@@ -95,7 +95,7 @@ function CategoryNavItem({
         alignItems: 'center',
         gap: 'var(--spacing-sm)',
         width: '100%',
-        padding: 'var(--spacing-sm) var(--spacing-md)',
+        padding: '10px var(--spacing-md)',
         background: isActive ? 'var(--color-surface-selected)' : 'transparent',
         border: 'none',
         borderRadius: 'var(--radius-md)',

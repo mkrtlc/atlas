@@ -10,6 +10,53 @@ import { EmailListSkeleton } from '../ui/skeleton';
 import type { EmailCategory, Thread } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
 
+interface CategoryTabProps {
+  cat: EmailCategory;
+  isActive: boolean;
+  color: string;
+  label: string;
+  onClick: () => void;
+}
+
+function CategoryTab({ cat, isActive, color, label, onClick }: CategoryTabProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const borderBottomColor = isActive
+    ? color
+    : isHovered
+    ? `color-mix(in srgb, ${color} 40%, transparent)`
+    : 'transparent';
+
+  return (
+    <button
+      key={cat}
+      role="tab"
+      aria-selected={isActive}
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        padding: 'var(--spacing-md) var(--spacing-lg)',
+        border: 'none',
+        borderBottom: `2px solid ${borderBottomColor}`,
+        background: 'transparent',
+        color: isActive ? color : isHovered ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)',
+        fontSize: 'var(--font-size-sm)',
+        fontWeight: isActive
+          ? ('var(--font-weight-semibold)' as CSSProperties['fontWeight'])
+          : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
+        fontFamily: 'var(--font-family)',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        transition: 'color var(--transition-fast), border-bottom-color var(--transition-fast)',
+        marginBottom: '-1px',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 const CATEGORY_LABELS: Record<EmailCategory, string> = {
   important: 'Important',
   other: 'Other',
@@ -39,6 +86,7 @@ export function EmailListPane() {
     selectedThreadIds,
     toggleSelection,
     clearSelection,
+    selectThreads,
   } = useEmailStore();
   const toggleStar = useToggleStar();
   const archiveMutation = useArchiveThread();
@@ -66,6 +114,25 @@ export function EmailListPane() {
 
   // Keep the ref in sync so the cursor-selection event handler is never stale
   displayThreadsRef.current = displayThreads;
+
+  // Auto-scroll Virtuoso to keep the keyboard cursor visible
+  useEffect(() => {
+    if (cursorIndex >= 0 && virtuosoRef.current) {
+      virtuosoRef.current.scrollIntoView({ index: cursorIndex, behavior: 'smooth' });
+    }
+  }, [cursorIndex]);
+
+  // Auto-select first thread when switching categories
+  const prevCategoryRef = useRef(activeCategory);
+  useEffect(() => {
+    if (prevCategoryRef.current !== activeCategory) {
+      prevCategoryRef.current = activeCategory;
+      if (displayThreads.length > 0) {
+        setActiveThread(displayThreads[0].id);
+        setCursorIndex(0);
+      }
+    }
+  }, [activeCategory, displayThreads, setActiveThread, setCursorIndex]);
 
   // Listen for the cursor-selection event dispatched by inbox.tsx when `x` is pressed
   useEffect(() => {
@@ -154,6 +221,17 @@ export function EmailListPane() {
     clearSelection();
   }, [clearSelection]);
 
+  const handleSelectAll = useCallback(() => {
+    const allSelected =
+      selectedThreadIds.size === displayThreadsRef.current.length &&
+      displayThreadsRef.current.length > 0;
+    if (allSelected) {
+      clearSelection();
+    } else {
+      selectThreads(displayThreadsRef.current.map((t) => t.id));
+    }
+  }, [selectedThreadIds.size, clearSelection, selectThreads]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Category tabs */}
@@ -169,36 +247,16 @@ export function EmailListPane() {
           scrollbarWidth: 'none',
         }}
       >
-        {CATEGORIES.map((cat) => {
-          const isActive = cat === activeCategory;
-          const color = CATEGORY_COLORS[cat];
-          return (
-            <button
-              key={cat}
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setActiveCategory(cat)}
-              style={{
-                padding: 'var(--spacing-md) var(--spacing-lg)',
-                border: 'none',
-                borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
-                background: 'transparent',
-                color: isActive ? color : 'var(--color-text-tertiary)',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: isActive
-                  ? ('var(--font-weight-semibold)' as CSSProperties['fontWeight'])
-                  : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
-                fontFamily: 'var(--font-family)',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'color var(--transition-fast)',
-                marginBottom: '-1px',
-              }}
-            >
-              {CATEGORY_LABELS[cat]}
-            </button>
-          );
-        })}
+        {CATEGORIES.map((cat) => (
+          <CategoryTab
+            key={cat}
+            cat={cat}
+            isActive={cat === activeCategory}
+            color={CATEGORY_COLORS[cat]}
+            label={CATEGORY_LABELS[cat]}
+            onClick={() => setActiveCategory(cat)}
+          />
+        ))}
       </div>
 
       {/* Search bar */}
@@ -219,15 +277,19 @@ export function EmailListPane() {
 
       {/* Bulk actions toolbar — visible when 1+ threads are selected */}
       {selectedThreadIds.size > 0 && (
-        <BulkActions
-          selectedCount={selectedThreadIds.size}
-          onArchive={handleBulkArchive}
-          onTrash={handleBulkTrash}
-          onStar={handleBulkStar}
-          onMarkRead={handleBulkMarkRead}
-          onMarkUnread={handleBulkMarkUnread}
-          onClearSelection={clearSelection}
-        />
+        <div style={{ overflow: 'hidden', animation: 'bulkActionsSlideDown 150ms ease forwards', flexShrink: 0 }}>
+          <BulkActions
+            selectedCount={selectedThreadIds.size}
+            totalCount={displayThreads.length}
+            onSelectAll={handleSelectAll}
+            onArchive={handleBulkArchive}
+            onTrash={handleBulkTrash}
+            onStar={handleBulkStar}
+            onMarkRead={handleBulkMarkRead}
+            onMarkUnread={handleBulkMarkUnread}
+            onClearSelection={clearSelection}
+          />
+        </div>
       )}
 
       {/* Thread list */}
@@ -246,7 +308,7 @@ export function EmailListPane() {
         ) : (
           <Virtuoso
             ref={virtuosoRef}
-            style={{ height: '100%' }}
+            style={{ height: '100%', paddingTop: 4 }}
             data={displayThreads}
             itemContent={(index, thread) => (
               <EmailListItem

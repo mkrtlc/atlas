@@ -332,6 +332,39 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
       >
         {resolvedDescription}
       </span>
+
+      {type === 'inbox' && (
+        <span
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-text-tertiary)',
+            marginTop: 'var(--spacing-sm)',
+          }}
+        >
+          Press{' '}
+          <kbd
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--color-bg-tertiary)',
+              border: '1px solid var(--color-border-primary)',
+              borderRadius: 'var(--radius-sm)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              lineHeight: 1,
+              padding: '2px 5px',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            C
+          </kbd>{' '}
+          to compose a new email
+        </span>
+      )}
     </div>
   );
 }

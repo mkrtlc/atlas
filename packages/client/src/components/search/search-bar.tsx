@@ -38,6 +38,7 @@ export function SearchBar({
     if (e.key === 'Enter') {
       onSubmit?.(value);
     } else if (e.key === 'Escape') {
+      onChange('');
       inputRef.current?.blur();
     }
   }

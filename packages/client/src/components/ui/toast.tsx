@@ -111,7 +111,7 @@ function ToastItem({ toast }: ToastItemProps) {
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-lg)',
         fontFamily: 'var(--font-family)',
-        minWidth: 280,
+        minWidth: 320,
         maxWidth: 400,
         overflow: 'hidden',
         animation: exiting

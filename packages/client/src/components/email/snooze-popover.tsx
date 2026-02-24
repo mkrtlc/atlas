@@ -297,9 +297,9 @@ export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverPro
                     background: 'transparent',
                     border: '1px solid var(--color-border-primary)',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '4px var(--spacing-sm)',
+                    padding: '6px var(--spacing-md)',
                     cursor: 'pointer',
-                    height: '28px',
+                    height: '32px',
                   }}
                 >
                   Cancel
@@ -316,9 +316,9 @@ export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverPro
                       : 'var(--color-text-tertiary)',
                     border: 'none',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '4px var(--spacing-sm)',
+                    padding: '6px var(--spacing-md)',
                     cursor: customValue ? 'pointer' : 'not-allowed',
-                    height: '28px',
+                    height: '32px',
                   }}
                 >
                   Snooze

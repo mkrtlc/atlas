@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Star, Reply, Archive, Trash2, Clock, Check } from 'lucide-react';
 import { Avatar } from '../ui/avatar';
 import { Tooltip } from '../ui/tooltip';
+import { LabelChip } from './label-chip';
+import { getLabelById } from '../../lib/labels';
 import { formatRelativeTime } from '@atlasmail/shared';
 import type { Thread } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
@@ -48,7 +50,7 @@ function QuickActionButton({ icon: Icon, label, onClick, destructive = false }: 
           color: 'var(--color-text-tertiary)',
           cursor: 'pointer',
           flexShrink: 0,
-          transition: 'background var(--transition-fast), color var(--transition-fast)',
+          transition: 'background var(--transition-fast), color var(--transition-fast), transform 80ms ease',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'var(--color-surface-active)';
@@ -59,6 +61,12 @@ function QuickActionButton({ icon: Icon, label, onClick, destructive = false }: 
         onMouseLeave={(e) => {
           e.currentTarget.style.background = 'transparent';
           e.currentTarget.style.color = 'var(--color-text-tertiary)';
+        }}
+        onMouseDown={(e) => {
+          e.currentTarget.style.transform = 'scale(0.92)';
+        }}
+        onMouseUp={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
         }}
       >
         <Icon size={14} />
@@ -85,6 +93,11 @@ export function EmailListItem({
   const isUnread = thread.unreadCount > 0;
   const senderName = thread.emails?.[0]?.fromName || thread.emails?.[0]?.fromAddress || 'Unknown';
   const senderEmail = thread.emails?.[0]?.fromAddress || '';
+
+  // Resolve label IDs to Label objects (skip system labels like INBOX)
+  const threadLabels = (thread.labels ?? [])
+    .map((id) => getLabelById(id))
+    .filter((l): l is NonNullable<typeof l> => l !== undefined);
 
   let background = 'transparent';
   if (isMultiSelected) background = 'var(--color-surface-selected)';
@@ -280,6 +293,21 @@ export function EmailListItem({
         >
           {thread.snippet || ''}
         </span>
+
+        {/* Labels row — fixed height for consistent item sizing */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            height: 16,
+            overflow: 'hidden',
+          }}
+        >
+          {threadLabels.map((label) => (
+            <LabelChip key={label.id} label={label} />
+          ))}
+        </div>
       </div>
 
       {/* Star — hidden when quick actions are showing */}
@@ -317,7 +345,7 @@ export function EmailListItem({
         }}
       >
         <Star
-          size={15}
+          size={16}
           fill={thread.isStarred ? 'var(--color-star)' : 'none'}
         />
       </button>

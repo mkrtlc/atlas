@@ -1617,6 +1617,18 @@ export function SettingsModal() {
                 key={section.title}
                 style={{ marginBottom: si < SIDEBAR_SECTIONS.length - 1 ? 'var(--spacing-md)' : 0 }}
               >
+                {/* Divider between sections (not before the first) */}
+                {si > 0 && (
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      height: '1px',
+                      background: 'var(--color-border-secondary)',
+                      margin: 'var(--spacing-xs) var(--spacing-md)',
+                      marginBottom: 'var(--spacing-sm)',
+                    }}
+                  />
+                )}
                 <div
                   style={{
                     padding: 'var(--spacing-xs) var(--spacing-sm)',

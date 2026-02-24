@@ -224,6 +224,19 @@
   100% { background-position: 200px 0; }
 }
 
+/* ─── Bulk actions enter animation ────────────────────────────────── */
+
+@keyframes bulkActionsSlideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 48px;
+    opacity: 1;
+  }
+}
+
 /* ─── Toast animations ─────────────────────────────────────────────── */
 
 @keyframes toastSlideUp {

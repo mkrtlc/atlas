@@ -298,6 +298,15 @@ export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
       {/* Expanded body */}
       {expanded && (
         <div style={{ padding: '0 var(--spacing-lg) var(--spacing-lg)' }}>
+          {/* Subtle separator between header section and body */}
+          <div
+            aria-hidden="true"
+            style={{
+              height: '1px',
+              background: 'var(--color-border-secondary)',
+              margin: 'var(--spacing-sm) 0',
+            }}
+          />
           <div style={{ marginLeft: `calc(36px + var(--spacing-md))` }}>
             <SafeEmailBody bodyHtml={email.bodyHtml} bodyText={email.bodyText} />
 

@@ -110,36 +110,59 @@ export function ReadingPane() {
       {/* Action toolbar */}
       <EmailActions thread={thread} />
 
-      {/* Message list */}
+      {/* Message list with scroll shadow */}
       <div
-        aria-label="Email content"
         style={{
+          position: 'relative',
           flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
+          overflow: 'hidden',
         }}
       >
-        {emails.length === 0 ? (
-          <div
-            style={{
-              padding: 'var(--spacing-xl)',
-              color: 'var(--color-text-tertiary)',
-              fontSize: 'var(--font-size-md)',
-              fontFamily: 'var(--font-family)',
-              textAlign: 'center',
-            }}
-          >
-            No messages in this thread.
-          </div>
-        ) : (
-          emails.map((email, index) => (
-            <EmailMessage
-              key={email.id}
-              email={email}
-              isLatest={index === emails.length - 1}
-            />
-          ))
-        )}
+        {/* Subtle inset top shadow indicates scrollable content above */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            zIndex: 1,
+            pointerEvents: 'none',
+            boxShadow: 'inset 0 4px 6px -4px rgba(0,0,0,0.08)',
+          }}
+        />
+        <div
+          aria-label="Email content"
+          style={{
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingBottom: 'var(--spacing-xl)',
+          }}
+        >
+          {emails.length === 0 ? (
+            <div
+              style={{
+                padding: 'var(--spacing-xl)',
+                color: 'var(--color-text-tertiary)',
+                fontSize: 'var(--font-size-md)',
+                fontFamily: 'var(--font-family)',
+                textAlign: 'center',
+              }}
+            >
+              No messages in this thread.
+            </div>
+          ) : (
+            emails.map((email, index) => (
+              <EmailMessage
+                key={email.id}
+                email={email}
+                isLatest={index === emails.length - 1}
+              />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

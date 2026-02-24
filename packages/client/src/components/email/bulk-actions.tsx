@@ -1,8 +1,10 @@
-import { Archive, Trash2, Star, Mail, MailOpen, X } from 'lucide-react';
+import { Archive, Trash2, Star, Mail, MailOpen, X, Check, Minus } from 'lucide-react';
 import { Tooltip } from '../ui/tooltip';
 
 interface BulkActionsProps {
   selectedCount: number;
+  totalCount: number;
+  onSelectAll: () => void;
   onArchive: () => void;
   onTrash: () => void;
   onStar: () => void;
@@ -59,6 +61,8 @@ function BulkActionButton({ icon: Icon, label, onClick, destructive = false }: B
 
 export function BulkActions({
   selectedCount,
+  totalCount,
+  onSelectAll,
   onArchive,
   onTrash,
   onStar,
@@ -66,6 +70,9 @@ export function BulkActions({
   onMarkUnread,
   onClearSelection,
 }: BulkActionsProps) {
+  const allSelected = selectedCount === totalCount && totalCount > 0;
+  const isIndeterminate = selectedCount > 0 && selectedCount < totalCount;
+
   return (
     <div
       role="toolbar"
@@ -81,6 +88,47 @@ export function BulkActions({
         flexShrink: 0,
       }}
     >
+      {/* Select all checkbox */}
+      <Tooltip content={allSelected ? 'Deselect all' : 'Select all'} side="bottom">
+        <button
+          onClick={onSelectAll}
+          aria-label={allSelected ? 'Deselect all conversations' : 'Select all conversations'}
+          aria-pressed={allSelected}
+          style={{
+            width: 16,
+            height: 16,
+            border: allSelected || isIndeterminate
+              ? 'none'
+              : '1.5px solid var(--color-border-primary)',
+            borderRadius: 4,
+            background: allSelected || isIndeterminate
+              ? 'var(--color-accent-primary)'
+              : 'transparent',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'background var(--transition-fast), border-color var(--transition-fast)',
+            marginRight: 'var(--spacing-xs)',
+          }}
+          onMouseEnter={(e) => {
+            if (!allSelected && !isIndeterminate) {
+              e.currentTarget.style.borderColor = 'var(--color-accent-primary)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!allSelected && !isIndeterminate) {
+              e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+            }
+          }}
+        >
+          {allSelected && <Check size={10} color="#ffffff" strokeWidth={3} />}
+          {isIndeterminate && <Minus size={10} color="#ffffff" strokeWidth={3} />}
+        </button>
+      </Tooltip>
+
       {/* Selected count label */}
       <span
         style={{

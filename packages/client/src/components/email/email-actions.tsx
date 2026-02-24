@@ -127,7 +127,7 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
               ? 'var(--color-text-tertiary)'
               : 'var(--color-text-secondary)',
             cursor: 'pointer',
-            transition: 'background var(--transition-fast), color var(--transition-fast)',
+            transition: 'background var(--transition-fast), color var(--transition-fast), transform 80ms ease',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -141,6 +141,12 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
               : destructive
               ? 'var(--color-text-tertiary)'
               : 'var(--color-text-secondary)';
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = 'scale(0.92)';
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
           }}
         >
           <Icon
@@ -199,7 +205,7 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
               background: 'transparent',
               color: 'var(--color-text-secondary)',
               cursor: 'pointer',
-              transition: 'background var(--transition-fast), color var(--transition-fast)',
+              transition: 'background var(--transition-fast), color var(--transition-fast), transform 80ms ease',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -208,6 +214,12 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent';
               e.currentTarget.style.color = 'var(--color-text-secondary)';
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.92)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             <Clock size={16} />

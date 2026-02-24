@@ -158,6 +158,7 @@ export interface RecipientInputProps {
   recipients: Recipient[];
   onChange: (recipients: Recipient[]) => void;
   placeholder?: string;
+  autoFocus?: boolean;
 }
 
 export function RecipientInput({
@@ -165,6 +166,7 @@ export function RecipientInput({
   recipients,
   onChange,
   placeholder = 'Add recipients',
+  autoFocus = false,
 }: RecipientInputProps) {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<Recipient[]>([]);
@@ -172,6 +174,15 @@ export function RecipientInput({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-focus the internal input on mount when requested
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Update suggestions whenever the query changes
   useEffect(() => {

@@ -507,12 +507,28 @@ export function ComposeModal() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isOpen, handleSend]);
 
+  // For 'new' mode: focus the To field after the dialog animation settles
+  const toInputFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (composeMode === 'new' && isOpen) {
+      toInputFocusTimerRef.current = setTimeout(() => {
+        const toInput = document.querySelector<HTMLInputElement>('[aria-label="To"]');
+        toInput?.focus();
+      }, 100);
+    }
+    return () => {
+      if (toInputFocusTimerRef.current) clearTimeout(toInputFocusTimerRef.current);
+    };
+  }, [composeMode, isOpen]);
+
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       if (draftSavedTimerRef.current) clearTimeout(draftSavedTimerRef.current);
+      if (toInputFocusTimerRef.current) clearTimeout(toInputFocusTimerRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── File attachment handlers ─────────────────────────────────────
@@ -572,12 +588,25 @@ export function ComposeModal() {
     }
   };
 
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      const hasContent =
+        (editor?.getText().trim().length ?? 0) > 0 ||
+        toRecipients.length > 0 ||
+        subject.trim().length > 0;
+
+      if (hasContent) {
+        const shouldDiscard = window.confirm('Discard this draft?');
+        if (!shouldDiscard) return;
+      }
+      handleClose();
+    }
+  }
+
   return (
     <Dialog.Root
       open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) handleClose();
-      }}
+      onOpenChange={handleOpenChange}
     >
       <Dialog.Portal>
         <Dialog.Overlay
@@ -594,7 +623,7 @@ export function ComposeModal() {
             position: 'fixed',
             bottom: 'var(--spacing-xl)',
             right: 'var(--spacing-xl)',
-            width: 560,
+            width: 600,
             maxHeight: '80vh',
             background: 'var(--color-bg-elevated)',
             border: '1px solid var(--color-border-primary)',
@@ -725,7 +754,7 @@ export function ComposeModal() {
             onDrop={handleDrop}
             style={{
               flex: 1,
-              padding: 'var(--spacing-lg)',
+              padding: '20px var(--spacing-lg) var(--spacing-lg)',
               overflowY: 'auto',
               cursor: 'text',
               position: 'relative',
@@ -886,6 +915,21 @@ export function ComposeModal() {
                 onChange={handleFileInputChange}
                 style={{ display: 'none' }}
               />
+
+              {/* Attachment summary badge */}
+              {attachments.length > 0 && (
+                <span
+                  style={{
+                    fontSize: 'var(--font-size-xs)',
+                    color: 'var(--color-text-tertiary)',
+                    fontFamily: 'var(--font-family)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {attachments.length} file{attachments.length > 1 ? 's' : ''} (
+                  {formatBytes(attachments.reduce((sum, f) => sum + f.size, 0))})
+                </span>
+              )}
 
               {/* Draft saved indicator */}
               <DraftSavedBadge visible={draftSavedVisible} />
