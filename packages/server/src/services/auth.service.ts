@@ -21,7 +21,10 @@ export async function getGoogleUserInfo(accessToken: string) {
   return response.json() as Promise<{ id: string; email: string; name: string; picture: string }>;
 }
 
-export async function findOrCreateAccount(userInfo: { id: string; email: string; name: string; picture: string }, tokens: any) {
+export async function findOrCreateAccount(
+  userInfo: { id: string; email: string; name: string; picture: string },
+  tokens: any,
+): Promise<{ account: typeof accounts.$inferSelect; isNew: boolean }> {
   const existing = await db.select().from(accounts).where(eq(accounts.email, userInfo.email)).limit(1);
 
   if (existing.length > 0) {
@@ -31,12 +34,12 @@ export async function findOrCreateAccount(userInfo: { id: string; email: string;
         pictureUrl: userInfo.picture,
         accessToken: encrypt(tokens.access_token),
         refreshToken: encrypt(tokens.refresh_token || ''),
-        tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600000),
-        updatedAt: new Date(),
+        tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600000).toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(accounts.id, existing[0].id))
       .returning();
-    return account;
+    return { account, isNew: false };
   }
 
   const [account] = await db.insert(accounts).values({
@@ -47,12 +50,12 @@ export async function findOrCreateAccount(userInfo: { id: string; email: string;
     providerId: userInfo.id,
     accessToken: encrypt(tokens.access_token),
     refreshToken: encrypt(tokens.refresh_token || ''),
-    tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600000),
+    tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600000).toISOString(),
   }).returning();
 
   await db.insert(userSettings).values({ accountId: account.id });
 
-  return account;
+  return { account, isNew: true };
 }
 
 export function generateTokens(account: { id: string; email: string }) {

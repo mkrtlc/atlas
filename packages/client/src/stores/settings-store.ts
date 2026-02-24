@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ThemeMode, Density } from '@atlasmail/shared';
+import i18n from '../i18n';
+import type { ThemeMode, Density, ColorThemeId } from '@atlasmail/shared';
 
 interface SettingsState {
   theme: ThemeMode;
   density: Density;
+  language: string;
   customShortcuts: Record<string, string>;
   readingPane: 'right' | 'bottom' | 'hidden';
   autoAdvance: 'next' | 'previous' | 'list';
@@ -14,8 +16,15 @@ interface SettingsState {
   notificationLevel: 'all' | 'smart' | 'priority' | 'none';
   composeMode: 'plain' | 'rich';
   signature: string;
-  undoSendDelay: 5 | 10 | 30;
+  signatureHtml: string;
+  includeSignatureInReplies: boolean;
+  undoSendDelay: 5 | 10 | 20 | 30;
+  sendAnimation: boolean;
+  themeTransition: boolean;
+  colorTheme: ColorThemeId;
+  trackingEnabled: boolean;
   setTheme: (theme: ThemeMode) => void;
+  setColorTheme: (colorTheme: ColorThemeId) => void;
   setDensity: (density: Density) => void;
   setCustomShortcut: (id: string, keys: string) => void;
   setReadingPane: (pane: 'right' | 'bottom' | 'hidden') => void;
@@ -26,7 +35,13 @@ interface SettingsState {
   setNotificationLevel: (level: 'all' | 'smart' | 'priority' | 'none') => void;
   setComposeMode: (mode: 'plain' | 'rich') => void;
   setSignature: (signature: string) => void;
-  setUndoSendDelay: (delay: 5 | 10 | 30) => void;
+  setSignatureHtml: (signatureHtml: string) => void;
+  setIncludeSignatureInReplies: (value: boolean) => void;
+  setUndoSendDelay: (delay: 5 | 10 | 20 | 30) => void;
+  setSendAnimation: (value: boolean) => void;
+  setThemeTransition: (value: boolean) => void;
+  setTrackingEnabled: (value: boolean) => void;
+  setLanguage: (language: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -34,6 +49,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       theme: 'dark',
       density: 'default',
+      language: i18n.language?.split('-')[0] || 'en',
       customShortcuts: {},
       readingPane: 'right',
       autoAdvance: 'next',
@@ -43,8 +59,15 @@ export const useSettingsStore = create<SettingsState>()(
       notificationLevel: 'smart',
       composeMode: 'rich',
       signature: '',
-      undoSendDelay: 10,
+      signatureHtml: '',
+      includeSignatureInReplies: true,
+      undoSendDelay: 5,
+      sendAnimation: true,
+      themeTransition: true,
+      colorTheme: 'default',
+      trackingEnabled: false,
       setTheme: (theme) => set({ theme }),
+      setColorTheme: (colorTheme) => set({ colorTheme }),
       setDensity: (density) => set({ density }),
       setCustomShortcut: (id, keys) =>
         set((s) => ({ customShortcuts: { ...s.customShortcuts, [id]: keys } })),
@@ -56,7 +79,18 @@ export const useSettingsStore = create<SettingsState>()(
       setNotificationLevel: (notificationLevel) => set({ notificationLevel }),
       setComposeMode: (composeMode) => set({ composeMode }),
       setSignature: (signature) => set({ signature }),
+      setSignatureHtml: (signatureHtml) => set({ signatureHtml }),
+      setIncludeSignatureInReplies: (includeSignatureInReplies) =>
+        set({ includeSignatureInReplies }),
       setUndoSendDelay: (undoSendDelay) => set({ undoSendDelay }),
+      setSendAnimation: (sendAnimation) => set({ sendAnimation }),
+      setThemeTransition: (themeTransition) => set({ themeTransition }),
+      setTrackingEnabled: (trackingEnabled) => set({ trackingEnabled }),
+      setLanguage: (language) => {
+        i18n.changeLanguage(language);
+        localStorage.setItem('atlasmail-language', language);
+        set({ language });
+      },
     }),
     { name: 'atlasmail-settings' },
   ),

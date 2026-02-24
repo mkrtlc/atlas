@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../lib/api-client';
 import { useAuthStore } from '../../stores/auth-store';
 import { ROUTES } from '../../config/routes';
@@ -7,9 +8,14 @@ import { Mail } from 'lucide-react';
 import type { Account } from '@atlasmail/shared';
 
 export function OAuthCallback() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setAccount } = useAuthStore();
+  const { addAccount } = useAuthStore();
   const hasRun = useRef(false);
+  // Capture the flag at mount time — before the effect clears it from sessionStorage
+  const [isAddingAccount] = useState(
+    () => sessionStorage.getItem('atlasmail_adding_account') === 'true',
+  );
 
   useEffect(() => {
     // Prevent double-execution in React StrictMode
@@ -21,34 +27,44 @@ export function OAuthCallback() {
     const error = params.get('error');
 
     if (error) {
+      sessionStorage.removeItem('atlasmail_adding_account');
       navigate(ROUTES.LOGIN);
       return;
     }
 
     if (!code) {
+      sessionStorage.removeItem('atlasmail_adding_account');
       navigate(ROUTES.LOGIN);
       return;
     }
 
     async function exchangeCode() {
       try {
-        const { data } = await api.post('/auth/google/callback', { code });
+        const redirectUri = `${window.location.origin}/auth/callback`;
+        const { data } = await api.post('/auth/callback', { code, redirectUri });
         const { accessToken, refreshToken, account } = data.data as {
           accessToken: string;
           refreshToken: string;
           account: Account;
         };
-        localStorage.setItem('atlasmail_token', accessToken);
-        localStorage.setItem('atlasmail_refresh_token', refreshToken);
-        setAccount(account);
+
+        sessionStorage.removeItem('atlasmail_adding_account');
+
+        // addAccount handles both first-login and add-account flows:
+        // it merges into the accounts list and makes this account active.
+        addAccount(account, accessToken, refreshToken);
+
         navigate(ROUTES.INBOX, { replace: true });
-      } catch {
+      } catch (err) {
+        console.error('OAuth callback failed:', err);
+        sessionStorage.removeItem('atlasmail_adding_account');
         navigate(ROUTES.LOGIN);
       }
     }
 
     exchangeCode();
-  }, [navigate, setAccount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
@@ -87,7 +103,7 @@ export function OAuthCallback() {
             color: 'var(--color-text-secondary)',
           }}
         >
-          Signing you in...
+          {isAddingAccount ? t('auth.addingAccount') : t('auth.signingIn')}
         </p>
         <p
           style={{
@@ -96,7 +112,7 @@ export function OAuthCallback() {
             color: 'var(--color-text-tertiary)',
           }}
         >
-          Connecting to your Gmail account
+          {t('auth.connectingToGmail')}
         </p>
       </div>
 

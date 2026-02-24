@@ -1,13 +1,22 @@
-import { Reply, CornerUpLeft, Forward, Archive, Trash2, Star, MailOpen, Clock } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Reply, CornerUpLeft, Forward, Archive, Trash2, Star, MailOpen, Clock, AlertOctagon, Ban, Tag } from 'lucide-react';
 import { useEmailStore } from '../../stores/email-store';
-import { useArchiveThread, useTrashThread, useToggleStar, useSnoozeThread } from '../../hooks/use-threads';
+import { useArchiveWithUndo, useTrashWithUndo, useToggleStar, useSnoozeThread, useSpamWithUndo, useMarkReadUnread, useMailboxThreads, useBlockSender } from '../../hooks/use-threads';
+import { useAutoAdvance } from '../../hooks/use-auto-advance';
+import { useToastStore } from '../../stores/toast-store';
+import { ConfirmDialog } from '../ui/confirm-dialog';
+import { queryKeys } from '../../config/query-keys';
 import { Tooltip } from '../ui/tooltip';
 import { SnoozePopover } from './snooze-popover';
+import { LabelPopover } from './label-popover';
+import { useValueChangeAnimation, injectStarPop } from '../../lib/animations';
 import type { Thread } from '@atlasmail/shared';
+
+injectStarPop();
 
 interface EmailActionsProps {
   thread: Thread;
-  onMarkUnread?: () => void;
 }
 
 interface ActionButton {
@@ -20,48 +29,88 @@ interface ActionButton {
   destructive?: boolean;
 }
 
-export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
-  const { openCompose } = useEmailStore();
-  const archiveMutation = useArchiveThread();
-  const trashMutation = useTrashThread();
+export function EmailActions({ thread }: EmailActionsProps) {
+  const { t } = useTranslation();
+  const { openCompose, activeMailbox, activeCategory, cursorIndex } = useEmailStore();
+  const archiveWithUndo = useArchiveWithUndo();
+  const trashWithUndo = useTrashWithUndo();
   const starMutation = useToggleStar();
   const snoozeMutation = useSnoozeThread();
+  const spamWithUndo = useSpamWithUndo();
+  const markReadUnread = useMarkReadUnread();
+  const blockSender = useBlockSender();
+  const addToast = useToastStore((s) => s.addToast);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const starAnimating = useValueChangeAnimation(thread.isStarred, true, 500);
+
+  // Derive the correct TanStack Query list key for the currently visible thread
+  // list, so optimistic updates in undo hooks target the right cache entry.
+  const activeListKey =
+    activeMailbox === 'inbox'
+      ? queryKeys.threads.list(activeCategory)
+      : queryKeys.threads.mailbox(activeMailbox);
+
+  const isInbox = activeMailbox === 'inbox';
+  const { data: rawThreads } = useMailboxThreads(activeMailbox, isInbox ? activeCategory : undefined);
+  const displayThreads = useMemo(() => rawThreads ?? [], [rawThreads]);
+  const advanceAfterRemoval = useAutoAdvance(displayThreads);
 
   const actions: ActionButton[] = [
     {
       icon: Reply,
-      label: 'Reply',
+      label: t('compose.reply'),
       shortcut: 'R',
       action: () => openCompose('reply', thread.id),
     },
     {
       icon: CornerUpLeft,
-      label: 'Reply all',
+      label: t('compose.replyAll'),
       shortcut: 'Shift+R',
       action: () => openCompose('reply_all', thread.id),
     },
     {
       icon: Forward,
-      label: 'Forward',
+      label: t('compose.forward'),
       shortcut: 'F',
       action: () => openCompose('forward', thread.id),
     },
     {
       icon: Archive,
-      label: 'Archive',
+      label: t('email.archive'),
       shortcut: 'E',
-      action: () => archiveMutation.mutate(thread.id),
+      action: () => {
+        advanceAfterRemoval(thread.id, cursorIndex);
+        archiveWithUndo(thread.id, activeListKey);
+      },
     },
     {
       icon: Trash2,
-      label: 'Trash',
+      label: t('email.trash'),
       shortcut: '#',
-      action: () => trashMutation.mutate(thread.id),
+      action: () => {
+        advanceAfterRemoval(thread.id, cursorIndex);
+        trashWithUndo(thread.id, activeListKey);
+      },
+      destructive: true,
+    },
+    {
+      icon: AlertOctagon,
+      label: t('email.reportSpam'),
+      action: () => {
+        advanceAfterRemoval(thread.id, cursorIndex);
+        spamWithUndo(thread.id, activeListKey);
+      },
+      destructive: true,
+    },
+    {
+      icon: Ban,
+      label: t('email.blockSender'),
+      action: () => setShowBlockConfirm(true),
       destructive: true,
     },
     {
       icon: Star,
-      label: thread.isStarred ? 'Unstar' : 'Star',
+      label: thread.isStarred ? t('email.unstar') : t('email.star'),
       shortcut: 'S',
       action: () => starMutation.mutate(thread.id),
       active: thread.isStarred,
@@ -72,9 +121,9 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
   const afterSnoozeActions: ActionButton[] = [
     {
       icon: MailOpen,
-      label: 'Mark unread',
+      label: t('email.markUnread'),
       shortcut: 'Shift+U',
-      action: () => onMarkUnread?.(),
+      action: () => markReadUnread.mutate({ threadId: thread.id, isUnread: true }),
     },
   ];
 
@@ -127,7 +176,7 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
               ? 'var(--color-text-tertiary)'
               : 'var(--color-text-secondary)',
             cursor: 'pointer',
-            transition: 'background var(--transition-fast), color var(--transition-fast), transform 80ms ease',
+            transition: 'background var(--transition-normal), color var(--transition-normal), transform 80ms ease',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -152,6 +201,7 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
           <Icon
             size={16}
             fill={active && activeColor === 'var(--color-star)' ? 'var(--color-star)' : 'none'}
+            style={active && activeColor === 'var(--color-star)' && starAnimating ? { animation: 'atlasmail-star-pop 500ms ease' } : undefined}
           />
         </button>
       </Tooltip>
@@ -159,41 +209,32 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
   }
 
   return (
-    <div
-      role="toolbar"
-      aria-label="Email actions"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--spacing-xs)',
-        padding: 'var(--spacing-sm) var(--spacing-lg)',
-        borderBottom: '1px solid var(--color-border-primary)',
-        background: 'var(--color-bg-secondary)',
-        flexShrink: 0,
-      }}
-    >
-      {actions.map(renderActionButton)}
-
-      {/* Snooze — between Star and Mark unread */}
-      <SnoozePopover
-        threadId={thread.id}
-        onSnooze={(threadId, snoozeUntil) => {
-          snoozeMutation.mutate({ threadId, snoozeUntil: snoozeUntil.toISOString() });
+    <>
+      <div
+        role="toolbar"
+        aria-label={t('email.emailActions')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-xs)',
+          padding: 'var(--spacing-sm) var(--spacing-lg)',
+          borderBottom: '1px solid var(--color-border-primary)',
+          background: 'var(--color-bg-secondary)',
+          flexShrink: 0,
         }}
       >
-        <Tooltip
-          content={
-            <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-              Snooze
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', opacity: 0.7 }}>
-                H
-              </span>
-            </span>
-          }
-          side="bottom"
+        {actions.map(renderActionButton)}
+
+        {/* Snooze — between Star and Mark unread */}
+        <SnoozePopover
+          threadId={thread.id}
+          onSnooze={(threadId, snoozeUntil) => {
+            snoozeMutation.mutate({ threadId, snoozeUntil: snoozeUntil.toISOString() });
+          }}
         >
           <button
-            aria-label="Snooze"
+            aria-label={t('email.snooze')}
+            title={`${t('email.snooze')} (H)`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -205,7 +246,7 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
               background: 'transparent',
               color: 'var(--color-text-secondary)',
               cursor: 'pointer',
-              transition: 'background var(--transition-fast), color var(--transition-fast), transform 80ms ease',
+              transition: 'background var(--transition-normal), color var(--transition-normal), transform 80ms ease',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -224,10 +265,64 @@ export function EmailActions({ thread, onMarkUnread }: EmailActionsProps) {
           >
             <Clock size={16} />
           </button>
-        </Tooltip>
-      </SnoozePopover>
+        </SnoozePopover>
 
-      {afterSnoozeActions.map(renderActionButton)}
-    </div>
+        {/* Label assignment */}
+        <LabelPopover threadId={thread.id} currentLabels={thread.labels ?? []}>
+          <button
+            aria-label={t('labels.manageLabels')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              background: 'transparent',
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              transition: 'background var(--transition-normal), color var(--transition-normal), transform 80ms ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--color-surface-hover)';
+              e.currentTarget.style.color = 'var(--color-text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--color-text-secondary)';
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.92)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <Tag size={16} />
+          </button>
+        </LabelPopover>
+
+        {afterSnoozeActions.map(renderActionButton)}
+      </div>
+
+      <ConfirmDialog
+        open={showBlockConfirm}
+        onOpenChange={setShowBlockConfirm}
+        title={t('email.blockSenderConfirm')}
+        description={t('email.blockSenderDescription')}
+        confirmLabel={t('email.blockSender')}
+        onConfirm={() => {
+          const emails = thread.emails ?? [];
+          const senderEmail = emails[emails.length - 1]?.fromAddress || '';
+          if (!senderEmail) return;
+          advanceAfterRemoval(thread.id, cursorIndex);
+          blockSender.mutate(
+            { threadId: thread.id, senderEmail },
+            { onSuccess: () => addToast({ type: 'success', message: t('email.senderBlocked'), duration: 3000 }) },
+          );
+        }}
+      />
+    </>
   );
 }

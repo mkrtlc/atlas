@@ -3,4 +3,5 @@ export * from './email';
 export * from './category';
 export * from './search';
 export * from './settings';
+export * from './tracking';
 export * from './api';

@@ -61,7 +61,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       fontFamily: 'var(--font-family)',
       fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
       cursor: 'pointer',
-      transition: 'background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast)',
+      transition: 'background var(--transition-normal), color var(--transition-normal), opacity var(--transition-normal)',
       outline: 'none',
       whiteSpace: 'nowrap',
       flexShrink: 0,

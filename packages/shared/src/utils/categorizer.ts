@@ -32,6 +32,7 @@ export function categorizeEmail(email: Email, rules: CategoryRule[], contactEmai
 
   // 3. Gmail category labels
   const labels = email.gmailLabels || [];
+  if (labels.includes('CATEGORY_PERSONAL') || labels.includes('IMPORTANT')) return 'important';
   if (labels.includes('CATEGORY_PROMOTIONS') || labels.includes('CATEGORY_UPDATES')) return 'newsletters';
   if (labels.includes('CATEGORY_SOCIAL') || labels.includes('CATEGORY_FORUMS')) return 'notifications';
 

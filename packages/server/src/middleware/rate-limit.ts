@@ -15,3 +15,11 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, error: 'Too many auth attempts, please try again later' },
 });
+
+export const trackingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: '',
+});

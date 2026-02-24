@@ -1,5 +1,9 @@
 import type { Request, Response } from 'express';
+import { eq } from 'drizzle-orm';
 import * as authService from '../services/auth.service';
+import { triggerInitialSync } from '../services/sync.service';
+import { db } from '../config/database';
+import { accounts } from '../db/schema';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
@@ -19,15 +23,32 @@ export async function getAuthUrl(req: Request, res: Response) {
 export async function handleCallback(req: Request, res: Response) {
   try {
     const { code, redirectUri } = req.body;
+    logger.info({ hasCode: !!code, redirectUri }, 'Auth callback received');
+
     if (!code) {
       res.status(400).json({ success: false, error: 'Missing authorization code' });
       return;
     }
 
+    logger.info('Exchanging code for tokens...');
     const tokens = await authService.exchangeCodeForTokens(code, redirectUri);
+    logger.info({ hasAccessToken: !!tokens.access_token }, 'Tokens received');
+
     const userInfo = await authService.getGoogleUserInfo(tokens.access_token!);
-    const account = await authService.findOrCreateAccount(userInfo, tokens);
+    logger.info({ email: userInfo.email }, 'User info fetched');
+
+    const { account, isNew } = await authService.findOrCreateAccount(userInfo, tokens);
+    logger.info({ accountId: account.id, isNew }, 'Account ready');
+
     const jwtTokens = authService.generateTokens(account);
+
+    // Enqueue a full sync for brand-new accounts so their mailbox is populated.
+    // Existing accounts are kept up to date by the periodic incremental sync.
+    if (isNew) {
+      triggerInitialSync(account.id).catch((err) =>
+        logger.error({ err, accountId: account.id }, 'Failed to enqueue initial sync'),
+      );
+    }
 
     res.json({
       success: true,
@@ -39,12 +60,22 @@ export async function handleCallback(req: Request, res: Response) {
           email: account.email,
           name: account.name,
           pictureUrl: account.pictureUrl,
+          provider: account.provider,
+          providerId: account.providerId,
+          historyId: account.historyId ?? null,
+          lastSync: account.lastSync ?? null,
+          syncStatus: account.syncStatus as 'idle' | 'syncing' | 'error',
+          createdAt: account.createdAt,
+          updatedAt: account.updatedAt,
         },
       },
     });
   } catch (error) {
-    logger.error({ error }, 'Auth callback failed');
-    res.status(500).json({ success: false, error: 'Authentication failed' });
+    const message = error instanceof Error ? error.message : String(error);
+    const detail = (error as any)?.response?.data || (error as any)?.code || '';
+    console.error('AUTH CALLBACK ERROR:', message, detail);
+    logger.error({ error, message, detail }, 'Auth callback failed');
+    res.status(500).json({ success: false, error: message });
   }
 }
 
@@ -69,5 +100,27 @@ export async function refreshToken(req: Request, res: Response) {
 }
 
 export async function getMe(req: Request, res: Response) {
-  res.json({ success: true, data: req.auth });
+  try {
+    const [account] = await db.select({
+      id: accounts.id,
+      email: accounts.email,
+      name: accounts.name,
+      pictureUrl: accounts.pictureUrl,
+      provider: accounts.provider,
+      syncStatus: accounts.syncStatus,
+    })
+      .from(accounts)
+      .where(eq(accounts.id, req.auth!.accountId))
+      .limit(1);
+
+    if (!account) {
+      res.status(404).json({ success: false, error: 'Account not found' });
+      return;
+    }
+
+    res.json({ success: true, data: account });
+  } catch (error) {
+    logger.error({ error }, 'Failed to fetch account');
+    res.status(500).json({ success: false, error: 'Failed to fetch account' });
+  }
 }

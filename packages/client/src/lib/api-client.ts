@@ -25,6 +25,25 @@ function processQueue(error: unknown, token: string | null) {
   failedQueue = [];
 }
 
+// Keep the atlasmail_tokens map in sync when the active account's token is refreshed
+function syncRefreshedToken(newAccessToken: string) {
+  try {
+    const currentToken = localStorage.getItem('atlasmail_token');
+    const raw = localStorage.getItem('atlasmail_tokens');
+    if (!raw || !currentToken) return;
+    const tokenMap = JSON.parse(raw) as Record<string, { access: string; refresh: string }>;
+    const activeAccountId = Object.keys(tokenMap).find(
+      (id) => tokenMap[id].access === currentToken,
+    );
+    if (activeAccountId) {
+      tokenMap[activeAccountId].access = newAccessToken;
+      localStorage.setItem('atlasmail_tokens', JSON.stringify(tokenMap));
+    }
+  } catch {
+    // Non-critical — the active token is already updated in the caller
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -45,11 +64,30 @@ api.interceptors.response.use(
         const { data } = await axios.post(`${config.apiUrl}/auth/refresh`, { refreshToken });
         const newToken = data.data.accessToken;
         localStorage.setItem('atlasmail_token', newToken);
+        syncRefreshedToken(newToken);
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (err) {
         processQueue(err, null);
+        // Remove the stale entry from the per-account token map BEFORE clearing
+        // the active-token keys, so we can still identify which account to evict.
+        try {
+          const currentAccess = localStorage.getItem('atlasmail_token');
+          const raw = localStorage.getItem('atlasmail_tokens');
+          if (raw && currentAccess) {
+            const tokenMap = JSON.parse(raw) as Record<string, { access: string; refresh: string }>;
+            const staleId = Object.keys(tokenMap).find(
+              (id) => tokenMap[id].access === currentAccess,
+            );
+            if (staleId) {
+              delete tokenMap[staleId];
+              localStorage.setItem('atlasmail_tokens', JSON.stringify(tokenMap));
+            }
+          }
+        } catch {
+          // Best-effort cleanup
+        }
         localStorage.removeItem('atlasmail_token');
         localStorage.removeItem('atlasmail_refresh_token');
         window.location.href = '/login';

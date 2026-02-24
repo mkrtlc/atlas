@@ -1,4 +1,8 @@
-import { useState, type CSSProperties, type ReactNode, type ReactElement } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties, type ReactNode, type ReactElement } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import DOMPurify from 'dompurify';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import {
@@ -18,17 +22,25 @@ import {
   X,
   Plus,
   Trash2,
-  Github,
-  AlertCircle,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
+  LogOut,
+  Save,
+  Camera,
+  AlertCircle,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../../stores/ui-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useAuthStore } from '../../stores/auth-store';
 import { Avatar } from '../ui/avatar';
 import { DEFAULT_LABELS, type Label } from '../../lib/labels';
+import { AddAccountModal } from './add-account-modal';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { DEFAULT_SHORTCUTS, type ShortcutCategory } from '@atlasmail/shared';
+import { SUPPORTED_LANGUAGES } from '../../i18n';
+import { COLOR_THEMES } from '../../lib/color-themes';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,38 +73,41 @@ interface SidebarSection {
 // Sidebar navigation config
 // ---------------------------------------------------------------------------
 
-const SIDEBAR_SECTIONS: SidebarSection[] = [
-  {
-    title: 'Account',
-    items: [
-      { id: 'general', label: 'General', icon: User },
-      { id: 'accounts', label: 'Accounts', icon: Mail },
-    ],
-  },
-  {
-    title: 'Preferences',
-    items: [
-      { id: 'appearance', label: 'Appearance', icon: Palette },
-      { id: 'notifications', label: 'Notifications', icon: Bell },
-      { id: 'composer', label: 'Composer', icon: PenLine },
-    ],
-  },
-  {
-    title: 'Email',
-    items: [
-      { id: 'inbox', label: 'Inbox', icon: Inbox },
-      { id: 'reading-pane', label: 'Reading pane', icon: PanelRight },
-      { id: 'labels', label: 'Labels', icon: Tag },
-    ],
-  },
-  {
-    title: 'Advanced',
-    items: [
-      { id: 'shortcuts', label: 'Keyboard shortcuts', icon: Keyboard },
-      { id: 'about', label: 'About', icon: Info },
-    ],
-  },
-];
+function useSidebarSections(): SidebarSection[] {
+  const { t } = useTranslation();
+  return [
+    {
+      title: t('settings.account'),
+      items: [
+        { id: 'general', label: t('settings.general'), icon: User },
+        { id: 'accounts', label: t('settings.accounts'), icon: Mail },
+      ],
+    },
+    {
+      title: t('settings.preferences'),
+      items: [
+        { id: 'appearance', label: t('settings.appearance'), icon: Palette },
+        { id: 'notifications', label: t('settings.notifications'), icon: Bell },
+        { id: 'composer', label: t('settings.composer'), icon: PenLine },
+      ],
+    },
+    {
+      title: t('settings.emailSection'),
+      items: [
+        { id: 'inbox', label: t('settings.inboxSection'), icon: Inbox },
+        { id: 'reading-pane', label: t('settings.readingPane'), icon: PanelRight },
+        { id: 'labels', label: t('settings.labels'), icon: Tag },
+      ],
+    },
+    {
+      title: t('settings.advanced'),
+      items: [
+        { id: 'shortcuts', label: t('settings.keyboardShortcuts'), icon: Keyboard },
+        { id: 'about', label: t('settings.about'), icon: Info },
+      ],
+    },
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // Primitive UI components
@@ -108,8 +123,8 @@ function SettingsSection({
   children: ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-      <div style={{ marginBottom: description ? 'var(--spacing-xs)' : 'var(--spacing-md)' }}>
+    <div style={{ marginBottom: 'var(--spacing-2xl)' }}>
+      <div style={{ marginBottom: description ? 'var(--spacing-sm)' : 'var(--spacing-md)' }}>
         <h3
           style={{
             margin: 0,
@@ -126,7 +141,7 @@ function SettingsSection({
         {description && (
           <p
             style={{
-              margin: '4px 0 0',
+              margin: '6px 0 0',
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-tertiary)',
               fontFamily: 'var(--font-family)',
@@ -157,7 +172,7 @@ function SettingsRow({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 'var(--spacing-lg)',
+        gap: 'var(--spacing-xl)',
         padding: 'var(--spacing-md) 0',
         borderBottom: '1px solid var(--color-border-secondary)',
       }}
@@ -176,7 +191,7 @@ function SettingsRow({
         {description && (
           <div
             style={{
-              marginTop: 2,
+              marginTop: 3,
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-tertiary)',
               fontFamily: 'var(--font-family)',
@@ -211,8 +226,8 @@ function SettingsToggle({
         position: 'relative',
         display: 'inline-flex',
         alignItems: 'center',
-        width: 40,
-        height: 22,
+        width: 44,
+        height: 24,
         borderRadius: 'var(--radius-full)',
         background: checked ? 'var(--color-accent-primary)' : 'var(--color-border-primary)',
         border: 'none',
@@ -233,9 +248,9 @@ function SettingsToggle({
         style={{
           position: 'absolute',
           top: 3,
-          left: checked ? 21 : 3,
-          width: 16,
-          height: 16,
+          left: checked ? 23 : 3,
+          width: 18,
+          height: 18,
           borderRadius: '50%',
           background: '#ffffff',
           transition: 'left var(--transition-normal)',
@@ -270,7 +285,7 @@ function SelectableCard({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 'var(--spacing-sm)',
-        padding: 'var(--spacing-md)',
+        padding: 'var(--spacing-lg)',
         borderRadius: 'var(--radius-lg)',
         border: selected
           ? '2px solid var(--color-accent-primary)'
@@ -281,7 +296,7 @@ function SelectableCard({
             ? 'var(--color-surface-hover)'
             : 'var(--color-bg-tertiary)',
         cursor: 'pointer',
-        transition: 'border-color var(--transition-fast), background var(--transition-fast)',
+        transition: 'border-color var(--transition-normal), background var(--transition-normal)',
         fontFamily: 'var(--font-family)',
         outline: 'none',
         ...style,
@@ -333,7 +348,7 @@ function RadioOption({
         borderRadius: 'var(--radius-md)',
         cursor: 'pointer',
         textAlign: 'left',
-        transition: 'background var(--transition-fast)',
+        transition: 'background var(--transition-normal)',
         fontFamily: 'var(--font-family)',
         outline: 'none',
       }}
@@ -355,7 +370,7 @@ function RadioOption({
             ? '5px solid var(--color-accent-primary)'
             : '2px solid var(--color-border-primary)',
           background: 'transparent',
-          transition: 'border var(--transition-fast)',
+          transition: 'border var(--transition-normal)',
           boxSizing: 'border-box',
         }}
       />
@@ -387,39 +402,202 @@ function RadioOption({
   );
 }
 
+function SingleKeyBadge({ label }: { label: string }) {
+  return (
+    <kbd
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 24,
+        height: 22,
+        padding: '0 6px',
+        background: 'var(--color-bg-tertiary)',
+        border: '1px solid var(--color-border-primary)',
+        borderRadius: 'var(--radius-sm)',
+        fontSize: 'var(--font-size-xs)',
+        fontFamily: 'var(--font-mono)',
+        color: 'var(--color-text-secondary)',
+        boxShadow: '0 1px 0 var(--color-border-primary)',
+        lineHeight: 1,
+      }}
+    >
+      {label === 'mod' ? '⌘' : label === 'shift' ? '⇧' : label === 'Enter' ? '↵' : label}
+    </kbd>
+  );
+}
+
 function KeyBadge({ children }: { children: string }) {
+  // Handle sequences like "g i" (space-separated steps)
+  const steps = children.split(' ');
+  if (steps.length > 1) {
+    return (
+      <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+        {steps.map((step, si) => (
+          <span key={si} style={{ display: 'inline-flex', gap: 3, alignItems: 'center' }}>
+            {si > 0 && (
+              <span style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)' }}>then</span>
+            )}
+            {step.split('+').map((k, ki) => (
+              <SingleKeyBadge key={ki} label={k} />
+            ))}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  // Single combo like "mod+Enter" or "e"
   const keys = children.split('+');
   return (
     <span style={{ display: 'inline-flex', gap: 3, alignItems: 'center' }}>
       {keys.map((k, i) => (
-        <kbd
-          key={i}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minWidth: 22,
-            height: 20,
-            padding: '0 5px',
-            background: 'var(--color-bg-tertiary)',
-            border: '1px solid var(--color-border-primary)',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--font-size-xs)',
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--color-text-secondary)',
-            boxShadow: '0 1px 0 var(--color-border-primary)',
-            lineHeight: 1,
-          }}
-        >
-          {k === 'mod' ? '⌘' : k === 'shift' ? '⇧' : k}
-        </kbd>
+        <SingleKeyBadge key={i} label={k} />
       ))}
     </span>
   );
 }
 
+// Custom select component (replaces native <select>)
+function SettingsSelect<T extends string | number>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: Array<{ value: T; label: string }>;
+  onChange: (value: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.value === value);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-sm)',
+          height: 34,
+          padding: '0 var(--spacing-sm) 0 var(--spacing-md)',
+          background: 'var(--color-bg-tertiary)',
+          border: '1px solid var(--color-border-primary)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--color-text-primary)',
+          fontSize: 'var(--font-size-md)',
+          fontFamily: 'var(--font-family)',
+          cursor: 'pointer',
+          minWidth: 140,
+          justifyContent: 'space-between',
+          transition: 'border-color var(--transition-normal)',
+        }}
+        onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-border-focus)')}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+          // Close dropdown after a short delay to allow click registration
+          setTimeout(() => setOpen(false), 150);
+        }}
+      >
+        {current?.label ?? ''}
+        <ChevronDown size={14} style={{ color: 'var(--color-text-tertiary)' }} />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: 4,
+            minWidth: '100%',
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-md)',
+            zIndex: 10,
+            padding: 'var(--spacing-xs)',
+            overflow: 'hidden',
+          }}
+        >
+          {options.map((opt) => (
+            <button
+              key={String(opt.value)}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                padding: 'var(--spacing-xs) var(--spacing-sm)',
+                background: opt.value === value ? 'var(--color-surface-selected)' : 'transparent',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                color: opt.value === value ? 'var(--color-accent-primary)' : 'var(--color-text-primary)',
+                fontSize: 'var(--font-size-md)',
+                fontFamily: 'var(--font-family)',
+                fontWeight: opt.value === value
+                  ? ('var(--font-weight-medium)' as CSSProperties['fontWeight'])
+                  : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
+                cursor: 'pointer',
+                transition: 'background var(--transition-normal)',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => {
+                if (opt.value !== value) e.currentTarget.style.background = 'var(--color-surface-hover)';
+              }}
+              onMouseLeave={(e) => {
+                if (opt.value !== value) e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Inline save button for settings that need explicit save
+function SaveButton({ onClick, saved }: { onClick: () => void; saved: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 'var(--spacing-xs)',
+        height: 32,
+        padding: '0 var(--spacing-md)',
+        background: saved ? 'var(--color-success)' : 'var(--color-accent-primary)',
+        border: 'none',
+        borderRadius: 'var(--radius-md)',
+        color: '#ffffff',
+        fontSize: 'var(--font-size-sm)',
+        fontFamily: 'var(--font-family)',
+        fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+        cursor: 'pointer',
+        transition: 'background var(--transition-normal)',
+        flexShrink: 0,
+      }}
+      onMouseEnter={(e) => {
+        if (!saved) e.currentTarget.style.opacity = '0.9';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.opacity = '1';
+      }}
+    >
+      {saved ? <CheckCircle2 size={13} /> : <Save size={13} />}
+      {saved ? 'Saved' : 'Save'}
+    </button>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Density preview illustration
+// Visual preview illustrations
 // ---------------------------------------------------------------------------
 
 function DensityPreview({ density }: { density: 'compact' | 'default' | 'comfortable' }) {
@@ -432,20 +610,17 @@ function DensityPreview({ density }: { density: 'compact' | 'default' | 'comfort
         display: 'flex',
         flexDirection: 'column',
         gap,
-        width: 48,
-        padding: '6px 4px',
+        width: 56,
+        padding: '8px 6px',
       }}
     >
       {[1, 2, 3].map((i) => (
         <div
           key={i}
           style={{
-            height: 3,
+            height: 4,
             borderRadius: 2,
-            background:
-              i === 1
-                ? 'var(--color-accent-primary)'
-                : 'var(--color-border-primary)',
+            background: i === 1 ? 'var(--color-accent-primary)' : 'var(--color-border-primary)',
             opacity: i === 1 ? 1 : i === 2 ? 0.6 : 0.35,
           }}
         />
@@ -454,14 +629,10 @@ function DensityPreview({ density }: { density: 'compact' | 'default' | 'comfort
   );
 }
 
-// ---------------------------------------------------------------------------
-// Reading pane preview illustration
-// ---------------------------------------------------------------------------
-
 function ReadingPanePreview({ position }: { position: 'right' | 'bottom' | 'hidden' }) {
   const baseStyle: CSSProperties = {
-    width: 52,
-    height: 36,
+    width: 60,
+    height: 40,
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--color-border-primary)',
     overflow: 'hidden',
@@ -511,7 +682,47 @@ function ReadingPanePreview({ position }: { position: 'right' | 'bottom' | 'hidd
 
 function GeneralPanel() {
   const account = useAuthStore((s) => s.account);
+  const updateAccount = useAuthStore((s) => s.updateAccount);
   const [displayName, setDisplayName] = useState(account?.name ?? '');
+  const [saved, setSaved] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarHovered, setAvatarHovered] = useState(false);
+
+  // Reset saved state when display name changes
+  useEffect(() => {
+    setSaved(false);
+  }, [displayName]);
+
+  const handleSaveName = useCallback(() => {
+    if (!account) return;
+    updateAccount({ ...account, name: displayName.trim() });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [account, displayName, updateAccount]);
+
+  const handleAvatarUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !account) return;
+
+    // Validate file type and size (max 2MB)
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 2 * 1024 * 1024) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      updateAccount({ ...account, pictureUrl: dataUrl });
+    };
+    reader.readAsDataURL(file);
+    // Reset input so the same file can be re-selected
+    e.target.value = '';
+  }, [account, updateAccount]);
+
+  const handleRemoveAvatar = useCallback(() => {
+    if (!account) return;
+    updateAccount({ ...account, pictureUrl: null });
+  }, [account, updateAccount]);
 
   return (
     <div>
@@ -520,24 +731,55 @@ function GeneralPanel() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--spacing-lg)',
-            padding: 'var(--spacing-lg)',
+            gap: 'var(--spacing-xl)',
+            padding: 'var(--spacing-xl)',
             background: 'var(--color-bg-tertiary)',
             borderRadius: 'var(--radius-lg)',
-            marginBottom: 'var(--spacing-md)',
+            marginBottom: 'var(--spacing-lg)',
             border: '1px solid var(--color-border-secondary)',
           }}
         >
-          <Avatar
-            src={account?.pictureUrl}
-            name={account?.name}
-            email={account?.email ?? ''}
-            size={48}
-          />
+          {/* Avatar with upload overlay */}
+          <div
+            style={{ position: 'relative', flexShrink: 0, cursor: 'pointer' }}
+            onMouseEnter={() => setAvatarHovered(true)}
+            onMouseLeave={() => setAvatarHovered(false)}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Avatar
+              src={account?.pictureUrl}
+              name={account?.name}
+              email={account?.email ?? ''}
+              size={56}
+            />
+            {/* Camera overlay on hover */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                background: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: avatarHovered ? 1 : 0,
+                transition: 'opacity var(--transition-normal)',
+              }}
+            >
+              <Camera size={18} color="#ffffff" />
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              style={{ display: 'none' }}
+            />
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontSize: 'var(--font-size-md)',
+                fontSize: 'var(--font-size-lg)',
                 fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
                 color: 'var(--color-text-primary)',
                 fontFamily: 'var(--font-family)',
@@ -550,8 +792,8 @@ function GeneralPanel() {
             </div>
             <div
               style={{
-                marginTop: 2,
-                fontSize: 'var(--font-size-sm)',
+                marginTop: 4,
+                fontSize: 'var(--font-size-md)',
                 color: 'var(--color-text-tertiary)',
                 fontFamily: 'var(--font-family)',
                 overflow: 'hidden',
@@ -561,30 +803,87 @@ function GeneralPanel() {
             >
               {account?.email}
             </div>
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-sm)' }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                style={{
+                  padding: '2px 8px',
+                  background: 'transparent',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontFamily: 'var(--font-family)',
+                  cursor: 'pointer',
+                  transition: 'background var(--transition-normal), color var(--transition-normal)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--color-text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                }}
+              >
+                Upload photo
+              </button>
+              {account?.pictureUrl && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleRemoveAvatar(); }}
+                  style={{
+                    padding: '2px 8px',
+                    background: 'transparent',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--color-text-tertiary)',
+                    fontSize: 'var(--font-size-xs)',
+                    fontFamily: 'var(--font-family)',
+                    cursor: 'pointer',
+                    transition: 'background var(--transition-normal), color var(--transition-normal)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'color-mix(in srgb, var(--color-error) 8%, transparent)';
+                    e.currentTarget.style.color = 'var(--color-error)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         <SettingsRow label="Display name" description="How your name appears when you send emails">
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
-            style={{
-              width: 200,
-              height: 32,
-              padding: '0 var(--spacing-sm)',
-              background: 'var(--color-bg-tertiary)',
-              border: '1px solid var(--color-border-primary)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-md)',
-              fontFamily: 'var(--font-family)',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-            onFocus={(e) => (e.target.style.borderColor = 'var(--color-border-focus)')}
-            onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-primary)')}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your name"
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+              style={{
+                width: 220,
+                height: 34,
+                padding: '0 var(--spacing-md)',
+                background: 'var(--color-bg-tertiary)',
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--color-text-primary)',
+                fontSize: 'var(--font-size-md)',
+                fontFamily: 'var(--font-family)',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color var(--transition-normal)',
+              }}
+              onFocus={(e) => (e.target.style.borderColor = 'var(--color-border-focus)')}
+              onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-primary)')}
+            />
+            <SaveButton onClick={handleSaveName} saved={saved} />
+          </div>
         </SettingsRow>
 
         <SettingsRow label="Email address" description="Your Google account email">
@@ -592,8 +891,8 @@ function GeneralPanel() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              height: 32,
-              padding: '0 var(--spacing-sm)',
+              height: 34,
+              padding: '0 var(--spacing-md)',
               background: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border-secondary)',
               borderRadius: 'var(--radius-md)',
@@ -601,13 +900,89 @@ function GeneralPanel() {
               fontSize: 'var(--font-size-md)',
               fontFamily: 'var(--font-family)',
               userSelect: 'none',
-              minWidth: 200,
+              minWidth: 220,
             }}
           >
             {account?.email || '—'}
           </div>
         </SettingsRow>
       </SettingsSection>
+
+      <SettingsSection title="Danger zone">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--spacing-md) var(--spacing-lg)',
+            background: 'color-mix(in srgb, var(--color-error) 5%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-error) 20%, transparent)',
+            borderRadius: 'var(--radius-lg)',
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 'var(--font-size-md)',
+                fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+                color: 'var(--color-text-primary)',
+                fontFamily: 'var(--font-family)',
+              }}
+            >
+              Sign out
+            </div>
+            <div
+              style={{
+                marginTop: 2,
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-text-tertiary)',
+                fontFamily: 'var(--font-family)',
+              }}
+            >
+              Sign out of your current account
+            </div>
+          </div>
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-xs)',
+              height: 34,
+              padding: '0 var(--spacing-md)',
+              background: 'transparent',
+              border: '1px solid var(--color-error)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-error)',
+              fontSize: 'var(--font-size-sm)',
+              fontFamily: 'var(--font-family)',
+              fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+              cursor: 'pointer',
+              transition: 'background var(--transition-normal)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--color-error)';
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--color-error)';
+            }}
+          >
+            <LogOut size={14} />
+            Sign out
+          </button>
+        </div>
+      </SettingsSection>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign out?"
+        description="You will be signed out of your current account. You can sign back in at any time."
+        confirmLabel="Sign out"
+        onConfirm={() => useAuthStore.getState().logout()}
+      />
     </div>
   );
 }
@@ -617,115 +992,226 @@ function GeneralPanel() {
 // ---------------------------------------------------------------------------
 
 function AccountsPanel() {
+  const { t } = useTranslation();
   const account = useAuthStore((s) => s.account);
+  const accounts = useAuthStore((s) => s.accounts);
+  const switchAccount = useAuthStore((s) => s.switchAccount);
+  const removeAccount = useAuthStore((s) => s.removeAccount);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+
+  const displayAccounts = accounts.length > 0 ? accounts : account ? [account] : [];
 
   return (
     <div>
-      <SettingsSection title="Connected accounts">
-        {account ? (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-md)',
-              padding: 'var(--spacing-md)',
-              background: 'var(--color-bg-tertiary)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--color-border-secondary)',
-              marginBottom: 'var(--spacing-md)',
-            }}
-          >
-            <Avatar
-              src={account.pictureUrl}
-              name={account.name}
-              email={account.email}
-              size={36}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-md)',
-                  fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-                  color: 'var(--color-text-primary)',
-                  fontFamily: 'var(--font-family)',
-                }}
-              >
-                {account.name || account.email}
-              </div>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-text-tertiary)',
-                  fontFamily: 'var(--font-family)',
-                }}
-              >
-                {account.email}
-              </div>
-            </div>
-            <span
+      <SettingsSection title="Connected accounts" description="Manage your connected email accounts">
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--spacing-sm)',
+            marginBottom: 'var(--spacing-lg)',
+          }}
+        >
+          {displayAccounts.length > 0 ? (
+            displayAccounts.map((acc) => {
+              const isActive = acc.id === account?.id;
+              return (
+                <div
+                  key={acc.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--spacing-md)',
+                    padding: 'var(--spacing-md) var(--spacing-lg)',
+                    background: isActive
+                      ? 'color-mix(in srgb, var(--color-accent-primary) 6%, var(--color-bg-tertiary))'
+                      : 'var(--color-bg-tertiary)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: isActive
+                      ? '1px solid color-mix(in srgb, var(--color-accent-primary) 30%, transparent)'
+                      : '1px solid var(--color-border-secondary)',
+                    transition: 'background var(--transition-normal)',
+                  }}
+                >
+                  <Avatar
+                    src={acc.pictureUrl}
+                    name={acc.name}
+                    email={acc.email}
+                    size={40}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-md)',
+                        fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+                        color: 'var(--color-text-primary)',
+                        fontFamily: 'var(--font-family)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {acc.name || acc.email}
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 2,
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-text-tertiary)',
+                        fontFamily: 'var(--font-family)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {acc.email}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', flexShrink: 0 }}>
+                    {isActive ? (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 'var(--font-size-xs)',
+                          color: 'var(--color-success)',
+                          fontFamily: 'var(--font-family)',
+                          fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+                          background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-lg)',
+                        }}
+                      >
+                        <CheckCircle2 size={12} />
+                        Active
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => switchAccount(acc.id)}
+                        style={{
+                          height: 28,
+                          padding: '0 var(--spacing-sm)',
+                          background: 'var(--color-bg-elevated)',
+                          border: '1px solid var(--color-border-primary)',
+                          borderRadius: 'var(--radius-md)',
+                          color: 'var(--color-text-secondary)',
+                          fontSize: 'var(--font-size-xs)',
+                          fontFamily: 'var(--font-family)',
+                          cursor: 'pointer',
+                          transition: 'background var(--transition-normal), color var(--transition-normal)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--color-accent-primary)';
+                          e.currentTarget.style.color = '#ffffff';
+                          e.currentTarget.style.borderColor = 'var(--color-accent-primary)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'var(--color-bg-elevated)';
+                          e.currentTarget.style.color = 'var(--color-text-secondary)';
+                          e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                        }}
+                      >
+                        Switch
+                      </button>
+                    )}
+
+                    {displayAccounts.length > 1 && (
+                      <button
+                        onClick={() => setConfirmRemoveId(acc.id)}
+                        aria-label={`Remove ${acc.email}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 28,
+                          height: 28,
+                          border: 'none',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'transparent',
+                          color: 'var(--color-text-tertiary)',
+                          cursor: 'pointer',
+                          transition: 'background var(--transition-normal), color var(--transition-normal)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'color-mix(in srgb, var(--color-error) 10%, transparent)';
+                          e.currentTarget.style.color = 'var(--color-error)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 'var(--font-size-xs)',
-                color: 'var(--color-success)',
+                padding: 'var(--spacing-2xl)',
+                textAlign: 'center',
+                color: 'var(--color-text-tertiary)',
+                fontSize: 'var(--font-size-md)',
                 fontFamily: 'var(--font-family)',
-                fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+                background: 'var(--color-bg-tertiary)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-border-secondary)',
               }}
             >
-              <CheckCircle2 size={12} />
-              Active
-            </span>
-          </div>
-        ) : (
-          <div
-            style={{
-              padding: 'var(--spacing-lg)',
-              textAlign: 'center',
-              color: 'var(--color-text-tertiary)',
-              fontSize: 'var(--font-size-md)',
-              fontFamily: 'var(--font-family)',
-            }}
-          >
-            No accounts connected
-          </div>
-        )}
+              No accounts connected
+            </div>
+          )}
+        </div>
 
         <button
-          disabled
+          onClick={() => setShowAddAccount(true)}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--spacing-sm)',
-            padding: 'var(--spacing-sm) var(--spacing-md)',
+            padding: 'var(--spacing-md) var(--spacing-lg)',
             background: 'transparent',
             border: '1px dashed var(--color-border-primary)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--color-text-tertiary)',
+            borderRadius: 'var(--radius-lg)',
+            color: 'var(--color-text-secondary)',
             fontSize: 'var(--font-size-md)',
             fontFamily: 'var(--font-family)',
-            cursor: 'not-allowed',
+            cursor: 'pointer',
             width: '100%',
-            opacity: 0.6,
+            transition: 'background var(--transition-normal), border-color var(--transition-normal)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-surface-hover)';
+            e.currentTarget.style.borderColor = 'var(--color-accent-primary)';
+            e.currentTarget.style.color = 'var(--color-accent-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+            e.currentTarget.style.color = 'var(--color-text-secondary)';
           }}
         >
-          <Plus size={14} />
-          Add account
-          <span
-            style={{
-              marginLeft: 'auto',
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-tertiary)',
-              background: 'var(--color-bg-tertiary)',
-              padding: '1px 6px',
-              borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--color-border-secondary)',
-            }}
-          >
-            Coming soon
-          </span>
+          <Plus size={16} />
+          {t('settings.addAccount')}
         </button>
       </SettingsSection>
+
+      <AddAccountModal open={showAddAccount} onOpenChange={setShowAddAccount} />
+
+      <ConfirmDialog
+        open={!!confirmRemoveId}
+        onOpenChange={(open) => { if (!open) setConfirmRemoveId(null); }}
+        title={t('settings.removeAccount')}
+        description={t('settings.removeAccountDescription')}
+        confirmLabel={t('common.remove')}
+        onConfirm={() => { if (confirmRemoveId) removeAccount(confirmRemoveId); }}
+      />
     </div>
   );
 }
@@ -735,79 +1221,222 @@ function AccountsPanel() {
 // ---------------------------------------------------------------------------
 
 function AppearancePanel() {
-  const { theme, density, setTheme, setDensity } = useSettingsStore();
+  const { t } = useTranslation();
+  const {
+    theme,
+    density,
+    language,
+    colorTheme,
+    sendAnimation,
+    themeTransition,
+    setTheme,
+    setDensity,
+    setLanguage,
+    setColorTheme,
+    setSendAnimation,
+    setThemeTransition,
+    trackingEnabled,
+    setTrackingEnabled,
+  } = useSettingsStore();
 
-  const themeOptions: Array<{ value: typeof theme; label: string; icon: typeof Sun }> = [
-    { value: 'light', label: 'Light', icon: Sun },
-    { value: 'dark', label: 'Dark', icon: Moon },
-    { value: 'system', label: 'System', icon: Monitor },
+  const themeOptions: Array<{ value: typeof theme; label: string; icon: typeof Sun; desc: string }> = [
+    { value: 'light', label: t('settings.light'), icon: Sun, desc: t('settings.lightDesc') },
+    { value: 'dark', label: t('settings.dark'), icon: Moon, desc: t('settings.darkDesc') },
+    { value: 'system', label: t('settings.system'), icon: Monitor, desc: t('settings.systemDesc') },
   ];
 
-  const densityOptions: Array<{ value: typeof density; label: string }> = [
-    { value: 'compact', label: 'Compact' },
-    { value: 'default', label: 'Default' },
-    { value: 'comfortable', label: 'Comfortable' },
+  const densityOptions: Array<{ value: typeof density; label: string; desc: string }> = [
+    { value: 'compact', label: t('settings.compact'), desc: t('settings.compactDesc') },
+    { value: 'default', label: t('settings.default'), desc: t('settings.defaultDesc') },
+    { value: 'comfortable', label: t('settings.comfortable'), desc: t('settings.comfortableDesc') },
   ];
+
+  const languageOptions = SUPPORTED_LANGUAGES.map((lang) => ({
+    value: lang.code,
+    label: lang.label,
+  }));
 
   return (
     <div>
-      <SettingsSection
-        title="Theme"
-        description="Choose the color scheme for the interface"
-      >
-        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-          {themeOptions.map(({ value, label, icon: Icon }) => (
+      <SettingsSection title={t('settings.theme')} description={t('settings.themeDescription')}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+          {themeOptions.map(({ value, label, icon: Icon, desc }) => (
             <SelectableCard
               key={value}
               selected={theme === value}
               onClick={() => setTheme(value)}
-              style={{ flex: 1, minHeight: 72 }}
+              style={{ flex: 1, minHeight: 100 }}
             >
               <Icon
-                size={20}
+                size={24}
                 style={{
                   color: theme === value ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
+                  transition: 'color var(--transition-normal)',
                 }}
               />
               <span
                 style={{
-                  fontSize: 'var(--font-size-sm)',
+                  fontSize: 'var(--font-size-md)',
                   fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
                   color: theme === value ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
                 }}
               >
                 {label}
+              </span>
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                }}
+              >
+                {desc}
               </span>
             </SelectableCard>
           ))}
         </div>
       </SettingsSection>
 
-      <SettingsSection
-        title="Density"
-        description="Control the spacing of email list items"
-      >
-        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-          {densityOptions.map(({ value, label }) => (
+      <SettingsSection title={t('settings.colorTheme')} description={t('settings.colorThemeDescription')}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 'var(--spacing-sm)',
+        }}>
+          {COLOR_THEMES.map((ct) => {
+            const isActive = colorTheme === ct.id;
+            return (
+              <button
+                key={ct.id}
+                onClick={() => setColorTheme(ct.id)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: 'var(--spacing-sm) var(--spacing-xs)',
+                  background: isActive
+                    ? `color-mix(in srgb, ${ct.swatch} 10%, transparent)`
+                    : 'transparent',
+                  border: isActive
+                    ? `2px solid ${ct.swatch}`
+                    : '2px solid var(--color-border-secondary)',
+                  borderRadius: 'var(--radius-lg)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-family)',
+                  transition: 'border-color var(--transition-normal), background var(--transition-normal)',
+                  outline: 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                    e.currentTarget.style.background = 'var(--color-surface-hover)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                <div style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: ct.swatch,
+                  boxShadow: isActive
+                    ? `0 0 0 2px var(--color-bg-primary), 0 0 0 4px ${ct.swatch}`
+                    : 'none',
+                  transition: 'box-shadow var(--transition-normal)',
+                }} />
+                <span style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                  fontWeight: isActive ? 500 : 400,
+                }}>
+                  {ct.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title={t('settings.language')} description={t('settings.languageDescription')}>
+        <SettingsSelect
+          value={language}
+          options={languageOptions}
+          onChange={(v) => setLanguage(v as string)}
+        />
+      </SettingsSection>
+
+      <SettingsSection title={t('settings.density')} description={t('settings.densityDescription')}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+          {densityOptions.map(({ value, label, desc }) => (
             <SelectableCard
               key={value}
               selected={density === value}
               onClick={() => setDensity(value)}
-              style={{ flex: 1, minHeight: 80, gap: 'var(--spacing-xs)' }}
+              style={{ flex: 1, minHeight: 100, gap: 'var(--spacing-xs)' }}
             >
               <DensityPreview density={value} />
               <span
                 style={{
-                  fontSize: 'var(--font-size-sm)',
+                  fontSize: 'var(--font-size-md)',
                   fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
                   color: density === value ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
                 }}
               >
                 {label}
               </span>
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                }}
+              >
+                {desc}
+              </span>
             </SelectableCard>
           ))}
         </div>
+      </SettingsSection>
+
+      <SettingsSection title={t('settings.animations')} description={t('settings.animationsDescription')}>
+        <SettingsRow
+          label={t('settings.sendAnimation')}
+          description={t('settings.sendAnimationDesc')}
+        >
+          <SettingsToggle
+            checked={sendAnimation}
+            onChange={setSendAnimation}
+            label={t('settings.sendAnimation')}
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          label={t('settings.themeTransition')}
+          description={t('settings.themeTransitionDesc')}
+        >
+          <SettingsToggle
+            checked={themeTransition}
+            onChange={setThemeTransition}
+            label={t('settings.themeTransition')}
+          />
+        </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection title={t('settings.emailTracking')} description={t('settings.emailTrackingDescription')}>
+        <SettingsRow
+          label={t('settings.readReceipts')}
+          description={t('settings.readReceiptsDesc')}
+        >
+          <SettingsToggle
+            checked={trackingEnabled}
+            onChange={setTrackingEnabled}
+            label={t('settings.readReceipts')}
+          />
+        </SettingsRow>
       </SettingsSection>
     </div>
   );
@@ -818,6 +1447,7 @@ function AppearancePanel() {
 // ---------------------------------------------------------------------------
 
 function NotificationsPanel() {
+  const { t } = useTranslation();
   const {
     desktopNotifications,
     soundNotifications,
@@ -829,61 +1459,107 @@ function NotificationsPanel() {
     setNotificationLevel,
   } = useSettingsStore();
 
+  const [permissionState, setPermissionState] = useState<NotificationPermission | 'unsupported'>(
+    () => ('Notification' in window ? Notification.permission : 'unsupported'),
+  );
+
+  const handleDesktopToggle = useCallback(async (value: boolean) => {
+    if (value && 'Notification' in window && Notification.permission === 'default') {
+      const result = await Notification.requestPermission();
+      setPermissionState(result);
+      if (result !== 'granted') return;
+    }
+    setDesktopNotifications(value);
+  }, [setDesktopNotifications]);
+
+  const isDenied = permissionState === 'denied';
+  const isUnsupported = permissionState === 'unsupported';
+
   const levels: Array<{
     value: typeof notificationLevel;
     label: string;
     description: string;
   }> = [
-    { value: 'all', label: 'All', description: 'Notify for every new email' },
-    { value: 'smart', label: 'Smart', description: 'Notify for important emails only' },
-    { value: 'priority', label: 'Priority', description: 'Notify only for starred senders' },
-    { value: 'none', label: 'None', description: 'No notifications' },
+    { value: 'all', label: t('settings.allEmails'), description: t('settings.allEmailsDesc') },
+    { value: 'smart', label: t('settings.smartFiltering'), description: t('settings.smartFilteringDesc') },
+    { value: 'priority', label: t('settings.priorityOnly'), description: t('settings.priorityOnlyDesc') },
+    { value: 'none', label: t('settings.none'), description: t('settings.noneDesc') },
   ];
 
   return (
     <div>
-      <SettingsSection title="Alerts">
+      {/* Browser permission warning */}
+      {(isDenied || isUnsupported) && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 'var(--spacing-sm)',
+            padding: 'var(--spacing-md) var(--spacing-lg)',
+            marginBottom: 'var(--spacing-xl)',
+            background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)',
+            borderRadius: 'var(--radius-lg)',
+          }}
+        >
+          <AlertCircle size={16} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: 2 }} />
+          <div
+            style={{
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-family)',
+              lineHeight: 'var(--line-height-normal)',
+            }}
+          >
+            {isUnsupported
+              ? 'Your browser does not support desktop notifications.'
+              : 'Notifications are blocked by your browser. Please allow notifications in your browser settings to enable this feature.'}
+          </div>
+        </div>
+      )}
+
+      <SettingsSection title={t('settings.alertsTitle')} description={t('settings.alertsDescription')}>
         <SettingsRow
-          label="Desktop notifications"
-          description="Show system notifications for new email"
+          label={t('settings.desktopNotifications')}
+          description={isDenied ? t('settings.desktopNotificationsBlocked') : t('settings.desktopNotificationsDesc')}
         >
           <SettingsToggle
-            checked={desktopNotifications}
-            onChange={setDesktopNotifications}
-            label="Desktop notifications"
+            checked={desktopNotifications && !isDenied && !isUnsupported}
+            onChange={handleDesktopToggle}
+            label={t('settings.desktopNotifications')}
           />
         </SettingsRow>
 
         <SettingsRow
-          label="Sound notifications"
-          description="Play a sound when new email arrives"
+          label={t('settings.soundNotifications')}
+          description={t('settings.soundNotificationsDesc')}
         >
           <SettingsToggle
             checked={soundNotifications}
             onChange={setSoundNotifications}
-            label="Sound notifications"
+            label={t('settings.soundNotifications')}
           />
         </SettingsRow>
 
         <SettingsRow
-          label="Show badge count"
-          description="Display unread count on the app icon"
+          label={t('settings.showBadgeCount')}
+          description={t('settings.showBadgeCountDesc')}
         >
           <SettingsToggle
             checked={showBadgeCount}
             onChange={setShowBadgeCount}
-            label="Show badge count"
+            label={t('settings.showBadgeCount')}
           />
         </SettingsRow>
       </SettingsSection>
 
       <SettingsSection
-        title="Notification level"
-        description="Choose which emails trigger notifications"
+        title={t('settings.notificationLevel')}
+        description={t('settings.notificationLevelDescription')}
       >
         <div
           role="radiogroup"
-          aria-label="Notification level"
+          aria-label={t('settings.notificationLevel')}
           style={{ display: 'flex', flexDirection: 'column', gap: 2 }}
         >
           {levels.map(({ value, label, description }) => (
@@ -905,19 +1581,158 @@ function NotificationsPanel() {
 // Panel: Composer
 // ---------------------------------------------------------------------------
 
+function SignatureEditor() {
+  const { signatureHtml, includeSignatureInReplies, setSignatureHtml, setSignature, setIncludeSignatureInReplies } =
+    useSettingsStore();
+  const [showPreview, setShowPreview] = useState(false);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({ heading: false, codeBlock: false }),
+      Placeholder.configure({ placeholder: 'Add a signature...' }),
+    ],
+    editorProps: {
+      attributes: {
+        style: [
+          'outline: none',
+          'color: var(--color-text-primary)',
+          'font-size: var(--font-size-md)',
+          'line-height: var(--line-height-normal)',
+          'font-family: var(--font-family)',
+          'min-height: 100px',
+          'padding: 0',
+        ].join('; '),
+      },
+    },
+    content: signatureHtml || '',
+    onUpdate: ({ editor: e }) => {
+      setSignatureHtml(e.isEmpty ? '' : e.getHTML());
+      setSignature(e.isEmpty ? '' : e.getText());
+    },
+  });
+
+  // Sync editor content when store value changes externally
+  useEffect(() => {
+    if (!editor || editor.isFocused) return;
+    const current = editor.isEmpty ? '' : editor.getHTML();
+    if (current !== signatureHtml) {
+      editor.commands.setContent(signatureHtml || '');
+    }
+  }, [signatureHtml, editor]);
+
+  const sanitizedPreview = DOMPurify.sanitize(signatureHtml || '', {
+    USE_PROFILES: { html: true },
+  });
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+      {/* TipTap editor wrapper */}
+      <div
+        onClick={() => editor?.commands.focus()}
+        style={{
+          border: '1px solid var(--color-border-primary)',
+          borderRadius: 'var(--radius-md)',
+          background: 'var(--color-bg-tertiary)',
+          minHeight: 120,
+          cursor: 'text',
+          fontSize: 'var(--font-size-md)',
+          fontFamily: 'var(--font-family)',
+          color: 'var(--color-text-primary)',
+          lineHeight: 'var(--line-height-normal)',
+          overflow: 'hidden',
+          transition: 'border-color var(--transition-normal)',
+        }}
+      >
+        <EditorContent
+          editor={editor}
+          style={{ padding: 'var(--spacing-md)', outline: 'none' }}
+        />
+      </div>
+
+      {/* Include in replies toggle */}
+      <SettingsRow
+        label="Include signature in replies"
+        description="Append signature when replying or forwarding"
+      >
+        <SettingsToggle
+          checked={includeSignatureInReplies}
+          onChange={setIncludeSignatureInReplies}
+          label="Include signature in replies"
+        />
+      </SettingsRow>
+
+      {/* Signature preview */}
+      {signatureHtml && (
+        <div>
+          <button
+            onClick={() => setShowPreview((v) => !v)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-accent-primary)',
+              fontFamily: 'var(--font-family)',
+              marginBottom: showPreview ? 'var(--spacing-sm)' : 0,
+              transition: 'color var(--transition-normal)',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            {showPreview ? 'Hide preview' : 'Show preview'}
+          </button>
+          {showPreview && (
+            <div
+              style={{
+                padding: 'var(--spacing-lg)',
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border-secondary)',
+                borderTop: '3px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                  fontFamily: 'var(--font-family)',
+                  marginBottom: 'var(--spacing-sm)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Signature preview
+              </div>
+              <div
+                className="email-html-body"
+                style={{
+                  fontSize: 'var(--font-size-md)',
+                  color: 'var(--color-text-primary)',
+                  fontFamily: 'var(--font-family)',
+                  lineHeight: 'var(--line-height-normal)',
+                }}
+                dangerouslySetInnerHTML={{ __html: sanitizedPreview }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ComposerPanel() {
   const {
     composeMode,
-    signature,
     undoSendDelay,
     setComposeMode,
-    setSignature,
     setUndoSendDelay,
   } = useSettingsStore();
 
   return (
     <div>
-      <SettingsSection title="Compose mode">
+      <SettingsSection title="Compose mode" description="Choose how you write emails">
         <div
           role="radiogroup"
           aria-label="Compose mode"
@@ -939,62 +1754,27 @@ function ComposerPanel() {
       </SettingsSection>
 
       <SettingsSection
-        title="Email signature"
+        title="Signature"
         description="Automatically appended to every email you compose"
       >
-        <textarea
-          value={signature}
-          onChange={(e) => setSignature(e.target.value)}
-          placeholder="Add a signature..."
-          rows={4}
-          style={{
-            width: '100%',
-            padding: 'var(--spacing-sm)',
-            background: 'var(--color-bg-tertiary)',
-            border: '1px solid var(--color-border-primary)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--color-text-primary)',
-            fontSize: 'var(--font-size-md)',
-            fontFamily: 'var(--font-family)',
-            lineHeight: 'var(--line-height-normal)',
-            resize: 'vertical',
-            outline: 'none',
-            boxSizing: 'border-box',
-            transition: 'border-color var(--transition-fast)',
-          }}
-          onFocus={(e) => (e.target.style.borderColor = 'var(--color-border-focus)')}
-          onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-primary)')}
-        />
+        <SignatureEditor />
       </SettingsSection>
 
-      <SettingsSection title="Undo send">
+      <SettingsSection title="Undo send" description="Configure the grace period after sending">
         <SettingsRow
           label="Undo send delay"
           description="How long you have to cancel a sent email"
         >
-          <select
+          <SettingsSelect
             value={undoSendDelay}
-            onChange={(e) => setUndoSendDelay(Number(e.target.value) as 5 | 10 | 30)}
-            style={{
-              height: 32,
-              padding: '0 var(--spacing-sm)',
-              paddingRight: 28,
-              background: 'var(--color-bg-tertiary)',
-              border: '1px solid var(--color-border-primary)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-md)',
-              fontFamily: 'var(--font-family)',
-              outline: 'none',
-              cursor: 'pointer',
-              appearance: 'none',
-              WebkitAppearance: 'none',
-            }}
-          >
-            <option value={5}>5 seconds</option>
-            <option value={10}>10 seconds</option>
-            <option value={30}>30 seconds</option>
-          </select>
+            options={[
+              { value: 5 as const, label: '5 seconds' },
+              { value: 10 as const, label: '10 seconds' },
+              { value: 20 as const, label: '20 seconds' },
+              { value: 30 as const, label: '30 seconds' },
+            ]}
+            onChange={(v) => setUndoSendDelay(v as 5 | 10 | 20 | 30)}
+          />
         </SettingsRow>
       </SettingsSection>
     </div>
@@ -1079,26 +1859,32 @@ function ReadingPanePanel() {
         title="Layout"
         description="Choose where the reading pane is displayed"
       >
-        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-          {positions.map(({ value, label }) => (
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+          {positions.map(({ value, label, description }) => (
             <SelectableCard
               key={value}
               selected={readingPane === value}
               onClick={() => setReadingPane(value)}
-              style={{ flex: 1, minHeight: 90, gap: 'var(--spacing-sm)' }}
+              style={{ flex: 1, minHeight: 110, gap: 'var(--spacing-sm)' }}
             >
               <ReadingPanePreview position={value} />
               <span
                 style={{
-                  fontSize: 'var(--font-size-sm)',
+                  fontSize: 'var(--font-size-md)',
                   fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-                  color:
-                    readingPane === value
-                      ? 'var(--color-accent-primary)'
-                      : 'var(--color-text-secondary)',
+                  color: readingPane === value ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
                 }}
               >
                 {label}
+              </span>
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                  textAlign: 'center',
+                }}
+              >
+                {description}
               </span>
             </SelectableCard>
           ))}
@@ -1113,15 +1899,30 @@ function ReadingPanePanel() {
 // ---------------------------------------------------------------------------
 
 function LabelsPanel() {
-  const [labels, setLabels] = useState<Label[]>(DEFAULT_LABELS);
+  // Use a store key so labels persist across settings open/close
+  const [labels, setLabels] = useState<Label[]>(() => {
+    try {
+      const stored = localStorage.getItem('atlasmail-labels');
+      return stored ? (JSON.parse(stored) as Label[]) : DEFAULT_LABELS;
+    } catch {
+      return DEFAULT_LABELS;
+    }
+  });
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
+  const [newLabelColor, setNewLabelColor] = useState('#4a7cba');
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string | null>(null);
+
+  // Persist labels to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('atlasmail-labels', JSON.stringify(labels));
+  }, [labels]);
 
   function addLabel() {
     const trimmed = newLabelName.trim();
     if (!trimmed) return;
+    if (labels.some((l) => l.name.toLowerCase() === trimmed.toLowerCase())) return;
     const id = trimmed.toLowerCase().replace(/\s+/g, '-');
-    setLabels((prev) => [...prev, { id, name: trimmed, color: newLabelColor }]);
+    setLabels((prev) => [...prev, { id, name: trimmed, color: newLabelColor, parentId: null }]);
     setNewLabelName('');
   }
 
@@ -1136,80 +1937,110 @@ function LabelsPanel() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
-            marginBottom: 'var(--spacing-md)',
+            gap: 'var(--spacing-xs)',
+            marginBottom: 'var(--spacing-lg)',
           }}
         >
-          {labels.map((label) => (
+          {labels.length === 0 ? (
             <div
-              key={label.id}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--spacing-sm)',
-                padding: 'var(--spacing-sm) var(--spacing-md)',
-                borderRadius: 'var(--radius-md)',
+                padding: 'var(--spacing-2xl)',
+                textAlign: 'center',
+                color: 'var(--color-text-tertiary)',
+                fontSize: 'var(--font-size-md)',
+                fontFamily: 'var(--font-family)',
                 background: 'var(--color-bg-tertiary)',
+                borderRadius: 'var(--radius-lg)',
                 border: '1px solid var(--color-border-secondary)',
               }}
             >
-              <span
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: label.color,
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
-                  flex: 1,
-                  fontSize: 'var(--font-size-md)',
-                  color: 'var(--color-text-primary)',
-                  fontFamily: 'var(--font-family)',
-                }}
-              >
-                {label.name}
-              </span>
-              <button
-                onClick={() => removeLabel(label.id)}
-                aria-label={`Remove ${label.name} label`}
+              No labels yet. Create one below.
+            </div>
+          ) : (
+            labels.map((label) => (
+              <div
+                key={label.id}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 24,
-                  height: 24,
-                  padding: 0,
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--color-text-tertiary)',
-                  cursor: 'pointer',
-                  transition: 'color var(--transition-fast), background var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-error)';
-                  e.currentTarget.style.background = 'var(--color-surface-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--color-text-tertiary)';
-                  e.currentTarget.style.background = 'transparent';
+                  gap: 'var(--spacing-md)',
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-bg-tertiary)',
+                  border: '1px solid var(--color-border-secondary)',
+                  transition: 'background var(--transition-normal)',
                 }}
               >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
+                <span
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    background: label.color,
+                    flexShrink: 0,
+                    boxShadow: `0 0 0 2px color-mix(in srgb, ${label.color} 20%, transparent)`,
+                  }}
+                />
+                <span
+                  style={{
+                    flex: 1,
+                    fontSize: 'var(--font-size-md)',
+                    color: 'var(--color-text-primary)',
+                    fontFamily: 'var(--font-family)',
+                  }}
+                >
+                  {label.name}
+                </span>
+                <button
+                  onClick={() => setConfirmDeleteLabel(label.id)}
+                  aria-label={`Remove ${label.name} label`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 28,
+                    height: 28,
+                    padding: 0,
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--color-text-tertiary)',
+                    cursor: 'pointer',
+                    transition: 'color var(--transition-normal), background var(--transition-normal)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--color-error)';
+                    e.currentTarget.style.background = 'color-mix(in srgb, var(--color-error) 8%, transparent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))
+          )}
         </div>
+
+        {confirmDeleteLabel && (
+          <ConfirmDialog
+            open={!!confirmDeleteLabel}
+            onOpenChange={(open) => { if (!open) setConfirmDeleteLabel(null); }}
+            title="Delete label?"
+            description={`The label "${labels.find((l) => l.id === confirmDeleteLabel)?.name}" will be permanently deleted.`}
+            confirmLabel="Delete label"
+            onConfirm={() => removeLabel(confirmDeleteLabel)}
+          />
+        )}
 
         <div
           style={{
             display: 'flex',
             gap: 'var(--spacing-sm)',
             alignItems: 'center',
-            padding: 'var(--spacing-sm)',
+            padding: 'var(--spacing-md)',
             background: 'var(--color-bg-tertiary)',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--color-border-secondary)',
@@ -1221,8 +2052,8 @@ function LabelsPanel() {
             onChange={(e) => setNewLabelColor(e.target.value)}
             aria-label="Label color"
             style={{
-              width: 28,
-              height: 28,
+              width: 32,
+              height: 32,
               padding: 2,
               border: '1px solid var(--color-border-primary)',
               borderRadius: 'var(--radius-sm)',
@@ -1238,8 +2069,8 @@ function LabelsPanel() {
             onKeyDown={(e) => e.key === 'Enter' && addLabel()}
             style={{
               flex: 1,
-              height: 28,
-              padding: '0 var(--spacing-sm)',
+              height: 34,
+              padding: '0 var(--spacing-md)',
               background: 'var(--color-bg-elevated)',
               border: '1px solid var(--color-border-primary)',
               borderRadius: 'var(--radius-md)',
@@ -1247,6 +2078,7 @@ function LabelsPanel() {
               fontSize: 'var(--font-size-md)',
               fontFamily: 'var(--font-family)',
               outline: 'none',
+              transition: 'border-color var(--transition-normal)',
             }}
             onFocus={(e) => (e.target.style.borderColor = 'var(--color-border-focus)')}
             onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-primary)')}
@@ -1257,9 +2089,9 @@ function LabelsPanel() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              height: 28,
-              padding: '0 var(--spacing-sm)',
+              gap: 'var(--spacing-xs)',
+              height: 34,
+              padding: '0 var(--spacing-md)',
               background: newLabelName.trim()
                 ? 'var(--color-accent-primary)'
                 : 'var(--color-bg-secondary)',
@@ -1271,10 +2103,10 @@ function LabelsPanel() {
               fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
               cursor: newLabelName.trim() ? 'pointer' : 'not-allowed',
               flexShrink: 0,
-              transition: 'background var(--transition-fast)',
+              transition: 'background var(--transition-normal)',
             }}
           >
-            <Plus size={13} />
+            <Plus size={14} />
             Add
           </button>
         </div>
@@ -1287,19 +2119,32 @@ function LabelsPanel() {
 // Panel: Keyboard shortcuts
 // ---------------------------------------------------------------------------
 
-const CATEGORY_LABELS: Record<ShortcutCategory, string> = {
-  navigation: 'Navigation',
-  actions: 'Actions',
-  compose: 'Compose',
-  search: 'Search',
-  ui: 'Interface',
-};
-
 function ShortcutsPanel() {
+  const { t } = useTranslation();
   const categories: ShortcutCategory[] = ['navigation', 'actions', 'compose', 'search', 'ui'];
+
+  const CATEGORY_LABELS: Record<ShortcutCategory, string> = {
+    navigation: t('shortcuts.navigation'),
+    actions: t('shortcuts.actions'),
+    compose: t('shortcuts.composeCategory'),
+    search: t('shortcuts.searchCategory'),
+    ui: t('shortcuts.ui'),
+  };
 
   return (
     <div>
+      <p
+        style={{
+          margin: '0 0 var(--spacing-xl)',
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-text-tertiary)',
+          fontFamily: 'var(--font-family)',
+          lineHeight: 'var(--line-height-normal)',
+        }}
+      >
+        These keyboard shortcuts are available throughout the app.
+      </p>
+
       {categories.map((category) => {
         const shortcuts = DEFAULT_SHORTCUTS.filter((s) => s.category === category);
         if (shortcuts.length === 0) return null;
@@ -1320,10 +2165,9 @@ function ShortcutsPanel() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: 'var(--spacing-lg)',
-                    padding: 'var(--spacing-sm) var(--spacing-md)',
-                    background:
-                      index % 2 === 0 ? 'var(--color-bg-tertiary)' : 'transparent',
+                    gap: 'var(--spacing-xl)',
+                    padding: 'var(--spacing-sm) var(--spacing-lg)',
+                    background: index % 2 === 0 ? 'var(--color-bg-tertiary)' : 'transparent',
                     borderBottom:
                       index < shortcuts.length - 1
                         ? '1px solid var(--color-border-secondary)'
@@ -1336,13 +2180,14 @@ function ShortcutsPanel() {
                         fontSize: 'var(--font-size-md)',
                         color: 'var(--color-text-primary)',
                         fontFamily: 'var(--font-family)',
+                        fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
                       }}
                     >
                       {shortcut.label}
                     </div>
                     <div
                       style={{
-                        marginTop: 1,
+                        marginTop: 2,
                         fontSize: 'var(--font-size-xs)',
                         color: 'var(--color-text-tertiary)',
                         fontFamily: 'var(--font-family)',
@@ -1374,18 +2219,18 @@ function AboutPanel() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--spacing-lg)',
-            padding: 'var(--spacing-lg)',
+            gap: 'var(--spacing-xl)',
+            padding: 'var(--spacing-xl)',
             background: 'var(--color-bg-tertiary)',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--color-border-secondary)',
-            marginBottom: 'var(--spacing-lg)',
+            marginBottom: 'var(--spacing-xl)',
           }}
         >
           <div
             style={{
-              width: 48,
-              height: 48,
+              width: 56,
+              height: 56,
               borderRadius: 'var(--radius-lg)',
               background: 'var(--color-accent-primary)',
               display: 'flex',
@@ -1394,12 +2239,12 @@ function AboutPanel() {
               flexShrink: 0,
             }}
           >
-            <Mail size={24} color="#ffffff" />
+            <Mail size={28} color="#ffffff" />
           </div>
           <div>
             <div
               style={{
-                fontSize: 'var(--font-size-lg)',
+                fontSize: 'var(--font-size-2xl)',
                 fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
                 color: 'var(--color-text-primary)',
                 fontFamily: 'var(--font-family)',
@@ -1409,13 +2254,13 @@ function AboutPanel() {
             </div>
             <div
               style={{
-                marginTop: 2,
-                fontSize: 'var(--font-size-sm)',
+                marginTop: 4,
+                fontSize: 'var(--font-size-md)',
                 color: 'var(--color-text-tertiary)',
                 fontFamily: 'var(--font-family)',
               }}
             >
-              Version 0.1.0
+              Fast, keyboard-first email client
             </div>
           </div>
         </div>
@@ -1427,7 +2272,7 @@ function AboutPanel() {
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-secondary)',
               background: 'var(--color-bg-tertiary)',
-              padding: '2px 8px',
+              padding: '4px 10px',
               borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border-secondary)',
             }}
@@ -1436,68 +2281,87 @@ function AboutPanel() {
           </span>
         </SettingsRow>
 
-        <SettingsRow label="Built with" description="Technologies used">
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {['React', 'TypeScript', 'Vite', 'Zustand'].map((tech) => (
+        <SettingsRow label="Built with" description="Core technologies">
+          <div style={{ display: 'flex', gap: 'var(--spacing-xs)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {['React', 'TypeScript', 'Vite', 'Zustand'].map((name) => (
               <span
-                key={tech}
+                key={name}
                 style={{
                   fontFamily: 'var(--font-family)',
                   fontSize: 'var(--font-size-xs)',
                   color: 'var(--color-text-secondary)',
                   background: 'var(--color-bg-tertiary)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '3px 10px',
+                  borderRadius: 'var(--radius-lg)',
                   border: '1px solid var(--color-border-secondary)',
                 }}
               >
-                {tech}
+                {name}
               </span>
             ))}
           </div>
         </SettingsRow>
       </SettingsSection>
 
-      <SettingsSection title="Links">
-        {[
-          { label: 'View on GitHub', icon: Github, href: '#' },
-          { label: 'Report an issue', icon: AlertCircle, href: '#' },
-        ].map(({ label, icon: Icon, href }) => (
-          <a
-            key={label}
-            href={href}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 'var(--spacing-sm)',
-              padding: 'var(--spacing-sm) var(--spacing-md)',
-              marginBottom: 4,
-              background: 'var(--color-bg-tertiary)',
-              border: '1px solid var(--color-border-secondary)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--color-text-link)',
-              fontSize: 'var(--font-size-md)',
-              fontFamily: 'var(--font-family)',
-              textDecoration: 'none',
-              transition: 'background var(--transition-fast)',
-            }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background =
-                'var(--color-surface-hover)')
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background =
-                'var(--color-bg-tertiary)')
-            }
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-              <Icon size={14} />
-              {label}
+      <SettingsSection title="Quick links">
+        <button
+          onClick={() => {
+            document.dispatchEvent(new CustomEvent('atlasmail:settings_navigate', { detail: { panel: 'shortcuts' } }));
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--spacing-md) var(--spacing-lg)',
+            marginBottom: 'var(--spacing-xs)',
+            background: 'var(--color-bg-tertiary)',
+            border: '1px solid var(--color-border-secondary)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            transition: 'background var(--transition-normal)',
+            width: '100%',
+            fontFamily: 'var(--font-family)',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-bg-secondary)',
+              }}
+            >
+              <Keyboard size={16} style={{ color: 'var(--color-text-secondary)' }} />
             </span>
-            <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)' }} />
-          </a>
-        ))}
+            <div style={{ textAlign: 'left' }}>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-md)',
+                  color: 'var(--color-text-primary)',
+                  fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+                }}
+              >
+                Keyboard shortcuts
+              </div>
+              <div
+                style={{
+                  marginTop: 1,
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                }}
+              >
+                View all available shortcuts
+              </div>
+            </div>
+          </div>
+          <ChevronRight size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+        </button>
       </SettingsSection>
     </div>
   );
@@ -1520,26 +2384,59 @@ const PANELS: Record<NavItemId, () => ReactElement> = {
   about: AboutPanel,
 };
 
-const PANEL_TITLES: Record<NavItemId, string> = {
-  general: 'General',
-  accounts: 'Accounts',
-  appearance: 'Appearance',
-  notifications: 'Notifications',
-  composer: 'Composer',
-  inbox: 'Inbox',
-  'reading-pane': 'Reading pane',
-  labels: 'Labels',
-  shortcuts: 'Keyboard shortcuts',
-  about: 'About',
-};
+function usePanelTitles(): Record<NavItemId, string> {
+  const { t } = useTranslation();
+  return {
+    general: t('settings.general'),
+    accounts: t('settings.accounts'),
+    appearance: t('settings.appearance'),
+    notifications: t('settings.notifications'),
+    composer: t('settings.composer'),
+    inbox: t('settings.inboxSection'),
+    'reading-pane': t('settings.readingPane'),
+    labels: t('settings.labels'),
+    shortcuts: t('settings.keyboardShortcuts'),
+    about: t('settings.about'),
+  };
+}
+
+function usePanelDescriptions(): Record<NavItemId, string> {
+  const { t } = useTranslation();
+  return {
+    general: 'Manage your profile and account',
+    accounts: 'Manage connected email accounts',
+    appearance: 'Customize how AtlasMail looks',
+    notifications: 'Configure alerts and notification preferences',
+    composer: 'Email composition and signature settings',
+    inbox: 'Inbox behavior and auto-advance',
+    'reading-pane': 'Reading pane layout and positioning',
+    labels: 'Create and manage email labels',
+    shortcuts: 'Keyboard shortcut reference',
+    about: 'Application information and resources',
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Main modal
 // ---------------------------------------------------------------------------
 
 export function SettingsModal() {
+  const { t } = useTranslation();
   const { settingsOpen, closeSettings } = useUIStore();
   const [activeItem, setActiveItem] = useState<NavItemId>('general');
+  const sidebarSections = useSidebarSections();
+  const panelTitles = usePanelTitles();
+  const panelDescriptions = usePanelDescriptions();
+
+  // Listen for cross-panel navigation (e.g. About → Shortcuts)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const panel = (e as CustomEvent).detail?.panel as NavItemId | undefined;
+      if (panel && PANELS[panel]) setActiveItem(panel);
+    };
+    document.addEventListener('atlasmail:settings_navigate', handler);
+    return () => document.removeEventListener('atlasmail:settings_navigate', handler);
+  }, []);
 
   const ActivePanel = PANELS[activeItem];
 
@@ -1563,10 +2460,10 @@ export function SettingsModal() {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 720,
-            maxWidth: 'calc(100vw - 32px)',
-            height: 520,
-            maxHeight: '80vh',
+            width: 920,
+            maxWidth: 'calc(100vw - 48px)',
+            height: 680,
+            maxHeight: 'calc(100vh - 48px)',
             background: 'var(--color-bg-elevated)',
             borderRadius: 'var(--radius-xl)',
             boxShadow: 'var(--shadow-elevated)',
@@ -1577,47 +2474,46 @@ export function SettingsModal() {
           }}
         >
           <VisuallyHidden.Root>
-            <Dialog.Title>Settings</Dialog.Title>
+            <Dialog.Title>{t('settings.title')}</Dialog.Title>
           </VisuallyHidden.Root>
 
           {/* Left sidebar */}
           <div
             style={{
-              width: 200,
+              width: 240,
               flexShrink: 0,
               background: 'var(--color-bg-secondary)',
               borderRight: '1px solid var(--color-border-primary)',
               display: 'flex',
               flexDirection: 'column',
               overflowY: 'auto',
-              padding: 'var(--spacing-md) var(--spacing-sm)',
+              padding: 'var(--spacing-lg) var(--spacing-sm)',
               boxSizing: 'border-box',
             }}
           >
             <div
               style={{
-                padding: 'var(--spacing-xs) var(--spacing-sm)',
-                marginBottom: 'var(--spacing-sm)',
+                padding: 'var(--spacing-sm) var(--spacing-md)',
+                marginBottom: 'var(--spacing-md)',
               }}
             >
               <span
                 style={{
-                  fontSize: 'var(--font-size-md)',
+                  fontSize: 'var(--font-size-lg)',
                   fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
                   color: 'var(--color-text-primary)',
                   fontFamily: 'var(--font-family)',
                 }}
               >
-                Settings
+                {t('settings.title')}
               </span>
             </div>
 
-            {SIDEBAR_SECTIONS.map((section, si) => (
+            {sidebarSections.map((section, si) => (
               <div
                 key={section.title}
-                style={{ marginBottom: si < SIDEBAR_SECTIONS.length - 1 ? 'var(--spacing-md)' : 0 }}
+                style={{ marginBottom: si < sidebarSections.length - 1 ? 'var(--spacing-md)' : 0 }}
               >
-                {/* Divider between sections (not before the first) */}
                 {si > 0 && (
                   <div
                     aria-hidden="true"
@@ -1631,7 +2527,7 @@ export function SettingsModal() {
                 )}
                 <div
                   style={{
-                    padding: 'var(--spacing-xs) var(--spacing-sm)',
+                    padding: 'var(--spacing-xs) var(--spacing-md)',
                     fontSize: 'var(--font-size-xs)',
                     fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
                     color: 'var(--color-text-tertiary)',
@@ -1652,7 +2548,7 @@ export function SettingsModal() {
                       isActive={isActive}
                       onClick={() => setActiveItem(id)}
                       label={label}
-                      icon={<Icon size={15} />}
+                      icon={<Icon size={16} />}
                     />
                   );
                 })}
@@ -1675,22 +2571,34 @@ export function SettingsModal() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: 'var(--spacing-md) var(--spacing-xl)',
+                padding: 'var(--spacing-lg) var(--spacing-2xl)',
                 borderBottom: '1px solid var(--color-border-primary)',
                 flexShrink: 0,
               }}
             >
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: 'var(--font-size-lg)',
-                  fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
-                  color: 'var(--color-text-primary)',
-                  fontFamily: 'var(--font-family)',
-                }}
-              >
-                {PANEL_TITLES[activeItem]}
-              </h2>
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 'var(--font-size-xl)',
+                    fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
+                    color: 'var(--color-text-primary)',
+                    fontFamily: 'var(--font-family)',
+                  }}
+                >
+                  {panelTitles[activeItem]}
+                </h2>
+                <p
+                  style={{
+                    margin: '4px 0 0',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-text-tertiary)',
+                    fontFamily: 'var(--font-family)',
+                  }}
+                >
+                  {panelDescriptions[activeItem]}
+                </p>
+              </div>
 
               <Dialog.Close asChild>
                 <button
@@ -1699,15 +2607,15 @@ export function SettingsModal() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: 28,
-                    height: 28,
+                    width: 32,
+                    height: 32,
                     padding: 0,
                     background: 'transparent',
                     border: 'none',
                     borderRadius: 'var(--radius-md)',
                     color: 'var(--color-text-tertiary)',
                     cursor: 'pointer',
-                    transition: 'background var(--transition-fast), color var(--transition-fast)',
+                    transition: 'background var(--transition-normal), color var(--transition-normal)',
                     flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
@@ -1719,7 +2627,7 @@ export function SettingsModal() {
                     e.currentTarget.style.color = 'var(--color-text-tertiary)';
                   }}
                 >
-                  <X size={16} />
+                  <X size={18} />
                 </button>
               </Dialog.Close>
             </div>
@@ -1729,7 +2637,7 @@ export function SettingsModal() {
               style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: 'var(--spacing-xl)',
+                padding: 'var(--spacing-2xl)',
                 boxSizing: 'border-box',
               }}
             >
@@ -1770,7 +2678,7 @@ function SidebarNavButton({
         alignItems: 'center',
         gap: 'var(--spacing-sm)',
         width: '100%',
-        padding: 'var(--spacing-xs) var(--spacing-sm)',
+        padding: '7px var(--spacing-md)',
         background: isActive
           ? 'var(--color-surface-selected)'
           : hovered
@@ -1786,15 +2694,9 @@ function SidebarNavButton({
           : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
         cursor: 'pointer',
         textAlign: 'left',
-        transition: 'background var(--transition-fast), color var(--transition-fast)',
+        transition: 'background var(--transition-normal), color var(--transition-normal)',
         outline: 'none',
         marginBottom: 1,
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-border-focus)';
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.boxShadow = 'none';
       }}
     >
       <span

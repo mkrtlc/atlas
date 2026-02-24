@@ -1,25 +1,30 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { AppLayout } from '../components/layout/app-layout';
 import { EmailListPane } from '../components/layout/email-list-pane';
 import { ReadingPane } from '../components/layout/reading-pane';
 import { ComposeModal } from '../components/compose/compose-modal';
 import { ToastContainer } from '../components/ui/toast';
+import { SendAnimation } from '../components/ui/send-animation';
 import { SettingsModal } from '../components/settings/settings-modal';
 import { useEmailStore } from '../stores/email-store';
 import { useUIStore } from '../stores/ui-store';
 import { useShortcut, useShortcutEngine } from '../providers/shortcut-provider';
+import { queryKeys } from '../config/query-keys';
 import {
   useArchiveWithUndo,
   useTrashWithUndo,
   useToggleStar,
-  useThreads,
+  useMarkReadUnread,
+  useMailboxThreads,
 } from '../hooks/use-threads';
+import { useAutoAdvance } from '../hooks/use-auto-advance';
 
 export function InboxPage() {
   const {
     moveCursor,
     activeThreadId,
     activeCategory,
+    activeMailbox,
     cursorIndex,
     setActiveThread,
     openCompose,
@@ -27,19 +32,49 @@ export function InboxPage() {
     selectedThreadIds,
     clearSelection,
   } = useEmailStore();
-  const { toggleCommandPalette, toggleSidebar } = useUIStore();
+  const { toggleCommandPalette, toggleSidebar, toggleSettings } = useUIStore();
   const archiveWithUndo = useArchiveWithUndo();
   const trashWithUndo = useTrashWithUndo();
   const starMutation = useToggleStar();
-  const { data: threads } = useThreads(activeCategory);
+  const markReadUnread = useMarkReadUnread();
+  const isInbox = activeMailbox === 'inbox';
+  const { data: threads } = useMailboxThreads(activeMailbox, isInbox ? activeCategory : undefined);
   const maxCursorIndex = Math.max(0, (threads?.length ?? 1) - 1);
+  const displayThreads = useMemo(() => threads ?? [], [threads]);
+  const advanceAfterRemoval = useAutoAdvance(displayThreads);
+
+  const activeListKey = useMemo(
+    () =>
+      isInbox
+        ? queryKeys.threads.list(activeCategory)
+        : queryKeys.threads.mailbox(activeMailbox),
+    [isInbox, activeCategory, activeMailbox],
+  );
+
+  // Keep the shortcut engine context in sync with whether a thread is open
+  const shortcutEngine = useShortcutEngine();
+  useEffect(() => {
+    shortcutEngine.setContext(activeThreadId ? 'thread' : 'inbox');
+  }, [activeThreadId, shortcutEngine]);
+
+  // Sync cursor movement to active thread selection
+  useEffect(() => {
+    const thread = displayThreads[cursorIndex];
+    if (thread && thread.id !== activeThreadId) {
+      setActiveThread(thread.id);
+    }
+  }, [cursorIndex, displayThreads, activeThreadId, setActiveThread]);
 
   // Navigation shortcuts
   const handleMoveDown = useCallback(() => moveCursor(1, maxCursorIndex), [moveCursor, maxCursorIndex]);
   const handleMoveUp = useCallback(() => moveCursor(-1, maxCursorIndex), [moveCursor, maxCursorIndex]);
   const handleOpenThread = useCallback(() => {
-    // The cursor index maps to the active thread — handled in email-list-pane
-  }, []);
+    const thread = displayThreads[cursorIndex];
+    if (thread) {
+      setActiveThread(thread.id);
+      markReadUnread.mutate({ threadId: thread.id, isUnread: false });
+    }
+  }, [cursorIndex, displayThreads, setActiveThread, markReadUnread]);
   const handleGoBack = useCallback(() => setActiveThread(null), [setActiveThread]);
 
   // Category navigation
@@ -48,14 +83,21 @@ export function InboxPage() {
   const handleGoNewsletters = useCallback(() => setActiveCategory('newsletters'), [setActiveCategory]);
   const handleGoNotifications = useCallback(() => setActiveCategory('notifications'), [setActiveCategory]);
 
-  // Action shortcuts — use undo-aware variants so the user can recover
+  // Action shortcuts — use undo-aware variants so the user can recover.
+  // Pass the correct list key so optimistic updates target the right cache.
+  // advanceAfterRemoval runs first (deferred one tick) so it fires after the
+  // optimistic removal has propagated and the list has re-rendered.
   const handleArchive = useCallback(() => {
-    if (activeThreadId) archiveWithUndo(activeThreadId, activeCategory);
-  }, [activeThreadId, activeCategory, archiveWithUndo]);
+    if (!activeThreadId) return;
+    advanceAfterRemoval(activeThreadId, cursorIndex);
+    archiveWithUndo(activeThreadId, activeListKey);
+  }, [activeThreadId, cursorIndex, activeListKey, advanceAfterRemoval, archiveWithUndo]);
 
   const handleTrash = useCallback(() => {
-    if (activeThreadId) trashWithUndo(activeThreadId, activeCategory);
-  }, [activeThreadId, activeCategory, trashWithUndo]);
+    if (!activeThreadId) return;
+    advanceAfterRemoval(activeThreadId, cursorIndex);
+    trashWithUndo(activeThreadId, activeListKey);
+  }, [activeThreadId, cursorIndex, activeListKey, advanceAfterRemoval, trashWithUndo]);
 
   const handleStar = useCallback(() => {
     if (activeThreadId) starMutation.mutate(activeThreadId);
@@ -73,9 +115,30 @@ export function InboxPage() {
     if (activeThreadId) openCompose('forward', activeThreadId);
   }, [activeThreadId, openCompose]);
 
+  // Mark read/unread shortcuts
+  const handleMarkRead = useCallback(() => {
+    if (activeThreadId) markReadUnread.mutate({ threadId: activeThreadId, isUnread: false });
+  }, [activeThreadId, markReadUnread]);
+
+  const handleMarkUnread = useCallback(() => {
+    if (activeThreadId) markReadUnread.mutate({ threadId: activeThreadId, isUnread: true });
+  }, [activeThreadId, markReadUnread]);
+
   // UI shortcuts
   const handleCommandPalette = useCallback(() => toggleCommandPalette(), [toggleCommandPalette]);
   const handleToggleSidebar = useCallback(() => toggleSidebar(), [toggleSidebar]);
+  const handleShortcutHelp = useCallback(() => {
+    toggleSettings();
+    // Navigate to shortcuts panel after settings opens
+    setTimeout(() => {
+      document.dispatchEvent(new CustomEvent('atlasmail:settings_navigate', { detail: { panel: 'shortcuts' } }));
+    }, 50);
+  }, [toggleSettings]);
+
+  // Search shortcut — dispatches event so SearchBar can focus itself
+  const handleSearchFocus = useCallback(() => {
+    document.dispatchEvent(new CustomEvent('atlasmail:focus_search'));
+  }, []);
 
   // Snooze shortcut — dispatches a custom event so the SnoozePopover can open itself
   const handleSnooze = useCallback(() => {
@@ -103,7 +166,6 @@ export function InboxPage() {
 
   // Register Escape to clear selection directly — only fires when there are selections.
   // `go_back` already owns Escape in 'thread' context so there's no conflict.
-  const shortcutEngine = useShortcutEngine();
   useEffect(() => {
     if (selectedThreadIds.size === 0) {
       shortcutEngine.unregister('clear_selection');
@@ -113,26 +175,30 @@ export function InboxPage() {
     return () => shortcutEngine.unregister('clear_selection');
   }, [selectedThreadIds.size, handleClearSelection, shortcutEngine]);
 
-  // Register all shortcuts
-  useShortcut('move_down', handleMoveDown, 'inbox');
-  useShortcut('move_up', handleMoveUp, 'inbox');
-  useShortcut('open_thread', handleOpenThread, 'inbox');
+  // Register all shortcuts — most use 'global' so they work in both inbox and thread views
+  useShortcut('move_down', handleMoveDown, 'global');
+  useShortcut('move_up', handleMoveUp, 'global');
+  useShortcut('open_thread', handleOpenThread, 'global');
   useShortcut('go_back', handleGoBack, 'thread');
   useShortcut('go_important', handleGoImportant, 'global');
   useShortcut('go_other', handleGoOther, 'global');
   useShortcut('go_newsletters', handleGoNewsletters, 'global');
   useShortcut('go_notifications', handleGoNotifications, 'global');
-  useShortcut('archive', handleArchive, 'inbox');
-  useShortcut('trash', handleTrash, 'inbox');
-  useShortcut('star', handleStar, 'inbox');
-  useShortcut('compose_new', handleCompose, 'inbox');
-  useShortcut('reply', handleReply, 'thread');
-  useShortcut('reply_all', handleReplyAll, 'thread');
-  useShortcut('forward', handleForward, 'thread');
-  useShortcut('snooze', handleSnooze, 'thread');
-  useShortcut('select_toggle', handleSelectToggle, 'inbox');
+  useShortcut('archive', handleArchive, 'global');
+  useShortcut('trash', handleTrash, 'global');
+  useShortcut('star', handleStar, 'global');
+  useShortcut('mark_read', handleMarkRead, 'global');
+  useShortcut('mark_unread', handleMarkUnread, 'global');
+  useShortcut('compose_new', handleCompose, 'global');
+  useShortcut('reply', handleReply, 'global');
+  useShortcut('reply_all', handleReplyAll, 'global');
+  useShortcut('forward', handleForward, 'global');
+  useShortcut('snooze', handleSnooze, 'global');
+  useShortcut('select_toggle', handleSelectToggle, 'global');
   useShortcut('command_palette', handleCommandPalette, 'global');
   useShortcut('toggle_sidebar', handleToggleSidebar, 'global');
+  useShortcut('search', handleSearchFocus, 'global');
+  useShortcut('shortcut_help', handleShortcutHelp, 'global');
 
   return (
     <>
@@ -143,6 +209,7 @@ export function InboxPage() {
       <ComposeModal />
       <SettingsModal />
       <ToastContainer />
+      <SendAnimation />
     </>
   );
 }

@@ -4,20 +4,28 @@
   "workspaces": [
     "packages/shared",
     "packages/server",
-    "packages/client"
+    "packages/client",
+    "packages/desktop"
   ],
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=@atlasmail/client --filter=@atlasmail/server",
+    "dev:desktop": "npm run dev:web & sleep 3 && npm run dev --workspace=@atlasmail/desktop",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean"
   },
+  "packageManager": "npm@10.9.4",
+  "overrides": {
+    "@tiptap/extension-color": "2.27.2",
+    "@tiptap/extension-highlight": "2.27.2",
+    "@tiptap/extension-text-style": "2.27.2"
+  },
   "devDependencies": {
-    "turbo": "^2.3.0",
-    "typescript": "^5.6.0",
     "@types/node": "^22.0.0",
-    "prettier": "^3.4.0"
+    "prettier": "^3.4.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.0"
   }
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { useUIStore } from '../../stores/ui-store';
 
@@ -18,6 +18,13 @@ export function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const { setSearchFocused } = useUIStore();
+
+  // Listen for "/" shortcut event from inbox.tsx
+  useEffect(() => {
+    const handler = () => inputRef.current?.focus();
+    document.addEventListener('atlasmail:focus_search', handler);
+    return () => document.removeEventListener('atlasmail:focus_search', handler);
+  }, []);
 
   function handleFocus() {
     setIsFocused(true);
@@ -54,7 +61,7 @@ export function SearchBar({
         background: isFocused ? 'var(--color-bg-elevated)' : 'var(--color-bg-tertiary)',
         border: `1px solid ${isFocused ? 'var(--color-border-focus)' : 'var(--color-border-primary)'}`,
         borderRadius: 'var(--radius-md)',
-        transition: 'border-color var(--transition-fast), background var(--transition-fast)',
+        transition: 'border-color var(--transition-normal), background var(--transition-normal)',
         gap: 'var(--spacing-sm)',
         boxSizing: 'border-box',
       }}
@@ -64,7 +71,7 @@ export function SearchBar({
         style={{
           color: isFocused ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)',
           flexShrink: 0,
-          transition: 'color var(--transition-fast)',
+          transition: 'color var(--transition-normal)',
         }}
       />
       <input

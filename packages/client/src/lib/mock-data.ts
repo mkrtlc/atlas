@@ -25,6 +25,7 @@ function makeEmail(overrides: Partial<Email> & { id: string; threadId: string; f
     receivedAt: null,
     sizeEstimate: null,
     attachments: [],
+    listUnsubscribe: null,
     createdAt: overrides.internalDate,
     updatedAt: overrides.internalDate,
     ...overrides,
@@ -273,6 +274,7 @@ const emailsProductHunt: Email[] = [
     fromName: 'Product Hunt',
     subject: 'Top products of the week 🚀',
     internalDate: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
+    listUnsubscribe: 'https://producthunt.com/unsubscribe',
     bodyText: `This week's top products:
 
 1. Raycast AI — An AI-powered productivity tool that integrates with your workflow
@@ -324,6 +326,7 @@ const emailsTechCrunch: Email[] = [
     fromName: 'TechCrunch Daily',
     subject: 'OpenAI announces GPT-5, fundraising hits $20B',
     internalDate: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+    listUnsubscribe: 'https://techcrunch.com/unsubscribe',
     bodyText: `TechCrunch Daily — February 24, 2026
 
 TOP STORIES
@@ -447,6 +450,7 @@ const emailsMedium: Email[] = [
     fromName: 'Medium Daily Digest',
     subject: 'Why every developer should understand email protocols',
     internalDate: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    listUnsubscribe: 'https://medium.com/unsubscribe',
     bodyText: `Your Medium Daily Digest
 
 "Why Every Developer Should Understand Email Protocols"
@@ -499,6 +503,164 @@ Tuesday works great for me. How about Blue Bottle on Market Street at 10am?
 And yes — the email client is AtlasMail. We're going for a Superhuman-like experience with split inbox, keyboard shortcuts, and a dark-mode-first design. Early days but it's coming together nicely.
 
 See you Tuesday!`,
+  }),
+];
+
+// ─── Sent emails ──────────────────────────────────────────────────────
+
+const emailsSentLiamReply: Email[] = [
+  makeEmail({
+    id: 'es1',
+    threadId: 'ts1',
+    fromAddress: 'demo@atlasmail.dev',
+    fromName: 'Demo User',
+    toAddresses: [{ name: "Liam O'Brien", address: 'liam@startup.io' }],
+    subject: 'Re: Coffee next week?',
+    internalDate: new Date(Date.now() - 7 * 3600 * 1000).toISOString(),
+    bodyText: `Hey Liam!
+
+Tuesday works great for me. How about Blue Bottle on Market Street at 10am?
+
+And yes — the email client is AtlasMail. We're going for a Superhuman-like experience with split inbox, keyboard shortcuts, and a dark-mode-first design. Early days but it's coming together nicely.
+
+See you Tuesday!`,
+    gmailLabels: ['SENT'],
+  }),
+];
+
+const emailsSentProjectUpdate: Email[] = [
+  makeEmail({
+    id: 'es2',
+    threadId: 'ts2',
+    fromAddress: 'demo@atlasmail.dev',
+    fromName: 'Demo User',
+    toAddresses: [
+      { name: 'Sarah Chen', address: 'sarah@company.com' },
+      { name: 'Marcus Johnson', address: 'marcus@company.com' },
+      { name: 'Priya Patel', address: 'priya@company.com' },
+    ],
+    subject: 'Project update — week of Feb 24',
+    internalDate: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    bodyText: `Hi team,
+
+Quick update for this week:
+
+- Auth flow is fully working end-to-end with OAuth2
+- Thread list virtualization is in — scrolling is now buttery smooth
+- Dark mode tokens are finalized; light mode parity is ~80%
+
+Next up: keyboard shortcut engine and the compose drawer.
+
+Let me know if you have questions or blockers.
+
+Thanks`,
+    gmailLabels: ['SENT'],
+  }),
+];
+
+// ─── Archived emails ───────────────────────────────────────────────────
+
+const emailsArchivedTeamUpdate: Email[] = [
+  makeEmail({
+    id: 'ea1',
+    threadId: 'ta1',
+    fromAddress: 'sarah@company.com',
+    fromName: 'Sarah Chen',
+    subject: 'Team update — January wrap-up',
+    internalDate: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
+    bodyText: `Hi all,
+
+January was a strong month. Here's a quick summary:
+
+- Shipped the new onboarding flow (28% improvement in activation)
+- Closed 3 enterprise deals
+- Grew the team by 2 engineers
+
+February focus: infrastructure reliability and the new mobile app.
+
+Sarah`,
+    gmailLabels: ['INBOX'],
+  }),
+];
+
+const emailsArchivedBudgetApproval: Email[] = [
+  makeEmail({
+    id: 'ea2',
+    threadId: 'ta2',
+    fromAddress: 'finance@company.com',
+    fromName: 'Finance Team',
+    subject: 'Q1 budget approved',
+    internalDate: new Date(Date.now() - 45 * 24 * 3600 * 1000).toISOString(),
+    bodyText: `Hi,
+
+Your Q1 budget request has been approved. The allocated amount is $42,000.
+
+Please submit purchase orders through the usual portal.
+
+Finance Team`,
+    gmailLabels: ['INBOX'],
+  }),
+];
+
+// ─── Trashed emails ────────────────────────────────────────────────────
+
+const emailsTrashedNewsletter: Email[] = [
+  makeEmail({
+    id: 'etr1',
+    threadId: 'ttr1',
+    fromAddress: 'deals@promotions-weekly.com',
+    fromName: 'Promotions Weekly',
+    subject: "This week's hottest deals — 70% off everything!",
+    internalDate: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
+    listUnsubscribe: 'https://promotions-weekly.com/unsubscribe',
+    bodyText: `HUGE SALE — This week only!
+
+70% off sitewide. Use code SAVE70 at checkout.
+
+Shop now: https://promotions-weekly.com/sale
+
+You are receiving this because you signed up at some point. Unsubscribe here.`,
+    gmailLabels: ['TRASH'],
+  }),
+];
+
+const emailsTrashedSpamFollowup: Email[] = [
+  makeEmail({
+    id: 'etr2',
+    threadId: 'ttr2',
+    fromAddress: 'noreply@old-service.io',
+    fromName: 'Old Service',
+    subject: 'Your account will be deleted',
+    internalDate: new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString(),
+    bodyText: `Your account at Old Service has been scheduled for deletion due to inactivity.
+
+Click here to reactivate: https://old-service.io/reactivate
+
+If you don't take action within 7 days, your account and all data will be permanently removed.`,
+    gmailLabels: ['TRASH'],
+  }),
+];
+
+// ─── Spam emails ───────────────────────────────────────────────────────
+
+const emailsSpam: Email[] = [
+  makeEmail({
+    id: 'esp1',
+    threadId: 'tsp1',
+    fromAddress: 'winner@prize-central.biz',
+    fromName: 'Prize Central',
+    subject: 'Congratulations! You have been selected as our GRAND PRIZE winner!!!',
+    internalDate: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString(),
+    bodyText: `CONGRATULATIONS!!!
+
+You have been randomly selected as our GRAND PRIZE WINNER of $1,000,000 USD!
+
+To claim your prize, reply with your full name, address, and bank account details.
+
+This offer expires in 24 hours. Act now!
+
+Prize Central International`,
+    gmailLabels: ['SPAM'],
   }),
 ];
 
@@ -639,6 +801,142 @@ const allThreads: Thread[] = [
   }),
 ];
 
+// ─── Sent threads ─────────────────────────────────────────────────────
+
+const sentThreads: Thread[] = [
+  makeThread({
+    id: 'ts1',
+    subject: 'Re: Coffee next week?',
+    snippet: "Tuesday works great for me. How about Blue Bottle on Market Street at 10am?",
+    messageCount: 1,
+    unreadCount: 0,
+    lastMessageAt: emailsSentLiamReply[0].internalDate,
+    category: 'important',
+    labels: ['SENT'],
+    emails: emailsSentLiamReply,
+  }),
+  makeThread({
+    id: 'ts2',
+    subject: 'Project update — week of Feb 24',
+    snippet: "Auth flow is fully working end-to-end with OAuth2. Thread list virtualization is in...",
+    messageCount: 1,
+    unreadCount: 0,
+    lastMessageAt: emailsSentProjectUpdate[0].internalDate,
+    category: 'important',
+    labels: ['SENT'],
+    emails: emailsSentProjectUpdate,
+  }),
+];
+
+// ─── Archived threads ─────────────────────────────────────────────────
+
+const archivedThreads: Thread[] = [
+  makeThread({
+    id: 'ta1',
+    subject: 'Team update — January wrap-up',
+    snippet: "January was a strong month. Shipped the new onboarding flow (28% improvement)...",
+    messageCount: 1,
+    unreadCount: 0,
+    lastMessageAt: emailsArchivedTeamUpdate[0].internalDate,
+    category: 'important',
+    labels: ['INBOX'],
+    isArchived: true,
+    emails: emailsArchivedTeamUpdate,
+  }),
+  makeThread({
+    id: 'ta2',
+    subject: 'Q1 budget approved',
+    snippet: "Your Q1 budget request has been approved. The allocated amount is $42,000.",
+    messageCount: 1,
+    unreadCount: 0,
+    lastMessageAt: emailsArchivedBudgetApproval[0].internalDate,
+    category: 'other',
+    labels: ['INBOX'],
+    isArchived: true,
+    emails: emailsArchivedBudgetApproval,
+  }),
+];
+
+// ─── Trashed threads ──────────────────────────────────────────────────
+
+const trashedThreads: Thread[] = [
+  makeThread({
+    id: 'ttr1',
+    subject: "This week's hottest deals — 70% off everything!",
+    snippet: "HUGE SALE — This week only! 70% off sitewide. Use code SAVE70 at checkout.",
+    messageCount: 1,
+    unreadCount: 0,
+    lastMessageAt: emailsTrashedNewsletter[0].internalDate,
+    category: 'newsletters',
+    labels: ['TRASH'],
+    isTrashed: true,
+    emails: emailsTrashedNewsletter,
+  }),
+  makeThread({
+    id: 'ttr2',
+    subject: 'Your account will be deleted',
+    snippet: "Your account at Old Service has been scheduled for deletion due to inactivity.",
+    messageCount: 1,
+    unreadCount: 0,
+    lastMessageAt: emailsTrashedSpamFollowup[0].internalDate,
+    category: 'other',
+    labels: ['TRASH'],
+    isTrashed: true,
+    emails: emailsTrashedSpamFollowup,
+  }),
+];
+
+// ─── Spam threads ─────────────────────────────────────────────────────
+
+const spamThreads: Thread[] = [
+  makeThread({
+    id: 'tsp1',
+    subject: 'Congratulations! You have been selected as our GRAND PRIZE winner!!!',
+    snippet: "You have been randomly selected as our GRAND PRIZE WINNER of $1,000,000 USD!",
+    messageCount: 1,
+    unreadCount: 1,
+    lastMessageAt: emailsSpam[0].internalDate,
+    category: 'other',
+    labels: ['SPAM'],
+    isSpam: true,
+    emails: emailsSpam,
+  }),
+];
+
+// ─── Draft → Thread adapter ───────────────────────────────────────────
+
+export function draftToThread(draft: {
+  id: string;
+  subject: string;
+  toRecipients: { name?: string; address: string }[];
+  bodyHtml: string;
+  savedAt: string;
+}): Thread {
+  return makeThread({
+    id: draft.id,
+    subject: draft.subject || '(no subject)',
+    snippet: draft.bodyHtml.replace(/<[^>]+>/g, '').slice(0, 100),
+    messageCount: 1,
+    unreadCount: 0,
+    lastMessageAt: draft.savedAt,
+    category: 'important',
+    labels: ['DRAFT'],
+    emails: [
+      makeEmail({
+        id: `${draft.id}-email`,
+        threadId: draft.id,
+        fromAddress: 'demo@atlasmail.dev',
+        fromName: 'Demo User',
+        internalDate: draft.savedAt,
+        subject: draft.subject || '(no subject)',
+        bodyHtml: draft.bodyHtml,
+        isDraft: true,
+        toAddresses: draft.toRecipients.map((r) => ({ name: r.name, address: r.address })),
+      }),
+    ],
+  });
+}
+
 // ─── Public API ───────────────────────────────────────────────────────
 
 export function getMockThreads(category?: string): Thread[] {
@@ -647,5 +945,31 @@ export function getMockThreads(category?: string): Thread[] {
 }
 
 export function getMockThread(id: string): Thread | null {
-  return allThreads.find((t) => t.id === id) || null;
+  const allMailboxThreads = [
+    ...allThreads,
+    ...sentThreads,
+    ...archivedThreads,
+    ...trashedThreads,
+    ...spamThreads,
+  ];
+  return allMailboxThreads.find((t) => t.id === id) || null;
+}
+
+export function getMockThreadsByMailbox(mailbox: string): Thread[] {
+  switch (mailbox) {
+    case 'inbox':
+      return allThreads;
+    case 'sent':
+      return sentThreads;
+    case 'drafts':
+      return []; // drafts come from draft-store
+    case 'archive':
+      return archivedThreads;
+    case 'trash':
+      return trashedThreads;
+    case 'spam':
+      return spamThreads;
+    default:
+      return [];
+  }
 }

@@ -1,28 +1,42 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, forwardRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TiptapLink from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import Highlight from '@tiptap/extension-highlight';
 import {
   X, Minus, Maximize2, Send, ChevronDown,
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   List, ListOrdered, Link as LinkIcon, Code, Paperclip,
+  Eye, EyeOff, Type, Highlighter, Clock,
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useEmailStore } from '../../stores/email-store';
 import { useAuthStore } from '../../stores/auth-store';
 import { useDraftStore } from '../../stores/draft-store';
-import { useThread } from '../../hooks/use-threads';
+import { useSettingsStore } from '../../stores/settings-store';
+import { useThread, useSendEmail, useScheduleSend } from '../../hooks/use-threads';
+import { useToastStore } from '../../stores/toast-store';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { RecipientInput } from './recipient-input';
+import { SendLaterPopover } from './send-later-popover';
+import { ColorPickerPopover } from './color-picker-popover';
 import { formatBytes } from '../../lib/format';
+import { bodyMentionsAttachments } from '../../lib/attachment-check';
+import { injectComposeTransition } from '../../lib/animations';
 import { formatFullDate } from '@atlasmail/shared';
 import type { Email, EmailAddress } from '@atlasmail/shared';
 import type { Recipient } from '../../lib/mock-contacts';
 import type { CSSProperties } from 'react';
 import type { Editor } from '@tiptap/react';
+
+injectComposeTransition();
 
 // ─── Compose helpers ──────────────────────────────────────────────────
 
@@ -30,16 +44,6 @@ function addSubjectPrefix(subject: string | null, prefix: 'Re' | 'Fwd'): string 
   const s = subject || '';
   const cleaned = s.replace(/^((Re|Fwd):\s*)+/i, '');
   return `${prefix}: ${cleaned}`;
-}
-
-function formatAddr(email: Email): string {
-  return email.fromName
-    ? `${email.fromName} <${email.fromAddress}>`
-    : email.fromAddress;
-}
-
-function formatAddressList(addresses: EmailAddress[]): string {
-  return addresses.map((a) => (a.name ? `${a.name} <${a.address}>` : a.address)).join(', ');
 }
 
 function escapeHtml(text: string): string {
@@ -50,6 +54,20 @@ function escapeHtml(text: string): string {
     .replace(/\n/g, '<br>');
 }
 
+function formatAddr(email: Email): string {
+  const name = escapeHtml(email.fromName || '');
+  const addr = escapeHtml(email.fromAddress);
+  return name ? `${name} &lt;${addr}&gt;` : addr;
+}
+
+function formatAddressList(addresses: EmailAddress[]): string {
+  return addresses.map((a) => {
+    const name = escapeHtml(a.name || '');
+    const addr = escapeHtml(a.address);
+    return name ? `${name} &lt;${addr}&gt;` : addr;
+  }).join(', ');
+}
+
 function sanitizeBodyHtml(html: string): string {
   return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
 }
@@ -57,13 +75,12 @@ function sanitizeBodyHtml(html: string): string {
 function buildQuotedBody(email: Email): string {
   const date = formatFullDate(email.receivedAt || email.internalDate);
   const from = formatAddr(email);
-  const header = `<br><br><div style="border-left: 3px solid #e5e7eb; padding-left: 12px; color: #6b7280;">On ${date}, ${from} wrote:<br><br>`;
+  const attribution = `<p class="gmail_attr">On ${date}, ${from} wrote:</p>`;
+  const quotedContent = email.bodyHtml
+    ? sanitizeBodyHtml(email.bodyHtml)
+    : escapeHtml(email.bodyText || '');
 
-  if (email.bodyHtml) {
-    return `${header}${sanitizeBodyHtml(email.bodyHtml)}</div>`;
-  }
-
-  return `${header}${escapeHtml(email.bodyText || '')}</div>`;
+  return `<p></p><blockquote>${attribution}${quotedContent}</blockquote>`;
 }
 
 function buildForwardBody(email: Email): string {
@@ -72,17 +89,17 @@ function buildForwardBody(email: Email): string {
   const to = formatAddressList(email.toAddresses);
 
   const header =
-    `<br><br>---------- Forwarded message ---------<br>` +
-    `From: ${from}<br>` +
+    `<p>---------- Forwarded message ---------</p>` +
+    `<p>From: ${from}<br>` +
     `Date: ${date}<br>` +
     `Subject: ${email.subject || '(no subject)'}<br>` +
-    `To: ${to}<br><br>`;
+    `To: ${to}</p>`;
 
-  if (email.bodyHtml) {
-    return `${header}${sanitizeBodyHtml(email.bodyHtml)}`;
-  }
+  const forwardedContent = email.bodyHtml
+    ? sanitizeBodyHtml(email.bodyHtml)
+    : escapeHtml(email.bodyText || '');
 
-  return `${header}${escapeHtml(email.bodyText || '')}`;
+  return `<p></p><blockquote>${header}${forwardedContent}</blockquote>`;
 }
 
 // Convert a plain email address string into a Recipient object
@@ -92,23 +109,23 @@ function addressToRecipient(address: string, name?: string): Recipient {
 
 // ─── Format toolbar ───────────────────────────────────────────────────
 
-function ToolbarButton({
-  icon,
-  label,
-  isActive,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  isActive?: boolean;
-  onClick: () => void;
-}) {
+const ToolbarButton = forwardRef<
+  HTMLButtonElement,
+  {
+    icon: React.ReactNode;
+    label: string;
+    isActive?: boolean;
+    onClick?: () => void;
+  }
+>(function ToolbarButton({ icon, label, isActive, onClick, ...rest }, ref) {
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onClick}
       aria-label={label}
       aria-pressed={isActive}
+      {...rest}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -120,7 +137,7 @@ function ToolbarButton({
         background: isActive ? 'var(--color-surface-active)' : 'transparent',
         color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
         cursor: 'pointer',
-        transition: 'background var(--transition-fast), color var(--transition-fast)',
+        transition: 'background var(--transition-normal), color var(--transition-normal)',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -134,9 +151,124 @@ function ToolbarButton({
       {icon}
     </button>
   );
+});
+
+function LinkPopover({
+  isOpen,
+  onSubmit,
+  onCancel,
+}: {
+  isOpen: boolean;
+  onSubmit: (url: string) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const [url, setUrl] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setUrl('');
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.stopPropagation(); onCancel(); }
+    };
+    document.addEventListener('keydown', handleKey, true);
+    return () => document.removeEventListener('keydown', handleKey, true);
+  }, [isOpen, onCancel]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        marginTop: 6,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--spacing-xs)',
+        padding: 'var(--spacing-xs) var(--spacing-sm)',
+        background: 'var(--color-bg-elevated)',
+        border: '1px solid var(--color-border-primary)',
+        borderRadius: 'var(--radius-md)',
+        boxShadow: 'var(--shadow-md)',
+        zIndex: 100,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="url"
+        placeholder={t('compose.urlPlaceholder')}
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && url.trim()) {
+            e.preventDefault();
+            onSubmit(url.trim());
+          }
+        }}
+        style={{
+          width: 220,
+          height: 28,
+          padding: '0 var(--spacing-sm)',
+          border: '1px solid var(--color-border-primary)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: 'var(--font-size-sm)',
+          fontFamily: 'var(--font-family)',
+          background: 'var(--color-bg-primary)',
+          color: 'var(--color-text-primary)',
+          outline: 'none',
+        }}
+      />
+      <button
+        onClick={() => url.trim() && onSubmit(url.trim())}
+        disabled={!url.trim()}
+        style={{
+          height: 28,
+          padding: '0 var(--spacing-sm)',
+          border: 'none',
+          borderRadius: 'var(--radius-sm)',
+          background: url.trim() ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)',
+          color: url.trim() ? '#ffffff' : 'var(--color-text-tertiary)',
+          fontSize: 'var(--font-size-sm)',
+          fontFamily: 'var(--font-family)',
+          cursor: url.trim() ? 'pointer' : 'default',
+          transition: 'background var(--transition-normal)',
+        }}
+      >
+        {t('common.apply')}
+      </button>
+      <button
+        onClick={onCancel}
+        style={{
+          height: 28,
+          padding: '0 var(--spacing-xs)',
+          border: 'none',
+          borderRadius: 'var(--radius-sm)',
+          background: 'transparent',
+          color: 'var(--color-text-tertiary)',
+          fontSize: 'var(--font-size-sm)',
+          cursor: 'pointer',
+        }}
+      >
+        {t('common.cancel')}
+      </button>
+    </div>
+  );
 }
 
 function FormatToolbar({ editor }: { editor: Editor | null }) {
+  const { t } = useTranslation();
+  const [showLinkPopover, setShowLinkPopover] = useState(false);
+
   if (!editor) return null;
 
   const handleLinkToggle = () => {
@@ -144,10 +276,17 @@ function FormatToolbar({ editor }: { editor: Editor | null }) {
       editor.chain().focus().unsetLink().run();
       return;
     }
-    const url = window.prompt('Enter URL');
-    if (url) {
-      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-    }
+    setShowLinkPopover(true);
+  };
+
+  const handleLinkSubmit = (url: string) => {
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    setShowLinkPopover(false);
+  };
+
+  const handleLinkCancel = () => {
+    setShowLinkPopover(false);
+    editor.chain().focus().run();
   };
 
   return (
@@ -162,25 +301,25 @@ function FormatToolbar({ editor }: { editor: Editor | null }) {
     >
       <ToolbarButton
         icon={<Bold size={14} />}
-        label="Bold"
+        label={t('compose.bold')}
         isActive={editor.isActive('bold')}
         onClick={() => editor.chain().focus().toggleBold().run()}
       />
       <ToolbarButton
         icon={<Italic size={14} />}
-        label="Italic"
+        label={t('compose.italic')}
         isActive={editor.isActive('italic')}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       />
       <ToolbarButton
         icon={<UnderlineIcon size={14} />}
-        label="Underline"
+        label={t('compose.underline')}
         isActive={editor.isActive('underline')}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       />
       <ToolbarButton
         icon={<Strikethrough size={14} />}
-        label="Strikethrough"
+        label={t('compose.strikethrough')}
         isActive={editor.isActive('strike')}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       />
@@ -196,13 +335,13 @@ function FormatToolbar({ editor }: { editor: Editor | null }) {
 
       <ToolbarButton
         icon={<List size={14} />}
-        label="Bullet list"
+        label={t('compose.bulletList')}
         isActive={editor.isActive('bulletList')}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       />
       <ToolbarButton
         icon={<ListOrdered size={14} />}
-        label="Ordered list"
+        label={t('compose.orderedList')}
         isActive={editor.isActive('orderedList')}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       />
@@ -216,18 +355,50 @@ function FormatToolbar({ editor }: { editor: Editor | null }) {
         }}
       />
 
-      <ToolbarButton
-        icon={<LinkIcon size={14} />}
-        label="Insert link"
-        isActive={editor.isActive('link')}
-        onClick={handleLinkToggle}
-      />
+      <div style={{ position: 'relative', display: 'inline-flex' }}>
+        <ToolbarButton
+          icon={<LinkIcon size={14} />}
+          label={t('compose.insertLink')}
+          isActive={editor.isActive('link')}
+          onClick={handleLinkToggle}
+        />
+        <LinkPopover
+          isOpen={showLinkPopover}
+          onSubmit={handleLinkSubmit}
+          onCancel={handleLinkCancel}
+        />
+      </div>
       <ToolbarButton
         icon={<Code size={14} />}
-        label="Inline code"
+        label={t('compose.inlineCode')}
         isActive={editor.isActive('code')}
         onClick={() => editor.chain().focus().toggleCode().run()}
       />
+
+      <div
+        style={{
+          width: 1,
+          height: 16,
+          background: 'var(--color-border-primary)',
+          margin: '0 var(--spacing-xs)',
+        }}
+      />
+
+      <ColorPickerPopover mode="text" editor={editor}>
+        <ToolbarButton
+          icon={<Type size={14} />}
+          label={t('compose.textColor')}
+          isActive={!!editor.getAttributes('textStyle').color}
+        />
+      </ColorPickerPopover>
+
+      <ColorPickerPopover mode="highlight" editor={editor}>
+        <ToolbarButton
+          icon={<Highlighter size={14} />}
+          label={t('compose.highlightColor')}
+          isActive={editor.isActive('highlight')}
+        />
+      </ColorPickerPopover>
     </div>
   );
 }
@@ -235,6 +406,7 @@ function FormatToolbar({ editor }: { editor: Editor | null }) {
 // ─── Draft saved indicator ────────────────────────────────────────────
 
 function DraftSavedBadge({ visible }: { visible: boolean }) {
+  const { t } = useTranslation();
   return (
     <span
       aria-live="polite"
@@ -248,7 +420,7 @@ function DraftSavedBadge({ visible }: { visible: boolean }) {
         userSelect: 'none',
       }}
     >
-      Draft saved
+      {t('compose.draftSaved')}
     </span>
   );
 }
@@ -256,9 +428,13 @@ function DraftSavedBadge({ visible }: { visible: boolean }) {
 // ─── Compose modal ────────────────────────────────────────────────────
 
 export function ComposeModal() {
+  const { t } = useTranslation();
   const { composeMode, composeThreadId, closeCompose } = useEmailStore();
   const account = useAuthStore((s) => s.account);
   const { saveDraft, updateDraft, deleteDraft, setActiveDraftId } = useDraftStore();
+  const sendEmail = useSendEmail();
+  const scheduleSend = useScheduleSend();
+  const addToast = useToastStore((s) => s.addToast);
   const isOpen = composeMode !== null;
 
   const { data: thread } = useThread(composeThreadId);
@@ -271,6 +447,12 @@ export function ComposeModal() {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [draftSavedVisible, setDraftSavedVisible] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [showAttachmentReminder, setShowAttachmentReminder] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const globalTrackingEnabled = useSettingsStore((s) => s.trackingEnabled);
+  const [trackingEnabled, setTrackingEnabled] = useState(globalTrackingEnabled);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -288,6 +470,12 @@ export function ComposeModal() {
         codeBlock: false,
       }),
       Underline,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      TextStyle as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Color as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Highlight as any).configure({ multicolor: true }),
       TiptapLink.configure({
         openOnClick: false,
         autolink: true,
@@ -296,7 +484,7 @@ export function ComposeModal() {
         },
       }),
       Placeholder.configure({
-        placeholder: 'Write your email...',
+        placeholder: t('compose.writeEmail'),
       }),
     ],
     editorProps: {
@@ -477,15 +665,90 @@ export function ComposeModal() {
     editor?.commands.clearContent();
   }, [closeCompose, editor, setActiveDraftId]);
 
-  const handleSend = useCallback(() => {
-    // Delete the draft when the email is actually sent
-    if (draftIdRef.current) {
-      deleteDraft(draftIdRef.current);
-      draftIdRef.current = null;
-    }
-    // TODO: wire up send mutation
+  const doSend = useCallback(() => {
+    const bodyHtml = editor?.getHTML() ?? '';
+    const to = toRecipients.map((r) => r.address);
+    const cc = ccRecipients.length > 0 ? ccRecipients.map((r) => r.address) : undefined;
+    const bcc = bccRecipients.length > 0 ? bccRecipients.map((r) => r.address) : undefined;
+
+    if (to.length === 0) return;
+
+    // Capture the draft id before closing so the onSuccess callback can clean it
+    // up even after draftIdRef is cleared by handleClose.
+    const draftId = draftIdRef.current;
+
+    sendEmail.mutate(
+      {
+        to,
+        cc,
+        bcc,
+        subject,
+        bodyHtml,
+        threadId: composeThreadId ?? undefined,
+        trackingEnabled,
+      },
+      {
+        onSuccess: () => {
+          // Delete the draft only after the send has been confirmed, so the
+          // user still has it available if the network request fails.
+          if (draftId) {
+            deleteDraft(draftId);
+          }
+        },
+      },
+    );
+
     handleClose();
-  }, [handleClose, deleteDraft]);
+
+    // Trigger the paper plane send animation
+    document.dispatchEvent(new CustomEvent('atlasmail:email_sent'));
+    // Use sendEmail.mutate (stable function ref) rather than the entire
+    // sendEmail mutation object to avoid a dep that changes every render.
+  }, [handleClose, deleteDraft, sendEmail.mutate, editor, toRecipients, ccRecipients, bccRecipients, subject, composeThreadId, trackingEnabled]);
+
+  const handleSend = useCallback(() => {
+    const bodyText = editor?.getText() ?? '';
+    if (attachments.length === 0 && bodyMentionsAttachments(bodyText)) {
+      setShowAttachmentReminder(true);
+      return;
+    }
+    doSend();
+  }, [editor, attachments.length, doSend]);
+
+  const handleScheduleSend = useCallback(
+    (date: Date) => {
+      const bodyHtml = editor?.getHTML() ?? '';
+      const to = toRecipients.map((r) => r.address);
+      const cc = ccRecipients.length > 0 ? ccRecipients.map((r) => r.address) : undefined;
+      const bcc = bccRecipients.length > 0 ? bccRecipients.map((r) => r.address) : undefined;
+      if (to.length === 0) return;
+      const draftId = draftIdRef.current;
+      scheduleSend.mutate(
+        {
+          to,
+          cc,
+          bcc,
+          subject,
+          bodyHtml,
+          threadId: composeThreadId ?? undefined,
+          trackingEnabled,
+          scheduledFor: date.toISOString(),
+        },
+        {
+          onSuccess: () => {
+            if (draftId) deleteDraft(draftId);
+            addToast({
+              type: 'success',
+              message: `${t('compose.emailScheduled')} — ${date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`,
+              duration: 4000,
+            });
+          },
+        },
+      );
+      handleClose();
+    },
+    [editor, toRecipients, ccRecipients, bccRecipients, subject, composeThreadId, trackingEnabled, scheduleSend, handleClose, deleteDraft, addToast, t],
+  );
 
   // Reset the draft tracking ref whenever the modal opens fresh
   useEffect(() => {
@@ -512,7 +775,7 @@ export function ComposeModal() {
   useEffect(() => {
     if (composeMode === 'new' && isOpen) {
       toInputFocusTimerRef.current = setTimeout(() => {
-        const toInput = document.querySelector<HTMLInputElement>('[aria-label="To"]');
+        const toInput = document.querySelector<HTMLInputElement>('[data-compose-field="to"] input');
         toInput?.focus();
       }, 100);
     }
@@ -578,13 +841,13 @@ export function ComposeModal() {
   const getTitle = () => {
     switch (composeMode) {
       case 'reply':
-        return 'Reply';
+        return t('compose.reply');
       case 'reply_all':
-        return 'Reply all';
+        return t('compose.replyAll');
       case 'forward':
-        return 'Forward';
+        return t('compose.forward');
       default:
-        return 'New message';
+        return t('compose.newMessage');
     }
   };
 
@@ -596,14 +859,24 @@ export function ComposeModal() {
         subject.trim().length > 0;
 
       if (hasContent) {
-        const shouldDiscard = window.confirm('Discard this draft?');
-        if (!shouldDiscard) return;
+        setShowDiscardConfirm(true);
+        return;
       }
       handleClose();
     }
   }
 
+  function handleConfirmDiscard() {
+    setShowDiscardConfirm(false);
+    handleClose();
+  }
+
+  function handleCancelDiscard() {
+    setShowDiscardConfirm(false);
+  }
+
   return (
+    <>
     <Dialog.Root
       open={isOpen}
       onOpenChange={handleOpenChange}
@@ -615,25 +888,30 @@ export function ComposeModal() {
             inset: 0,
             background: 'var(--color-bg-overlay)',
             zIndex: 50,
+            animation: 'atlasmail-compose-overlay-enter 200ms ease',
           }}
         />
         <Dialog.Content
           aria-describedby={undefined}
           style={{
             position: 'fixed',
-            bottom: 'var(--spacing-xl)',
-            right: 'var(--spacing-xl)',
-            width: 600,
-            maxHeight: '80vh',
+            bottom: isMaximized ? 0 : 'var(--spacing-xl)',
+            right: isMaximized ? 0 : 'var(--spacing-xl)',
+            left: isMaximized ? 0 : undefined,
+            top: isMaximized ? 0 : undefined,
+            width: isMaximized ? '100%' : isMinimized ? 320 : 600,
+            maxHeight: isMaximized ? '100%' : isMinimized ? 'auto' : '80vh',
             background: 'var(--color-bg-elevated)',
-            border: '1px solid var(--color-border-primary)',
-            borderRadius: 'var(--radius-xl)',
-            boxShadow: 'var(--shadow-elevated)',
+            border: isMaximized ? 'none' : '1px solid var(--color-border-primary)',
+            borderRadius: isMaximized ? 0 : 'var(--radius-xl)',
+            boxShadow: isMaximized ? 'none' : 'var(--shadow-elevated)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
             zIndex: 51,
             fontFamily: 'var(--font-family)',
+            transition: 'width var(--transition-normal), max-height var(--transition-normal), bottom var(--transition-normal), right var(--transition-normal), border-radius var(--transition-normal)',
+            animation: 'atlasmail-compose-enter 280ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           {/* Title bar */}
@@ -659,26 +937,36 @@ export function ComposeModal() {
               {getTitle()}
             </Dialog.Title>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
-              <button aria-label="Minimize" style={windowControlStyle}>
+              <button
+                aria-label={isMinimized ? t('compose.restore') : t('compose.minimize')}
+                onClick={() => { setIsMinimized(!isMinimized); setIsMaximized(false); }}
+                style={windowControlStyle}
+              >
                 <Minus size={13} />
               </button>
-              <button aria-label="Expand" style={windowControlStyle}>
+              <button
+                aria-label={isMaximized ? t('compose.restore') : t('common.expand')}
+                onClick={() => { setIsMaximized(!isMaximized); setIsMinimized(false); }}
+                style={windowControlStyle}
+              >
                 <Maximize2 size={13} />
               </button>
-              <button aria-label="Close and discard" onClick={handleClose} style={windowControlStyle}>
+              <button aria-label={t('compose.closeAndDiscard')} onClick={handleClose} style={windowControlStyle}>
                 <X size={13} />
               </button>
             </div>
           </div>
 
+          {/* Body — hidden when minimized */}
+          {!isMinimized && <>
           {/* Recipient fields */}
           <div style={{ flexShrink: 0 }}>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} data-compose-field="to">
               <RecipientInput
-                label="To"
+                label={t('common.to')}
                 recipients={toRecipients}
                 onChange={setToRecipients}
-                placeholder="Recipients"
+                placeholder={t('compose.recipients')}
               />
               <button
                 onClick={() => setShowCcBcc(!showCcBcc)}
@@ -699,22 +987,22 @@ export function ComposeModal() {
                   padding: 'var(--spacing-xs)',
                 }}
               >
-                Cc/Bcc <ChevronDown size={12} />
+                {t('compose.ccBcc')} <ChevronDown size={12} />
               </button>
             </div>
             {showCcBcc && (
               <>
                 <RecipientInput
-                  label="Cc"
+                  label={t('common.cc')}
                   recipients={ccRecipients}
                   onChange={setCcRecipients}
-                  placeholder="CC recipients"
+                  placeholder={t('compose.ccRecipients')}
                 />
                 <RecipientInput
-                  label="Bcc"
+                  label={t('common.bcc')}
                   recipients={bccRecipients}
                   onChange={setBccRecipients}
-                  placeholder="BCC recipients"
+                  placeholder={t('compose.bccRecipients')}
                 />
               </>
             )}
@@ -728,7 +1016,7 @@ export function ComposeModal() {
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Subject"
+                placeholder={t('compose.subject')}
                 style={{
                   width: '100%',
                   background: 'transparent',
@@ -760,7 +1048,7 @@ export function ComposeModal() {
               position: 'relative',
               border: dragActive ? '2px dashed var(--color-accent-primary)' : '2px dashed transparent',
               borderRadius: 'var(--radius-md)',
-              transition: 'border-color var(--transition-fast)',
+              transition: 'border-color var(--transition-normal)',
             }}
             onClick={() => editor?.commands.focus()}
           >
@@ -781,7 +1069,7 @@ export function ComposeModal() {
                   pointerEvents: 'none',
                 }}
               >
-                Drop files to attach
+                {t('compose.dropFilesToAttach')}
               </div>
             )}
           </div>
@@ -878,12 +1166,42 @@ export function ComposeModal() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
               <Button variant="primary" size="md" icon={<Send size={14} />} onClick={handleSend}>
-                Send
+                {t('common.send')}
               </Button>
+
+              <SendLaterPopover onSchedule={handleScheduleSend}>
+                <button
+                  aria-label={t('compose.sendLater')}
+                  title={t('compose.sendLater')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 34,
+                    height: 34,
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'transparent',
+                    color: 'var(--color-text-tertiary)',
+                    cursor: 'pointer',
+                    transition: 'background var(--transition-normal), color var(--transition-normal)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--color-surface-hover)';
+                    e.currentTarget.style.color = 'var(--color-text-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                  }}
+                >
+                  <Clock size={16} />
+                </button>
+              </SendLaterPopover>
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                aria-label="Attach files"
+                aria-label={t('compose.attachFiles')}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -895,7 +1213,7 @@ export function ComposeModal() {
                   background: 'transparent',
                   color: 'var(--color-text-tertiary)',
                   cursor: 'pointer',
-                  transition: 'background var(--transition-fast), color var(--transition-fast)',
+                  transition: 'background var(--transition-normal), color var(--transition-normal)',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -907,6 +1225,35 @@ export function ComposeModal() {
                 }}
               >
                 <Paperclip size={16} />
+              </button>
+
+              <button
+                onClick={() => setTrackingEnabled((v) => !v)}
+                aria-label={trackingEnabled ? t('compose.disableReadReceipts') : t('compose.enableReadReceipts')}
+                title={trackingEnabled ? t('compose.readReceiptsOn') : t('compose.readReceiptsOff')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 34,
+                  height: 34,
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'transparent',
+                  color: trackingEnabled ? 'var(--color-accent-primary)' : 'var(--color-text-tertiary)',
+                  cursor: 'pointer',
+                  transition: 'background var(--transition-normal), color var(--transition-normal)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--color-surface-hover)';
+                  if (!trackingEnabled) e.currentTarget.style.color = 'var(--color-text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  if (!trackingEnabled) e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                }}
+              >
+                {trackingEnabled ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
               <input
                 ref={fileInputRef}
@@ -926,8 +1273,7 @@ export function ComposeModal() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {attachments.length} file{attachments.length > 1 ? 's' : ''} (
-                  {formatBytes(attachments.reduce((sum, f) => sum + f.size, 0))})
+                  {t('common.file', { count: attachments.length })} ({formatBytes(attachments.reduce((sum, f) => sum + f.size, 0))})
                 </span>
               )}
 
@@ -937,7 +1283,7 @@ export function ComposeModal() {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
               <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
-                Send with
+                {t('compose.sendWith')}
               </span>
               <span
                 style={{
@@ -957,9 +1303,34 @@ export function ComposeModal() {
               </span>
             </div>
           </div>
+          </>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+
+      {/* Attachment reminder dialog */}
+      <ConfirmDialog
+        open={showAttachmentReminder}
+        onOpenChange={setShowAttachmentReminder}
+        title={t('compose.forgotAttachment')}
+        description={t('compose.forgotAttachmentDescription')}
+        confirmLabel={t('compose.sendAnyway')}
+        destructive={false}
+        onConfirm={doSend}
+      />
+
+      {/* Discard confirmation modal */}
+      <ConfirmDialog
+        open={showDiscardConfirm}
+        onOpenChange={(open) => { if (!open) handleCancelDiscard(); }}
+        title={t('compose.discardDraft')}
+        description={t('compose.unsavedChanges')}
+        confirmLabel={t('common.discard')}
+        cancelLabel={t('compose.keepEditing')}
+        destructive
+        onConfirm={handleConfirmDiscard}
+      />
+    </>
   );
 }
 
@@ -974,5 +1345,5 @@ const windowControlStyle: CSSProperties = {
   background: 'transparent',
   color: 'var(--color-text-tertiary)',
   cursor: 'pointer',
-  transition: 'background var(--transition-fast)',
+  transition: 'background var(--transition-normal)',
 };

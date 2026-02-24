@@ -24,6 +24,7 @@ export const composeSchema = z.object({
   bodyText: z.string().optional(),
   threadId: z.string().optional(),
   inReplyTo: z.string().optional(),
+  trackingEnabled: z.boolean().optional(),
 });
 
 export const settingsSchema = z.object({
@@ -34,4 +35,5 @@ export const settingsSchema = z.object({
   desktopNotifications: z.boolean().optional(),
   notificationSound: z.boolean().optional(),
   signatureHtml: z.string().nullable().optional(),
+  trackingEnabled: z.boolean().optional(),
 });

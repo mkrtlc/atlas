@@ -1,4 +1,13 @@
 export type ThemeMode = 'light' | 'dark' | 'system';
+export type ColorThemeId =
+  | 'default'
+  | 'ocean'
+  | 'forest'
+  | 'sunset'
+  | 'rose'
+  | 'lavender'
+  | 'amber'
+  | 'slate';
 export type Density = 'compact' | 'default' | 'comfortable';
 export type ReadingPanePosition = 'right' | 'bottom' | 'hidden';
 export type AutoAdvance = 'next' | 'previous' | 'list';
@@ -15,4 +24,5 @@ export interface UserSettings {
   desktopNotifications: boolean;
   notificationSound: boolean;
   signatureHtml: string | null;
+  trackingEnabled: boolean;
 }

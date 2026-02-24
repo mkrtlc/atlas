@@ -49,7 +49,7 @@ export function ResizeHandle({ orientation, onResize, onResizeEnd }: ResizeHandl
 
     // Reset line appearance
     if (lineRef.current) {
-      lineRef.current.style.background = 'transparent';
+      lineRef.current.style.background = 'var(--color-border-primary)';
     }
 
     document.removeEventListener('mousemove', handleMouseMove);
@@ -98,12 +98,12 @@ export function ResizeHandle({ orientation, onResize, onResizeEnd }: ResizeHandl
     height: isVertical ? '100%' : '8px',
   };
 
-  // Inner visible line: 4px in the drag axis, full span in the other axis.
+  // Inner visible line: always visible with the border color, highlights on interaction.
   const lineStyle: CSSProperties = {
     width: isVertical ? '1px' : '100%',
     height: isVertical ? '100%' : '1px',
-    background: 'transparent',
-    transition: 'background var(--transition-fast)',
+    background: 'var(--color-border-primary)',
+    transition: 'background var(--transition-normal)',
     pointerEvents: 'none',
     borderRadius: '9999px',
   };
@@ -120,7 +120,7 @@ export function ResizeHandle({ orientation, onResize, onResizeEnd }: ResizeHandl
       }}
       onMouseLeave={() => {
         if (!isDragging.current && lineRef.current) {
-          lineRef.current.style.background = 'transparent';
+          lineRef.current.style.background = 'var(--color-border-primary)';
         }
       }}
       role="separator"

@@ -17,12 +17,21 @@ declare global {
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
+  // Support token via query param for resources loaded by <img src> / direct links
+  const queryToken = req.query.token as string | undefined;
+
+  let token: string | undefined;
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else if (queryToken) {
+    token = queryToken;
+  }
+
+  if (!token) {
     res.status(401).json({ success: false, error: 'Missing or invalid authorization header' });
     return;
   }
 
-  const token = authHeader.slice(7);
   try {
     const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
     req.auth = payload;

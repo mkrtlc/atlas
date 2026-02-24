@@ -1,5 +1,6 @@
 import type { ReactNode, CSSProperties } from 'react';
 import type { EmailCategory } from '@atlasmail/shared';
+import { CHIP_RADIUS } from './chip';
 
 // Category-specific badge
 interface CategoryBadgeProps {
@@ -30,7 +31,7 @@ export function CategoryBadge({ category }: CategoryBadgeProps) {
         alignItems: 'center',
         height: '18px',
         padding: '0 var(--spacing-xs)',
-        borderRadius: 'var(--radius-full)',
+        borderRadius: CHIP_RADIUS,
         fontSize: 'var(--font-size-xs)',
         fontFamily: 'var(--font-family)',
         fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
@@ -87,7 +88,7 @@ export function Badge({ variant = 'default', children }: BadgeProps) {
         alignItems: 'center',
         height: '20px',
         padding: '0 var(--spacing-xs)',
-        borderRadius: 'var(--radius-full)',
+        borderRadius: CHIP_RADIUS,
         fontSize: 'var(--font-size-xs)',
         fontFamily: 'var(--font-family)',
         fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],

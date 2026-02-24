@@ -8,6 +8,7 @@
  */
 
 import { useState, useId, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Clock, Sun, Calendar, Pencil } from 'lucide-react';
 
@@ -97,7 +98,7 @@ function OptionRow({ icon: Icon, label, timeLabel, onClick }: OptionRowProps) {
         cursor: 'pointer',
         textAlign: 'left',
         borderRadius: 'var(--radius-sm)',
-        transition: 'background var(--transition-fast)',
+        transition: 'background var(--transition-normal)',
       }}
     >
       <Icon
@@ -131,6 +132,7 @@ function OptionRow({ icon: Icon, label, timeLabel, onClick }: OptionRowProps) {
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
   const [customValue, setCustomValue] = useState('');
@@ -200,19 +202,19 @@ export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverPro
           {/* Preset options */}
           <OptionRow
             icon={Clock}
-            label="Later today"
+            label={t('snooze.laterToday')}
             timeLabel={formatTime(laterToday)}
             onClick={() => handlePreset(laterToday)}
           />
           <OptionRow
             icon={Sun}
-            label="Tomorrow"
-            timeLabel={`Tomorrow, ${formatTime(tomorrow)}`}
+            label={t('snooze.tomorrow')}
+            timeLabel={`${t('snooze.tomorrow')}, ${formatTime(tomorrow)}`}
             onClick={() => handlePreset(tomorrow)}
           />
           <OptionRow
             icon={Calendar}
-            label="Next week"
+            label={t('snooze.nextWeek')}
             timeLabel={formatNextMonday(nextMonday)}
             onClick={() => handlePreset(nextMonday)}
           />
@@ -232,8 +234,8 @@ export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverPro
           {!showCustom ? (
             <OptionRow
               icon={Pencil}
-              label="Custom..."
-              timeLabel="Pick a date and time"
+              label={t('snooze.custom')}
+              timeLabel={t('snooze.pickDateTime')}
               onClick={() => {
                 setCustomValue(toDatetimeLocalValue(laterToday));
                 setShowCustom(true);
@@ -255,7 +257,7 @@ export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverPro
                   color: 'var(--color-text-secondary)',
                 }}
               >
-                Pick a date and time
+                {t('snooze.pickDateTime')}
               </label>
               <input
                 id={customInputId}
@@ -302,7 +304,7 @@ export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverPro
                     height: '32px',
                   }}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="button"
@@ -321,7 +323,7 @@ export function SnoozePopover({ threadId, onSnooze, children }: SnoozePopoverPro
                     height: '32px',
                   }}
                 >
-                  Snooze
+                  {t('snooze.snooze')}
                 </button>
               </div>
             </div>

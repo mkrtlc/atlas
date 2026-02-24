@@ -1,5 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_SHORTCUTS } from '@atlasmail/shared';
 import { useUIStore } from '../../stores/ui-store';
 import { useEmailStore } from '../../stores/email-store';
@@ -16,6 +17,7 @@ interface Command {
 }
 
 export function CommandPalette() {
+  const { t } = useTranslation();
   const { commandPaletteOpen, toggleCommandPalette } = useUIStore();
   const { openCompose, setActiveCategory } = useEmailStore();
   const [query, setQuery] = useState('');
@@ -23,14 +25,14 @@ export function CommandPalette() {
   // Build commands list — shortcuts + quick actions
   const allCommands: Command[] = useMemo(() => {
     const categoryActions: Command[] = [
-      { id: 'go_important', label: 'Go to important', keys: 'g i', action: () => setActiveCategory('important' as EmailCategory) },
-      { id: 'go_other', label: 'Go to other', keys: 'g o', action: () => setActiveCategory('other' as EmailCategory) },
-      { id: 'go_newsletters', label: 'Go to newsletters', keys: 'g n', action: () => setActiveCategory('newsletters' as EmailCategory) },
-      { id: 'go_notifications', label: 'Go to notifications', keys: 'g t', action: () => setActiveCategory('notifications' as EmailCategory) },
+      { id: 'go_important', label: t('commandPalette.goToImportant'), keys: 'g i', action: () => setActiveCategory('important' as EmailCategory) },
+      { id: 'go_other', label: t('commandPalette.goToOther'), keys: 'g o', action: () => setActiveCategory('other' as EmailCategory) },
+      { id: 'go_newsletters', label: t('commandPalette.goToNewsletters'), keys: 'g n', action: () => setActiveCategory('newsletters' as EmailCategory) },
+      { id: 'go_notifications', label: t('commandPalette.goToNotifications'), keys: 'g t', action: () => setActiveCategory('notifications' as EmailCategory) },
     ];
     const composeAction: Command = {
       id: 'compose_new',
-      label: 'Compose new email',
+      label: t('commandPalette.composeNewEmail'),
       keys: 'c',
       action: () => openCompose('new'),
     };
@@ -39,7 +41,7 @@ export function CommandPalette() {
       .map((s) => ({ id: s.id, label: s.label, description: s.description, keys: s.keys }));
 
     return [composeAction, ...categoryActions, ...shortcutCommands];
-  }, [openCompose, setActiveCategory]);
+  }, [openCompose, setActiveCategory, t]);
 
   const filteredCommands = useMemo(() => {
     if (!query.trim()) return allCommands;
@@ -70,7 +72,7 @@ export function CommandPalette() {
       <Dialog.Portal>
         <Dialog.Overlay className="command-palette-overlay" />
         <Dialog.Content className="command-palette-content" aria-describedby={undefined}>
-          <Dialog.Title className="sr-only">Command palette</Dialog.Title>
+          <Dialog.Title className="sr-only">{t('commandPalette.title')}</Dialog.Title>
 
           {/* Search input */}
           <div
@@ -86,7 +88,7 @@ export function CommandPalette() {
             <input
               className="command-palette-input"
               style={{ borderBottom: 'none', padding: 'var(--spacing-lg) 0' }}
-              placeholder="Type a command or search..."
+              placeholder={t('commandPalette.placeholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
@@ -100,7 +102,7 @@ export function CommandPalette() {
           </div>
 
           {/* Command list */}
-          <div className="command-palette-list" role="listbox" aria-label="Commands">
+          <div className="command-palette-list" role="listbox" aria-label={t('commandPalette.commands')}>
             {filteredCommands.length === 0 ? (
               <div
                 style={{
@@ -111,7 +113,7 @@ export function CommandPalette() {
                   fontFamily: 'var(--font-family)',
                 }}
               >
-                No commands found for &quot;{query}&quot;
+                {t('commandPalette.noResults', { query })}
               </div>
             ) : (
               filteredCommands.map((cmd) => (

@@ -175,7 +175,7 @@ function ToastItem({ toast }: ToastItemProps) {
             fontWeight: 'var(--font-weight-medium)' as React.CSSProperties['fontWeight'],
             fontFamily: 'var(--font-family)',
             cursor: 'pointer',
-            transition: 'background var(--transition-fast), color var(--transition-fast)',
+            transition: 'background var(--transition-normal), color var(--transition-normal)',
             lineHeight: 1,
           }}
           onMouseEnter={(e) => {
@@ -216,7 +216,7 @@ function ToastItem({ toast }: ToastItemProps) {
           background: 'transparent',
           color: 'var(--color-text-tertiary)',
           cursor: 'pointer',
-          transition: 'background var(--transition-fast), color var(--transition-fast)',
+          transition: 'background var(--transition-normal), color var(--transition-normal)',
           padding: 0,
         }}
         onMouseEnter={(e) => {

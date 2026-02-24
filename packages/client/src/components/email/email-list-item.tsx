@@ -1,78 +1,34 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Star, Reply, Archive, Trash2, Clock, Check } from 'lucide-react';
 import { Avatar } from '../ui/avatar';
-import { Tooltip } from '../ui/tooltip';
+import { IconButton } from '../ui/icon-button';
 import { LabelChip } from './label-chip';
+import { SnoozePopover } from './snooze-popover';
 import { getLabelById } from '../../lib/labels';
+import { useValueChangeAnimation, injectStarPop, injectNewEmailArrival } from '../../lib/animations';
 import { formatRelativeTime } from '@atlasmail/shared';
 import type { Thread } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
+
+// Inject keyframes once
+injectStarPop();
+injectNewEmailArrival();
 
 interface EmailListItemProps {
   thread: Thread;
   isSelected: boolean;
   isCursor: boolean;
   isMultiSelected: boolean;
+  /** When true, plays slide-in entrance animation (for newly arrived emails) */
+  isNew?: boolean;
   onClick: () => void;
   onStarClick?: (e: React.MouseEvent) => void;
   onCheckboxClick?: (e: React.MouseEvent) => void;
   onReplyClick?: () => void;
   onArchiveClick?: () => void;
   onTrashClick?: () => void;
-  onSnoozeClick?: () => void;
-}
-
-interface QuickActionButtonProps {
-  icon: typeof Reply;
-  label: string;
-  onClick: (e: React.MouseEvent) => void;
-  destructive?: boolean;
-}
-
-function QuickActionButton({ icon: Icon, label, onClick, destructive = false }: QuickActionButtonProps) {
-  return (
-    <Tooltip content={label} side="top">
-      <button
-        aria-label={label}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick(e);
-        }}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 28,
-          height: 28,
-          border: 'none',
-          borderRadius: 'var(--radius-md)',
-          background: 'transparent',
-          color: 'var(--color-text-tertiary)',
-          cursor: 'pointer',
-          flexShrink: 0,
-          transition: 'background var(--transition-fast), color var(--transition-fast), transform 80ms ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--color-surface-active)';
-          e.currentTarget.style.color = destructive
-            ? 'var(--color-error)'
-            : 'var(--color-text-primary)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--color-text-tertiary)';
-        }}
-        onMouseDown={(e) => {
-          e.currentTarget.style.transform = 'scale(0.92)';
-        }}
-        onMouseUp={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
-        <Icon size={14} />
-      </button>
-    </Tooltip>
-  );
+  onSnooze?: (threadId: string, snoozeUntil: Date) => void;
 }
 
 export function EmailListItem({
@@ -80,19 +36,22 @@ export function EmailListItem({
   isSelected,
   isCursor,
   isMultiSelected,
+  isNew = false,
   onClick,
   onStarClick,
   onCheckboxClick,
   onReplyClick,
   onArchiveClick,
   onTrashClick,
-  onSnoozeClick,
+  onSnooze,
 }: EmailListItemProps) {
+  const { t, i18n } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
+  const starAnimating = useValueChangeAnimation(thread.isStarred, true, 500);
 
   const isUnread = thread.unreadCount > 0;
-  const senderName = thread.emails?.[0]?.fromName || thread.emails?.[0]?.fromAddress || 'Unknown';
-  const senderEmail = thread.emails?.[0]?.fromAddress || '';
+  const senderName = (thread as any).senderName || (thread as any).senderEmail || thread.emails?.[0]?.fromName || thread.emails?.[0]?.fromAddress || 'Unknown';
+  const senderEmail = (thread as any).senderEmail || thread.emails?.[0]?.fromAddress || '';
 
   // Resolve label IDs to Label objects (skip system labels like INBOX)
   const threadLabels = (thread.labels ?? [])
@@ -104,12 +63,6 @@ export function EmailListItem({
   else if (isSelected) background = 'var(--color-surface-selected)';
   else if (isCursor) background = 'var(--color-surface-hover)';
   else if (isHovered) background = 'var(--color-surface-hover)';
-
-  // The gradient overlay needs to fade from transparent into the row's resolved bg color.
-  // We use the same CSS variable references so dark/light themes work automatically.
-  let gradientEndColor = 'var(--color-bg-primary)';
-  if (isMultiSelected || isSelected) gradientEndColor = 'var(--color-surface-selected)';
-  else if (isCursor || isHovered) gradientEndColor = 'var(--color-surface-hover)';
 
   // Show checkbox when hovering OR when this thread is multi-selected
   const showCheckbox = isHovered || isMultiSelected;
@@ -126,13 +79,13 @@ export function EmailListItem({
         alignItems: 'center',
         gap: 'var(--spacing-sm)',
         padding: 'var(--email-list-padding, 10px 16px)',
-        height: 'var(--email-list-item-height, 64px)',
+        height: 'var(--email-list-item-height, 84px)',
         background,
         cursor: 'pointer',
         borderBottom: '1px solid var(--color-border-secondary)',
+        animation: isNew ? 'atlasmail-new-email-enter 400ms ease both' : undefined,
         boxSizing: 'border-box',
-        transition: 'background var(--transition-fast)',
-        position: 'relative',
+        transition: 'background var(--transition-normal)',
         userSelect: 'none',
       }}
     >
@@ -153,7 +106,7 @@ export function EmailListItem({
               e.stopPropagation();
               onCheckboxClick?.(e);
             }}
-            aria-label={isMultiSelected ? 'Deselect conversation' : 'Select conversation'}
+            aria-label={isMultiSelected ? t('email.deselectConversation') : t('email.selectConversation')}
             aria-pressed={isMultiSelected}
             style={{
               width: 16,
@@ -169,7 +122,7 @@ export function EmailListItem({
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              transition: 'background var(--transition-fast), border-color var(--transition-fast)',
+              transition: 'background var(--transition-normal), border-color var(--transition-normal)',
             }}
             onMouseEnter={(e) => {
               if (!isMultiSelected) {
@@ -191,7 +144,7 @@ export function EmailListItem({
               height: 6,
               borderRadius: '50%',
               background: isUnread ? 'var(--color-unread-indicator)' : 'transparent',
-              transition: 'background var(--transition-fast)',
+              transition: 'background var(--transition-normal)',
             }}
             aria-hidden="true"
           />
@@ -212,7 +165,7 @@ export function EmailListItem({
           overflow: 'hidden',
         }}
       >
-        {/* Top row: sender + timestamp */}
+        {/* Top row: sender + timestamp/actions */}
         <div
           style={{
             display: 'flex',
@@ -249,37 +202,112 @@ export function EmailListItem({
               </span>
             )}
           </span>
-          <span
-            style={{
-              fontSize: 'var(--font-size-xs)',
-              color: isUnread ? 'var(--color-accent-primary)' : 'var(--color-text-tertiary)',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              // Fade out the timestamp when quick actions are visible
-              opacity: isHovered ? 0 : 1,
-              transition: 'opacity var(--transition-fast)',
-            }}
-            aria-hidden={isHovered}
-          >
-            {formatRelativeTime(thread.lastMessageAt)}
-          </span>
+
+          {/* Right side of top row: quick actions + timestamp stacked, swap visibility on hover */}
+          <div style={{ position: 'relative', flexShrink: 0, height: 28, display: 'flex', alignItems: 'center' }}>
+            {/* Timestamp — hidden on hover */}
+            <span
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                color: isUnread ? 'var(--color-accent-primary)' : 'var(--color-text-tertiary)',
+                whiteSpace: 'nowrap',
+                opacity: isHovered ? 0 : 1,
+                transition: 'opacity var(--transition-normal)',
+              }}
+            >
+              {formatRelativeTime(thread.lastMessageAt, i18n.language)}
+            </span>
+            {/* Quick actions — shown on hover, positioned on top of timestamp */}
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+                opacity: isHovered ? 1 : 0,
+                pointerEvents: isHovered ? 'auto' : 'none',
+                transition: 'opacity var(--transition-normal)',
+              }}
+            >
+              <IconButton
+                icon={<Reply size={14} />}
+                label={t('compose.reply')}
+                tooltipSide="top"
+                pressEffect
+                onClick={(e) => { e.stopPropagation(); onReplyClick?.(); }}
+              />
+              <IconButton
+                icon={<Archive size={14} />}
+                label={t('email.archive')}
+                tooltipSide="top"
+                pressEffect
+                onClick={(e) => { e.stopPropagation(); onArchiveClick?.(); }}
+              />
+              <IconButton
+                icon={<Trash2 size={14} />}
+                label={t('email.trash')}
+                tooltipSide="top"
+                destructive
+                pressEffect
+                onClick={(e) => { e.stopPropagation(); onTrashClick?.(); }}
+              />
+              <SnoozePopover
+                threadId={thread.id}
+                onSnooze={(threadId, snoozeUntil) => onSnooze?.(threadId, snoozeUntil)}
+              >
+                <IconButton
+                  icon={<Clock size={14} />}
+                  label={t('email.snooze')}
+                  tooltip={false}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </SnoozePopover>
+            </div>
+          </div>
         </div>
 
-        {/* Subject */}
-        <span
+        {/* Subject + labels */}
+        <div
           style={{
-            fontSize: 'var(--font-size-md)',
-            color: isUnread ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-            fontWeight: isUnread
-              ? ('var(--font-weight-medium)' as CSSProperties['fontWeight'])
-              : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-sm)',
             overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
           }}
         >
-          {thread.subject || '(no subject)'}
-        </span>
+          <span
+            style={{
+              fontSize: 'var(--font-size-md)',
+              color: isUnread ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              fontWeight: isUnread
+                ? ('var(--font-weight-medium)' as CSSProperties['fontWeight'])
+                : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            {thread.subject || t('common.noSubject')}
+          </span>
+          {threadLabels.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                flexShrink: 0,
+              }}
+            >
+              {threadLabels.slice(0, 2).map((label) => (
+                <LabelChip key={label.id} label={label} />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Snippet */}
         <span
@@ -293,30 +321,15 @@ export function EmailListItem({
         >
           {thread.snippet || ''}
         </span>
-
-        {/* Labels row — fixed height for consistent item sizing */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            height: 16,
-            overflow: 'hidden',
-          }}
-        >
-          {threadLabels.map((label) => (
-            <LabelChip key={label.id} label={label} />
-          ))}
-        </div>
       </div>
 
-      {/* Star — hidden when quick actions are showing */}
+      {/* Star — always visible on the right edge */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           onStarClick?.(e);
         }}
-        aria-label={thread.isStarred ? 'Unstar conversation' : 'Star conversation'}
+        aria-label={thread.isStarred ? t('email.unstar') : t('email.star')}
         style={{
           background: 'transparent',
           border: 'none',
@@ -328,70 +341,28 @@ export function EmailListItem({
           justifyContent: 'center',
           flexShrink: 0,
           color: thread.isStarred ? 'var(--color-star)' : 'var(--color-text-tertiary)',
-          transition: 'color var(--transition-fast), opacity var(--transition-fast)',
-          opacity: isHovered ? 0 : 1,
-          pointerEvents: isHovered ? 'none' : 'auto',
+          opacity: thread.isStarred ? 1 : isHovered ? 0.6 : 0,
+          transition: 'color var(--transition-normal), opacity var(--transition-normal)',
+          animation: starAnimating ? 'atlasmail-star-pop 500ms ease' : undefined,
         }}
-        tabIndex={isHovered ? -1 : 0}
         onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '1';
           if (!thread.isStarred) {
             e.currentTarget.style.color = 'var(--color-star)';
           }
         }}
         onMouseLeave={(e) => {
           if (!thread.isStarred) {
+            e.currentTarget.style.opacity = isHovered ? '0.6' : '0';
             e.currentTarget.style.color = 'var(--color-text-tertiary)';
           }
         }}
       >
         <Star
-          size={16}
+          size={15}
           fill={thread.isStarred ? 'var(--color-star)' : 'none'}
         />
       </button>
-
-      {/* Quick actions overlay — slides in from the right on hover */}
-      <div
-        aria-hidden={!isHovered}
-        style={{
-          position: 'absolute',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2px',
-          paddingRight: 'var(--spacing-sm)',
-          // Gradient fades text under the buttons rather than hard-clipping it
-          background: `linear-gradient(to right, transparent, ${gradientEndColor} 36px)`,
-          opacity: isHovered ? 1 : 0,
-          transform: isHovered ? 'translateX(0)' : 'translateX(6px)',
-          transition: 'opacity var(--transition-fast), transform var(--transition-fast)',
-          pointerEvents: isHovered ? 'auto' : 'none',
-        }}
-      >
-        <QuickActionButton
-          icon={Reply}
-          label="Reply"
-          onClick={() => onReplyClick?.()}
-        />
-        <QuickActionButton
-          icon={Archive}
-          label="Archive"
-          onClick={() => onArchiveClick?.()}
-        />
-        <QuickActionButton
-          icon={Trash2}
-          label="Trash"
-          onClick={() => onTrashClick?.()}
-          destructive
-        />
-        <QuickActionButton
-          icon={Clock}
-          label="Snooze"
-          onClick={() => onSnoozeClick?.()}
-        />
-      </div>
     </div>
   );
 }

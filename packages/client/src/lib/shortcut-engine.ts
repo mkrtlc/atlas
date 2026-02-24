@@ -13,13 +13,24 @@ export class ShortcutEngine {
   private sequenceBuffer: string[] = [];
   private sequenceTimeout: ReturnType<typeof setTimeout> | null = null;
   private enabled: boolean = true;
+  private attached: boolean = false;
 
-  constructor() {
+  /** Add the global keydown listener. Safe to call multiple times. */
+  attach() {
+    if (this.attached) return;
     document.addEventListener('keydown', this.handleKeyDown);
+    this.attached = true;
   }
 
-  destroy() {
+  /** Remove the global keydown listener. */
+  detach() {
     document.removeEventListener('keydown', this.handleKeyDown);
+    this.attached = false;
+  }
+
+  /** @deprecated use attach/detach */
+  destroy() {
+    this.detach();
   }
 
   setContext(context: ShortcutContext) {
@@ -32,9 +43,7 @@ export class ShortcutEngine {
   }
 
   register(id: string, keys: string, handler: ShortcutHandler, context: ShortcutContext = 'global') {
-    const existing = this.bindings.get(id) || [];
-    existing.push({ keys, handler, context });
-    this.bindings.set(id, existing);
+    this.bindings.set(id, [{ keys, handler, context }]);
   }
 
   unregister(id: string) {

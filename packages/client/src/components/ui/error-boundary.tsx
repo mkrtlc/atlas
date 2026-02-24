@@ -88,7 +88,7 @@ function ErrorDisplay({ message, primaryAction, secondaryAction }: ErrorDisplayP
     fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
     fontFamily: 'var(--font-family)',
     cursor: 'pointer',
-    transition: 'background var(--transition-fast)',
+    transition: 'background var(--transition-normal)',
     whiteSpace: 'nowrap',
   };
 
@@ -106,7 +106,7 @@ function ErrorDisplay({ message, primaryAction, secondaryAction }: ErrorDisplayP
     fontFamily: 'var(--font-family)',
     cursor: 'pointer',
     textDecoration: 'none',
-    transition: 'background var(--transition-fast), color var(--transition-fast)',
+    transition: 'background var(--transition-normal), color var(--transition-normal)',
     whiteSpace: 'nowrap',
   };
 

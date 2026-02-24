@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
-import { ChevronDown, ChevronUp, Paperclip } from 'lucide-react';
+import { ChevronDown, ChevronUp, Paperclip, FileText, Image as ImageIcon, Download, File } from 'lucide-react';
 import { Avatar } from '../ui/avatar';
+import { TrackingStats } from './tracking-stats';
 import { formatFullDate, formatRelativeTime } from '@atlasmail/shared';
 import { formatBytes } from '../../lib/format';
-import type { Email } from '@atlasmail/shared';
+import { injectThreadExpand } from '../../lib/animations';
+import { useSettingsStore } from '../../stores/settings-store';
+import { config } from '../../config/env';
+import type { Email, Attachment, EmailTrackingRecord, TrackingEvent } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
+
+injectThreadExpand();
 
 // Configure DOMPurify: allow safe HTML, strip dangerous elements
 // USE_PROFILES: { html: true } already strips all event handler attributes
@@ -101,7 +108,6 @@ const textBodyStyle: CSSProperties = {
 
 const emailHtmlBodyStyle: CSSProperties = {
   fontSize: 'var(--font-size-md)',
-  color: 'var(--color-text-primary)',
   lineHeight: 'var(--line-height-normal)',
   fontFamily: 'var(--font-family)',
   overflowWrap: 'break-word',
@@ -124,8 +130,187 @@ const quotedToggleStyle: CSSProperties = {
   letterSpacing: '1px',
 };
 
+// ---------------------------------------------------------------------------
+// Attachment helpers
+// ---------------------------------------------------------------------------
+
+function getAttachmentIcon(mimeType: string): typeof File {
+  if (mimeType.startsWith('image/')) return ImageIcon;
+  if (mimeType === 'application/pdf') return FileText;
+  if (
+    mimeType === 'application/msword' ||
+    mimeType.includes('wordprocessingml') ||
+    mimeType.includes('spreadsheetml') ||
+    mimeType.includes('presentationml') ||
+    mimeType.includes('opendocument')
+  ) {
+    return FileText;
+  }
+  return File;
+}
+
+function getAttachmentUrl(attachmentId: string): string {
+  const token = localStorage.getItem('atlasmail_token');
+  return `${config.apiUrl}/threads/attachments/${attachmentId}?token=${encodeURIComponent(token || '')}`;
+}
+
+function AttachmentCard({ attachment }: { attachment: Attachment }) {
+  const { t } = useTranslation();
+  const isImage = attachment.mimeType.startsWith('image/');
+  const Icon = getAttachmentIcon(attachment.mimeType);
+  const downloadUrl = getAttachmentUrl(attachment.id);
+  const [imgError, setImgError] = useState(false);
+
+  const handleDownload = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Open the attachment URL — the server's Content-Disposition header controls
+    // whether the browser previews (inline) or downloads (attachment) the file.
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: isImage ? 140 : 'auto',
+        maxWidth: isImage ? 140 : 220,
+        background: 'var(--color-bg-elevated)',
+        border: '1px solid var(--color-border-primary)',
+        borderRadius: 'var(--radius-md)',
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}
+    >
+      {/* Image thumbnail — real preview for images */}
+      {isImage ? (
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            width: '100%',
+            height: 80,
+            background: 'var(--color-bg-tertiary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          {!imgError ? (
+            <img
+              src={downloadUrl}
+              alt={attachment.filename}
+              onError={() => setImgError(true)}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          ) : (
+            <ImageIcon
+              size={28}
+              style={{ color: 'var(--color-text-tertiary)', opacity: 0.5 }}
+            />
+          )}
+        </a>
+      ) : null}
+
+      {/* File info row */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-sm)',
+          padding: 'var(--spacing-sm) var(--spacing-sm)',
+        }}
+      >
+        <Icon
+          size={15}
+          style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-primary)',
+              fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={attachment.filename}
+          >
+            {attachment.filename}
+          </div>
+          <div
+            style={{
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-tertiary)',
+            }}
+          >
+            {formatBytes(attachment.size || 0)}
+          </div>
+        </div>
+        <a
+          href={downloadUrl}
+          aria-label={t('email.download', { filename: attachment.filename })}
+          onClick={handleDownload}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 24,
+            height: 24,
+            borderRadius: 'var(--radius-sm)',
+            color: 'var(--color-text-tertiary)',
+            flexShrink: 0,
+            textDecoration: 'none',
+            transition: 'color var(--transition-normal), background var(--transition-normal)',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text-primary)';
+            (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-surface-hover)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.color = 'var(--color-text-tertiary)';
+            (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+          }}
+        >
+          <Download size={13} />
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Email body renderer
+// ---------------------------------------------------------------------------
+
 function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyText: string | null }) {
+  const { t } = useTranslation();
   const [showQuoted, setShowQuoted] = useState(false);
+  const theme = useSettingsStore((s) => s.theme);
+
+  // Detect effective dark mode: explicit dark setting, or system preference
+  const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+
+  // External HTML emails assume a white background. In dark mode, force a
+  // light container so sender-authored colors remain legible (same approach
+  // as Gmail, Outlook, and Apple Mail).
+  const htmlWrapperStyle: CSSProperties = isDark
+    ? {
+        background: '#ffffff',
+        color: '#1a1a1a',
+        borderRadius: 'var(--radius-md)',
+        padding: 'var(--spacing-md)',
+        margin: 'var(--spacing-xs) 0',
+      }
+    : {};
 
   // Prefer HTML rendering when available
   if (bodyHtml) {
@@ -134,23 +319,27 @@ function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyTe
 
     return (
       <div>
-        <div
-          className="email-html-body"
-          style={emailHtmlBodyStyle}
-          dangerouslySetInnerHTML={{ __html: main }}
-        />
+        <div style={htmlWrapperStyle}>
+          <div
+            className="email-html-body"
+            style={emailHtmlBodyStyle}
+            dangerouslySetInnerHTML={{ __html: main }}
+          />
+        </div>
         {quoted && (
           <>
             <button onClick={() => setShowQuoted(!showQuoted)} style={quotedToggleStyle}>
-              {showQuoted ? 'Hide quoted text' : '\u2026'}
+              {showQuoted ? t('email.hideQuotedText') : '\u2026'}
             </button>
-            {showQuoted && (
-              <div
-                className="email-html-body"
-                style={{ ...emailHtmlBodyStyle, opacity: 0.7 }}
-                dangerouslySetInnerHTML={{ __html: quoted }}
-              />
-            )}
+            <div style={htmlWrapperStyle}>
+              {showQuoted && (
+                <div
+                  className="email-html-body"
+                  style={{ ...emailHtmlBodyStyle, opacity: 0.7 }}
+                  dangerouslySetInnerHTML={{ __html: quoted }}
+                />
+              )}
+            </div>
           </>
         )}
       </div>
@@ -166,7 +355,7 @@ function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyTe
         {quoted && (
           <>
             <button onClick={() => setShowQuoted(!showQuoted)} style={quotedToggleStyle}>
-              {showQuoted ? 'Hide quoted text' : '\u2026'}
+              {showQuoted ? t('email.hideQuotedText') : '\u2026'}
             </button>
             {showQuoted && (
               <pre style={{ ...textBodyStyle, opacity: 0.7 }}>{quoted}</pre>
@@ -179,7 +368,7 @@ function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyTe
 
   return (
     <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-md)', margin: 0 }}>
-      (no content)
+      {t('common.noContent')}
     </p>
   );
 }
@@ -187,36 +376,79 @@ function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyTe
 interface EmailMessageProps {
   email: Email;
   isLatest?: boolean;
+  /** When provided, expand/collapse is controlled externally by the parent */
+  isExpanded?: boolean;
+  /** Called when the user clicks the header to toggle expand/collapse */
+  onToggleExpand?: () => void;
+  /** Tracking record for this email (only for sent emails with tracking) */
+  trackingRecord?: EmailTrackingRecord | null;
+  /** All tracking events for the thread */
+  trackingEvents?: TrackingEvent[];
 }
 
-export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
-  const [expanded, setExpanded] = useState(isLatest);
+export function EmailMessage({
+  email,
+  isLatest = false,
+  isExpanded,
+  onToggleExpand,
+  trackingRecord,
+  trackingEvents: events = [],
+}: EmailMessageProps) {
+  const { t } = useTranslation();
+  const animationsEnabled = useSettingsStore((s) => s.sendAnimation);
+  // Fall back to internal state when the parent doesn't control expand state
+  const [internalExpanded, setInternalExpanded] = useState(isLatest);
+  const expanded = isExpanded !== undefined ? isExpanded : internalExpanded;
+  const toggleExpanded = onToggleExpand ?? (() => setInternalExpanded((v) => !v));
+
+  // Track user-initiated expansions to animate (skip initial render)
+  const hasRendered = useRef(false);
+  const [shouldAnimateExpand, setShouldAnimateExpand] = useState(false);
+  useEffect(() => {
+    if (!hasRendered.current) {
+      hasRendered.current = true;
+      return;
+    }
+    if (expanded && animationsEnabled) {
+      setShouldAnimateExpand(true);
+      const timer = setTimeout(() => setShouldAnimateExpand(false), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [expanded, animationsEnabled]);
 
   const senderName = email.fromName || email.fromAddress;
-  const recipientList = email.toAddresses.map((a) => a.name || a.address).join(', ');
-  const ccList = email.ccAddresses.map((a) => a.name || a.address).join(', ');
+  const emailAttachments = email.attachments ?? [];
+  const toAddresses = email.toAddresses ?? [];
+  const ccAddresses = email.ccAddresses ?? [];
+  const recipientList = toAddresses.map((a) => a.name || a.address).join(', ');
+  const ccList = ccAddresses.map((a) => a.name || a.address).join(', ');
 
   return (
     <div
       style={{
         borderBottom: '1px solid var(--color-border-primary)',
         background: 'var(--color-bg-primary)',
+        // Smooth height transition when expanding/collapsing
+        transition: 'background var(--transition-normal)',
       }}
     >
       {/* Message header — clickable to expand/collapse */}
       <div
-        onClick={() => setExpanded(!expanded)}
+        onClick={toggleExpanded}
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
-        onKeyDown={(e) => e.key === 'Enter' && setExpanded(!expanded)}
+        onKeyDown={(e) => e.key === 'Enter' && toggleExpanded()}
         style={{
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: expanded ? 'flex-start' : 'center',
           gap: 'var(--spacing-md)',
-          padding: 'var(--spacing-lg)',
+          // Taller row when collapsed for comfortable readability, normal padding when expanded
+          padding: expanded ? 'var(--spacing-lg)' : 'var(--spacing-sm) var(--spacing-lg)',
+          minHeight: expanded ? undefined : 52,
           cursor: 'pointer',
-          transition: 'background var(--transition-fast)',
+          transition: 'background var(--transition-normal), min-height var(--transition-normal), padding var(--transition-normal)',
+          overflow: 'hidden',
         }}
         onMouseEnter={(e) => {
           if (!expanded) e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -225,7 +457,7 @@ export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
           e.currentTarget.style.background = 'transparent';
         }}
       >
-        <Avatar name={email.fromName} email={email.fromAddress} size={36} />
+        <Avatar name={email.fromName} email={email.fromAddress} size={expanded ? 36 : 24} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
@@ -234,7 +466,7 @@ export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 'var(--spacing-sm)',
-              flexWrap: 'wrap',
+              flexWrap: expanded ? 'wrap' : 'nowrap',
             }}
           >
             <span
@@ -242,12 +474,16 @@ export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
                 fontSize: 'var(--font-size-md)',
                 fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
                 color: 'var(--color-text-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               {senderName}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-              {email.attachments.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', flexShrink: 0 }}>
+              {emailAttachments.length > 0 && (
                 <Paperclip size={13} style={{ color: 'var(--color-text-tertiary)' }} />
               )}
               <span
@@ -279,9 +515,10 @@ export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
               {ccList && <span style={{ marginLeft: 'var(--spacing-sm)' }}>CC: {ccList}</span>}
             </div>
           ) : (
+            /* Collapsed snippet — single line, truncated */
             <div
               style={{
-                marginTop: '2px',
+                marginTop: 1,
                 fontSize: 'var(--font-size-sm)',
                 color: 'var(--color-text-tertiary)',
                 overflow: 'hidden',
@@ -295,9 +532,13 @@ export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
         </div>
       </div>
 
-      {/* Expanded body */}
+      {/* Expanded body — rendered only when open */}
       {expanded && (
-        <div style={{ padding: '0 var(--spacing-lg) var(--spacing-lg)' }}>
+        <div style={{
+          padding: '0 var(--spacing-lg) var(--spacing-lg)',
+          animation: shouldAnimateExpand ? 'atlasmail-thread-expand 300ms ease both' : undefined,
+          overflow: 'hidden',
+        }}>
           {/* Subtle separator between header section and body */}
           <div
             aria-hidden="true"
@@ -310,56 +551,49 @@ export function EmailMessage({ email, isLatest = false }: EmailMessageProps) {
           <div style={{ marginLeft: `calc(36px + var(--spacing-md))` }}>
             <SafeEmailBody bodyHtml={email.bodyHtml} bodyText={email.bodyText} />
 
+            {/* Read receipt / link tracking stats */}
+            {trackingRecord && (trackingRecord.openCount > 0 || trackingRecord.clickCount > 0) && (
+              <TrackingStats record={trackingRecord} events={events} />
+            )}
+
             {/* Attachments */}
-            {email.attachments.filter((a) => !a.isInline).length > 0 && (
+            {emailAttachments.filter((a) => !a.isInline).length > 0 && (
               <div
                 style={{
                   marginTop: 'var(--spacing-lg)',
                   paddingTop: 'var(--spacing-md)',
                   borderTop: '1px solid var(--color-border-primary)',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 'var(--spacing-sm)',
                 }}
               >
-                {email.attachments
-                  .filter((a) => !a.isInline)
-                  .map((attachment) => (
-                    <div
-                      key={attachment.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--spacing-sm)',
-                        padding: 'var(--spacing-sm) var(--spacing-md)',
-                        background: 'var(--color-bg-elevated)',
-                        border: '1px solid var(--color-border-primary)',
-                        borderRadius: 'var(--radius-md)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Paperclip size={13} style={{ color: 'var(--color-text-tertiary)' }} />
-                      <div>
-                        <div
-                          style={{
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-primary)',
-                            fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-                          }}
-                        >
-                          {attachment.filename}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 'var(--font-size-xs)',
-                            color: 'var(--color-text-tertiary)',
-                          }}
-                        >
-                          {formatBytes(attachment.size || 0)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--spacing-xs)',
+                    marginBottom: 'var(--spacing-sm)',
+                    fontSize: 'var(--font-size-xs)',
+                    color: 'var(--color-text-tertiary)',
+                    fontFamily: 'var(--font-family)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  <Paperclip size={11} />
+                  {t('common.attachment', { count: emailAttachments.filter((a) => !a.isInline).length })}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 'var(--spacing-sm)',
+                  }}
+                >
+                  {emailAttachments
+                    .filter((a) => !a.isInline)
+                    .map((attachment) => (
+                      <AttachmentCard key={attachment.id} attachment={attachment} />
+                    ))}
+                </div>
               </div>
             )}
           </div>

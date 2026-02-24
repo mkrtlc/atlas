@@ -6,10 +6,15 @@ import { useSettingsStore } from '../stores/settings-store';
 const ShortcutCtx = createContext<ShortcutEngine | null>(null);
 
 export function ShortcutProvider({ children }: { children: ReactNode }) {
-  const engineRef = useRef<ShortcutEngine>(new ShortcutEngine());
+  const engineRef = useRef<ShortcutEngine | null>(null);
+  if (!engineRef.current) {
+    engineRef.current = new ShortcutEngine();
+  }
 
   useEffect(() => {
-    return () => engineRef.current.destroy();
+    const engine = engineRef.current!;
+    engine.attach();
+    return () => engine.detach();
   }, []);
 
   return <ShortcutCtx.Provider value={engineRef.current}>{children}</ShortcutCtx.Provider>;

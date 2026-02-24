@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import { createOAuth2Client } from '../config/google';
-import { decrypt } from '../utils/crypto';
+import { decrypt, encrypt } from '../utils/crypto';
 import { db } from '../config/database';
 import { accounts } from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -13,15 +13,17 @@ export async function getGmailClient(accountId: string) {
   oauth2Client.setCredentials({
     access_token: decrypt(account.accessToken),
     refresh_token: decrypt(account.refreshToken),
-    expiry_date: account.tokenExpiresAt.getTime(),
+    expiry_date: new Date(account.tokenExpiresAt).getTime(),
   });
 
   oauth2Client.on('tokens', async (tokens) => {
     if (tokens.access_token) {
+      // Encrypt the refreshed token before persisting — must be consistent with
+      // how auth.service stores tokens on initial OAuth.
       await db.update(accounts).set({
-        accessToken: tokens.access_token,
-        tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600000),
-        updatedAt: new Date(),
+        accessToken: encrypt(tokens.access_token),
+        tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600000).toISOString(),
+        updatedAt: new Date().toISOString(),
       }).where(eq(accounts.id, accountId));
     }
   });
@@ -33,7 +35,10 @@ export async function listMessageIds(accountId: string, query?: string, pageToke
   const gmail = await getGmailClient(accountId);
   const response = await gmail.users.messages.list({
     userId: 'me',
-    q: query || 'in:inbox',
+    // When query is omitted the Gmail API returns all messages (no filter).
+    // Only fall back to 'in:inbox' when a non-empty query is explicitly supplied
+    // to avoid restricting full-sync fetches to just the inbox.
+    q: query || undefined,
     maxResults,
     pageToken,
   });
@@ -55,12 +60,14 @@ export async function getMessage(accountId: string, messageId: string) {
 
 export async function batchGetMessages(accountId: string, messageIds: string[]) {
   const results = [];
-  const batchSize = 50;
-  for (let i = 0; i < messageIds.length; i += batchSize) {
-    const batch = messageIds.slice(i, i + batchSize);
-    const messages = await Promise.all(
-      batch.map((id) => getMessage(accountId, id)),
-    );
+  // Fetch in small concurrent chunks (5 at a time) to stay well within Gmail's
+  // 250 quota-units/second limit while still benefiting from parallelism.
+  // Each getMessage call costs 5 units → 5 × 5 = 25 units per tick, leaving
+  // plenty of headroom when multiple accounts sync concurrently.
+  const CONCURRENCY = 5;
+  for (let i = 0; i < messageIds.length; i += CONCURRENCY) {
+    const chunk = messageIds.slice(i, i + CONCURRENCY);
+    const messages = await Promise.all(chunk.map((id) => getMessage(accountId, id)));
     results.push(...messages);
   }
   return results;
@@ -99,5 +106,21 @@ export async function sendMessage(accountId: string, raw: string) {
     userId: 'me',
     requestBody: { raw },
   });
+  return response.data;
+}
+
+export async function getAttachment(accountId: string, messageId: string, attachmentId: string) {
+  const gmail = await getGmailClient(accountId);
+  const response = await gmail.users.messages.attachments.get({
+    userId: 'me',
+    messageId,
+    id: attachmentId,
+  });
+  return response.data; // { size, data (base64url) }
+}
+
+export async function getProfile(accountId: string) {
+  const gmail = await getGmailClient(accountId);
+  const response = await gmail.users.getProfile({ userId: 'me' });
   return response.data;
 }

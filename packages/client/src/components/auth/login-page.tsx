@@ -1,4 +1,5 @@
 import { Mail } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { config } from '../../config/env';
 import type { CSSProperties } from 'react';
 
@@ -13,7 +14,6 @@ function buildGoogleOAuthUrl(): string {
       'openid',
       'email',
       'profile',
-      'https://www.googleapis.com/auth/gmail.readonly',
       'https://www.googleapis.com/auth/gmail.modify',
     ].join(' '),
     access_type: 'offline',
@@ -23,6 +23,8 @@ function buildGoogleOAuthUrl(): string {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
+
   function handleGoogleSignIn() {
     window.location.href = buildGoogleOAuthUrl();
   }
@@ -80,7 +82,7 @@ export function LoginPage() {
                 letterSpacing: '-0.02em',
               }}
             >
-              AtlasMail
+              {t('auth.appName')}
             </h1>
             <p
               style={{
@@ -89,7 +91,7 @@ export function LoginPage() {
                 color: 'var(--color-text-tertiary)',
               }}
             >
-              Your inbox, reimagined
+              {t('auth.tagline')}
             </p>
           </div>
         </div>
@@ -113,13 +115,13 @@ export function LoginPage() {
               textAlign: 'center',
             }}
           >
-            Sign in to continue
+            {t('auth.signInToContinue')}
           </p>
 
           {/* Google sign in button */}
           <button
             onClick={handleGoogleSignIn}
-            aria-label="Sign in with Google"
+            aria-label={t('auth.signInWithGoogle')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -135,7 +137,7 @@ export function LoginPage() {
               fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
               fontFamily: 'var(--font-family)',
               cursor: 'pointer',
-              transition: 'background var(--transition-fast), border-color var(--transition-fast)',
+              transition: 'background var(--transition-normal), border-color var(--transition-normal)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -172,7 +174,7 @@ export function LoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            Sign in with Google
+            {t('auth.signInWithGoogle')}
           </button>
         </div>
 
@@ -186,7 +188,7 @@ export function LoginPage() {
             lineHeight: 'var(--line-height-normal)',
           }}
         >
-          By signing in you agree to allow AtlasMail to read and manage your email.
+          {t('auth.consentNotice')}
         </p>
       </div>
     </div>

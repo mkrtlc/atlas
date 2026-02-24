@@ -24,6 +24,7 @@ export interface Email {
   receivedAt: string | null;
   sizeEstimate: number | null;
   attachments: Attachment[];
+  listUnsubscribe: string | null;
   createdAt: string;
   updatedAt: string;
 }

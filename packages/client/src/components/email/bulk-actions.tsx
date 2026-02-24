@@ -1,5 +1,8 @@
-import { Archive, Trash2, Star, Mail, MailOpen, X, Check, Minus } from 'lucide-react';
+import { useState, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Archive, Trash2, Star, Mail, MailOpen, Check, Minus } from 'lucide-react';
 import { Tooltip } from '../ui/tooltip';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 
 interface BulkActionsProps {
   selectedCount: number;
@@ -30,15 +33,15 @@ function BulkActionButton({ icon: Icon, label, onClick, destructive = false }: B
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: 32,
-          height: 32,
+          width: 28,
+          height: 28,
           border: 'none',
           borderRadius: 'var(--radius-md)',
           background: 'transparent',
           color: destructive ? 'var(--color-text-tertiary)' : 'var(--color-text-secondary)',
           cursor: 'pointer',
           flexShrink: 0,
-          transition: 'background var(--transition-fast), color var(--transition-fast)',
+          transition: 'background var(--transition-normal), color var(--transition-normal)',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'var(--color-surface-hover)';
@@ -70,29 +73,18 @@ export function BulkActions({
   onMarkUnread,
   onClearSelection,
 }: BulkActionsProps) {
+  const { t } = useTranslation();
   const allSelected = selectedCount === totalCount && totalCount > 0;
   const isIndeterminate = selectedCount > 0 && selectedCount < totalCount;
+  const [confirmTrash, setConfirmTrash] = useState(false);
 
   return (
-    <div
-      role="toolbar"
-      aria-label="Bulk actions"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--spacing-xs)',
-        padding: '0 var(--spacing-md)',
-        height: 40,
-        background: 'var(--color-bg-secondary)',
-        borderBottom: '1px solid var(--color-border-primary)',
-        flexShrink: 0,
-      }}
-    >
+    <>
       {/* Select all checkbox */}
-      <Tooltip content={allSelected ? 'Deselect all' : 'Select all'} side="bottom">
+      <Tooltip content={allSelected ? t('bulk.deselectAll') : t('bulk.selectAll')} side="bottom">
         <button
           onClick={onSelectAll}
-          aria-label={allSelected ? 'Deselect all conversations' : 'Select all conversations'}
+          aria-label={allSelected ? t('bulk.deselectAllConversations') : t('bulk.selectAllConversations')}
           aria-pressed={allSelected}
           style={{
             width: 16,
@@ -110,8 +102,7 @@ export function BulkActions({
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            transition: 'background var(--transition-fast), border-color var(--transition-fast)',
-            marginRight: 'var(--spacing-xs)',
+            transition: 'background var(--transition-normal), border-color var(--transition-normal)',
           }}
           onMouseEnter={(e) => {
             if (!allSelected && !isIndeterminate) {
@@ -133,14 +124,13 @@ export function BulkActions({
       <span
         style={{
           fontSize: 'var(--font-size-sm)',
-          fontWeight: 'var(--font-weight-medium)' as React.CSSProperties['fontWeight'],
-          color: 'var(--color-accent-primary)',
+          fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+          color: 'var(--color-text-primary)',
           whiteSpace: 'nowrap',
-          marginRight: 'var(--spacing-xs)',
           fontFamily: 'var(--font-family)',
         }}
       >
-        {selectedCount} selected
+        {t('common.selected', { count: selectedCount })}
       </span>
 
       {/* Divider */}
@@ -151,49 +141,23 @@ export function BulkActions({
           height: 18,
           background: 'var(--color-border-primary)',
           flexShrink: 0,
-          marginRight: 'var(--spacing-xs)',
         }}
       />
 
-      <BulkActionButton icon={Archive} label="Archive selected" onClick={onArchive} />
-      <BulkActionButton icon={Trash2} label="Trash selected" onClick={onTrash} destructive />
-      <BulkActionButton icon={Star} label="Star selected" onClick={onStar} />
-      <BulkActionButton icon={Mail} label="Mark as unread" onClick={onMarkUnread} />
-      <BulkActionButton icon={MailOpen} label="Mark as read" onClick={onMarkRead} />
+      <BulkActionButton icon={Archive} label={t('bulk.archiveSelected')} onClick={onArchive} />
+      <BulkActionButton icon={Trash2} label={t('bulk.trashSelected')} onClick={() => setConfirmTrash(true)} destructive />
+      <BulkActionButton icon={Star} label={t('bulk.starSelected')} onClick={onStar} />
+      <BulkActionButton icon={Mail} label={t('bulk.markAsUnread')} onClick={onMarkUnread} />
+      <BulkActionButton icon={MailOpen} label={t('bulk.markAsRead')} onClick={onMarkRead} />
 
-      {/* Spacer pushes clear button to the far right */}
-      <div style={{ flex: 1 }} />
-
-      <Tooltip content="Clear selection" side="bottom">
-        <button
-          onClick={onClearSelection}
-          aria-label="Clear selection"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 28,
-            height: 28,
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            background: 'transparent',
-            color: 'var(--color-text-tertiary)',
-            cursor: 'pointer',
-            flexShrink: 0,
-            transition: 'background var(--transition-fast), color var(--transition-fast)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--color-surface-hover)';
-            e.currentTarget.style.color = 'var(--color-text-primary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--color-text-tertiary)';
-          }}
-        >
-          <X size={16} />
-        </button>
-      </Tooltip>
-    </div>
+      <ConfirmDialog
+        open={confirmTrash}
+        onOpenChange={setConfirmTrash}
+        title={t('bulk.trashConfirm', { count: selectedCount })}
+        description={t('bulk.trashDescription')}
+        confirmLabel={t('bulk.moveToTrash')}
+        onConfirm={onTrash}
+      />
+    </>
   );
 }

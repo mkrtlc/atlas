@@ -1,8 +1,11 @@
 export const queryKeys = {
   threads: {
     all: ['threads'] as const,
+    counts: ['threads', 'counts'] as const,
     list: (category?: string) => ['threads', 'list', category] as const,
     detail: (id: string) => ['threads', 'detail', id] as const,
+    mailbox: (mailbox: string, category?: string) =>
+      ['threads', 'mailbox', mailbox, category] as const,
   },
   search: {
     all: ['search'] as const,
@@ -13,5 +16,9 @@ export const queryKeys = {
   },
   account: {
     all: ['account'] as const,
+  },
+  tracking: {
+    all: ['tracking'] as const,
+    thread: (threadId: string) => ['tracking', 'thread', threadId] as const,
   },
 };

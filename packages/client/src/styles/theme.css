@@ -1,35 +1,37 @@
 :root,
 [data-theme="light"] {
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f9fafb;
-  --color-bg-tertiary: #f3f4f6;
+  --color-bg-secondary: #eef0f4;
+  --color-bg-tertiary: #e6e9ee;
   --color-bg-elevated: #ffffff;
-  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+  --color-bg-overlay: rgba(0, 0, 0, 0.4);
   --color-surface-primary: #ffffff;
-  --color-surface-hover: #f9fafb;
-  --color-surface-active: #f3f4f6;
-  --color-surface-selected: #eff6ff;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-tertiary: #9ca3af;
+  --color-surface-hover: #e4e7ec;
+  --color-surface-active: #daddE4;
+  --color-surface-selected: #cdd8e4;
+  --color-text-primary: #1a1d23;
+  --color-text-secondary: #4a5264;
+  --color-text-tertiary: #7a8494;
   --color-text-inverse: #ffffff;
-  --color-text-link: #2563eb;
-  --color-border-primary: #e5e7eb;
-  --color-border-secondary: #f3f4f6;
-  --color-border-focus: #2563eb;
-  --color-accent-primary: #2563eb;
-  --color-accent-primary-hover: #1d4ed8;
-  --color-accent-primary-active: #1e40af;
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
-  --color-unread-indicator: #2563eb;
-  --color-star: #eab308;
-  --color-category-important: #2563eb;
-  --color-category-other: #6b7280;
-  --color-category-newsletters: #7c3aed;
-  --color-category-notifications: #ea580c;
+  --color-text-link: #5a7fa0;
+  --color-border-primary: #d0d5dd;
+  --color-border-secondary: #e2e5ea;
+  --color-border-focus: #7a9ab8;
+  --color-accent-primary: #5a7fa0;
+  --color-accent-primary-hover: #4d6e8c;
+  --color-accent-primary-active: #3f5c78;
+  --color-accent-subtle: color-mix(in srgb, #5a7fa0 10%, transparent);
+  --color-accent-subtle-hover: color-mix(in srgb, #5a7fa0 16%, transparent);
+  --color-success: #3a9e7e;
+  --color-warning: #c4880d;
+  --color-error: #c44040;
+  --color-info: #5a7fa0;
+  --color-unread-indicator: #5a7fa0;
+  --color-star: #d4a017;
+  --color-category-important: #5a7fa0;
+  --color-category-other: #7a8495;
+  --color-category-newsletters: #8b6cc4;
+  --color-category-notifications: #c47a3a;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
@@ -67,36 +69,38 @@
 }
 
 [data-theme="dark"] {
-  --color-bg-primary: #0f0f0f;
-  --color-bg-secondary: #171717;
-  --color-bg-tertiary: #1f1f1f;
-  --color-bg-elevated: #262626;
-  --color-bg-overlay: rgba(0, 0, 0, 0.7);
-  --color-surface-primary: #171717;
-  --color-surface-hover: #1f1f1f;
-  --color-surface-active: #262626;
-  --color-surface-selected: #172554;
-  --color-text-primary: #f9fafb;
-  --color-text-secondary: #9ca3af;
-  --color-text-tertiary: #6b7280;
-  --color-text-inverse: #111827;
-  --color-text-link: #60a5fa;
-  --color-border-primary: #2e2e2e;
-  --color-border-secondary: #1f1f1f;
-  --color-border-focus: #3b82f6;
-  --color-accent-primary: #3b82f6;
-  --color-accent-primary-hover: #60a5fa;
-  --color-accent-primary-active: #2563eb;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
-  --color-unread-indicator: #3b82f6;
-  --color-star: #facc15;
-  --color-category-important: #3b82f6;
-  --color-category-other: #9ca3af;
-  --color-category-newsletters: #a78bfa;
-  --color-category-notifications: #fb923c;
+  --color-bg-primary: #101114;
+  --color-bg-secondary: #181a1e;
+  --color-bg-tertiary: #1f2128;
+  --color-bg-elevated: #252830;
+  --color-bg-overlay: rgba(0, 0, 0, 0.6);
+  --color-surface-primary: #181a1e;
+  --color-surface-hover: #1f2128;
+  --color-surface-active: #282b34;
+  --color-surface-selected: #1e2a3d;
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #9ba2b0;
+  --color-text-tertiary: #636b7c;
+  --color-text-inverse: #1a1d23;
+  --color-text-link: #7a9ab8;
+  --color-border-primary: #2a2d36;
+  --color-border-secondary: #1f2128;
+  --color-border-focus: #7a9ab8;
+  --color-accent-primary: #7a9ab8;
+  --color-accent-primary-hover: #8dadc8;
+  --color-accent-primary-active: #6889a5;
+  --color-accent-subtle: color-mix(in srgb, #7a9ab8 12%, transparent);
+  --color-accent-subtle-hover: color-mix(in srgb, #7a9ab8 20%, transparent);
+  --color-success: #4dba93;
+  --color-warning: #d4a030;
+  --color-error: #d45c5c;
+  --color-info: #7a9ab8;
+  --color-unread-indicator: #7a9ab8;
+  --color-star: #d4b040;
+  --color-category-important: #7a9ab8;
+  --color-category-other: #9ba2b0;
+  --color-category-newsletters: #a48bd4;
+  --color-category-notifications: #d4954a;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
@@ -104,17 +108,150 @@
 }
 
 [data-density="compact"] {
-  --email-list-item-height: 52px;
+  --email-list-item-height: 72px;
   --email-list-padding: 6px 12px;
   --font-size-md: 13px;
 }
 
 [data-density="default"] {
-  --email-list-item-height: 64px;
+  --email-list-item-height: 84px;
   --email-list-padding: 10px 16px;
 }
 
 [data-density="comfortable"] {
-  --email-list-item-height: 80px;
+  --email-list-item-height: 96px;
   --email-list-padding: 14px 20px;
+}
+
+/* ---- Theme transition (View Transitions API) ----------------------------- */
+
+/* Let clicks pass through the view-transition layer so dialogs stay open */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(root) {
+  animation: theme-sweep-out 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+::view-transition-new(root) {
+  animation: theme-sweep-in 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes theme-sweep-out {
+  from {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.3;
+  }
+}
+
+@keyframes theme-sweep-in {
+  from {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0.3;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+/* ---- Sidebar icon shake on hover ----------------------------------------- */
+
+@keyframes iconShake {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-1px); }
+  50%  { transform: translateX(1px); }
+  75%  { transform: translateX(-0.5px); }
+  100% { transform: translateX(0); }
+}
+
+.sidebar-nav-icon {
+  transition: color var(--transition-fast);
+}
+
+.sidebar-nav-btn:hover .sidebar-nav-icon {
+  animation: iconShake 400ms ease;
+}
+
+/* ---- Global smooth transitions ------------------------------------------- */
+
+/* Focus ring on interactive elements */
+*:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+  transition: outline-color var(--transition-fast);
+}
+
+/* Scrollbar styling is in global.css */
+
+/* ---- Responsive overlay sidebar ------------------------------------------ */
+
+.sidebar-overlay-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg-overlay);
+  z-index: 40;
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  z-index: 50;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border-primary);
+  box-shadow: var(--shadow-lg);
+  animation: slideInLeft var(--transition-normal) ease;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ---- Tablet: 769px – 1024px ---------------------------------------------- */
+@media (max-width: 1024px) {
+  .sidebar-overlay-backdrop.is-open {
+    display: block;
+  }
+
+  .sidebar-overlay.is-open {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Mobile back button — hidden on desktop */
+  .mobile-back-button {
+    display: flex;
+  }
+}
+
+/* ---- Mobile: up to 768px ------------------------------------------------- */
+@media (max-width: 768px) {
+  /* On mobile the email-list or reading-pane are toggled full-width by JS */
+  .mobile-back-button {
+    display: flex;
+  }
 }

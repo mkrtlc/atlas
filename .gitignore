@@ -6,6 +6,8 @@ dist/
 .env.local
 .DS_Store
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 coverage/
 out/

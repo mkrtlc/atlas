@@ -1,83 +1,225 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import { ArrowLeft } from 'lucide-react';
 import { useEmailStore } from '../../stores/email-store';
-import { useThreads, useToggleStar, useArchiveThread, useTrashThread, useArchiveWithUndo, useTrashWithUndo } from '../../hooks/use-threads';
+import { useDraftStore } from '../../stores/draft-store';
+import { useMailboxThreads, useToggleStar, useArchiveThread, useTrashThread, useArchiveWithUndo, useTrashWithUndo, useMarkReadUnread, useSnoozeThread } from '../../hooks/use-threads';
+import { useToastStore } from '../../stores/toast-store';
+import { useAutoAdvance } from '../../hooks/use-auto-advance';
+import { useMediaQuery } from '../../hooks/use-media-query';
+import { queryKeys } from '../../config/query-keys';
 import { EmailListItem } from '../email/email-list-item';
 import { BulkActions } from '../email/bulk-actions';
 import { SearchBar } from '../search/search-bar';
 import { EmptyState } from '../ui/empty-state';
 import { EmailListSkeleton } from '../ui/skeleton';
+import { getLabelById } from '../../lib/labels';
+import { Chip } from '../ui/chip';
+import { useSearch } from '../../hooks/use-search';
 import type { EmailCategory, Thread } from '@atlasmail/shared';
+import type { Mailbox } from '../../stores/email-store';
 import type { CSSProperties } from 'react';
 
-interface CategoryTabProps {
-  cat: EmailCategory;
-  isActive: boolean;
-  color: string;
-  label: string;
-  onClick: () => void;
+// ---------------------------------------------------------------------------
+// Search filter parsing
+// ---------------------------------------------------------------------------
+
+interface SearchFilters {
+  from: string | null;
+  to: string | null;
+  subject: string | null;
+  hasAttachment: boolean;
+  freeText: string;
 }
 
-function CategoryTab({ cat, isActive, color, label, onClick }: CategoryTabProps) {
-  const [isHovered, setIsHovered] = useState(false);
+function parseSearchQuery(query: string): SearchFilters {
+  const filters: SearchFilters = {
+    from: null,
+    to: null,
+    subject: null,
+    hasAttachment: false,
+    freeText: '',
+  };
 
-  const borderBottomColor = isActive
-    ? color
-    : isHovered
-    ? `color-mix(in srgb, ${color} 40%, transparent)`
-    : 'transparent';
+  let remaining = query;
 
+  // Extract from:value
+  remaining = remaining.replace(/\bfrom:(\S+)/gi, (_, val) => {
+    filters.from = val;
+    return '';
+  });
+
+  // Extract to:value
+  remaining = remaining.replace(/\bto:(\S+)/gi, (_, val) => {
+    filters.to = val;
+    return '';
+  });
+
+  // Extract subject:value (supports quoted strings)
+  remaining = remaining.replace(/\bsubject:"([^"]+)"/gi, (_, val) => {
+    filters.subject = val;
+    return '';
+  });
+  remaining = remaining.replace(/\bsubject:(\S+)/gi, (_, val) => {
+    filters.subject = val;
+    return '';
+  });
+
+  // Extract has:attachment
+  remaining = remaining.replace(/\bhas:attachment\b/gi, () => {
+    filters.hasAttachment = true;
+    return '';
+  });
+
+  filters.freeText = remaining.trim();
+
+  return filters;
+}
+
+function hasActiveFilters(filters: SearchFilters): boolean {
   return (
-    <button
-      key={cat}
-      role="tab"
-      aria-selected={isActive}
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        padding: 'var(--spacing-md) var(--spacing-lg)',
-        border: 'none',
-        borderBottom: `2px solid ${borderBottomColor}`,
-        background: 'transparent',
-        color: isActive ? color : isHovered ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)',
-        fontSize: 'var(--font-size-sm)',
-        fontWeight: isActive
-          ? ('var(--font-weight-semibold)' as CSSProperties['fontWeight'])
-          : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
-        fontFamily: 'var(--font-family)',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        transition: 'color var(--transition-fast), border-bottom-color var(--transition-fast)',
-        marginBottom: '-1px',
-      }}
-    >
-      {label}
-    </button>
+    filters.from !== null ||
+    filters.to !== null ||
+    filters.subject !== null ||
+    filters.hasAttachment ||
+    filters.freeText.length > 0
   );
 }
 
-const CATEGORY_LABELS: Record<EmailCategory, string> = {
-  important: 'Important',
-  other: 'Other',
-  newsletters: 'Newsletters',
-  notifications: 'Notifications',
-};
+function filterThreadsByParsed(threads: Thread[], filters: SearchFilters): Thread[] {
+  return threads.filter((t) => {
+    const emails = t.emails ?? [];
+    const firstEmail = emails[0];
 
-const CATEGORIES: EmailCategory[] = ['important', 'other', 'newsletters', 'notifications'];
+    if (filters.hasAttachment && !t.hasAttachments) return false;
 
-const CATEGORY_COLORS: Record<EmailCategory, string> = {
-  important: 'var(--color-category-important)',
-  other: 'var(--color-category-other)',
-  newsletters: 'var(--color-category-newsletters)',
-  notifications: 'var(--color-category-notifications)',
-};
+    if (filters.from) {
+      const q = filters.from.toLowerCase();
+      const match = firstEmail
+        ? firstEmail.fromAddress.toLowerCase().includes(q) ||
+          (firstEmail.fromName?.toLowerCase().includes(q) ?? false)
+        : false;
+      if (!match) return false;
+    }
+
+    if (filters.to) {
+      const q = filters.to.toLowerCase();
+      const match = firstEmail
+        ? firstEmail.toAddresses.some(
+            (a) => a.address.toLowerCase().includes(q) || (a.name?.toLowerCase().includes(q) ?? false),
+          )
+        : false;
+      if (!match) return false;
+    }
+
+    if (filters.subject) {
+      const q = filters.subject.toLowerCase();
+      if (!(t.subject?.toLowerCase().includes(q) ?? false)) return false;
+    }
+
+    if (filters.freeText) {
+      const q = filters.freeText.toLowerCase();
+      const matches =
+        t.subject?.toLowerCase().includes(q) ||
+        t.snippet?.toLowerCase().includes(q) ||
+        firstEmail?.fromName?.toLowerCase().includes(q) ||
+        firstEmail?.fromAddress?.toLowerCase().includes(q);
+      if (!matches) return false;
+    }
+
+    return true;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Search filter chips
+// ---------------------------------------------------------------------------
+
+interface FilterChipProps {
+  label: string;
+  onRemove: () => void;
+}
+
+function FilterChip({ label, onRemove }: FilterChipProps) {
+  return (
+    <Chip color="var(--color-accent-primary)" onRemove={onRemove} aria-label={`Remove filter ${label}`}>
+      {label}
+    </Chip>
+  );
+}
+
+interface SearchFilterChipsProps {
+  query: string;
+  onChange: (newQuery: string) => void;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function SearchFilterChips({ query, onChange }: SearchFilterChipsProps) {
+  const filters = useMemo(() => parseSearchQuery(query), [query]);
+  const chips: Array<{ label: string; remove: () => void }> = [];
+
+  if (filters.from) {
+    const escaped = escapeRegExp(filters.from);
+    chips.push({
+      label: `from:${filters.from}`,
+      remove: () => onChange(query.replace(new RegExp(`\\bfrom:${escaped}\\b`, 'i'), '').trim()),
+    });
+  }
+  if (filters.to) {
+    const escaped = escapeRegExp(filters.to);
+    chips.push({
+      label: `to:${filters.to}`,
+      remove: () => onChange(query.replace(new RegExp(`\\bto:${escaped}\\b`, 'i'), '').trim()),
+    });
+  }
+  if (filters.subject) {
+    const escaped = escapeRegExp(filters.subject);
+    chips.push({
+      label: `subject:${filters.subject}`,
+      remove: () => onChange(
+        query
+          .replace(new RegExp(`\\bsubject:"${escaped}"`, 'i'), '')
+          .replace(new RegExp(`\\bsubject:${escaped}\\b`, 'i'), '')
+          .trim(),
+      ),
+    });
+  }
+  if (filters.hasAttachment) {
+    chips.push({
+      label: 'has:attachment',
+      remove: () => onChange(query.replace(/\bhas:attachment\b/i, '').trim()),
+    });
+  }
+
+  if (chips.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 'var(--spacing-xs)',
+        padding: 'var(--spacing-xs) var(--spacing-md)',
+        paddingTop: 0,
+      }}
+    >
+      {chips.map((chip) => (
+        <FilterChip key={chip.label} label={chip.label} onRemove={chip.remove} />
+      ))}
+    </div>
+  );
+}
 
 
 export function EmailListPane() {
+  const { t } = useTranslation();
   const {
     activeCategory,
-    setActiveCategory,
+    activeMailbox,
     activeThreadId,
     setActiveThread,
     cursorIndex,
@@ -87,33 +229,113 @@ export function EmailListPane() {
     toggleSelection,
     clearSelection,
     selectThreads,
+    filterByLabel,
+    setFilterByLabel,
   } = useEmailStore();
+
+  const CATEGORY_LABELS: Record<EmailCategory, string> = {
+    important: t('sidebar.important'),
+    other: t('sidebar.other'),
+    newsletters: t('sidebar.newsletters'),
+    notifications: t('sidebar.notifications'),
+  };
+
+  const MAILBOX_LABELS: Record<Mailbox, string> = {
+    inbox: t('sidebar.important'),
+    sent: t('sidebar.sent'),
+    drafts: t('sidebar.drafts'),
+    archive: t('sidebar.archive'),
+    trash: t('sidebar.trash'),
+    spam: t('sidebar.spam'),
+  };
   const toggleStar = useToggleStar();
   const archiveMutation = useArchiveThread();
   const trashMutation = useTrashThread();
+  const snoozeMutation = useSnoozeThread();
   const archiveWithUndo = useArchiveWithUndo();
   const trashWithUndo = useTrashWithUndo();
+  const markReadUnread = useMarkReadUnread();
+  const addToast = useToastStore((s) => s.addToast);
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [quickFilter, setQuickFilter] = useState<'all' | 'unread' | 'starred'>('all');
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+
+  // Debounce search query for server-side search (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   // Keep a stable ref to the current displayed threads list so the cursor event
   // handler can resolve which thread is at the cursor position without stale closure issues.
   const displayThreadsRef = useRef<Thread[]>([]);
 
-  const { data: threads, isLoading } = useThreads(activeCategory);
+  const isInbox = activeMailbox === 'inbox';
+  const {
+    data: threads,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMailboxThreads(
+    activeMailbox,
+    isInbox ? activeCategory : undefined,
+  );
 
-  const displayThreads = (threads || []).filter((t) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      t.subject?.toLowerCase().includes(q) ||
-      t.snippet?.toLowerCase().includes(q) ||
-      t.emails?.[0]?.fromName?.toLowerCase().includes(q) ||
-      t.emails?.[0]?.fromAddress?.toLowerCase().includes(q)
-    );
-  });
+  // Server-side search — fires when user types a free-text query
+  const { data: searchResults, isLoading: isSearching } = useSearch(debouncedSearch);
+  const isSearchActive = debouncedSearch.length > 0;
+
+  const parsedFilters = useMemo(() => parseSearchQuery(searchQuery), [searchQuery]);
+
+  const displayThreads = useMemo(() => {
+    // When search is active, use server-side search results
+    const baseThreads = isSearchActive ? (searchResults || []) : (threads || []);
+
+    // Apply local advanced filters (from:, to:, subject:, has:attachment) on top
+    let filtered = hasActiveFilters(parsedFilters) && !isSearchActive
+      ? filterThreadsByParsed(baseThreads, parsedFilters)
+      : baseThreads;
+
+    if (quickFilter === 'unread') filtered = filtered.filter(t => t.unreadCount > 0);
+    if (quickFilter === 'starred') filtered = filtered.filter(t => t.isStarred);
+    if (filterByLabel) filtered = filtered.filter(t => t.labels.includes(filterByLabel));
+    return filtered;
+  }, [threads, searchResults, isSearchActive, parsedFilters, quickFilter, filterByLabel]);
 
   // Keep the ref in sync so the cursor-selection event handler is never stale
   displayThreadsRef.current = displayThreads;
+
+  // Track newly arrived threads for entrance animation
+  const knownThreadIds = useRef<Set<string>>(new Set());
+  const [newThreadIds, setNewThreadIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!displayThreads.length) {
+      knownThreadIds.current = new Set();
+      setNewThreadIds(new Set());
+      return;
+    }
+    const currentIds = new Set(displayThreads.map((t) => t.id));
+    // On first load, mark all as known (no animation)
+    if (knownThreadIds.current.size === 0) {
+      knownThreadIds.current = currentIds;
+      return;
+    }
+    const arrivals = new Set<string>();
+    for (const id of currentIds) {
+      if (!knownThreadIds.current.has(id)) arrivals.add(id);
+    }
+    knownThreadIds.current = currentIds;
+    if (arrivals.size > 0) {
+      setNewThreadIds(arrivals);
+      const timer = setTimeout(() => setNewThreadIds(new Set()), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [displayThreads]);
+
+  const advanceAfterRemoval = useAutoAdvance(displayThreads);
 
   // Auto-scroll Virtuoso to keep the keyboard cursor visible
   useEffect(() => {
@@ -122,17 +344,30 @@ export function EmailListPane() {
     }
   }, [cursorIndex]);
 
-  // Auto-select first thread when switching categories
+  // Auto-select first thread when switching categories or mailboxes
   const prevCategoryRef = useRef(activeCategory);
+  const prevMailboxRef = useRef(activeMailbox);
   useEffect(() => {
-    if (prevCategoryRef.current !== activeCategory) {
-      prevCategoryRef.current = activeCategory;
-      if (displayThreads.length > 0) {
-        setActiveThread(displayThreads[0].id);
-        setCursorIndex(0);
-      }
+    const categoryChanged = prevCategoryRef.current !== activeCategory;
+    const mailboxChanged = prevMailboxRef.current !== activeMailbox;
+    prevCategoryRef.current = activeCategory;
+    prevMailboxRef.current = activeMailbox;
+
+    if (categoryChanged || mailboxChanged) {
+      setQuickFilter('all');
+      setFilterByLabel(null);
     }
-  }, [activeCategory, displayThreads, setActiveThread, setCursorIndex]);
+
+    if ((categoryChanged || mailboxChanged) && displayThreads.length > 0) {
+      setActiveThread(displayThreads[0].id);
+      setCursorIndex(0);
+    }
+  }, [activeCategory, activeMailbox, displayThreads, setActiveThread, setCursorIndex, setFilterByLabel]);
+
+  // Reset quick filter when search query changes
+  useEffect(() => {
+    setQuickFilter('all');
+  }, [searchQuery]);
 
   // Listen for the cursor-selection event dispatched by inbox.tsx when `x` is pressed
   useEffect(() => {
@@ -148,9 +383,23 @@ export function EmailListPane() {
   const handleThreadClick = useCallback(
     (thread: Thread, index: number) => {
       setCursorIndex(index);
+
+      // If we're in the drafts mailbox, open compose to resume editing
+      if (activeMailbox === 'drafts') {
+        const draft = useDraftStore.getState().getDraft(thread.id);
+        if (draft) {
+          useDraftStore.getState().setActiveDraftId(draft.id);
+          openCompose(draft.composeMode, draft.threadId ?? undefined);
+        }
+        return;
+      }
+
       setActiveThread(thread.id);
+      if (thread.unreadCount > 0) {
+        markReadUnread.mutate({ threadId: thread.id, isUnread: false });
+      }
     },
-    [setCursorIndex, setActiveThread],
+    [setCursorIndex, setActiveThread, markReadUnread, activeMailbox, openCompose],
   );
 
   const handleStarClick = useCallback(
@@ -167,27 +416,43 @@ export function EmailListPane() {
     [openCompose],
   );
 
+  // The undo hooks snapshot the cache entry for the currently visible list.
+  // When in inbox mode the key is the category list; in other mailboxes it
+  // is the mailbox key — so we must pass the right key to each undo hook.
+  const activeListKey = useMemo(
+    () =>
+      isInbox
+        ? queryKeys.threads.list(activeCategory)
+        : queryKeys.threads.mailbox(activeMailbox),
+    [isInbox, activeCategory, activeMailbox],
+  );
+
   const handleArchiveClick = useCallback(
     (threadId: string) => {
-      archiveWithUndo(threadId, activeCategory);
+      advanceAfterRemoval(threadId, cursorIndex);
+      archiveWithUndo(threadId, activeListKey);
     },
-    [archiveWithUndo, activeCategory],
+    [advanceAfterRemoval, cursorIndex, archiveWithUndo, activeListKey],
   );
 
   const handleTrashClick = useCallback(
     (threadId: string) => {
-      trashWithUndo(threadId, activeCategory);
+      advanceAfterRemoval(threadId, cursorIndex);
+      trashWithUndo(threadId, activeListKey);
     },
-    [trashWithUndo, activeCategory],
+    [advanceAfterRemoval, cursorIndex, trashWithUndo, activeListKey],
   );
 
-  const handleSnoozeClick = useCallback(
-    (threadId: string) => {
-      document.dispatchEvent(
-        new CustomEvent('atlasmail:snooze', { detail: { threadId } }),
-      );
+  const handleSnooze = useCallback(
+    (threadId: string, snoozeUntil: Date) => {
+      snoozeMutation.mutate({ threadId, snoozeUntil: snoozeUntil.toISOString() });
+      addToast({
+        type: 'success',
+        message: t('email.snooze') + ' — ' + snoozeUntil.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
+        duration: 3000,
+      });
     },
-    [],
+    [snoozeMutation, addToast, t],
   );
 
   const handleCheckboxClick = useCallback(
@@ -212,14 +477,15 @@ export function EmailListPane() {
     clearSelection();
   }, [selectedThreadIds, toggleStar, clearSelection]);
 
-  // Mark read/unread are client-side only until a mutation hook exists
   const handleBulkMarkRead = useCallback(() => {
+    selectedThreadIds.forEach((id) => markReadUnread.mutate({ threadId: id, isUnread: false }));
     clearSelection();
-  }, [clearSelection]);
+  }, [selectedThreadIds, markReadUnread, clearSelection]);
 
   const handleBulkMarkUnread = useCallback(() => {
+    selectedThreadIds.forEach((id) => markReadUnread.mutate({ threadId: id, isUnread: true }));
     clearSelection();
-  }, [clearSelection]);
+  }, [selectedThreadIds, markReadUnread, clearSelection]);
 
   const handleSelectAll = useCallback(() => {
     const allSelected =
@@ -234,36 +500,81 @@ export function EmailListPane() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Category tabs */}
+      {/* Mobile back button — only shown on mobile when a thread is active */}
+      {isMobile && activeThreadId && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: 'var(--spacing-sm) var(--spacing-md)',
+            borderBottom: '1px solid var(--color-border-primary)',
+            background: 'var(--color-bg-secondary)',
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={() => setActiveThread(null)}
+            aria-label="Back to inbox"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-sm)',
+              padding: 'var(--spacing-xs) var(--spacing-sm)',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--font-size-sm)',
+              fontFamily: 'var(--font-family)',
+              cursor: 'pointer',
+              transition: 'background var(--transition-normal), color var(--transition-normal)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--color-surface-hover)';
+              e.currentTarget.style.color = 'var(--color-text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--color-text-secondary)';
+            }}
+          >
+            <ArrowLeft size={15} />
+            Back
+          </button>
+        </div>
+      )}
+
+      {/* Pane header — shows active category or mailbox name */}
       <div
-        role="tablist"
-        aria-label="Email categories"
         style={{
-          display: 'flex',
+          padding: 'var(--spacing-md) var(--spacing-lg)',
           borderBottom: '1px solid var(--color-border-primary)',
           background: 'var(--color-bg-primary)',
           flexShrink: 0,
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
         }}
       >
-        {CATEGORIES.map((cat) => (
-          <CategoryTab
-            key={cat}
-            cat={cat}
-            isActive={cat === activeCategory}
-            color={CATEGORY_COLORS[cat]}
-            label={CATEGORY_LABELS[cat]}
-            onClick={() => setActiveCategory(cat)}
-          />
-        ))}
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 'var(--font-size-md)',
+            fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
+            fontFamily: 'var(--font-family)',
+            color: 'var(--color-text-primary)',
+            lineHeight: 1.4,
+          }}
+        >
+          {isInbox ? CATEGORY_LABELS[activeCategory] : MAILBOX_LABELS[activeMailbox]}
+        </h2>
       </div>
 
       {/* Search bar */}
       <div
         role="search"
         style={{
-          padding: 'var(--spacing-sm) var(--spacing-md)',
+          paddingTop: 'var(--spacing-sm)',
+          paddingLeft: 'var(--spacing-md)',
+          paddingRight: 'var(--spacing-md)',
+          paddingBottom: hasActiveFilters(parsedFilters) ? 'var(--spacing-xs)' : 'var(--spacing-sm)',
           borderBottom: '1px solid var(--color-border-primary)',
           flexShrink: 0,
         }}
@@ -273,35 +584,88 @@ export function EmailListPane() {
           onChange={setSearchQuery}
           placeholder="Search conversations..."
         />
+        <SearchFilterChips query={searchQuery} onChange={setSearchQuery} />
       </div>
 
-      {/* Bulk actions toolbar — visible when 1+ threads are selected */}
-      {selectedThreadIds.size > 0 && (
-        <div style={{ overflow: 'hidden', animation: 'bulkActionsSlideDown 150ms ease forwards', flexShrink: 0 }}>
-          <BulkActions
-            selectedCount={selectedThreadIds.size}
-            totalCount={displayThreads.length}
-            onSelectAll={handleSelectAll}
-            onArchive={handleBulkArchive}
-            onTrash={handleBulkTrash}
-            onStar={handleBulkStar}
-            onMarkRead={handleBulkMarkRead}
-            onMarkUnread={handleBulkMarkUnread}
-            onClearSelection={clearSelection}
-          />
-        </div>
-      )}
+      {/* Quick filters / Bulk actions — shared row */}
+      {(() => {
+        const filterChips = (['all', 'unread', 'starred'] as const).map((filter) => {
+          const isActive = quickFilter === filter;
+          const labels = { all: t('email.filterAll'), unread: t('email.filterUnread'), starred: t('email.filterStarred') };
+          return (
+            <Chip
+              key={filter}
+              onClick={() => setQuickFilter(filter)}
+              active={isActive}
+              height={26}
+              aria-pressed={isActive}
+            >
+              {labels[filter]}
+            </Chip>
+          );
+        });
+
+        return (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-xs)',
+              padding: 'var(--spacing-xs) var(--spacing-md)',
+              borderBottom: '1px solid var(--color-border-primary)',
+              flexShrink: 0,
+              minHeight: 34,
+            }}
+          >
+            {selectedThreadIds.size > 0 ? (
+              <>
+                <BulkActions
+                  selectedCount={selectedThreadIds.size}
+                  totalCount={displayThreads.length}
+                  onSelectAll={handleSelectAll}
+                  onArchive={handleBulkArchive}
+                  onTrash={handleBulkTrash}
+                  onStar={handleBulkStar}
+                  onMarkRead={handleBulkMarkRead}
+                  onMarkUnread={handleBulkMarkUnread}
+                  onClearSelection={clearSelection}
+                />
+                <div style={{ flex: 1 }} />
+                {filterChips}
+              </>
+            ) : (
+              filterChips
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Active label filter chip */}
+      {filterByLabel && (() => {
+        const label = getLabelById(filterByLabel);
+        if (!label) return null;
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', padding: 'var(--spacing-xs) var(--spacing-md)', borderBottom: '1px solid var(--color-border-primary)', flexShrink: 0 }}>
+            <Chip color={label.color} onRemove={() => setFilterByLabel(null)} aria-label="Remove label filter">
+              {label.name}
+            </Chip>
+          </div>
+        );
+      })()}
 
       {/* Thread list */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        {isLoading ? (
+        {(isLoading || (isSearchActive && (isSearching || !searchResults))) ? (
           <EmailListSkeleton />
         ) : displayThreads.length === 0 ? (
           <EmptyState
-            type={searchQuery ? 'search' : 'inbox'}
+            type={searchQuery ? 'search' : activeMailbox === 'trash' ? 'trash' : activeMailbox === 'archive' ? 'archive' : 'inbox'}
             description={
               searchQuery
                 ? `No conversations match "${searchQuery}"`
+                : activeMailbox === 'sent' ? 'Sent messages will appear here'
+                : activeMailbox === 'drafts' ? 'No drafts yet'
+                : activeMailbox === 'spam' ? 'No spam — your inbox is clean'
                 : undefined
             }
           />
@@ -310,6 +674,12 @@ export function EmailListPane() {
             ref={virtuosoRef}
             style={{ height: '100%', paddingTop: 4 }}
             data={displayThreads}
+            endReached={() => {
+              if (hasNextPage && !isFetchingNextPage && !isSearchActive) {
+                fetchNextPage();
+              }
+            }}
+            overscan={200}
             itemContent={(index, thread) => (
               <EmailListItem
                 key={thread.id}
@@ -317,15 +687,33 @@ export function EmailListPane() {
                 isSelected={thread.id === activeThreadId}
                 isCursor={index === cursorIndex}
                 isMultiSelected={selectedThreadIds.has(thread.id)}
+                isNew={newThreadIds.has(thread.id)}
                 onClick={() => handleThreadClick(thread, index)}
                 onStarClick={() => handleStarClick(thread.id)}
                 onCheckboxClick={() => handleCheckboxClick(thread.id)}
                 onReplyClick={() => handleReplyClick(thread.id)}
                 onArchiveClick={() => handleArchiveClick(thread.id)}
                 onTrashClick={() => handleTrashClick(thread.id)}
-                onSnoozeClick={() => handleSnoozeClick(thread.id)}
+                onSnooze={handleSnooze}
               />
             )}
+            components={{
+              Footer: () =>
+                isFetchingNextPage ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      padding: 'var(--spacing-md)',
+                      color: 'var(--color-text-tertiary)',
+                      fontSize: 'var(--font-size-sm)',
+                      fontFamily: 'var(--font-family)',
+                    }}
+                  >
+                    {t('common.loading')}
+                  </div>
+                ) : null,
+            }}
           />
         )}
       </div>

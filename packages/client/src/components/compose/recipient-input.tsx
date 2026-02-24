@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { X } from 'lucide-react';
 import { MOCK_CONTACTS, type Recipient } from '../../lib/mock-contacts';
+import { CHIP_RADIUS } from '../ui/chip';
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
@@ -52,7 +53,7 @@ function RecipientChip({ recipient, onRemove }: RecipientChipProps) {
         padding: '0 6px 0 8px',
         background: 'var(--color-bg-tertiary)',
         border: '1px solid var(--color-border-primary)',
-        borderRadius: 'var(--radius-full)',
+        borderRadius: CHIP_RADIUS,
         fontSize: 'var(--font-size-sm)',
         color: 'var(--color-text-primary)',
         fontFamily: 'var(--font-family)',
@@ -85,13 +86,13 @@ function RecipientChip({ recipient, onRemove }: RecipientChipProps) {
           width: 14,
           height: 14,
           border: 'none',
-          borderRadius: 'var(--radius-full)',
+          borderRadius: CHIP_RADIUS,
           background: removeHovered ? 'var(--color-surface-active)' : 'transparent',
           color: removeHovered ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
           cursor: 'pointer',
           padding: 0,
           flexShrink: 0,
-          transition: 'background var(--transition-fast), color var(--transition-fast)',
+          transition: 'background var(--transition-normal), color var(--transition-normal)',
         }}
       >
         <X size={9} strokeWidth={2.5} />
@@ -123,7 +124,7 @@ function SuggestionItem({ contact, isHighlighted, onMouseEnter, onMouseDown }: S
         padding: 'var(--spacing-sm) var(--spacing-md)',
         cursor: 'pointer',
         background: isHighlighted ? 'var(--color-surface-hover)' : 'transparent',
-        transition: 'background var(--transition-fast)',
+        transition: 'background var(--transition-normal)',
       }}
     >
       {contact.name && (

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ThemeProvider } from './providers/theme-provider';
 import { QueryProvider } from './providers/query-provider';
 import { ShortcutProvider } from './providers/shortcut-provider';
@@ -37,6 +38,7 @@ function DevAuthInit() {
 }
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
 
@@ -54,7 +56,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
           fontSize: 'var(--font-size-md)',
         }}
       >
-        Loading...
+        {t('common.loading')}
       </div>
     );
   }

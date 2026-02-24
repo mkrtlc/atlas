@@ -1,13 +1,25 @@
+import { useState, useCallback, useEffect } from 'react';
+import { ArrowLeft, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEmailStore } from '../../stores/email-store';
 import { useThread } from '../../hooks/use-threads';
+import { useThreadTracking } from '../../hooks/use-tracking';
+import { useMediaQuery } from '../../hooks/use-media-query';
 import { EmailActions } from '../email/email-actions';
 import { EmailMessage } from '../email/email-message';
+import { InlineReply } from '../email/inline-reply';
+import { UnsubscribeButton } from '../email/unsubscribe-button';
 import { Kbd } from '../ui/kbd';
 import { EmptyState } from '../ui/empty-state';
 import { ReadingPaneSkeleton } from '../ui/skeleton';
 import type { CSSProperties } from 'react';
 
+// Number of collapsed earlier messages above which we show "Show N earlier messages" toggle
+const COLLAPSED_PREVIEW_THRESHOLD = 3;
+
 function ReadingPaneEmptyState() {
+  const { t } = useTranslation();
+
   return (
     <div
       style={{
@@ -23,8 +35,8 @@ function ReadingPaneEmptyState() {
     >
       <EmptyState
         type="inbox"
-        title="Select a conversation"
-        description="Choose a thread from the list to read it here"
+        title={t('inbox.selectConversation')}
+        description={t('inbox.chooseThread')}
       />
       <div
         style={{
@@ -36,21 +48,69 @@ function ReadingPaneEmptyState() {
           marginTop: 'calc(var(--spacing-xs) * -1)',
         }}
       >
-        <span>Use</span>
+        <span>{t('inbox.useNavigationHint')}</span>
         <Kbd shortcut="j" variant="inline" />
         <span>/</span>
         <Kbd shortcut="k" variant="inline" />
-        <span>to navigate, then</span>
+        <span>{t('inbox.toNavigate')}</span>
         <Kbd shortcut="Enter" variant="inline" />
-        <span>to open</span>
+        <span>{t('inbox.toOpen')}</span>
       </div>
     </div>
   );
 }
 
 export function ReadingPane() {
-  const { activeThreadId } = useEmailStore();
+  const { activeThreadId, setActiveThread } = useEmailStore();
   const { data: thread, isLoading } = useThread(activeThreadId);
+  const { data: trackingStats } = useThreadTracking(activeThreadId);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const { t } = useTranslation();
+
+  // Set of expanded email IDs — initialised with only the last email's ID
+  const [expandedEmailIds, setExpandedEmailIds] = useState<Set<string>>(new Set());
+
+  // Whether the "show earlier messages" fold has been opened
+  const [showEarlierMessages, setShowEarlierMessages] = useState(false);
+
+  // Re-initialise collapse state whenever the active thread changes
+  useEffect(() => {
+    if (!thread?.emails?.length) {
+      setExpandedEmailIds(new Set());
+      setShowEarlierMessages(false);
+      return;
+    }
+    const lastEmail = thread.emails[thread.emails.length - 1];
+    setExpandedEmailIds(new Set([lastEmail.id]));
+    setShowEarlierMessages(false);
+    // We only want this to run when the thread ID changes, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thread?.id]);
+
+  const handleToggleExpand = useCallback((emailId: string) => {
+    setExpandedEmailIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(emailId)) {
+        next.delete(emailId);
+      } else {
+        next.add(emailId);
+      }
+      return next;
+    });
+  }, []);
+
+  const emails = thread?.emails || [];
+
+  const handleExpandAll = useCallback(() => {
+    setExpandedEmailIds(new Set(emails.map(e => e.id)));
+    setShowEarlierMessages(true);
+  }, [emails]);
+
+  const handleCollapseAll = useCallback(() => {
+    // Keep only the latest message expanded
+    const last = emails[emails.length - 1];
+    setExpandedEmailIds(last ? new Set([last.id]) : new Set());
+  }, [emails]);
 
   if (!activeThreadId) {
     return <ReadingPaneEmptyState />;
@@ -60,7 +120,23 @@ export function ReadingPane() {
     return <ReadingPaneSkeleton />;
   }
 
-  const emails = thread.emails || [];
+  const earlierEmails = emails.slice(0, -1);
+  const lastEmail = emails[emails.length - 1];
+
+  // How many collapsed earlier messages exist
+  const collapsedEarlierCount = earlierEmails.filter((e) => !expandedEmailIds.has(e.id)).length;
+
+  const allExpanded = emails.length > 1 && emails.every(e => expandedEmailIds.has(e.id));
+
+  // When there are more than COLLAPSED_PREVIEW_THRESHOLD earlier messages we hide
+  // all but the last COLLAPSED_PREVIEW_THRESHOLD behind a "Show N earlier" button.
+  const hasHiddenEarlier =
+    !showEarlierMessages && earlierEmails.length > COLLAPSED_PREVIEW_THRESHOLD;
+
+  // The index from which we start showing earlier emails (0 = show all)
+  const earlierStartIndex = hasHiddenEarlier
+    ? earlierEmails.length - COLLAPSED_PREVIEW_THRESHOLD
+    : 0;
 
   return (
     <div
@@ -80,6 +156,37 @@ export function ReadingPane() {
           flexShrink: 0,
         }}
       >
+        {/* Mobile back button — only visible on mobile */}
+        {isMobile && (
+          <button
+            onClick={() => setActiveThread(null)}
+            aria-label={t('inbox.backToInbox')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-sm)',
+              padding: '0 0 var(--spacing-sm)',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--font-size-sm)',
+              fontFamily: 'var(--font-family)',
+              cursor: 'pointer',
+              transition: 'color var(--transition-normal)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--color-text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--color-text-secondary)';
+            }}
+          >
+            <ArrowLeft size={14} />
+            Back
+          </button>
+        )}
+
         <h1
           style={{
             margin: 0,
@@ -92,7 +199,7 @@ export function ReadingPane() {
             whiteSpace: 'nowrap',
           }}
         >
-          {thread.subject || '(no subject)'}
+          {thread.subject || t('common.noSubject')}
         </h1>
         {thread.messageCount > 1 && (
           <p
@@ -102,9 +209,42 @@ export function ReadingPane() {
               color: 'var(--color-text-tertiary)',
             }}
           >
-            {thread.messageCount} messages
+            {t('common.messages', { count: thread.messageCount })}
           </p>
         )}
+        {thread.messageCount > 1 && (
+          <button
+            onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+            aria-label={allExpanded ? t('inbox.collapseAll') : t('inbox.expandAll')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-xs)',
+              marginTop: 'var(--spacing-xs)',
+              padding: 'var(--spacing-xs) var(--spacing-sm)',
+              background: 'transparent',
+              border: '1px solid var(--color-border-primary)',
+              borderRadius: 'var(--radius-lg)',
+              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--font-size-xs)',
+              fontFamily: 'var(--font-family)',
+              cursor: 'pointer',
+              transition: 'background var(--transition-normal), color var(--transition-normal)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--color-surface-hover)';
+              e.currentTarget.style.color = 'var(--color-text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--color-text-secondary)';
+            }}
+          >
+            {allExpanded ? <ChevronsDownUp size={13} /> : <ChevronsUpDown size={13} />}
+            {allExpanded ? t('inbox.collapseAll') : t('inbox.expandAll')}
+          </button>
+        )}
+        <UnsubscribeButton emails={emails} threadId={thread.id} />
       </div>
 
       {/* Action toolbar */}
@@ -133,12 +273,11 @@ export function ReadingPane() {
           }}
         />
         <div
-          aria-label="Email content"
+          aria-label={t('inbox.emailContent')}
           style={{
             height: '100%',
             overflowY: 'auto',
             overflowX: 'hidden',
-            paddingBottom: 'var(--spacing-xl)',
           }}
         >
           {emails.length === 0 ? (
@@ -151,16 +290,94 @@ export function ReadingPane() {
                 textAlign: 'center',
               }}
             >
-              No messages in this thread.
+              {t('inbox.noMessages')}
             </div>
           ) : (
-            emails.map((email, index) => (
-              <EmailMessage
-                key={email.id}
-                email={email}
-                isLatest={index === emails.length - 1}
-              />
-            ))
+            <>
+              {/* "Show N earlier messages" toggle */}
+              {emails.length > 1 && hasHiddenEarlier && (
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: 'var(--spacing-sm) var(--spacing-lg)',
+                    borderBottom: '1px solid var(--color-border-primary)',
+                  }}
+                >
+                  <button
+                    onClick={() => setShowEarlierMessages(true)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-xs)',
+                      padding: 'var(--spacing-xs) var(--spacing-md)',
+                      background: 'var(--color-bg-tertiary)',
+                      border: '1px solid var(--color-border-primary)',
+                      borderRadius: 'var(--radius-lg)',
+                      color: 'var(--color-text-secondary)',
+                      fontSize: 'var(--font-size-sm)',
+                      fontFamily: 'var(--font-family)',
+                      cursor: 'pointer',
+                      transition: 'background var(--transition-normal), color var(--transition-normal)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--color-surface-hover)';
+                      e.currentTarget.style.color = 'var(--color-text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                      e.currentTarget.style.color = 'var(--color-text-secondary)';
+                    }}
+                  >
+                    {t('inbox.showEarlier', { count: collapsedEarlierCount })}
+                  </button>
+                </div>
+              )}
+
+              {/* Earlier emails (all except last) */}
+              {emails.length > 1 &&
+                earlierEmails.map((email, index) => {
+                  if (index < earlierStartIndex) return null;
+                  const trackingRecord = trackingStats?.records.find(
+                    (r) => r.emailId === email.id,
+                  ) ?? null;
+                  return (
+                    <EmailMessage
+                      key={email.id}
+                      email={email}
+                      isLatest={false}
+                      isExpanded={expandedEmailIds.has(email.id)}
+                      onToggleExpand={() => handleToggleExpand(email.id)}
+                      trackingRecord={trackingRecord}
+                      trackingEvents={trackingStats?.events}
+                    />
+                  );
+                })}
+
+              {/* Latest email — always rendered, starts expanded */}
+              {lastEmail && (
+                <EmailMessage
+                  key={lastEmail.id}
+                  email={lastEmail}
+                  isLatest={true}
+                  isExpanded={expandedEmailIds.has(lastEmail.id)}
+                  onToggleExpand={() => handleToggleExpand(lastEmail.id)}
+                  trackingRecord={
+                    trackingStats?.records.find((r) => r.emailId === lastEmail.id) ?? null
+                  }
+                  trackingEvents={trackingStats?.events}
+                />
+              )}
+            </>
+          )}
+
+          {/* Inline reply composer — only shown when there are messages */}
+          {emails.length > 0 && (
+            <InlineReply
+              threadId={thread.id}
+              threadSubject={thread.subject}
+              lastEmail={emails[emails.length - 1]}
+            />
           )}
         </div>
       </div>

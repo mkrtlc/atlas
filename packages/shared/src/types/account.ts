@@ -3,7 +3,7 @@ export interface Account {
   email: string;
   name: string | null;
   pictureUrl: string | null;
-  provider: 'google' | 'microsoft';
+  provider: 'google' | 'microsoft' | 'yahoo' | 'imap';
   providerId: string;
   historyId: number | null;
   lastSync: string | null;

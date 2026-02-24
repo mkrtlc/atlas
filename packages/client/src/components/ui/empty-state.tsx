@@ -1,4 +1,14 @@
-import type { CSSProperties } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSettingsStore } from '../../stores/settings-store';
+import { injectKeyframes, injectInboxZero } from '../../lib/animations';
+
+injectInboxZero();
+injectKeyframes('empty-fade-in', `
+@keyframes atlasmail-empty-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}`);
 
 // ─── SVG Illustrations ────────────────────────────────────────────────
 
@@ -221,27 +231,11 @@ function TrashIllustration() {
 
 // ─── Default content per type ─────────────────────────────────────────
 
-const EMPTY_STATE_DEFAULTS = {
-  inbox: {
-    title: 'All caught up',
-    description: 'No conversations in this category',
-    illustration: InboxIllustration,
-  },
-  search: {
-    title: 'No results found',
-    description: 'Try different keywords',
-    illustration: SearchIllustration,
-  },
-  archive: {
-    title: 'No archived conversations',
-    description: 'Archived threads will appear here',
-    illustration: ArchiveIllustration,
-  },
-  trash: {
-    title: 'Trash is empty',
-    description: 'Deleted conversations will appear here',
-    illustration: TrashIllustration,
-  },
+const EMPTY_STATE_ILLUSTRATIONS = {
+  inbox: InboxIllustration,
+  search: SearchIllustration,
+  archive: ArchiveIllustration,
+  trash: TrashIllustration,
 } as const;
 
 // ─── Component ────────────────────────────────────────────────────────
@@ -252,35 +246,88 @@ interface EmptyStateProps {
   description?: string;
 }
 
-const fadeInKeyframes = `
-@keyframes atlasmail-empty-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-`;
+// Keyframes injected via injectKeyframes() at module level above
 
-// Inject the keyframe once at module load time
-if (typeof document !== 'undefined') {
-  const styleId = 'atlasmail-empty-state-styles';
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = fadeInKeyframes;
-    document.head.appendChild(style);
-  }
+// Celebration particle colors
+const CELEBRATION_COLORS = [
+  'var(--color-accent-primary)',
+  'var(--color-star)',
+  '#34d399',
+  '#fb7185',
+  '#a78bfa',
+  '#fbbf24',
+];
+
+// Pre-compute particle layout once at module level (stable across renders)
+const CELEBRATION_PARTICLES = Array.from({ length: 24 }, (_, i) => {
+  const angle = (i / 24) * Math.PI * 2;
+  const distance = 40 + (((i * 7 + 3) % 11) / 11) * 50;
+  const x = Math.cos(angle) * distance;
+  const y = Math.sin(angle) * distance - 20;
+  const size = 4 + (((i * 13 + 5) % 9) / 9) * 5;
+  const delay = ((i * 3 + 1) % 8) / 8 * 0.3;
+  const color = CELEBRATION_COLORS[i % CELEBRATION_COLORS.length];
+  const shape = i % 3 === 0 ? '50%' : i % 3 === 1 ? '2px' : '0';
+  return { x, y, size, delay, color, shape, key: i };
+});
+
+function CelebrationParticles() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        width: 0,
+        height: 0,
+        pointerEvents: 'none',
+      }}
+    >
+      {CELEBRATION_PARTICLES.map((p) => (
+        <div
+          key={p.key}
+          style={{
+            position: 'absolute',
+            width: p.size,
+            height: p.size,
+            borderRadius: p.shape,
+            background: p.color,
+            left: 0,
+            top: 0,
+            transform: `translate(${p.x}px, ${p.y}px)`,
+            animation: `atlasmail-inbox-zero-rise 800ms ${p.delay}s ease-out forwards`,
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 export function EmptyState({ type, title, description }: EmptyStateProps) {
-  const defaults = EMPTY_STATE_DEFAULTS[type];
-  const Illustration = defaults.illustration;
-  const resolvedTitle = title ?? defaults.title;
-  const resolvedDescription = description ?? defaults.description;
+  const { t } = useTranslation();
+  const animationsEnabled = useSettingsStore((s) => s.sendAnimation);
+  const Illustration = EMPTY_STATE_ILLUSTRATIONS[type];
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Show celebration only once when inbox empty state mounts
+  useEffect(() => {
+    if (type === 'inbox' && animationsEnabled) {
+      setShowCelebration(true);
+      const timer = setTimeout(() => setShowCelebration(false), 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [type, animationsEnabled]);
+
+  const defaultsByType = {
+    inbox: { title: t('inbox.allCaughtUp'), description: t('inbox.noConversations') },
+    search: { title: t('inbox.noResults'), description: t('inbox.tryDifferent') },
+    archive: { title: t('inbox.noArchived'), description: t('inbox.archivedAppearHere') },
+    trash: { title: t('inbox.trashEmpty'), description: t('inbox.deletedAppearHere') },
+  };
+
+  const resolvedTitle = title ?? defaultsByType[type].title;
+  const resolvedDescription = description ?? defaultsByType[type].description;
 
   return (
     <div
@@ -305,9 +352,15 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: 'var(--spacing-xs)',
+          position: 'relative',
         }}
       >
-        <Illustration />
+        <div style={{
+          animation: showCelebration ? 'atlasmail-inbox-zero-check 500ms ease both' : undefined,
+        }}>
+          <Illustration />
+        </div>
+        {showCelebration && <CelebrationParticles />}
       </div>
 
       <span
@@ -344,7 +397,7 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
             marginTop: 'var(--spacing-sm)',
           }}
         >
-          Press{' '}
+          {t('inbox.press')}{' '}
           <kbd
             style={{
               display: 'inline-flex',
@@ -362,7 +415,7 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
           >
             C
           </kbd>{' '}
-          to compose a new email
+          {t('inbox.toComposeNew')}
         </span>
       )}
     </div>

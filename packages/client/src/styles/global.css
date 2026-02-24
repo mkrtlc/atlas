@@ -1,3 +1,16 @@
+/* ─── Desktop (Electron) drag region and traffic light offset ──────── */
+
+.desktop-drag-region {
+  -webkit-app-region: drag;
+}
+
+.desktop-drag-region button,
+.desktop-drag-region a,
+.desktop-drag-region input,
+.desktop-drag-region [role="button"] {
+  -webkit-app-region: no-drag;
+}
+
 /* ─── Accessibility utilities ───────────────────────────────────────── */
 
 /* Screen-reader only — visually hidden but accessible to assistive technology */
@@ -48,10 +61,19 @@
   outline-offset: 2px;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling — thin, invisible until container is hovered */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -59,12 +81,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-text-tertiary);
+  background: transparent;
   border-radius: var(--radius-full);
 }
 
+:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent);
+}
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
+  background: color-mix(in srgb, var(--color-text-tertiary) 55%, transparent);
 }
 
 /* Dialog/Modal styles */
@@ -267,9 +293,11 @@
 }
 
 /* ─── Email HTML body content styling ──────────────────────────────── */
+/* In dark mode the email body is wrapped in a forced-light container
+   (#fff background), so avoid overriding text/border colors with theme
+   variables that resolve to dark-mode values. Only add layout fixes. */
 
 .email-html-body a {
-  color: var(--color-text-link);
   text-decoration: underline;
 }
 
@@ -286,7 +314,6 @@
 .email-html-body td,
 .email-html-body th {
   padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border-primary);
 }
 
 .email-html-body ul,
@@ -298,8 +325,7 @@
 .email-html-body blockquote {
   margin: var(--spacing-sm) 0;
   padding-left: var(--spacing-md);
-  border-left: 3px solid var(--color-border-primary);
-  color: var(--color-text-secondary);
+  border-left: 3px solid #d0d5dd;
 }
 
 .email-html-body h1,
@@ -309,7 +335,6 @@
 .email-html-body h5,
 .email-html-body h6 {
   margin: var(--spacing-md) 0 var(--spacing-sm);
-  color: var(--color-text-primary);
 }
 
 .email-html-body p {
@@ -320,7 +345,6 @@
 .email-html-body code {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
-  background: var(--color-bg-tertiary);
   border-radius: var(--radius-sm);
 }
 
@@ -335,7 +359,7 @@
 
 .email-html-body hr {
   border: none;
-  border-top: 1px solid var(--color-border-primary);
+  border-top: 1px solid #d0d5dd;
   margin: var(--spacing-md) 0;
 }
 
@@ -368,10 +392,11 @@
 }
 
 .tiptap blockquote {
-  margin: var(--spacing-sm) 0;
-  padding-left: var(--spacing-md);
+  margin: var(--spacing-lg) 0 var(--spacing-sm);
+  padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-md);
   border-left: 3px solid var(--color-border-primary);
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
 }
 
 .tiptap code {

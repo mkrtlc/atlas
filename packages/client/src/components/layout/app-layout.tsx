@@ -1,6 +1,9 @@
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, type ReactNode, type CSSProperties } from 'react';
+import { Menu, X } from 'lucide-react';
 import { useUIStore } from '../../stores/ui-store';
+import { useEmailStore } from '../../stores/email-store';
 import { useSettingsStore } from '../../stores/settings-store';
+import { useMediaQuery } from '../../hooks/use-media-query';
 import { Sidebar } from './sidebar';
 import { ResizeHandle } from '../ui/resize-handle';
 
@@ -12,7 +15,7 @@ const SIDEBAR_DEFAULT = 220;
 const SIDEBAR_LS_KEY = 'atlasmail_sidebar_width';
 
 const LIST_MIN = 280;
-const LIST_MAX = 600;
+const LIST_MAX = 900;
 const LIST_DEFAULT = 400;
 const LIST_LS_KEY = 'atlasmail_list_width';
 
@@ -49,8 +52,13 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
-  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const { sidebarOpen, toggleSidebar } = useUIStore();
   const readingPanePosition = useSettingsStore((s) => s.readingPane);
+  const activeThreadId = useEmailStore((s) => s.activeThreadId);
+
+  // Breakpoint detection
+  const isTablet = useMediaQuery('(max-width: 1024px)');
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Pane dimension state — lazily initialised from localStorage
   const [sidebarWidth, setSidebarWidth] = useState(() =>
@@ -120,6 +128,47 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
 
   const isBottom = readingPanePosition === 'bottom';
 
+  // On mobile: show reading pane full-width when a thread is active.
+  // On tablet: sidebar is an overlay, list + reading pane are shown together.
+  // On desktop: full three-column layout (same as before).
+  const showMobileList = isMobile && !activeThreadId;
+  const showMobileReadingPane = isMobile && !!activeThreadId;
+
+  // Hamburger button — shown on tablet and mobile
+  const HamburgerButton = (
+    <button
+      aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+      onClick={toggleSidebar}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 34,
+        height: 34,
+        flexShrink: 0,
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 'var(--radius-md)',
+        color: 'var(--color-text-secondary)',
+        cursor: 'pointer',
+        transition: 'background var(--transition-normal), color var(--transition-normal)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--color-surface-hover)';
+        e.currentTarget.style.color = 'var(--color-text-primary)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = 'var(--color-text-secondary)';
+      }}
+    >
+      {sidebarOpen && isTablet ? <X size={18} /> : <Menu size={18} />}
+    </button>
+  );
+
+  // Detect Electron desktop shell (set by preload script)
+  const isDesktop = !!('atlasDesktop' in window);
+
   return (
     <div
       style={{
@@ -129,15 +178,31 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
         overflow: 'hidden',
         background: 'var(--color-bg-primary)',
         fontFamily: 'var(--font-family)',
+        position: 'relative',
       }}
     >
+      {/* Desktop: invisible drag strip across the full top of the window */}
+      {isDesktop && (
+        <div
+          className="desktop-drag-region"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 38,
+            zIndex: 60,
+          }}
+        />
+      )}
+
       {/* Skip to main content — visually hidden, visible on keyboard focus */}
       <a href="#email-list-main" className="skip-link">
         Skip to main content
       </a>
 
-      {/* Sidebar */}
-      {sidebarOpen && (
+      {/* ---- Desktop sidebar (inline) ---- */}
+      {!isTablet && sidebarOpen && (
         <>
           <aside
             aria-label="Application sidebar"
@@ -163,59 +228,131 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
         </>
       )}
 
-      {/* Main content area */}
+      {/* ---- Tablet / mobile overlay sidebar ---- */}
+      {isTablet && (
+        <>
+          {/* Backdrop */}
+          {sidebarOpen && (
+            <div
+              className="sidebar-overlay-backdrop is-open"
+              onClick={toggleSidebar}
+              aria-hidden="true"
+            />
+          )}
+
+          {/* Overlay panel */}
+          <aside
+            aria-label="Application sidebar"
+            className={`sidebar-overlay${sidebarOpen ? ' is-open' : ''}`}
+          >
+            <Sidebar />
+          </aside>
+        </>
+      )}
+
+      {/* ---- Main content area ---- */}
       <div
         style={{
           flex: 1,
           display: 'flex',
-          flexDirection: isBottom ? 'column' : 'row',
+          flexDirection: isBottom && !isMobile ? 'column' : 'row',
           overflow: 'hidden',
           minWidth: 0,
         }}
       >
-        {/* Email list pane */}
-        <section
-          id="email-list-main"
-          aria-label="Email list"
-          style={{
-            width: isBottom ? '100%' : `${listWidth}px`,
-            height: isBottom ? `${listHeight}px` : '100%',
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            background: 'var(--color-bg-primary)',
-          }}
-        >
-          {emailList}
-        </section>
-
-        {/* Resize handle between email list and reading pane */}
-        {readingPanePosition !== 'hidden' && (
-          <ResizeHandle
-            orientation={isBottom ? 'horizontal' : 'vertical'}
-            onResize={isBottom ? handleListHeightResize : handleListResize}
-            onResizeEnd={isBottom ? handleListHeightResizeEnd : handleListResizeEnd}
-          />
-        )}
-
-        {/* Reading pane */}
-        {readingPanePosition !== 'hidden' && (
-          <main
-            aria-label="Reading pane"
+        {/* ---- Mobile: hamburger bar above content ---- */}
+        {isTablet && (
+          <div
             style={{
-              flex: 1,
-              height: '100%',
-              overflow: 'hidden',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 44,
               display: 'flex',
-              flexDirection: 'column',
-              background: 'var(--color-bg-primary)',
-              minWidth: 0,
+              alignItems: 'center',
+              padding: '0 var(--spacing-sm)',
+              background: 'var(--color-bg-secondary)',
+              borderBottom: '1px solid var(--color-border-primary)',
+              zIndex: 10,
+              gap: 'var(--spacing-sm)',
             }}
           >
-            {readingPane}
-          </main>
+            {HamburgerButton}
+            <span
+              style={{
+                fontSize: 'var(--font-size-md)',
+                fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
+                color: 'var(--color-text-primary)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              AtlasMail
+            </span>
+          </div>
         )}
+
+        {/* Spacer to push content below the tablet top bar */}
+        {isTablet && <div style={{ height: 44, width: '100%', flexShrink: 0, position: 'absolute', pointerEvents: 'none' }} />}
+
+        {/* ---- Content wrapper below top bar ---- */}
+        <div
+          style={{
+            display: 'flex',
+            flex: 1,
+            flexDirection: isBottom && !isMobile ? 'column' : 'row',
+            overflow: 'hidden',
+            marginTop: isTablet ? 44 : 0,
+            minWidth: 0,
+          }}
+        >
+          {/* Email list pane */}
+          {(!isMobile || showMobileList) && (
+            <section
+              id="email-list-main"
+              aria-label="Email list"
+              style={{
+                width: isMobile ? '100%' : isTablet ? '100%' : isBottom ? '100%' : `${listWidth}px`,
+                maxWidth: isTablet && !isMobile ? '380px' : undefined,
+                height: isBottom && !isMobile ? `${listHeight}px` : '100%',
+                flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                background: 'var(--color-bg-primary)',
+              }}
+            >
+              {emailList}
+            </section>
+          )}
+
+          {/* Resize handle between email list and reading pane — desktop + non-bottom tablet only */}
+          {!isTablet && readingPanePosition !== 'hidden' && (
+            <ResizeHandle
+              orientation={isBottom ? 'horizontal' : 'vertical'}
+              onResize={isBottom ? handleListHeightResize : handleListResize}
+              onResizeEnd={isBottom ? handleListHeightResizeEnd : handleListResizeEnd}
+            />
+          )}
+
+          {/* Reading pane */}
+          {readingPanePosition !== 'hidden' && (!isMobile || showMobileReadingPane) && (
+            <main
+              aria-label="Reading pane"
+              style={{
+                flex: 1,
+                height: '100%',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                background: 'var(--color-bg-primary)',
+                minWidth: 0,
+              }}
+            >
+              {readingPane}
+            </main>
+          )}
+        </div>
       </div>
     </div>
   );

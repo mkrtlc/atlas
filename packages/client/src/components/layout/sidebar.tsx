@@ -1,26 +1,43 @@
 import { useState } from 'react';
-import { Inbox, Mail, Newspaper, Bell, Settings, Edit, Sun, Moon, Monitor } from 'lucide-react';
+import {
+  Inbox,
+  Mail,
+  Newspaper,
+  Bell,
+  Settings,
+  Edit,
+  Sun,
+  Moon,
+  Monitor,
+  Send,
+  FileText,
+  Archive,
+  Trash2,
+  AlertOctagon,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEmailStore } from '../../stores/email-store';
-import { useAuthStore } from '../../stores/auth-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useUIStore } from '../../stores/ui-store';
-import { useThreads } from '../../hooks/use-threads';
-import { Avatar } from '../ui/avatar';
+import { useLabelStore } from '../../stores/label-store';
+import { useThreadCounts } from '../../hooks/use-threads';
+import { AccountSwitcher } from './account-switcher';
+import { LabelTree } from '../email/label-tree';
 import type { EmailCategory } from '@atlasmail/shared';
 import type { ThemeMode } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
+import type { Mailbox } from '../../stores/email-store';
 
 interface NavItem {
   id: EmailCategory;
-  label: string;
   icon: typeof Inbox;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'important', label: 'Important', icon: Inbox },
-  { id: 'other', label: 'Other', icon: Mail },
-  { id: 'newsletters', label: 'Newsletters', icon: Newspaper },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'important', icon: Inbox },
+  { id: 'other', icon: Mail },
+  { id: 'newsletters', icon: Newspaper },
+  { id: 'notifications', icon: Bell },
 ];
 
 const CATEGORY_COLORS: Record<EmailCategory, string> = {
@@ -32,10 +49,10 @@ const CATEGORY_COLORS: Record<EmailCategory, string> = {
 
 const THEME_CYCLE: ThemeMode[] = ['light', 'dark', 'system'];
 
-const THEME_META: Record<ThemeMode, { icon: typeof Sun; label: string }> = {
-  light: { icon: Sun, label: 'Light mode' },
-  dark: { icon: Moon, label: 'Dark mode' },
-  system: { icon: Monitor, label: 'System mode' },
+const THEME_ICONS: Record<ThemeMode, typeof Sun> = {
+  light: Sun,
+  dark: Moon,
+  system: Monitor,
 };
 
 function UnreadBadge({ count }: { count: number }) {
@@ -53,8 +70,8 @@ function UnreadBadge({ count }: { count: number }) {
         height: 18,
         padding: '0 5px',
         borderRadius: 9,
-        background: 'var(--color-accent-primary)',
-        color: '#ffffff',
+        background: 'var(--color-accent-subtle)',
+        color: 'var(--color-accent-primary)',
         fontSize: 10,
         fontWeight: 600,
         lineHeight: 1,
@@ -73,6 +90,8 @@ function CategoryNavItem({
   icon: Icon,
   isActive,
   color,
+  unreadCount,
+  totalCount,
   onSelect,
 }: {
   id: EmailCategory;
@@ -80,14 +99,15 @@ function CategoryNavItem({
   icon: typeof Inbox;
   isActive: boolean;
   color: string;
+  unreadCount: number;
+  totalCount: number;
   onSelect: () => void;
 }) {
-  const { data: threads } = useThreads(id);
-  const unreadCount = threads ? threads.filter((t) => t.unreadCount > 0).length : 0;
 
   return (
     <button
       key={id}
+      className="sidebar-nav-btn"
       onClick={onSelect}
       aria-current={isActive ? 'page' : undefined}
       style={{
@@ -95,18 +115,18 @@ function CategoryNavItem({
         alignItems: 'center',
         gap: 'var(--spacing-sm)',
         width: '100%',
-        padding: '10px var(--spacing-md)',
+        padding: '6px var(--spacing-md)',
         background: isActive ? 'var(--color-surface-selected)' : 'transparent',
         border: 'none',
         borderRadius: 'var(--radius-md)',
         color: isActive ? color : 'var(--color-text-secondary)',
-        fontSize: 'var(--font-size-md)',
+        fontSize: 'var(--font-size-sm)',
         fontFamily: 'var(--font-family)',
         fontWeight: isActive
           ? ('var(--font-weight-semibold)' as CSSProperties['fontWeight'])
           : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
         cursor: 'pointer',
-        transition: 'background var(--transition-fast), color var(--transition-fast)',
+        transition: 'background var(--transition-normal), color var(--transition-normal)',
         textAlign: 'left',
       }}
       onMouseEnter={(e) => {
@@ -122,18 +142,120 @@ function CategoryNavItem({
         }
       }}
     >
-      <Icon size={16} style={{ flexShrink: 0, color: isActive ? color : 'currentColor' }} />
+      <Icon size={16} className="sidebar-nav-icon" style={{ flexShrink: 0, color: color }} />
       <span style={{ flex: 1 }}>{label}</span>
       <UnreadBadge count={unreadCount} />
     </button>
   );
 }
 
+interface MailboxNavItemDef {
+  id: Mailbox;
+  icon: typeof Inbox;
+}
+
+const MAILBOX_NAV_ITEMS: MailboxNavItemDef[] = [
+  { id: 'sent', icon: Send },
+  { id: 'drafts', icon: FileText },
+  { id: 'archive', icon: Archive },
+  { id: 'trash', icon: Trash2 },
+  { id: 'spam', icon: AlertOctagon },
+];
+
+const MAILBOX_COLORS: Record<Mailbox, string> = {
+  inbox: 'currentColor',
+  sent: '#4a9e8f',
+  drafts: '#c4856c',
+  archive: '#7889a0',
+  trash: '#c45a5a',
+  spam: '#d4954a',
+};
+
+function MailboxNavItem({
+  mailbox,
+  label,
+  icon: Icon,
+  isActive,
+  color,
+  totalCount,
+  onSelect,
+}: {
+  mailbox: Mailbox;
+  label: string;
+  icon: typeof Inbox;
+  isActive: boolean;
+  color: string;
+  totalCount: number;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      className="sidebar-nav-btn"
+      onClick={onSelect}
+      aria-current={isActive ? 'page' : undefined}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--spacing-sm)',
+        width: '100%',
+        padding: '6px var(--spacing-md)',
+        background: isActive ? 'var(--color-surface-selected)' : 'transparent',
+        border: 'none',
+        borderRadius: 'var(--radius-md)',
+        color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        fontSize: 'var(--font-size-sm)',
+        fontFamily: 'var(--font-family)',
+        fontWeight: isActive
+          ? ('var(--font-weight-semibold)' as CSSProperties['fontWeight'])
+          : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
+        cursor: 'pointer',
+        transition: 'background var(--transition-normal), color var(--transition-normal)',
+        textAlign: 'left',
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = 'var(--color-surface-hover)';
+          e.currentTarget.style.color = 'var(--color-text-primary)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = 'var(--color-text-secondary)';
+        }
+      }}
+    >
+      <Icon size={16} className="sidebar-nav-icon" style={{ flexShrink: 0, color: color }} />
+      <span style={{ flex: 1 }}>{label}</span>
+      {totalCount > 0 && (
+        <span
+          style={{
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-text-tertiary)',
+            flexShrink: 0,
+          }}
+        >
+          {totalCount > 999 ? '999+' : totalCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function ThemeToggleButton() {
   const { theme, setTheme } = useSettingsStore();
+  const { t } = useTranslation();
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const { icon: ThemeIcon, label } = THEME_META[theme];
+  const ThemeIcon = THEME_ICONS[theme];
+
+  const THEME_LABELS: Record<ThemeMode, string> = {
+    light: t('sidebar.lightMode'),
+    dark: t('sidebar.darkMode'),
+    system: t('sidebar.systemMode'),
+  };
+
+  const label = THEME_LABELS[theme];
 
   function cycleTheme() {
     const currentIndex = THEME_CYCLE.indexOf(theme);
@@ -145,7 +267,7 @@ function ThemeToggleButton() {
     <div style={{ position: 'relative', display: 'inline-flex' }}>
       <button
         onClick={cycleTheme}
-        aria-label={`Theme: ${label}. Click to cycle theme`}
+        aria-label={t('sidebar.themeAriaLabel', { label })}
         title={label}
         style={{
           display: 'flex',
@@ -159,18 +281,20 @@ function ThemeToggleButton() {
           borderRadius: 'var(--radius-md)',
           color: 'var(--color-text-secondary)',
           cursor: 'pointer',
-          transition: 'background var(--transition-fast), color var(--transition-fast)',
+          transition: 'background var(--transition-normal), color var(--transition-normal), transform 150ms ease',
           flexShrink: 0,
         }}
         onMouseEnter={(e) => {
           setShowTooltip(true);
           e.currentTarget.style.background = 'var(--color-surface-hover)';
           e.currentTarget.style.color = 'var(--color-text-primary)';
+          e.currentTarget.style.transform = 'rotate(15deg)';
         }}
         onMouseLeave={(e) => {
           setShowTooltip(false);
           e.currentTarget.style.background = 'transparent';
           e.currentTarget.style.color = 'var(--color-text-secondary)';
+          e.currentTarget.style.transform = 'rotate(0deg)';
         }}
       >
         <ThemeIcon size={16} />
@@ -206,9 +330,30 @@ function ThemeToggleButton() {
 }
 
 export function Sidebar() {
-  const { activeCategory, setActiveCategory, openCompose } = useEmailStore();
-  const account = useAuthStore((s) => s.account);
+  const { activeCategory, setActiveCategory, activeMailbox, setActiveMailbox, openCompose, filterByLabel, setFilterByLabel } =
+    useEmailStore();
   const { toggleSettings } = useUIStore();
+  const { t } = useTranslation();
+  const labels = useLabelStore((s) => s.labels);
+  const { data: counts } = useThreadCounts();
+
+  const CATEGORY_LABELS: Record<EmailCategory, string> = {
+    important: t('sidebar.important'),
+    other: t('sidebar.other'),
+    newsletters: t('sidebar.newsletters'),
+    notifications: t('sidebar.notifications'),
+  };
+
+  const MAILBOX_LABELS: Record<string, string> = {
+    sent: t('sidebar.sent'),
+    drafts: t('sidebar.drafts'),
+    archive: t('sidebar.archive'),
+    trash: t('sidebar.trash'),
+    spam: t('sidebar.spam'),
+  };
+
+  // Detect Electron desktop shell (set by preload script)
+  const isDesktop = !!('atlasDesktop' in window);
 
   return (
     <div
@@ -216,25 +361,27 @@ export function Sidebar() {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        padding: 'var(--spacing-md)',
+        padding: 'var(--spacing-sm) var(--spacing-sm)',
+        paddingTop: isDesktop ? 40 : undefined,
         boxSizing: 'border-box',
       }}
     >
-      {/* Brand header */}
+      {/* Brand header with theme toggle — also serves as drag region on desktop */}
       <div
+        className={isDesktop ? 'desktop-drag-region' : undefined}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 'var(--spacing-sm)',
-          padding: 'var(--spacing-sm) var(--spacing-xs)',
-          marginBottom: 'var(--spacing-md)',
+          padding: 'var(--spacing-xs) var(--spacing-xs)',
+          marginBottom: 'var(--spacing-sm)',
         }}
       >
         <div
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: 'var(--radius-md)',
+            width: 24,
+            height: 24,
+            borderRadius: 'var(--radius-sm)',
             background: 'var(--color-accent-primary)',
             display: 'flex',
             alignItems: 'center',
@@ -242,53 +389,60 @@ export function Sidebar() {
             flexShrink: 0,
           }}
         >
-          <Mail size={15} color="#ffffff" />
+          <Mail size={13} color="#ffffff" />
         </div>
         <span
           style={{
-            fontSize: 'var(--font-size-md)',
+            fontSize: 'var(--font-size-sm)',
             fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
             color: 'var(--color-text-primary)',
             letterSpacing: '-0.01em',
+            flex: 1,
           }}
         >
           AtlasMail
         </span>
+        <ThemeToggleButton />
       </div>
 
       {/* Compose button */}
       <button
+        className="sidebar-nav-btn"
         onClick={() => openCompose('new')}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 'var(--spacing-sm)',
           width: '100%',
-          padding: 'var(--spacing-sm) var(--spacing-md)',
-          marginBottom: 'var(--spacing-lg)',
-          background: 'var(--color-accent-primary)',
-          color: '#ffffff',
-          border: 'none',
+          padding: '6px var(--spacing-md)',
+          marginBottom: 'var(--spacing-md)',
+          background: 'var(--color-accent-subtle)',
+          color: 'var(--color-accent-primary)',
+          border: '1px solid color-mix(in srgb, var(--color-accent-primary) 20%, transparent)',
           borderRadius: 'var(--radius-md)',
-          fontSize: 'var(--font-size-md)',
+          fontSize: 'var(--font-size-sm)',
           fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
           fontFamily: 'var(--font-family)',
           cursor: 'pointer',
-          transition: 'background var(--transition-fast)',
+          transition: 'background var(--transition-normal)',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-accent-primary-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-accent-primary)')}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--color-accent-subtle-hover)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'var(--color-accent-subtle)';
+        }}
       >
-        <Edit size={15} />
-        Compose
+        <Edit size={15} className="sidebar-nav-icon" />
+        {t('compose.newMessage')}
         <span
           aria-hidden="true"
           style={{
             marginLeft: 'auto',
             fontSize: 'var(--font-size-xs)',
-            opacity: 0.7,
+            opacity: 0.5,
             fontFamily: 'var(--font-mono)',
-            background: 'rgba(255,255,255,0.15)',
+            background: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
             padding: '1px 5px',
             borderRadius: 'var(--radius-sm)',
           }}
@@ -298,117 +452,136 @@ export function Sidebar() {
       </button>
 
       {/* Category navigation */}
-      <nav aria-label="Email categories" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        {NAV_ITEMS.map(({ id, label, icon }) => (
+      <nav
+        aria-label="Email categories"
+        style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
+      >
+        {NAV_ITEMS.map(({ id, icon }) => (
           <CategoryNavItem
             key={id}
             id={id}
-            label={label}
+            label={CATEGORY_LABELS[id]}
             icon={icon}
-            isActive={activeCategory === id}
+            isActive={activeMailbox === 'inbox' && activeCategory === id}
             color={CATEGORY_COLORS[id]}
+            unreadCount={counts?.categories[id]?.unread ?? 0}
+            totalCount={counts?.categories[id]?.total ?? 0}
             onSelect={() => setActiveCategory(id)}
           />
         ))}
       </nav>
 
-      {/* Bottom section: theme toggle + settings + account */}
+      {/* Separator */}
+      <div
+        aria-hidden="true"
+        style={{
+          height: 1,
+          background: 'var(--color-border-primary)',
+          margin: 'var(--spacing-xs) 0',
+          flexShrink: 0,
+        }}
+      />
+
+      {/* Mailbox navigation */}
+      <nav
+        aria-label="Mailboxes"
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}
+      >
+        {MAILBOX_NAV_ITEMS.map(({ id, icon }) => (
+          <MailboxNavItem
+            key={id}
+            mailbox={id}
+            label={MAILBOX_LABELS[id]}
+            icon={icon}
+            color={MAILBOX_COLORS[id]}
+            isActive={activeMailbox === id}
+            totalCount={counts?.mailboxes[id]?.total ?? 0}
+            onSelect={() => setActiveMailbox(id)}
+          />
+        ))}
+
+        {/* Labels section */}
+        {labels.length > 0 && (
+          <div style={{ marginTop: 'var(--spacing-xs)' }}>
+            <div
+              aria-hidden="true"
+              style={{
+                height: 1,
+                background: 'var(--color-border-primary)',
+                margin: 'var(--spacing-xs) 0',
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', padding: '4px var(--spacing-md)' }}>
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                  fontWeight: 500,
+                  flex: 1,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {t('labels.labelsSection')}
+              </span>
+            </div>
+            <LabelTree
+              labels={labels}
+              parentId={null}
+              depth={0}
+              activeLabel={filterByLabel}
+              onSelect={(id) => setFilterByLabel(filterByLabel === id ? null : id)}
+            />
+          </div>
+        )}
+      </nav>
+
+      {/* Bottom section: theme toggle + settings + account switcher */}
       <div
         style={{
           borderTop: '1px solid var(--color-border-primary)',
-          paddingTop: 'var(--spacing-md)',
+          paddingTop: 'var(--spacing-sm)',
           display: 'flex',
           flexDirection: 'column',
           gap: '2px',
         }}
       >
-        {/* Settings row with theme toggle */}
-        <div
+        {/* Settings button */}
+        <button
+          className="sidebar-nav-btn"
+          onClick={toggleSettings}
+          aria-label={t('settings.title')}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '2px',
+            gap: 'var(--spacing-sm)',
+            width: '100%',
+            padding: '6px var(--spacing-md)',
+            background: 'transparent',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--color-text-secondary)',
+            fontSize: 'var(--font-size-sm)',
+            fontFamily: 'var(--font-family)',
+            cursor: 'pointer',
+            transition: 'background var(--transition-normal), color var(--transition-normal)',
+            textAlign: 'left',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-surface-hover)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--color-text-secondary)';
           }}
         >
-          <button
-            onClick={toggleSettings}
-            aria-label="Settings"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-sm)',
-              flex: 1,
-              padding: 'var(--spacing-sm) var(--spacing-md)',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--color-text-secondary)',
-              fontSize: 'var(--font-size-md)',
-              fontFamily: 'var(--font-family)',
-              cursor: 'pointer',
-              transition: 'background var(--transition-fast), color var(--transition-fast)',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--color-surface-hover)';
-              e.currentTarget.style.color = 'var(--color-text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--color-text-secondary)';
-            }}
-          >
-            <Settings size={16} />
-            Settings
-          </button>
+          <Settings size={16} className="sidebar-nav-icon" style={{ color: '#7889a0' }} />
+          {t('settings.title')}
+        </button>
 
-          <ThemeToggleButton />
-        </div>
-
-        {account && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-sm)',
-              padding: 'var(--spacing-sm) var(--spacing-md)',
-              borderRadius: 'var(--radius-md)',
-              overflow: 'hidden',
-            }}
-          >
-            <Avatar
-              src={account.pictureUrl}
-              name={account.name}
-              email={account.email}
-              size={26}
-            />
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-text-primary)',
-                  fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {account.name || account.email}
-              </div>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-text-tertiary)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {account.email}
-              </div>
-            </div>
-          </div>
-        )}
+        <AccountSwitcher />
       </div>
     </div>
   );
