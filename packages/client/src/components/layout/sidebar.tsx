@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Inbox,
   Mail,
@@ -17,14 +17,18 @@ import {
   Trash2,
   AlertOctagon,
   Tag,
-  ChevronLeft,
+  Plus,
+  Pencil,
+  Trash2 as TrashIcon,
+  Check,
+  X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Chip } from '../ui/chip';
 import { useEmailStore } from '../../stores/email-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useUIStore } from '../../stores/ui-store';
-import { useThreadCounts, useGmailLabels } from '../../hooks/use-threads';
+import { useThreadCounts, useGmailLabels, useCreateGmailLabel, useUpdateGmailLabel, useDeleteGmailLabel } from '../../hooks/use-threads';
 import type { GmailLabel } from '../../hooks/use-threads';
 import { AccountSwitcher } from './account-switcher';
 import type { EmailCategory } from '@atlasmail/shared';
@@ -365,69 +369,465 @@ function GmailLabelItem({
   label,
   isActive,
   onSelect,
+  onRename,
+  onDelete,
 }: {
   label: GmailLabel;
   isActive: boolean;
   onSelect: () => void;
+  onRename: (newName: string) => void;
+  onDelete: () => void;
 }) {
   const bgColor = label.color?.background || 'var(--color-text-tertiary)';
   const { displayName, depth } = parseLabelName(label.name);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(displayName);
+  const [isHovered, setIsHovered] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isUserLabel = label.type === 'user';
 
-  return (
-    <button
-      onClick={onSelect}
-      aria-current={isActive ? 'page' : undefined}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--spacing-sm)',
-        width: '100%',
-        padding: '6px var(--spacing-md)',
-        paddingLeft: `${12 + depth * 16}px`,
-        background: isActive ? 'var(--color-surface-selected)' : 'transparent',
-        border: 'none',
-        borderRadius: 'var(--radius-md)',
-        color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-        fontSize: 'var(--font-size-sm)',
-        fontFamily: 'var(--font-family)',
-        fontWeight: isActive ? 500 : 400,
-        cursor: 'pointer',
-        transition: 'background var(--transition-normal), color var(--transition-normal)',
-        textAlign: 'left',
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'var(--color-surface-hover)';
-          e.currentTarget.style.color = 'var(--color-text-primary)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--color-text-secondary)';
-        }
-      }}
-    >
-      <span
+  useEffect(() => {
+    if (isEditing) inputRef.current?.focus();
+  }, [isEditing]);
+
+  function handleSaveRename() {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== displayName) {
+      // Preserve the parent path when renaming
+      const parts = label.name.split('/');
+      parts[parts.length - 1] = trimmed;
+      onRename(parts.join('/'));
+    }
+    setIsEditing(false);
+  }
+
+  if (isEditing) {
+    return (
+      <div
         style={{
-          flexShrink: 0,
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: bgColor,
-        }}
-      />
-      <span
-        style={{
-          flex: 1,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '4px var(--spacing-sm)',
+          paddingLeft: `${8 + depth * 16}px`,
         }}
       >
-        {displayName}
-      </span>
-    </button>
+        <input
+          ref={inputRef}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSaveRename();
+            if (e.key === 'Escape') { setIsEditing(false); setEditValue(displayName); }
+          }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            height: 26,
+            padding: '0 6px',
+            border: '1px solid var(--color-border-focus)',
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--color-bg-primary)',
+            color: 'var(--color-text-primary)',
+            fontSize: 'var(--font-size-sm)',
+            fontFamily: 'var(--font-family)',
+            outline: 'none',
+          }}
+        />
+        <button
+          onClick={handleSaveRename}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 24, height: 24, padding: 0,
+            background: 'transparent', border: 'none', borderRadius: 'var(--radius-sm)',
+            color: 'var(--color-success)', cursor: 'pointer',
+          }}
+        >
+          <Check size={14} />
+        </button>
+        <button
+          onClick={() => { setIsEditing(false); setEditValue(displayName); }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 24, height: 24, padding: 0,
+            background: 'transparent', border: 'none', borderRadius: 'var(--radius-sm)',
+            color: 'var(--color-text-tertiary)', cursor: 'pointer',
+          }}
+        >
+          <X size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <button
+        onClick={onSelect}
+        aria-current={isActive ? 'page' : undefined}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-sm)',
+          width: '100%',
+          padding: '6px var(--spacing-md)',
+          paddingLeft: `${12 + depth * 16}px`,
+          paddingRight: isUserLabel && isHovered ? 52 : 'var(--spacing-md)',
+          background: isActive ? 'var(--color-surface-selected)' : isHovered ? 'var(--color-surface-hover)' : 'transparent',
+          border: 'none',
+          borderRadius: 'var(--radius-md)',
+          color: isActive ? 'var(--color-text-primary)' : isHovered ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+          fontSize: 'var(--font-size-sm)',
+          fontFamily: 'var(--font-family)',
+          fontWeight: isActive ? 500 : 400,
+          cursor: 'pointer',
+          transition: 'background var(--transition-normal), color var(--transition-normal)',
+          textAlign: 'left',
+        }}
+      >
+        <span
+          style={{
+            flexShrink: 0,
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: bgColor,
+          }}
+        />
+        <span
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {displayName}
+        </span>
+      </button>
+
+      {/* Inline edit/delete actions for user labels */}
+      {isUserLabel && isHovered && (
+        <div
+          style={{
+            position: 'absolute',
+            right: 6,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            gap: 2,
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); setEditValue(displayName); setIsEditing(true); }}
+            title="Rename"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 22, height: 22, padding: 0,
+              background: 'var(--color-bg-tertiary)', border: 'none',
+              borderRadius: 'var(--radius-sm)', color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+            }}
+          >
+            <Pencil size={12} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            title="Delete"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 22, height: 22, padding: 0,
+              background: 'var(--color-bg-tertiary)', border: 'none',
+              borderRadius: 'var(--radius-sm)', color: 'var(--color-error)',
+              cursor: 'pointer',
+            }}
+          >
+            <TrashIcon size={12} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Labels floating popover
+// ---------------------------------------------------------------------------
+
+function LabelsPopover({
+  labels,
+  filterByLabel,
+  onSelectLabel,
+  onClose,
+  anchorTop,
+}: {
+  labels: GmailLabel[];
+  filterByLabel: string | null;
+  onSelectLabel: (id: string | null) => void;
+  onClose: () => void;
+  anchorTop: number;
+}) {
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [addingNew, setAddingNew] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const newInputRef = useRef<HTMLInputElement>(null);
+  const createLabel = useCreateGmailLabel();
+  const updateLabel = useUpdateGmailLabel();
+  const deleteLabel = useDeleteGmailLabel();
+
+  // Close on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [onClose]);
+
+  // Close on Escape
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (addingNew) newInputRef.current?.focus();
+  }, [addingNew]);
+
+  function handleCreate() {
+    const trimmed = newLabelName.trim();
+    if (!trimmed) return;
+    createLabel.mutate(trimmed, {
+      onSuccess: () => { setNewLabelName(''); setAddingNew(false); },
+    });
+  }
+
+  // Arrow should point at the Labels row. anchorTop is the top of the Labels button
+  // relative to the sidebar container.
+  const arrowSize = 8;
+
+  return (
+    <div
+      ref={popoverRef}
+      style={{
+        position: 'fixed',
+        left: 'var(--sidebar-width)',
+        top: Math.max(anchorTop - 40, 8),
+        width: 260,
+        maxHeight: 'calc(100vh - 16px)',
+        background: 'var(--color-bg-elevated)',
+        border: '1px solid var(--color-border-primary)',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-lg)',
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Arrow pointing left */}
+      <div
+        style={{
+          position: 'absolute',
+          left: -arrowSize - 1,
+          top: anchorTop - Math.max(anchorTop - 40, 8) + 8,
+          width: 0,
+          height: 0,
+          borderTop: `${arrowSize}px solid transparent`,
+          borderBottom: `${arrowSize}px solid transparent`,
+          borderRight: `${arrowSize}px solid var(--color-border-primary)`,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: -arrowSize + 1,
+          top: anchorTop - Math.max(anchorTop - 40, 8) + 8,
+          width: 0,
+          height: 0,
+          borderTop: `${arrowSize}px solid transparent`,
+          borderBottom: `${arrowSize}px solid transparent`,
+          borderRight: `${arrowSize}px solid var(--color-bg-elevated)`,
+        }}
+      />
+
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-sm)',
+          padding: '10px var(--spacing-md)',
+          borderBottom: '1px solid var(--color-border-secondary)',
+          flexShrink: 0,
+        }}
+      >
+        <Tag size={15} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} />
+        <span
+          style={{
+            flex: 1,
+            fontSize: 'var(--font-size-md)',
+            fontWeight: 600,
+            color: 'var(--color-text-primary)',
+            fontFamily: 'var(--font-family)',
+          }}
+        >
+          Labels
+        </span>
+        {filterByLabel && (
+          <Chip
+            onClick={() => onSelectLabel(null)}
+            active
+            height={24}
+            style={{
+              border: 'none',
+              background: 'var(--color-accent-subtle)',
+              color: 'var(--color-accent-primary)',
+              fontWeight: 500,
+              padding: '0 8px',
+              fontSize: 'var(--font-size-xs)',
+            }}
+          >
+            Clear
+          </Chip>
+        )}
+        <button
+          onClick={() => setAddingNew(true)}
+          title="Add label"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 26,
+            height: 26,
+            padding: 0,
+            background: 'transparent',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-sm)',
+            color: 'var(--color-text-secondary)',
+            cursor: 'pointer',
+            transition: 'background var(--transition-normal)',
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-hover)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+
+      {/* New label input */}
+      {addingNew && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '6px var(--spacing-md)',
+            borderBottom: '1px solid var(--color-border-secondary)',
+          }}
+        >
+          <input
+            ref={newInputRef}
+            value={newLabelName}
+            onChange={(e) => setNewLabelName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreate();
+              if (e.key === 'Escape') { setAddingNew(false); setNewLabelName(''); }
+            }}
+            placeholder="New label name..."
+            style={{
+              flex: 1,
+              minWidth: 0,
+              height: 28,
+              padding: '0 8px',
+              border: '1px solid var(--color-border-focus)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-bg-primary)',
+              color: 'var(--color-text-primary)',
+              fontSize: 'var(--font-size-sm)',
+              fontFamily: 'var(--font-family)',
+              outline: 'none',
+            }}
+          />
+          <button
+            onClick={handleCreate}
+            disabled={!newLabelName.trim() || createLabel.isPending}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 26, height: 26, padding: 0,
+              background: 'transparent', border: 'none', borderRadius: 'var(--radius-sm)',
+              color: newLabelName.trim() ? 'var(--color-success)' : 'var(--color-text-tertiary)',
+              cursor: newLabelName.trim() ? 'pointer' : 'default',
+            }}
+          >
+            <Check size={14} />
+          </button>
+          <button
+            onClick={() => { setAddingNew(false); setNewLabelName(''); }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 26, height: 26, padding: 0,
+              background: 'transparent', border: 'none', borderRadius: 'var(--radius-sm)',
+              color: 'var(--color-text-tertiary)', cursor: 'pointer',
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Label list */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: 'var(--spacing-xs) var(--spacing-xs)',
+        }}
+      >
+        {!labels || labels.length === 0 ? (
+          <div
+            style={{
+              padding: 'var(--spacing-xl)',
+              textAlign: 'center',
+              color: 'var(--color-text-tertiary)',
+              fontSize: 'var(--font-size-sm)',
+            }}
+          >
+            No labels found
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            {sortGmailLabels(labels).map((label) => (
+              <GmailLabelItem
+                key={label.id}
+                label={label}
+                isActive={filterByLabel === label.id}
+                onSelect={() => {
+                  onSelectLabel(filterByLabel === label.id ? null : label.id);
+                }}
+                onRename={(newName) => {
+                  updateLabel.mutate({ labelId: label.id, name: newName });
+                }}
+                onDelete={() => {
+                  if (filterByLabel === label.id) onSelectLabel(null);
+                  deleteLabel.mutate(label.id);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -437,8 +837,24 @@ export function Sidebar() {
   const { toggleSettings } = useUIStore();
   const { t } = useTranslation();
   const [labelsOpen, setLabelsOpen] = useState(false);
+  const [labelsAnchorTop, setLabelsAnchorTop] = useState(0);
+  const labelsBtnRef = useRef<HTMLButtonElement>(null);
   const { data: gmailLabels } = useGmailLabels();
   const { data: counts } = useThreadCounts();
+
+  const handleOpenLabels = useCallback(() => {
+    if (labelsBtnRef.current) {
+      const rect = labelsBtnRef.current.getBoundingClientRect();
+      setLabelsAnchorTop(rect.top + rect.height / 2);
+    }
+    setLabelsOpen((prev) => !prev);
+  }, []);
+
+  const handleCloseLabels = useCallback(() => setLabelsOpen(false), []);
+
+  const handleSelectLabel = useCallback((id: string | null) => {
+    setFilterByLabel(id);
+  }, [setFilterByLabel]);
 
   const CATEGORY_LABELS: Record<EmailCategory, string> = {
     all: t('sidebar.allMail'),
@@ -579,13 +995,13 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Separator */}
+      {/* Separator — between Other & Starred */}
       <div
         aria-hidden="true"
         style={{
           height: 1,
           background: 'var(--color-border-primary)',
-          margin: 'var(--spacing-xs) 0',
+          margin: '8px 0',
           flexShrink: 0,
         }}
       />
@@ -608,76 +1024,77 @@ export function Sidebar() {
           />
         ))}
 
+        {/* Separator — between Trash & Labels */}
+        <div
+          aria-hidden="true"
+          style={{
+            height: 1,
+            background: 'var(--color-border-primary)',
+            margin: '8px 0',
+            flexShrink: 0,
+          }}
+        />
+
         {/* Gmail labels button */}
-        <div style={{ marginTop: 'var(--spacing-xs)' }}>
-          <div
-            aria-hidden="true"
-            style={{
-              height: 1,
-              background: 'var(--color-border-primary)',
-              margin: 'var(--spacing-xs) 0',
-              flexShrink: 0,
-            }}
-          />
-          <button
-            className="sidebar-nav-btn"
-            onClick={() => setLabelsOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-sm)',
-              width: '100%',
-              padding: '6px var(--spacing-md)',
-              background: filterByLabel ? 'var(--color-surface-selected)' : 'transparent',
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              color: filterByLabel ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'var(--font-family)',
-              fontWeight: filterByLabel ? 500 : 400,
-              cursor: 'pointer',
-              transition: 'background var(--transition-normal), color var(--transition-normal)',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => {
-              if (!filterByLabel) {
-                e.currentTarget.style.background = 'var(--color-surface-hover)';
-                e.currentTarget.style.color = 'var(--color-text-primary)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!filterByLabel) {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--color-text-secondary)';
-              }
-            }}
-          >
-            <Tag size={16} className="sidebar-nav-icon" style={{ flexShrink: 0 }} />
-            <span style={{ flex: 1 }}>
-              {filterByLabel
-                ? parseLabelName(gmailLabels?.find((l) => l.id === filterByLabel)?.name ?? 'Labels').displayName
-                : 'Labels'}
-            </span>
-            {filterByLabel && (
-              <span
-                aria-label="Label filter active"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: 'var(--color-accent-primary)',
-                  flexShrink: 0,
-                }}
-              />
-            )}
-          </button>
-        </div>
+        <button
+          ref={labelsBtnRef}
+          className="sidebar-nav-btn"
+          onClick={handleOpenLabels}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-sm)',
+            width: '100%',
+            padding: '6px var(--spacing-md)',
+            background: (filterByLabel || labelsOpen) ? 'var(--color-surface-selected)' : 'transparent',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            color: (filterByLabel || labelsOpen) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+            fontSize: 'var(--font-size-sm)',
+            fontFamily: 'var(--font-family)',
+            fontWeight: filterByLabel ? 500 : 400,
+            cursor: 'pointer',
+            transition: 'background var(--transition-normal), color var(--transition-normal)',
+            textAlign: 'left',
+          }}
+          onMouseEnter={(e) => {
+            if (!filterByLabel && !labelsOpen) {
+              e.currentTarget.style.background = 'var(--color-surface-hover)';
+              e.currentTarget.style.color = 'var(--color-text-primary)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!filterByLabel && !labelsOpen) {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--color-text-secondary)';
+            }
+          }}
+        >
+          <Tag size={16} className="sidebar-nav-icon" style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>
+            {filterByLabel
+              ? parseLabelName(gmailLabels?.find((l) => l.id === filterByLabel)?.name ?? 'Labels').displayName
+              : 'Labels'}
+          </span>
+          {filterByLabel && (
+            <span
+              aria-label="Label filter active"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--color-accent-primary)',
+                flexShrink: 0,
+              }}
+            />
+          )}
+        </button>
       </nav>
 
-      {/* Bottom section: theme toggle + settings + account switcher */}
+      {/* Bottom section: settings + account switcher */}
       <div
         style={{
           borderTop: '1px solid var(--color-border-primary)',
@@ -724,130 +1141,15 @@ export function Sidebar() {
         <AccountSwitcher />
       </div>
 
-      {/* Gmail labels sliding panel */}
-      {labelsOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'var(--color-bg-secondary)',
-            zIndex: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            animation: 'slideInLeft 200ms ease',
-          }}
-        >
-          {/* Panel header */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-sm)',
-              padding: 'var(--spacing-sm) var(--spacing-sm)',
-              paddingTop: isDesktop ? 40 : 'var(--spacing-sm)',
-              borderBottom: '1px solid var(--color-border-primary)',
-              flexShrink: 0,
-            }}
-          >
-            <button
-              onClick={() => setLabelsOpen(false)}
-              aria-label="Back to navigation"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 32,
-                height: 32,
-                padding: 0,
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--color-text-secondary)',
-                cursor: 'pointer',
-                transition: 'background var(--transition-normal), color var(--transition-normal)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--color-surface-hover)';
-                e.currentTarget.style.color = 'var(--color-text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--color-text-secondary)';
-              }}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <span
-              style={{
-                fontSize: 'var(--font-size-lg)',
-                fontWeight: 600,
-                color: 'var(--color-text-primary)',
-                flex: 1,
-              }}
-            >
-              Labels
-            </span>
-            {filterByLabel && (
-              <Chip
-                onClick={() => {
-                  setFilterByLabel(null);
-                  setLabelsOpen(false);
-                }}
-                aria-label="Clear label filter"
-                active
-                height={26}
-                style={{
-                  border: 'none',
-                  background: 'var(--color-accent-subtle)',
-                  color: 'var(--color-accent-primary)',
-                  fontWeight: 500,
-                  padding: '0 10px',
-                }}
-              >
-                Clear filter
-              </Chip>
-            )}
-          </div>
-
-          {/* Label list */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: 'var(--spacing-sm)',
-            }}
-          >
-            {!gmailLabels || gmailLabels.length === 0 ? (
-              <div
-                style={{
-                  padding: 'var(--spacing-2xl)',
-                  textAlign: 'center',
-                  color: 'var(--color-text-tertiary)',
-                  fontSize: 'var(--font-size-sm)',
-                }}
-              >
-                No labels found
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                {sortGmailLabels(gmailLabels).map((label) => (
-                  <GmailLabelItem
-                    key={label.id}
-                    label={label}
-                    isActive={filterByLabel === label.id}
-                    onSelect={() => {
-                      setFilterByLabel(filterByLabel === label.id ? null : label.id);
-                      setLabelsOpen(false);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Gmail labels floating popover */}
+      {labelsOpen && gmailLabels && (
+        <LabelsPopover
+          labels={gmailLabels}
+          filterByLabel={filterByLabel}
+          onSelectLabel={handleSelectLabel}
+          onClose={handleCloseLabels}
+          anchorTop={labelsAnchorTop}
+        />
       )}
     </div>
   );

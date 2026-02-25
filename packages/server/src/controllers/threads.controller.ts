@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as threadService from '../services/thread.service';
+import * as gmailService from '../services/gmail.service';
 import { logger } from '../utils/logger';
 
 export async function getThreadCounts(req: Request, res: Response) {
@@ -36,6 +37,48 @@ export async function getGmailLabels(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to fetch Gmail labels');
     res.status(500).json({ success: false, error: 'Failed to fetch Gmail labels' });
+  }
+}
+
+export async function createGmailLabel(req: Request, res: Response) {
+  try {
+    const { name } = req.body;
+    if (!name || typeof name !== 'string') {
+      res.status(400).json({ success: false, error: 'Label name is required' });
+      return;
+    }
+    const label = await gmailService.createLabel(req.auth!.accountId, name.trim());
+    res.json({ success: true, data: label });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create Gmail label');
+    res.status(500).json({ success: false, error: 'Failed to create Gmail label' });
+  }
+}
+
+export async function updateGmailLabel(req: Request, res: Response) {
+  try {
+    const labelId = req.params.labelId as string;
+    const { name } = req.body;
+    if (!name || typeof name !== 'string') {
+      res.status(400).json({ success: false, error: 'Label name is required' });
+      return;
+    }
+    const label = await gmailService.updateLabel(req.auth!.accountId, labelId, name.trim());
+    res.json({ success: true, data: label });
+  } catch (error) {
+    logger.error({ error }, 'Failed to update Gmail label');
+    res.status(500).json({ success: false, error: 'Failed to update Gmail label' });
+  }
+}
+
+export async function deleteGmailLabel(req: Request, res: Response) {
+  try {
+    const labelId = req.params.labelId as string;
+    await gmailService.deleteLabel(req.auth!.accountId, labelId);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error({ error }, 'Failed to delete Gmail label');
+    res.status(500).json({ success: false, error: 'Failed to delete Gmail label' });
   }
 }
 

@@ -173,3 +173,31 @@ export async function listLabels(accountId: string) {
   const response = await gmail.users.labels.list({ userId: 'me' });
   return response.data.labels || [];
 }
+
+export async function createLabel(accountId: string, name: string) {
+  const gmail = await getGmailClient(accountId);
+  const response = await gmail.users.labels.create({
+    userId: 'me',
+    requestBody: {
+      name,
+      labelListVisibility: 'labelShow',
+      messageListVisibility: 'show',
+    },
+  });
+  return response.data;
+}
+
+export async function updateLabel(accountId: string, labelId: string, name: string) {
+  const gmail = await getGmailClient(accountId);
+  const response = await gmail.users.labels.update({
+    userId: 'me',
+    id: labelId,
+    requestBody: { name },
+  });
+  return response.data;
+}
+
+export async function deleteLabel(accountId: string, labelId: string) {
+  const gmail = await getGmailClient(accountId);
+  await gmail.users.labels.delete({ userId: 'me', id: labelId });
+}

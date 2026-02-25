@@ -583,6 +583,44 @@ export function useGmailLabels() {
   });
 }
 
+export function useCreateGmailLabel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data } = await api.post('/threads/labels', { name });
+      return data.data as GmailLabel;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels.gmail });
+    },
+  });
+}
+
+export function useUpdateGmailLabel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ labelId, name }: { labelId: string; name: string }) => {
+      const { data } = await api.patch(`/threads/labels/${encodeURIComponent(labelId)}`, { name });
+      return data.data as GmailLabel;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels.gmail });
+    },
+  });
+}
+
+export function useDeleteGmailLabel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (labelId: string) => {
+      await api.delete(`/threads/labels/${encodeURIComponent(labelId)}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels.gmail });
+    },
+  });
+}
+
 export function useSpamWithUndo() {
   const queryClient = useQueryClient();
   const spamMutation = useSpamThread();

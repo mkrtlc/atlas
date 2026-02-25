@@ -30,6 +30,9 @@ router.post('/sync', async (req: Request, res: Response) => {
 
 router.get('/counts', threadsController.getThreadCounts);
 router.get('/labels', threadsController.getGmailLabels);
+router.post('/labels', threadsController.createGmailLabel);
+router.patch('/labels/:labelId', threadsController.updateGmailLabel);
+router.delete('/labels/:labelId', threadsController.deleteGmailLabel);
 router.get('/attachments/:attachmentId', threadsController.downloadAttachment);
 router.get('/', threadsController.listThreads);
 router.post('/send', threadsController.sendEmail);
