@@ -116,10 +116,44 @@ export async function syncGoogleContacts(accountId: string) {
   logger.info({ accountId, synced }, 'Google Contacts sync complete');
 }
 
+// ─── Shared / no-reply addresses ─────────────────────────────────────
+// These are service-operated addresses that send on behalf of many people.
+// Contact lookups should be skipped for them to avoid false matches
+// (e.g. notifications@github.com matched to one person's Google Contact).
+
+const SHARED_EMAIL_ADDRESSES = new Set([
+  'notifications@github.com',
+  'noreply@github.com',
+  'noreply@google.com',
+  'no-reply@accounts.google.com',
+  'noreply@medium.com',
+  'noreply@notify.bugsnag.com',
+  'noreply@email.atlassian.com',
+  'notify@twitter.com',
+  'info@twitter.com',
+  'noreply@discord.com',
+]);
+
+const SHARED_EMAIL_PREFIXES = [
+  'noreply@', 'no-reply@', 'no_reply@',
+  'donotreply@', 'do-not-reply@', 'do_not_reply@',
+  'notifications@', 'notification@',
+  'mailer-daemon@', 'postmaster@',
+];
+
+function isSharedAddress(email: string): boolean {
+  const lower = email.toLowerCase();
+  if (SHARED_EMAIL_ADDRESSES.has(lower)) return true;
+  return SHARED_EMAIL_PREFIXES.some((prefix) => lower.startsWith(prefix));
+}
+
 // ─── Query contacts ───────────────────────────────────────────────────
 
 export async function getContactByEmail(accountId: string, email: string) {
   const normalizedEmail = email.toLowerCase();
+
+  // Skip contact lookup for shared/notification addresses
+  if (isSharedAddress(normalizedEmail)) return null;
 
   // Exact match on primary email
   let [contact] = await db
