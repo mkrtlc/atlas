@@ -608,7 +608,14 @@ export function ComposeModal() {
     if (composeMode === 'reply') {
       const replyAddr = lastEmail.replyTo || lastEmail.fromAddress;
       if (replyAddr !== myEmail) {
+        // Standard reply — respond to the sender
         setToRecipients([addressToRecipient(replyAddr, lastEmail.fromName ?? undefined)]);
+      } else {
+        // Replying to your own email — reply to the original recipients instead
+        const originalTo = lastEmail.toAddresses.filter((a) => a.address !== myEmail);
+        if (originalTo.length > 0) {
+          setToRecipients(originalTo.map((a) => addressToRecipient(a.address, a.name ?? undefined)));
+        }
       }
       setSubject(addSubjectPrefix(thread.subject, 'Re'));
       applyBody(buildQuotedBody(lastEmail));
@@ -618,6 +625,12 @@ export function ComposeModal() {
       const replyAddr = lastEmail.replyTo || lastEmail.fromAddress;
       if (replyAddr !== myEmail) {
         setToRecipients([addressToRecipient(replyAddr, lastEmail.fromName ?? undefined)]);
+      } else {
+        // Replying to your own email — reply to the original recipients instead
+        const originalTo = lastEmail.toAddresses.filter((a) => a.address !== myEmail);
+        if (originalTo.length > 0) {
+          setToRecipients(originalTo.map((a) => addressToRecipient(a.address, a.name ?? undefined)));
+        }
       }
 
       const allRecipients = [...lastEmail.toAddresses, ...lastEmail.ccAddresses].filter(

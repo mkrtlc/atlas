@@ -113,9 +113,15 @@ export function InlineReply({ threadId, threadSubject, lastEmail }: InlineReplyP
   const trackingEnabled = useSettingsStore((s) => s.trackingEnabled);
   const sendEmail = useSendEmail();
 
-  // Derive the reply-to address from the last email
-  const replyToAddress = lastEmail.replyTo || lastEmail.fromAddress;
-  const replyToName = lastEmail.fromName || '';
+  const myEmail = account?.email || '';
+
+  // Derive the reply-to address from the last email.
+  // If the sender is yourself, reply to the original recipients instead.
+  const rawReplyAddr = lastEmail.replyTo || lastEmail.fromAddress;
+  const isSentByMe = rawReplyAddr.toLowerCase() === myEmail.toLowerCase();
+  const firstOriginalTo = isSentByMe ? lastEmail.toAddresses.find((a) => a.address !== myEmail) : null;
+  const replyToAddress = isSentByMe && firstOriginalTo ? firstOriginalTo.address : rawReplyAddr;
+  const replyToName = isSentByMe && firstOriginalTo ? (firstOriginalTo.name || '') : (lastEmail.fromName || '');
 
   // Build quoted content from the original email (memoised on stable scalars)
   const quotedHtml = useMemo(

@@ -17,6 +17,12 @@ export function parseGmailMessage(message: any) {
     });
   };
 
+  const parseReplyTo = (header: string | null): string | null => {
+    if (!header) return null;
+    const match = header.trim().match(/<(.+?)>/);
+    return match ? match[1] : header.trim();
+  };
+
   const bodyParts = extractBody(message.payload);
 
   return {
@@ -30,7 +36,7 @@ export function parseGmailMessage(message: any) {
     toAddresses: parseAddressList(getHeader('to')),
     ccAddresses: parseAddressList(getHeader('cc')),
     bccAddresses: parseAddressList(getHeader('bcc')),
-    replyTo: getHeader('reply-to'),
+    replyTo: parseReplyTo(getHeader('reply-to')),
     subject: getHeader('subject'),
     snippet: message.snippet || null,
     bodyText: bodyParts.text,
