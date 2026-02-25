@@ -417,11 +417,11 @@ export function EmailMessage({
   }, [expanded, animationsEnabled]);
 
   const senderName = email.fromName || email.fromAddress;
+  const hasSenderName = !!email.fromName && email.fromName !== email.fromAddress;
   const emailAttachments = email.attachments ?? [];
   const toAddresses = email.toAddresses ?? [];
   const ccAddresses = email.ccAddresses ?? [];
-  const recipientList = toAddresses.map((a) => a.name || a.address).join(', ');
-  const ccList = ccAddresses.map((a) => a.name || a.address).join(', ');
+  const [showAddresses, setShowAddresses] = useState(false);
 
   return (
     <div
@@ -470,6 +470,11 @@ export function EmailMessage({
             }}
           >
             <span
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setShowAddresses((v) => !v);
+              }}
+              title={hasSenderName ? email.fromAddress : undefined}
               style={{
                 fontSize: 'var(--font-size-md)',
                 fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
@@ -478,9 +483,22 @@ export function EmailMessage({
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
+                cursor: 'default',
               }}
             >
               {senderName}
+              {showAddresses && hasSenderName && (
+                <span
+                  style={{
+                    marginLeft: 'var(--spacing-xs)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 'var(--font-weight-normal)' as CSSProperties['fontWeight'],
+                    color: 'var(--color-text-tertiary)',
+                  }}
+                >
+                  &lt;{email.fromAddress}&gt;
+                </span>
+              )}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', flexShrink: 0 }}>
               {emailAttachments.length > 0 && (
@@ -505,14 +523,43 @@ export function EmailMessage({
 
           {expanded ? (
             <div
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setShowAddresses((v) => !v);
+              }}
               style={{
                 marginTop: 'var(--spacing-xs)',
                 fontSize: 'var(--font-size-sm)',
                 color: 'var(--color-text-tertiary)',
+                cursor: 'default',
               }}
             >
-              <span>To: {recipientList || '(no recipients)'}</span>
-              {ccList && <span style={{ marginLeft: 'var(--spacing-sm)' }}>CC: {ccList}</span>}
+              <span>
+                To: {toAddresses.length > 0
+                  ? toAddresses.map((a, i) => (
+                      <span key={i}>
+                        {i > 0 && ', '}
+                        {a.name || a.address}
+                        {showAddresses && a.name && a.name !== a.address && (
+                          <span style={{ opacity: 0.7 }}> &lt;{a.address}&gt;</span>
+                        )}
+                      </span>
+                    ))
+                  : '(no recipients)'}
+              </span>
+              {ccAddresses.length > 0 && (
+                <span style={{ marginLeft: 'var(--spacing-sm)' }}>
+                  CC: {ccAddresses.map((a, i) => (
+                    <span key={i}>
+                      {i > 0 && ', '}
+                      {a.name || a.address}
+                      {showAddresses && a.name && a.name !== a.address && (
+                        <span style={{ opacity: 0.7 }}> &lt;{a.address}&gt;</span>
+                      )}
+                    </span>
+                  ))}
+                </span>
+              )}
             </div>
           ) : (
             /* Collapsed snippet — single line, truncated */
