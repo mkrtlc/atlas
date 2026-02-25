@@ -14,6 +14,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   TOKEN_ENCRYPTION_KEY: z.string().min(32),
   SERVER_PUBLIC_URL: z.string().url().default('http://localhost:3001'),
+  GOOGLE_PUBSUB_TOPIC: z.string().optional(), // e.g. projects/my-proj/topics/gmail-push
 });
 
 export const env = envSchema.parse(process.env);

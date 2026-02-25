@@ -129,6 +129,45 @@ export async function getProfile(accountId: string) {
   return response.data;
 }
 
+export async function watchMailbox(accountId: string, topicName: string) {
+  const gmail = await getGmailClient(accountId);
+  const response = await gmail.users.watch({
+    userId: 'me',
+    requestBody: {
+      topicName,
+      labelIds: ['INBOX', 'SENT', 'TRASH', 'SPAM', 'STARRED', 'DRAFT'],
+    },
+  });
+  return response.data; // { historyId, expiration }
+}
+
+export async function stopWatch(accountId: string) {
+  const gmail = await getGmailClient(accountId);
+  await gmail.users.stop({ userId: 'me' });
+}
+
+export async function getMessageMetadata(accountId: string, messageId: string) {
+  const gmail = await getGmailClient(accountId);
+  const response = await gmail.users.messages.get({
+    userId: 'me',
+    id: messageId,
+    format: 'metadata',
+    metadataHeaders: ['From', 'To', 'Cc', 'Bcc', 'Subject', 'Date', 'Reply-To', 'Message-ID', 'In-Reply-To', 'References'],
+  });
+  return response.data;
+}
+
+export async function batchGetMessageMetadata(accountId: string, messageIds: string[]) {
+  const results = [];
+  const CONCURRENCY = 5;
+  for (let i = 0; i < messageIds.length; i += CONCURRENCY) {
+    const chunk = messageIds.slice(i, i + CONCURRENCY);
+    const messages = await Promise.all(chunk.map((id) => getMessageMetadata(accountId, id)));
+    results.push(...messages);
+  }
+  return results;
+}
+
 export async function listLabels(accountId: string) {
   const gmail = await getGmailClient(accountId);
   const response = await gmail.users.labels.list({ userId: 'me' });

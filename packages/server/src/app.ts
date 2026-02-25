@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes';
 import trackingRoutes from './routes/tracking.routes';
+import pushRoutes from './routes/push.routes';
 import { errorHandler } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 
@@ -15,6 +16,9 @@ export function createApp() {
 
   // Public tracking endpoints — short /t prefix, no auth
   app.use('/t', trackingRoutes);
+
+  // Gmail push notification webhook — no auth (Pub/Sub can't send JWTs)
+  app.use('/webhooks/push', pushRoutes);
 
   app.use('/api/v1', apiLimiter);
   app.use('/api/v1', routes);

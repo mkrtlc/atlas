@@ -2,11 +2,14 @@ import { eq, and, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { db } from '../config/database';
 import { accounts } from '../db/schema';
 import { addIncrementalSyncJob } from './sync-worker';
+import { watchMailbox } from '../services/gmail.service';
+import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
 const SYNC_INTERVAL_MS = 60_000; // 60 seconds
 const STAGGER_DELAY_MS = 2_000; // 2 seconds between accounts
 const ERROR_RETRY_COOLDOWN_MS = 5 * 60_000; // 5 minutes before retrying errored accounts
+const WATCH_RENEW_BUFFER_MS = 24 * 60 * 60_000; // Renew watch 24h before expiry
 
 let schedulerTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -16,6 +19,8 @@ let schedulerTimer: ReturnType<typeof setInterval> | null = null;
  * Every SYNC_INTERVAL_MS, finds all accounts with syncStatus='idle' that have
  * completed at least one full sync (historyId is set), and enqueues incremental
  * sync jobs staggered to avoid overwhelming the Gmail API.
+ *
+ * Also renews expiring Gmail push watches (#1).
  */
 export function startSyncScheduler() {
   if (schedulerTimer) {
@@ -31,6 +36,7 @@ export function startSyncScheduler() {
   schedulerTimer = setInterval(async () => {
     try {
       await scheduleIncrementalSyncs();
+      await renewExpiringWatches();
     } catch (err) {
       logger.error({ err }, 'Sync scheduler tick failed');
     }
@@ -40,6 +46,7 @@ export function startSyncScheduler() {
   setTimeout(async () => {
     try {
       await scheduleIncrementalSyncs();
+      await renewExpiringWatches();
     } catch (err) {
       logger.error({ err }, 'Initial sync scheduler tick failed');
     }
@@ -129,4 +136,41 @@ async function scheduleIncrementalSyncs() {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ---------------------------------------------------------------------------
+// #1 — Renew Gmail push watches before they expire
+// ---------------------------------------------------------------------------
+
+async function renewExpiringWatches() {
+  if (!env.GOOGLE_PUBSUB_TOPIC) return;
+
+  const renewThreshold = Date.now() + WATCH_RENEW_BUFFER_MS;
+
+  // Find accounts whose watch will expire within the buffer window
+  const expiringAccounts = await db
+    .select({ id: accounts.id, email: accounts.email, watchExpiration: accounts.watchExpiration })
+    .from(accounts)
+    .where(
+      and(
+        isNotNull(accounts.historyId),
+        sql`${accounts.watchExpiration} IS NOT NULL AND ${accounts.watchExpiration} < ${renewThreshold}`,
+      ),
+    );
+
+  for (const account of expiringAccounts) {
+    try {
+      const result = await watchMailbox(account.id, env.GOOGLE_PUBSUB_TOPIC);
+      const newExpiration = result.expiration ? parseInt(String(result.expiration), 10) : null;
+
+      await db
+        .update(accounts)
+        .set({ watchExpiration: newExpiration, updatedAt: new Date().toISOString() })
+        .where(eq(accounts.id, account.id));
+
+      logger.info({ accountId: account.id, newExpiration }, 'Renewed Gmail push watch');
+    } catch (err) {
+      logger.warn({ err, accountId: account.id }, 'Failed to renew Gmail push watch');
+    }
+  }
 }
