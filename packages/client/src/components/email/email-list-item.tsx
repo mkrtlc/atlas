@@ -98,8 +98,8 @@ export function EmailListItem({
           t={t}
         />
 
-        {/* Avatar — smaller in horizontal mode */}
-        <Avatar name={senderName} email={senderEmail} size={22} />
+        {/* Avatar — smaller in horizontal mode, scales with density */}
+        <Avatar name={senderName} email={senderEmail} cssSize="var(--email-row-avatar, 22px)" />
 
         {/* Sender — fixed width, bold */}
         <span
@@ -290,8 +290,8 @@ export function EmailListItem({
         t={t}
       />
 
-      {/* Avatar */}
-      <Avatar name={senderName} email={senderEmail} size={32} />
+      {/* Avatar — scales with density */}
+      <Avatar name={senderName} email={senderEmail} cssSize="var(--email-list-avatar, 32px)" />
 
       {/* Content */}
       <div

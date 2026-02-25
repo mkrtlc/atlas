@@ -110,23 +110,29 @@
 [data-density="compact"] {
   --email-list-item-height: 72px;
   --email-list-padding: 6px 12px;
+  --email-list-avatar: 28px;
   --email-row-height: 28px;
   --email-row-padding: 0 10px;
+  --email-row-avatar: 20px;
   --font-size-md: 13px;
 }
 
 [data-density="default"] {
   --email-list-item-height: 84px;
   --email-list-padding: 10px 16px;
+  --email-list-avatar: 32px;
   --email-row-height: 36px;
   --email-row-padding: 0 16px;
+  --email-row-avatar: 22px;
 }
 
 [data-density="comfortable"] {
   --email-list-item-height: 96px;
   --email-list-padding: 14px 20px;
+  --email-list-avatar: 36px;
   --email-row-height: 44px;
   --email-row-padding: 0 20px;
+  --email-row-avatar: 26px;
 }
 
 /* ---- Theme transition (View Transitions API) ----------------------------- */

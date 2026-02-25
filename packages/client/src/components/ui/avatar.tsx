@@ -44,12 +44,18 @@ interface AvatarProps {
   name?: string | null;
   email?: string;
   size?: number;
+  /** CSS size string (e.g. "var(--email-list-avatar, 32px)"). When set, overrides `size` for layout. */
+  cssSize?: string;
 }
 
-export function Avatar({ src, name, email = '', size = 32 }: AvatarProps) {
+export function Avatar({ src, name, email = '', size = 32, cssSize }: AvatarProps) {
   const seed = email || name || 'default';
   const colors = pickPalette(seed, isDarkTheme());
   const initials = getInitials(name ?? null, email);
+
+  // When cssSize is provided, use it for width/height (CSS variable driven).
+  // The numeric `size` is still used for BoringAvatar and font sizing fallback.
+  const widthHeight = cssSize || size;
 
   return (
     <AvatarPrimitive.Root
@@ -57,8 +63,8 @@ export function Avatar({ src, name, email = '', size = 32 }: AvatarProps) {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: size,
-        height: size,
+        width: widthHeight,
+        height: widthHeight,
         borderRadius: '50%',
         overflow: 'hidden',
         flexShrink: 0,
