@@ -106,10 +106,9 @@ function ToastItem({ toast }: ToastItemProps) {
         alignItems: 'center',
         gap: 'var(--spacing-md)',
         padding: '10px var(--spacing-md)',
-        background: 'var(--color-bg-elevated)',
-        border: '1px solid var(--color-border-primary)',
+        background: 'var(--color-text-primary)',
         borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-lg)',
+        boxShadow: 'var(--shadow-elevated)',
         fontFamily: 'var(--font-family)',
         minWidth: 320,
         maxWidth: 400,
@@ -129,13 +128,13 @@ function ToastItem({ toast }: ToastItemProps) {
           left: 0,
           right: 0,
           height: 2,
-          background: 'var(--color-border-secondary)',
+          background: 'rgba(128, 128, 128, 0.3)',
         }}
       >
         <div
           style={{
             height: '100%',
-            background: isUndoable ? 'var(--color-accent-primary)' : 'var(--color-text-tertiary)',
+            background: isUndoable ? 'var(--color-bg-primary)' : 'rgba(255, 255, 255, 0.4)',
             width: `${progress}%`,
             transformOrigin: 'left center',
             transition: 'width 100ms linear',
@@ -148,7 +147,7 @@ function ToastItem({ toast }: ToastItemProps) {
         style={{
           flex: 1,
           fontSize: 'var(--font-size-md)',
-          color: 'var(--color-text-primary)',
+          color: 'var(--color-bg-primary)',
           lineHeight: 'var(--line-height-normal)',
           fontWeight: 'var(--font-weight-normal)' as React.CSSProperties['fontWeight'],
         }}
@@ -167,10 +166,10 @@ function ToastItem({ toast }: ToastItemProps) {
             alignItems: 'center',
             gap: '4px',
             padding: '3px var(--spacing-sm)',
-            border: '1px solid var(--color-accent-primary)',
+            border: '1px solid rgba(128, 128, 128, 0.4)',
             borderRadius: 'var(--radius-md)',
             background: 'transparent',
-            color: 'var(--color-accent-primary)',
+            color: 'var(--color-bg-primary)',
             fontSize: 'var(--font-size-sm)',
             fontWeight: 'var(--font-weight-medium)' as React.CSSProperties['fontWeight'],
             fontFamily: 'var(--font-family)',
@@ -179,12 +178,12 @@ function ToastItem({ toast }: ToastItemProps) {
             lineHeight: 1,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--color-accent-primary)';
-            e.currentTarget.style.color = 'var(--color-text-inverse)';
+            e.currentTarget.style.background = 'var(--color-bg-primary)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--color-accent-primary)';
+            e.currentTarget.style.color = 'var(--color-bg-primary)';
           }}
         >
           Undo
@@ -214,18 +213,18 @@ function ToastItem({ toast }: ToastItemProps) {
           border: 'none',
           borderRadius: 'var(--radius-sm)',
           background: 'transparent',
-          color: 'var(--color-text-tertiary)',
+          color: 'rgba(128, 128, 128, 0.6)',
           cursor: 'pointer',
           transition: 'background var(--transition-normal), color var(--transition-normal)',
           padding: 0,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--color-surface-hover)';
-          e.currentTarget.style.color = 'var(--color-text-primary)';
+          e.currentTarget.style.background = 'rgba(128, 128, 128, 0.2)';
+          e.currentTarget.style.color = 'var(--color-bg-primary)';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--color-text-tertiary)';
+          e.currentTarget.style.color = 'rgba(128, 128, 128, 0.6)';
         }}
       >
         <X size={14} />
