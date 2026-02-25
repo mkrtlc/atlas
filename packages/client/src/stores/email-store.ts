@@ -61,5 +61,5 @@ export const useEmailStore = create<EmailState>((set) => ({
   selectThreads: (threadIds) => set({ selectedThreadIds: new Set(threadIds) }),
   openCompose: (mode, threadId, initialTo) => set({ composeMode: mode, composeThreadId: threadId ?? null, composeInitialTo: initialTo ?? null }),
   closeCompose: () => set({ composeMode: null, composeThreadId: null, composeInitialTo: null }),
-  setFilterByLabel: (labelId) => set({ filterByLabel: labelId }),
+  setFilterByLabel: (labelId) => set({ filterByLabel: labelId, activeThreadId: null, cursorIndex: 0, selectedThreadIds: new Set() }),
 }));
