@@ -1,7 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api-client';
 import { queryKeys } from '../config/query-keys';
-import type { ContactByEmailResponse } from '@atlasmail/shared';
+import type { Contact, ContactByEmailResponse } from '@atlasmail/shared';
+
+export function useSearchContacts(search: string) {
+  return useQuery({
+    queryKey: queryKeys.contacts.search(search),
+    queryFn: async () => {
+      const { data } = await api.get('/contacts', { params: { search, limit: 10 } });
+      return data.data as Contact[];
+    },
+    enabled: search.length >= 1,
+    staleTime: 30_000,
+  });
+}
 
 export function useContactByEmail(email: string | null) {
   return useQuery({

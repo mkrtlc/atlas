@@ -8,7 +8,7 @@ import {
   Plus,
 } from 'lucide-react';
 import '../styles/calendar.css';
-import { useCalendars, useCalendarEvents, useSyncCalendar, useToggleCalendar } from '../hooks/use-calendar';
+import { useCalendars, useCalendarEvents, useSyncCalendar, useToggleCalendar, useUpdateCalendarEvent, useCreateCalendarEvent } from '../hooks/use-calendar';
 import { useCalendarStore } from '../stores/calendar-store';
 import { EventModal } from '../components/calendar/event-modal';
 import { MiniMonth } from '../components/calendar/mini-month';
@@ -73,6 +73,8 @@ export function CalendarPage() {
   const { data: events } = useCalendarEvents(timeMin, timeMax);
   const syncCalendar = useSyncCalendar();
   const toggleCalendar = useToggleCalendar();
+  const updateEvent = useUpdateCalendarEvent();
+  const createEvent = useCreateCalendarEvent();
 
   // Derive selected calendar IDs and color map
   const selectedCalendarIds = useMemo(() => {
@@ -116,6 +118,27 @@ export function CalendarPage() {
       openCreateModal(start.toISOString(), end.toISOString());
     },
     [openCreateModal],
+  );
+
+  const handleEventUpdate = useCallback(
+    (eventId: string, startTime: string, endTime: string) => {
+      updateEvent.mutate({ eventId, startTime, endTime });
+    },
+    [updateEvent],
+  );
+
+  const handleQuickCreate = useCallback(
+    (title: string, start: Date, end: Date) => {
+      const primaryCalendarId = calendars?.find((c) => c.isPrimary)?.id || calendars?.[0]?.id;
+      if (!primaryCalendarId) return;
+      createEvent.mutate({
+        calendarId: primaryCalendarId,
+        summary: title,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      });
+    },
+    [calendars, createEvent],
   );
 
   const isDesktop = !!('atlasDesktop' in window);
@@ -306,6 +329,8 @@ export function CalendarPage() {
             calendarColorMap={calendarColorMap}
             onEventClick={openEditModal}
             onDragCreate={handleDragCreate}
+            onEventUpdate={handleEventUpdate}
+            onQuickCreate={handleQuickCreate}
           />
         </div>
       </div>

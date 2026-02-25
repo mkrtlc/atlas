@@ -9,6 +9,15 @@ interface WeekGridProps {
   calendarColorMap: Map<string, string>;
   onEventClick: (event: CalendarEvent) => void;
   onDragCreate: (start: Date, end: Date) => void;
+  onEventUpdate?: (eventId: string, startTime: string, endTime: string) => void;
+  onQuickCreate?: (title: string, start: Date, end: Date) => void;
+}
+
+interface QuickCreateState {
+  dayIndex: number;
+  topY: number;
+  start: Date;
+  end: Date;
 }
 
 const HOUR_HEIGHT = 56;
@@ -18,6 +27,19 @@ const TOTAL_HOURS = END_HOUR - START_HOUR;
 const SNAP_MINUTES = 15;
 const SNAP_PX = (SNAP_MINUTES / 60) * HOUR_HEIGHT;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MIN_EVENT_HEIGHT = 18;
+const RESIZE_HANDLE_HEIGHT = 6;
+
+/** Parse hex color to RGB and compute relative luminance (0–1). Returns true if color is "light". */
+function isLightColor(hex: string): boolean {
+  const c = hex.replace('#', '');
+  if (c.length < 6) return false;
+  const r = parseInt(c.slice(0, 2), 16) / 255;
+  const g = parseInt(c.slice(2, 4), 16) / 255;
+  const b = parseInt(c.slice(4, 6), 16) / 255;
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 0.6;
+}
 
 function toYMD(date: Date): string {
   const y = date.getFullYear();
@@ -46,6 +68,12 @@ function formatTime(date: Date): string {
   return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+function formatTimeFromParts(hours: number, minutes: number): string {
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 || 12;
+  return minutes === 0 ? `${h12} ${ampm}` : `${h12}:${String(minutes).padStart(2, '0')} ${ampm}`;
+}
+
 /** Snap a pixel offset to the nearest 15-min interval */
 function snapY(y: number): number {
   return Math.round(y / SNAP_PX) * SNAP_PX;
@@ -56,6 +84,13 @@ function yToTime(y: number): { hours: number; minutes: number } {
   const totalMinutes = Math.round((y / HOUR_HEIGHT) * 60);
   const clamped = Math.max(0, Math.min(totalMinutes, 24 * 60));
   return { hours: Math.floor(clamped / 60), minutes: clamped % 60 };
+}
+
+/** Convert hours+minutes to a Date on the given day */
+function timeToDate(day: Date, t: { hours: number; minutes: number }): Date {
+  const d = new Date(day);
+  d.setHours(t.hours, t.minutes, 0, 0);
+  return d;
 }
 
 interface PositionedEvent {
@@ -94,13 +129,46 @@ function layoutEvents(dayEvents: Array<{ event: CalendarEvent; start: Date; end:
   return result;
 }
 
-// ─── Drag state ───────────────────────────────────────────────────────
+// ─── Drag types ───────────────────────────────────────────────────────
 
-interface DragState {
+type InteractionMode = 'create' | 'move' | 'resize';
+
+interface CreateDrag {
+  mode: 'create';
   dayIndex: number;
   startY: number;
   currentY: number;
 }
+
+interface MoveDrag {
+  mode: 'move';
+  event: CalendarEvent;
+  eventStart: Date;
+  eventEnd: Date;
+  /** Day index where the event currently appears */
+  dayIndex: number;
+  /** Y offset within the event where the user grabbed */
+  offsetY: number;
+  /** Current snapped top Y */
+  currentTopY: number;
+  /** Current day index (can change as user drags across columns) */
+  currentDayIndex: number;
+  /** Whether we've moved enough to consider this a real drag (not a click) */
+  hasMoved: boolean;
+}
+
+interface ResizeDrag {
+  mode: 'resize';
+  event: CalendarEvent;
+  eventStart: Date;
+  dayIndex: number;
+  /** The fixed top Y (start doesn't change during resize) */
+  topY: number;
+  /** Current bottom Y being dragged */
+  currentBottomY: number;
+}
+
+type DragState = CreateDrag | MoveDrag | ResizeDrag;
 
 export function WeekGrid({
   weekStart,
@@ -109,12 +177,17 @@ export function WeekGrid({
   calendarColorMap,
   onEventClick,
   onDragCreate,
+  onEventUpdate,
+  onQuickCreate,
 }: WeekGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const todayStr = useMemo(() => toYMD(new Date()), []);
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const [quickCreate, setQuickCreate] = useState<QuickCreateState | null>(null);
+  const [quickTitle, setQuickTitle] = useState('');
+  const quickInputRef = useRef<HTMLInputElement>(null);
 
   const days = useMemo(() => {
     const result: Date[] = [];
@@ -176,69 +249,215 @@ export function WeekGrid({
     }
   }, []);
 
-  // ─── Drag-to-create handlers ────────────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────────────────────────
 
   const getYInGrid = useCallback((clientY: number, colEl: HTMLElement) => {
     const rect = colEl.getBoundingClientRect();
     return clientY - rect.top;
   }, []);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, dayIndex: number) => {
-    // Only left click, not on an event
-    if (e.button !== 0) return;
-    if ((e.target as HTMLElement).closest('[data-event]')) return;
+  const getDayColumns = useCallback(() => {
+    if (!gridRef.current) return [];
+    return Array.from(gridRef.current.querySelectorAll<HTMLElement>('[data-day-col]'));
+  }, []);
 
-    const colEl = e.currentTarget as HTMLElement;
-    const y = snapY(getYInGrid(e.clientY, colEl));
-    const state: DragState = { dayIndex, startY: y, currentY: y };
-    dragRef.current = state;
-    setDrag(state);
-    e.preventDefault();
-  }, [getYInGrid]);
+  /** Find which day column the mouse is over */
+  const getDayIndexFromX = useCallback((clientX: number): number | null => {
+    const cols = getDayColumns();
+    for (let i = 0; i < cols.length; i++) {
+      const rect = cols[i].getBoundingClientRect();
+      if (clientX >= rect.left && clientX <= rect.right) return i;
+    }
+    return null;
+  }, [getDayColumns]);
 
   const cancelDrag = useCallback(() => {
     dragRef.current = null;
     setDrag(null);
   }, []);
 
+  // ─── Create drag ─────────────────────────────────────────────────────
+
+  const handleGridMouseDown = useCallback((e: React.MouseEvent, dayIndex: number) => {
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('[data-event]')) return;
+    if ((e.target as HTMLElement).closest('[data-quick-create]')) return;
+
+    // Close quick-create popover if open
+    setQuickCreate(null);
+
+    const colEl = e.currentTarget as HTMLElement;
+    const y = snapY(getYInGrid(e.clientY, colEl));
+    const state: CreateDrag = { mode: 'create', dayIndex, startY: y, currentY: y };
+    dragRef.current = state;
+    setDrag(state);
+    e.preventDefault();
+  }, [getYInGrid]);
+
+  // ─── Move drag ────────────────────────────────────────────────────────
+
+  const handleEventMouseDown = useCallback((e: React.MouseEvent, pe: PositionedEvent, dayIndex: number) => {
+    if (e.button !== 0) return;
+    // Don't start move if clicking the resize handle
+    if ((e.target as HTMLElement).closest('[data-resize-handle]')) return;
+
+    const colEl = (e.currentTarget as HTMLElement).closest('[data-day-col]') as HTMLElement;
+    if (!colEl) return;
+
+    const eventTopPx = getEventTop(pe.start);
+    const clickY = getYInGrid(e.clientY, colEl);
+    const offsetY = clickY - eventTopPx;
+
+    const state: MoveDrag = {
+      mode: 'move',
+      event: pe.event,
+      eventStart: pe.start,
+      eventEnd: pe.end,
+      dayIndex,
+      offsetY,
+      currentTopY: snapY(eventTopPx),
+      currentDayIndex: dayIndex,
+      hasMoved: false,
+    };
+    dragRef.current = state;
+    setDrag(state);
+    e.preventDefault();
+    e.stopPropagation();
+  }, [getYInGrid]);
+
+  // ─── Resize drag ─────────────────────────────────────────────────────
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent, pe: PositionedEvent, dayIndex: number) => {
+    if (e.button !== 0) return;
+
+    const topY = getEventTop(pe.start);
+    const bottomY = topY + getEventHeight(pe.start, pe.end);
+
+    const state: ResizeDrag = {
+      mode: 'resize',
+      event: pe.event,
+      eventStart: pe.start,
+      dayIndex,
+      topY,
+      currentBottomY: snapY(bottomY),
+    };
+    dragRef.current = state;
+    setDrag(state);
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  // ─── Unified drag effect ─────────────────────────────────────────────
+
   useEffect(() => {
     if (!drag) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dragRef.current || !gridRef.current) return;
-      const dayColumns = gridRef.current.querySelectorAll<HTMLElement>('[data-day-col]');
-      const col = dayColumns[dragRef.current.dayIndex];
-      if (!col) return;
+      const d = dragRef.current;
+      if (!d) return;
 
-      const y = snapY(getYInGrid(e.clientY, col));
-      const newState = { ...dragRef.current, currentY: y };
-      dragRef.current = newState;
-      setDrag(newState);
+      const cols = getDayColumns();
+
+      if (d.mode === 'create') {
+        const col = cols[d.dayIndex];
+        if (!col) return;
+        const y = snapY(getYInGrid(e.clientY, col));
+        const newState: CreateDrag = { ...d, currentY: y };
+        dragRef.current = newState;
+        setDrag(newState);
+      } else if (d.mode === 'move') {
+        // Determine which day column we're over
+        let targetDayIndex = d.currentDayIndex;
+        const dayIdx = getDayIndexFromX(e.clientX);
+        if (dayIdx !== null) targetDayIndex = dayIdx;
+
+        const col = cols[targetDayIndex];
+        if (!col) return;
+
+        const rawY = getYInGrid(e.clientY, col) - d.offsetY;
+        const newTopY = snapY(rawY);
+
+        const moved = Math.abs(newTopY - snapY(getEventTop(d.eventStart))) > 2 || targetDayIndex !== d.dayIndex;
+
+        const newState: MoveDrag = {
+          ...d,
+          currentTopY: newTopY,
+          currentDayIndex: targetDayIndex,
+          hasMoved: d.hasMoved || moved,
+        };
+        dragRef.current = newState;
+        setDrag(newState);
+      } else if (d.mode === 'resize') {
+        const col = cols[d.dayIndex];
+        if (!col) return;
+        const rawY = getYInGrid(e.clientY, col);
+        const newBottomY = Math.max(snapY(rawY), d.topY + SNAP_PX);
+
+        const newState: ResizeDrag = { ...d, currentBottomY: newBottomY };
+        dragRef.current = newState;
+        setDrag(newState);
+      }
     };
 
     const handleMouseUp = () => {
-      if (!dragRef.current) return;
-      const { dayIndex, startY, currentY } = dragRef.current;
-      const topY = Math.min(startY, currentY);
-      const bottomY = Math.max(startY, currentY);
-
-      // Require at least 15 min drag (or click = 30 min default)
-      const minDrag = SNAP_PX;
-      const finalBottomY = bottomY - topY < minDrag ? topY + 2 * SNAP_PX : bottomY;
-
-      const startTime = yToTime(topY);
-      const endTime = yToTime(finalBottomY);
-
-      const day = days[dayIndex];
-      const startDate = new Date(day);
-      startDate.setHours(startTime.hours, startTime.minutes, 0, 0);
-      const endDate = new Date(day);
-      endDate.setHours(endTime.hours, endTime.minutes, 0, 0);
+      const d = dragRef.current;
+      if (!d) return;
 
       dragRef.current = null;
       setDrag(null);
 
-      onDragCreate(startDate, endDate);
+      if (d.mode === 'create') {
+        const topY = Math.min(d.startY, d.currentY);
+        const bottomY = Math.max(d.startY, d.currentY);
+        const wasClick = Math.abs(d.currentY - d.startY) < SNAP_PX;
+
+        if (wasClick) {
+          // Single click → show quick-create popover
+          const startTime = yToTime(topY);
+          const endTimeParts = yToTime(topY + 2 * SNAP_PX); // 30 min default
+          const day = days[d.dayIndex];
+          const startDate = timeToDate(day, startTime);
+          const endDate = timeToDate(day, endTimeParts);
+          setQuickCreate({ dayIndex: d.dayIndex, topY, start: startDate, end: endDate });
+          setQuickTitle('');
+          setTimeout(() => quickInputRef.current?.focus(), 50);
+          return;
+        }
+
+        // Real drag → open full modal
+        const finalBottomY = bottomY;
+        const startTime = yToTime(topY);
+        const endTime = yToTime(finalBottomY);
+
+        const day = days[d.dayIndex];
+        const startDate = timeToDate(day, startTime);
+        const endDate = timeToDate(day, endTime);
+
+        onDragCreate(startDate, endDate);
+      } else if (d.mode === 'move') {
+        if (!d.hasMoved) {
+          // It was just a click, not a drag — open event
+          onEventClick(d.event);
+          return;
+        }
+        if (!onEventUpdate) return;
+
+        const durationMs = d.eventEnd.getTime() - d.eventStart.getTime();
+        const newStartTime = yToTime(d.currentTopY);
+        const newDay = days[d.currentDayIndex];
+        const newStart = timeToDate(newDay, newStartTime);
+        const newEnd = new Date(newStart.getTime() + durationMs);
+
+        onEventUpdate(d.event.id, newStart.toISOString(), newEnd.toISOString());
+      } else if (d.mode === 'resize') {
+        if (!onEventUpdate) return;
+
+        const newEndTime = yToTime(d.currentBottomY);
+        const newDay = days[d.dayIndex];
+        const newEnd = timeToDate(newDay, newEndTime);
+
+        onEventUpdate(d.event.id, d.eventStart.toISOString(), newEnd.toISOString());
+      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -253,12 +472,12 @@ export function WeekGrid({
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [drag, days, getYInGrid, onDragCreate, cancelDrag]);
+  }, [drag, days, getYInGrid, getDayColumns, getDayIndexFromX, onDragCreate, onEventClick, onEventUpdate, cancelDrag]);
 
-  // ─── Drag preview ───────────────────────────────────────────────────
+  // ─── Drag previews ───────────────────────────────────────────────────
 
-  const dragPreview = useMemo(() => {
-    if (!drag) return null;
+  const createPreview = useMemo(() => {
+    if (!drag || drag.mode !== 'create') return null;
     const topY = Math.min(drag.startY, drag.currentY);
     const bottomY = Math.max(drag.startY, drag.currentY);
     const height = Math.max(bottomY - topY, SNAP_PX);
@@ -272,10 +491,45 @@ export function WeekGrid({
     };
   }, [drag]);
 
+  const movePreview = useMemo(() => {
+    if (!drag || drag.mode !== 'move' || !drag.hasMoved) return null;
+    const durationMs = drag.eventEnd.getTime() - drag.eventStart.getTime();
+    const durationPx = (durationMs / (60 * 60 * 1000)) * HOUR_HEIGHT;
+    const startTime = yToTime(drag.currentTopY);
+    const endTime = yToTime(drag.currentTopY + durationPx);
+    return {
+      dayIndex: drag.currentDayIndex,
+      top: drag.currentTopY,
+      height: durationPx,
+      label: `${formatTimeFromParts(startTime.hours, startTime.minutes)} – ${formatTimeFromParts(endTime.hours, endTime.minutes)}`,
+      eventId: drag.event.id,
+      bgColor: calendarColorMap.get(drag.event.calendarId) || 'var(--color-accent-primary)',
+    };
+  }, [drag, calendarColorMap]);
+
+  const resizePreview = useMemo(() => {
+    if (!drag || drag.mode !== 'resize') return null;
+    const height = Math.max(drag.currentBottomY - drag.topY, SNAP_PX);
+    const startTime = yToTime(drag.topY);
+    const endTime = yToTime(drag.topY + height);
+    return {
+      dayIndex: drag.dayIndex,
+      top: drag.topY,
+      height,
+      endLabel: formatTimeFromParts(endTime.hours, endTime.minutes),
+      startLabel: formatTimeFromParts(startTime.hours, startTime.minutes),
+      eventId: drag.event.id,
+    };
+  }, [drag]);
+
+  const isAnyDrag = !!drag;
+  const movingEventId = drag?.mode === 'move' && drag.hasMoved ? drag.event.id : null;
+  const resizingEventId = drag?.mode === 'resize' ? drag.event.id : null;
+
   const timeAxisWidth = 56;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', userSelect: drag ? 'none' : 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', userSelect: isAnyDrag ? 'none' : 'auto' }}>
       {/* Day headers */}
       <div
         style={{
@@ -446,9 +700,9 @@ export function WeekGrid({
                   flex: 1,
                   position: 'relative',
                   borderLeft: '1px solid var(--color-border-secondary)',
-                  cursor: 'crosshair',
+                  cursor: isAnyDrag && drag?.mode === 'move' ? 'grabbing' : 'crosshair',
                 }}
-                onMouseDown={(e) => handleMouseDown(e, dayIndex)}
+                onMouseDown={(e) => handleGridMouseDown(e, dayIndex)}
               >
                 {/* Hour lines */}
                 {Array.from({ length: TOTAL_HOURS }, (_, i) => (
@@ -486,15 +740,15 @@ export function WeekGrid({
                 {/* Current time indicator */}
                 {dayStr === todayStr && <NowLine />}
 
-                {/* Drag preview */}
-                {dragPreview && dragPreview.dayIndex === dayIndex && (
+                {/* Create drag preview */}
+                {createPreview && createPreview.dayIndex === dayIndex && (
                   <div
                     style={{
                       position: 'absolute',
-                      top: dragPreview.top,
+                      top: createPreview.top,
                       left: 2,
                       right: 2,
-                      height: dragPreview.height,
+                      height: createPreview.height,
                       background: 'color-mix(in srgb, var(--color-accent-primary) 20%, transparent)',
                       border: '1px solid var(--color-accent-primary)',
                       borderLeft: '3px solid var(--color-accent-primary)',
@@ -508,47 +762,83 @@ export function WeekGrid({
                       fontFamily: 'var(--font-family)',
                     }}
                   >
-                    {dragPreview.label}
+                    {createPreview.label}
+                  </div>
+                )}
+
+                {/* Move ghost preview */}
+                {movePreview && movePreview.dayIndex === dayIndex && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: movePreview.top,
+                      left: 2,
+                      right: 2,
+                      height: Math.max(movePreview.height, MIN_EVENT_HEIGHT),
+                      background: `color-mix(in srgb, ${movePreview.bgColor} 30%, transparent)`,
+                      border: `1px dashed ${movePreview.bgColor}`,
+                      borderLeft: `3px solid ${movePreview.bgColor}`,
+                      borderRadius: 'var(--radius-sm)',
+                      zIndex: 10,
+                      pointerEvents: 'none',
+                      padding: '2px 6px',
+                      fontSize: 11,
+                      color: movePreview.bgColor,
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-family)',
+                    }}
+                  >
+                    {movePreview.label}
                   </div>
                 )}
 
                 {/* Events */}
                 {positioned.map((pe) => {
-                  const top = getEventTop(pe.start);
-                  const height = getEventHeight(pe.start, pe.end);
+                  const isMoving = pe.event.id === movingEventId;
+                  const isResizing = pe.event.id === resizingEventId;
+
+                  // During resize, use the preview height
+                  const eventTop = getEventTop(pe.start);
+                  let eventHeight = getEventHeight(pe.start, pe.end);
+                  if (isResizing && resizePreview) {
+                    eventHeight = resizePreview.height;
+                  }
+
                   const colWidth = 100 / pe.totalColumns;
                   const left = pe.column * colWidth;
                   const bgColor = calendarColorMap.get(pe.event.calendarId) || 'var(--color-accent-primary)';
+                  const textColor = isLightColor(bgColor) ? '#1a1a1a' : bgColor;
 
                   return (
-                    <button
+                    <div
                       key={pe.event.id}
                       data-event
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEventClick(pe.event);
-                      }}
+                      onMouseDown={(e) => handleEventMouseDown(e, pe, dayIndex)}
                       style={{
                         position: 'absolute',
-                        top,
+                        top: eventTop,
                         left: `calc(${left}% + 2px)`,
                         width: `calc(${colWidth}% - 4px)`,
-                        height: Math.max(height, 18),
+                        height: Math.max(eventHeight, MIN_EVENT_HEIGHT),
                         background: `color-mix(in srgb, ${bgColor} 18%, var(--color-bg-primary))`,
-                        border: 'none',
                         borderLeft: `3px solid ${bgColor}`,
                         borderRadius: 'var(--radius-sm)',
                         padding: '2px 4px',
                         overflow: 'hidden',
-                        cursor: 'pointer',
+                        cursor: isMoving ? 'grabbing' : 'grab',
                         textAlign: 'left',
                         fontFamily: 'var(--font-family)',
-                        zIndex: 1,
-                        transition: 'box-shadow var(--transition-fast)',
+                        zIndex: isMoving || isResizing ? 5 : 1,
+                        transition: isMoving || isResizing ? 'none' : 'box-shadow var(--transition-fast)',
                         boxSizing: 'border-box',
+                        opacity: isMoving ? 0.4 : 1,
+                        border: 'none',
+                        borderLeftStyle: 'solid',
+                        borderLeftWidth: 3,
+                        borderLeftColor: bgColor,
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                        if (!isAnyDrag) e.currentTarget.style.boxShadow = 'var(--shadow-md)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.boxShadow = 'none';
@@ -558,7 +848,7 @@ export function WeekGrid({
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: bgColor,
+                          color: textColor,
                           lineHeight: '14px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -567,7 +857,7 @@ export function WeekGrid({
                       >
                         {pe.event.summary || '(No title)'}
                       </div>
-                      {height > 30 && (
+                      {eventHeight > 30 && (
                         <div
                           style={{
                             fontSize: 10,
@@ -576,12 +866,150 @@ export function WeekGrid({
                             marginTop: 1,
                           }}
                         >
-                          {formatTime(pe.start)} – {formatTime(pe.end)}
+                          {isResizing && resizePreview
+                            ? `${resizePreview.startLabel} – ${resizePreview.endLabel}`
+                            : `${formatTime(pe.start)} – ${formatTime(pe.end)}`
+                          }
                         </div>
                       )}
-                    </button>
+
+                      {/* Resize handle at bottom */}
+                      <div
+                        data-resize-handle
+                        onMouseDown={(e) => handleResizeMouseDown(e, pe, dayIndex)}
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: RESIZE_HANDLE_HEIGHT,
+                          cursor: 's-resize',
+                          borderRadius: '0 0 var(--radius-sm) var(--radius-sm)',
+                        }}
+                      />
+                    </div>
                   );
                 })}
+
+                {/* Quick-create popover */}
+                {quickCreate && quickCreate.dayIndex === dayIndex && (
+                  <div
+                    data-quick-create
+                    style={{
+                      position: 'absolute',
+                      top: quickCreate.topY,
+                      left: 2,
+                      right: 2,
+                      zIndex: 20,
+                    }}
+                  >
+                    {/* 30-min slot indicator */}
+                    <div
+                      style={{
+                        height: 2 * SNAP_PX,
+                        background: 'color-mix(in srgb, var(--color-accent-primary) 20%, transparent)',
+                        borderLeft: '3px solid var(--color-accent-primary)',
+                        borderRadius: 'var(--radius-sm)',
+                      }}
+                    />
+                    {/* Popover card */}
+                    <div
+                      style={{
+                        marginTop: 4,
+                        background: 'var(--color-bg-elevated)',
+                        border: '1px solid var(--color-border-primary)',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: 'var(--shadow-lg)',
+                        padding: 10,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                        fontFamily: 'var(--font-family)',
+                        minWidth: 180,
+                      }}
+                    >
+                      <input
+                        ref={quickInputRef}
+                        value={quickTitle}
+                        onChange={(e) => setQuickTitle(e.target.value)}
+                        placeholder="Event title"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && quickTitle.trim() && quickCreate) {
+                            onQuickCreate?.(quickTitle.trim(), quickCreate.start, quickCreate.end);
+                            setQuickCreate(null);
+                            setQuickTitle('');
+                          }
+                          if (e.key === 'Escape') {
+                            setQuickCreate(null);
+                            setQuickTitle('');
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          height: 30,
+                          padding: '0 8px',
+                          border: '1px solid var(--color-border-primary)',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)',
+                          fontSize: 'var(--font-size-sm)',
+                          fontFamily: 'var(--font-family)',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                      <div style={{ display: 'flex', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+                        {formatTime(quickCreate.start)} – {formatTime(quickCreate.end)}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', alignItems: 'center' }}>
+                        <button
+                          onClick={() => {
+                            if (quickCreate) {
+                              onDragCreate(quickCreate.start, quickCreate.end);
+                            }
+                            setQuickCreate(null);
+                            setQuickTitle('');
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-accent-primary)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontFamily: 'var(--font-family)',
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                        >
+                          More options
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (quickTitle.trim() && quickCreate) {
+                              onQuickCreate?.(quickTitle.trim(), quickCreate.start, quickCreate.end);
+                            }
+                            setQuickCreate(null);
+                            setQuickTitle('');
+                          }}
+                          disabled={!quickTitle.trim()}
+                          style={{
+                            height: 26,
+                            padding: '0 12px',
+                            background: 'var(--color-accent-primary)',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--color-text-inverse)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontFamily: 'var(--font-family)',
+                            cursor: quickTitle.trim() ? 'pointer' : 'not-allowed',
+                            opacity: quickTitle.trim() ? 1 : 0.5,
+                          }}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -591,15 +1019,14 @@ export function WeekGrid({
   );
 }
 
-function formatTimeFromParts(hours: number, minutes: number): string {
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const h12 = hours % 12 || 12;
-  return minutes === 0 ? `${h12} ${ampm}` : `${h12}:${String(minutes).padStart(2, '0')} ${ampm}`;
-}
-
 function NowLine() {
-  const now = new Date();
-  const top = getEventTop(now);
+  const [top, setTop] = useState(getEventTop(new Date()));
+
+  useEffect(() => {
+    const update = () => setTop(getEventTop(new Date()));
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div

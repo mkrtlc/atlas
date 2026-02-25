@@ -27,6 +27,7 @@ export const queryKeys = {
   },
   contacts: {
     all: ['contacts'] as const,
+    search: (query: string) => ['contacts', 'search', query] as const,
     byEmail: (email: string) => ['contacts', 'byEmail', email] as const,
   },
   calendar: {

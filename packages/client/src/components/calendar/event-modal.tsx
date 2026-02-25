@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, MapPin, AlignLeft, Users, Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendar-store';
 import { useCalendars, useCreateCalendarEvent, useUpdateCalendarEvent, useDeleteCalendarEvent } from '../../hooks/use-calendar';
+import { useSearchContacts } from '../../hooks/use-contacts';
 import type { CSSProperties } from 'react';
 
 function formatDateTimeLocal(iso: string): string {
@@ -15,6 +16,256 @@ function toISOString(dateTimeLocal: string): string {
   if (!dateTimeLocal) return new Date().toISOString();
   return new Date(dateTimeLocal).toISOString();
 }
+
+interface AttendeeChip {
+  email: string;
+  name?: string;
+}
+
+// ─── Attendee input with autocomplete ──────────────────────────────────
+
+function AttendeeInput({
+  attendees,
+  onChange,
+  inputStyle,
+}: {
+  attendees: AttendeeChip[];
+  onChange: (attendees: AttendeeChip[]) => void;
+  inputStyle: CSSProperties;
+}) {
+  const [inputValue, setInputValue] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { data: contacts } = useSearchContacts(inputValue.trim());
+
+  // Filter out already-added attendees
+  const suggestions = (contacts || []).filter(
+    (c) => !attendees.some((a) => a.email === c.email),
+  );
+
+  const addAttendee = useCallback(
+    (email: string, name?: string) => {
+      const trimmed = email.trim().toLowerCase();
+      if (!trimmed) return;
+      if (attendees.some((a) => a.email === trimmed)) return;
+      onChange([...attendees, { email: trimmed, name }]);
+      setInputValue('');
+      setShowSuggestions(false);
+      setSelectedIndex(0);
+    },
+    [attendees, onChange],
+  );
+
+  const removeAttendee = useCallback(
+    (email: string) => {
+      onChange(attendees.filter((a) => a.email !== email));
+    },
+    [attendees, onChange],
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !inputValue && attendees.length > 0) {
+      removeAttendee(attendees[attendees.length - 1].email);
+      return;
+    }
+
+    if (e.key === 'Enter' || e.key === 'Tab' || e.key === ',') {
+      e.preventDefault();
+      if (showSuggestions && suggestions.length > 0 && selectedIndex < suggestions.length) {
+        const s = suggestions[selectedIndex];
+        addAttendee(s.email, s.name || undefined);
+      } else if (inputValue.trim()) {
+        addAttendee(inputValue.trim());
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((i) => Math.min(i + 1, suggestions.length - 1));
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((i) => Math.max(i - 1, 0));
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
+
+  // Close suggestions on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [inputValue]);
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <div
+        onClick={() => inputRef.current?.focus()}
+        style={{
+          ...inputStyle,
+          height: 'auto',
+          minHeight: 34,
+          padding: '4px 6px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 4,
+          alignItems: 'center',
+          cursor: 'text',
+        }}
+      >
+        {attendees.map((a) => (
+          <span
+            key={a.email}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '2px 6px',
+              background: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
+              borderRadius: 'var(--radius-full)',
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-primary)',
+              maxWidth: 200,
+            }}
+          >
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {a.name || a.email}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeAttendee(a.email);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 14,
+                height: 14,
+                padding: 0,
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '50%',
+                color: 'var(--color-text-tertiary)',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              <X size={10} />
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onFocus={() => {
+            if (inputValue.trim()) setShowSuggestions(true);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder={attendees.length === 0 ? 'Add attendees...' : ''}
+          style={{
+            flex: 1,
+            minWidth: 100,
+            height: 24,
+            padding: 0,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            color: 'var(--color-text-primary)',
+            fontSize: 'var(--font-size-sm)',
+            fontFamily: 'var(--font-family)',
+          }}
+        />
+      </div>
+
+      {/* Suggestions dropdown */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-md)',
+            zIndex: 10,
+            maxHeight: 180,
+            overflowY: 'auto',
+          }}
+        >
+          {suggestions.map((contact, i) => (
+            <button
+              key={contact.email}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                addAttendee(contact.email, contact.name || undefined);
+              }}
+              onMouseEnter={() => setSelectedIndex(i)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                padding: '6px 10px',
+                background: i === selectedIndex ? 'var(--color-bg-hover)' : 'transparent',
+                border: 'none',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-family)',
+              }}
+            >
+              {contact.name && (
+                <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
+                  {contact.name}
+                </span>
+              )}
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: contact.name ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)',
+                }}
+              >
+                {contact.email}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Event modal ────────────────────────────────────────────────────────
 
 export function EventModal() {
   const { eventModal, closeEventModal } = useCalendarStore();
@@ -31,7 +282,8 @@ export function EventModal() {
   const [endTime, setEndTime] = useState('');
   const [isAllDay, setIsAllDay] = useState(false);
   const [calendarId, setCalendarId] = useState('');
-  const [attendees, setAttendees] = useState('');
+  const [attendees, setAttendees] = useState<AttendeeChip[]>([]);
+  const [timeError, setTimeError] = useState('');
 
   // Populate form on open
   useEffect(() => {
@@ -46,7 +298,9 @@ export function EventModal() {
       setEndTime(formatDateTimeLocal(ev.endTime));
       setIsAllDay(ev.isAllDay);
       setCalendarId(ev.calendarId);
-      setAttendees(ev.attendees?.map((a) => a.email).join(', ') || '');
+      setAttendees(
+        ev.attendees?.map((a) => ({ email: a.email, name: a.displayName })) || [],
+      );
     } else {
       // Create mode
       const now = new Date();
@@ -61,28 +315,45 @@ export function EventModal() {
       setEndTime(formatDateTimeLocal(defaultEnd));
       setIsAllDay(false);
       setCalendarId(calendars?.find((c) => c.isPrimary)?.id || calendars?.[0]?.id || '');
-      setAttendees('');
+      setAttendees([]);
     }
+    setTimeError('');
 
     // Focus title after render
     setTimeout(() => titleRef.current?.focus(), 50);
   }, [eventModal.open, eventModal.mode, eventModal.event, eventModal.defaultStart, eventModal.defaultEnd, calendars]);
+
+  // Fix: when calendars load after modal opens, set calendarId if still empty
+  useEffect(() => {
+    if (eventModal.open && eventModal.mode === 'create' && !calendarId && calendars?.length) {
+      setCalendarId(calendars.find((c) => c.isPrimary)?.id || calendars[0].id);
+    }
+  }, [calendars, eventModal.open, eventModal.mode, calendarId]);
 
   if (!eventModal.open) return null;
 
   const handleSubmit = () => {
     if (!title.trim()) return;
 
-    const attendeeList = attendees
-      .split(',')
-      .map((e) => e.trim())
-      .filter(Boolean)
-      .map((email) => ({ email }));
+    // Validate calendarId
+    const resolvedCalendarId = calendarId || calendars?.find((c) => c.isPrimary)?.id || calendars?.[0]?.id;
+    if (!resolvedCalendarId) return;
+
+    // Validate time range
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+    if (!isAllDay && endDate <= startDate) {
+      setTimeError('End time must be after start time');
+      return;
+    }
+    setTimeError('');
+
+    const attendeeList = attendees.map((a) => ({ email: a.email }));
 
     if (eventModal.mode === 'create') {
       createEvent.mutate(
         {
-          calendarId,
+          calendarId: resolvedCalendarId,
           summary: title.trim(),
           description: description.trim() || undefined,
           location: location.trim() || undefined,
@@ -131,7 +402,7 @@ export function EventModal() {
     fontSize: 'var(--font-size-sm)',
     fontFamily: 'var(--font-family)',
     outline: 'none',
-    boxSizing: 'border-box',
+    boxSizing: 'border-box' as const,
   };
 
   const labelStyle: CSSProperties = {
@@ -257,17 +528,22 @@ export function EventModal() {
               <input
                 type={isAllDay ? 'date' : 'datetime-local'}
                 value={isAllDay ? startTime.slice(0, 10) : startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e) => { setStartTime(e.target.value); setTimeError(''); }}
                 style={{ ...inputStyle, flex: 1 }}
               />
               <span style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>to</span>
               <input
                 type={isAllDay ? 'date' : 'datetime-local'}
                 value={isAllDay ? endTime.slice(0, 10) : endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => { setEndTime(e.target.value); setTimeError(''); }}
                 style={{ ...inputStyle, flex: 1 }}
               />
             </div>
+            {timeError && (
+              <div style={{ color: 'var(--color-error)', fontSize: 'var(--font-size-xs)', marginTop: 4 }}>
+                {timeError}
+              </div>
+            )}
             <label
               style={{
                 display: 'flex',
@@ -354,11 +630,10 @@ export function EventModal() {
               <Users size={14} />
               Attendees
             </label>
-            <input
-              value={attendees}
-              onChange={(e) => setAttendees(e.target.value)}
-              placeholder="email@example.com, ..."
-              style={inputStyle}
+            <AttendeeInput
+              attendees={attendees}
+              onChange={setAttendees}
+              inputStyle={inputStyle}
             />
           </div>
         </div>
