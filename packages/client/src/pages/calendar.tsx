@@ -19,6 +19,7 @@ import { useToastStore } from '../stores/toast-store';
 import { EventModal } from '../components/calendar/event-modal';
 import { MiniMonth } from '../components/calendar/mini-month';
 import { WeekGrid } from '../components/calendar/week-grid';
+import { MonthGrid } from '../components/calendar/month-grid';
 import type { CSSProperties } from 'react';
 
 function toYMD(date: Date): string {
@@ -85,9 +86,30 @@ export function CalendarPage() {
       d.setHours(0, 0, 0, 0);
       return d;
     }
+    if (view === 'month-grid') {
+      // For month view, get the first of the month, then back up to the week start
+      const d = new Date(selectedDate + 'T12:00:00');
+      d.setDate(1);
+      const day = d.getDay();
+      const offset = weekStartsOnMonday ? ((day + 6) % 7) : day;
+      d.setDate(d.getDate() - offset);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
     return getWeekStart(selectedDate, weekStartsOnMonday);
   }, [selectedDate, view, weekStartsOnMonday]);
-  const { timeMin, timeMax } = useMemo(() => getTimeRange(weekStart), [weekStart]);
+
+  const { timeMin, timeMax } = useMemo(() => {
+    if (view === 'month-grid') {
+      // Month view needs ~6 weeks of data
+      const start = new Date(weekStart);
+      start.setDate(start.getDate() - 7);
+      const end = new Date(weekStart);
+      end.setDate(end.getDate() + 49); // 7 weeks to be safe
+      return { timeMin: start.toISOString(), timeMax: end.toISOString() };
+    }
+    return getTimeRange(weekStart);
+  }, [weekStart, view]);
   const { data: calendars } = useCalendars();
   const { data: events } = useCalendarEvents(timeMin, timeMax);
   const syncCalendar = useSyncCalendar();
@@ -180,24 +202,34 @@ export function CalendarPage() {
 
   const goToday = useCallback(() => setSelectedDate(toYMD(new Date())), [setSelectedDate]);
 
-  const step = view === 'day' ? 1 : 7;
-
   const goPrev = useCallback(() => {
     const d = new Date(selectedDate + 'T12:00:00');
-    d.setDate(d.getDate() - step);
+    if (view === 'month-grid') {
+      d.setMonth(d.getMonth() - 1);
+    } else {
+      d.setDate(d.getDate() - (view === 'day' ? 1 : 7));
+    }
     setSelectedDate(toYMD(d));
-  }, [selectedDate, setSelectedDate, step]);
+  }, [selectedDate, setSelectedDate, view]);
 
   const goNext = useCallback(() => {
     const d = new Date(selectedDate + 'T12:00:00');
-    d.setDate(d.getDate() + step);
+    if (view === 'month-grid') {
+      d.setMonth(d.getMonth() + 1);
+    } else {
+      d.setDate(d.getDate() + (view === 'day' ? 1 : 7));
+    }
     setSelectedDate(toYMD(d));
-  }, [selectedDate, setSelectedDate, step]);
+  }, [selectedDate, setSelectedDate, view]);
 
   const dateLabel = useMemo(() => {
     if (view === 'day') {
       const d = new Date(selectedDate + 'T12:00:00');
       return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    if (view === 'month-grid') {
+      const d = new Date(selectedDate + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
     return formatWeekRange(weekStart);
   }, [weekStart, view, selectedDate]);
@@ -324,6 +356,10 @@ export function CalendarPage() {
           e.preventDefault();
           setView('week');
           break;
+        case 'm':
+          e.preventDefault();
+          setView('month-grid');
+          break;
       }
     };
     window.addEventListener('keydown', handler);
@@ -442,7 +478,7 @@ export function CalendarPage() {
             overflow: 'hidden',
           }}
         >
-          {(['day', 'week'] as const).map((v) => (
+          {(['day', 'week', 'month-grid'] as const).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -459,7 +495,7 @@ export function CalendarPage() {
                 textTransform: 'capitalize',
               }}
             >
-              {v}
+              {v === 'month-grid' ? 'Month' : v}
             </button>
           ))}
         </div>
@@ -666,22 +702,37 @@ export function CalendarPage() {
         </div>
         )}
 
-        {/* Week grid */}
+        {/* Calendar grid */}
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <WeekGrid
-            weekStart={weekStart}
-            events={filteredEvents}
-            selectedCalendarIds={selectedCalendarIds}
-            calendarColorMap={calendarColorMap}
-            onEventClick={openEditModal}
-            onDragCreate={handleDragCreate}
-            onEventUpdate={handleEventUpdate}
-            onQuickCreate={handleQuickCreate}
-            onEventDelete={handleEventDelete}
-            onEventDuplicate={handleEventDuplicate}
-            dayCount={isNarrow ? 1 : view === 'day' ? 1 : 7}
-            weekStartsOnMonday={weekStartsOnMonday}
-          />
+          {view === 'month-grid' ? (
+            <MonthGrid
+              selectedDate={selectedDate}
+              events={filteredEvents}
+              selectedCalendarIds={selectedCalendarIds}
+              calendarColorMap={calendarColorMap}
+              weekStartsOnMonday={weekStartsOnMonday}
+              onEventClick={openEditModal}
+              onDateClick={(date) => {
+                setSelectedDate(date);
+                setView('day');
+              }}
+            />
+          ) : (
+            <WeekGrid
+              weekStart={weekStart}
+              events={filteredEvents}
+              selectedCalendarIds={selectedCalendarIds}
+              calendarColorMap={calendarColorMap}
+              onEventClick={openEditModal}
+              onDragCreate={handleDragCreate}
+              onEventUpdate={handleEventUpdate}
+              onQuickCreate={handleQuickCreate}
+              onEventDelete={handleEventDelete}
+              onEventDuplicate={handleEventDuplicate}
+              dayCount={isNarrow ? 1 : view === 'day' ? 1 : 7}
+              weekStartsOnMonday={weekStartsOnMonday}
+            />
+          )}
         </div>
       </div>
 
