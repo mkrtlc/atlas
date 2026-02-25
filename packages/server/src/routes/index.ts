@@ -4,6 +4,7 @@ import threadsRoutes from './threads.routes';
 import searchRoutes from './search.routes';
 import settingsRoutes from './settings.routes';
 import contactsRoutes from './contacts.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use('/threads', threadsRoutes);
 router.use('/search', searchRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/contacts', contactsRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

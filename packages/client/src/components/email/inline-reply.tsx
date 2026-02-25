@@ -97,11 +97,15 @@ interface InlineReplyProps {
   threadId: string;
   threadSubject: string | null;
   lastEmail: Email;
+  /** AI quick reply prefill body — when set, expands the reply and pre-fills the editor */
+  prefillBody?: string | null;
+  /** Called after the prefill has been consumed so parent can reset */
+  onPrefillConsumed?: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────
 
-export function InlineReply({ threadId, threadSubject, lastEmail }: InlineReplyProps) {
+export function InlineReply({ threadId, threadSubject, lastEmail, prefillBody, onPrefillConsumed }: InlineReplyProps) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [toAddress, setToAddress] = useState('');
@@ -163,6 +167,16 @@ export function InlineReply({ threadId, threadSubject, lastEmail }: InlineReplyP
       editor.commands.setContent(quotedHtml);
     }
   }, [editor, quotedHtml, isExpanded]);
+
+  // Handle AI quick reply prefill
+  useEffect(() => {
+    if (!prefillBody || !editor) return;
+    const prefillHtml = `<p>${prefillBody.replace(/\n/g, '<br>')}</p>${quotedHtml}`;
+    editor.commands.setContent(prefillHtml);
+    editor.commands.focus('start');
+    setIsExpanded(true);
+    onPrefillConsumed?.();
+  }, [prefillBody, editor, quotedHtml, onPrefillConsumed]);
 
   // Collapse when clicking outside the reply box
   useEffect(() => {

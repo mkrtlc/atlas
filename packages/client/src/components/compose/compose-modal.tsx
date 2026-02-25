@@ -13,7 +13,7 @@ import {
   X, Minus, Maximize2, Send, ChevronDown,
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   List, ListOrdered, Link as LinkIcon, Code, Paperclip,
-  Eye, EyeOff, Type, Highlighter, Clock,
+  Eye, EyeOff, Type, Highlighter, Clock, Sparkles,
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useEmailStore } from '../../stores/email-store';
@@ -27,6 +27,8 @@ import { ConfirmDialog } from '../ui/confirm-dialog';
 import { RecipientInput } from './recipient-input';
 import { SendLaterPopover } from './send-later-popover';
 import { ColorPickerPopover } from './color-picker-popover';
+import { AIWritingAssist } from './ai-writing-assist';
+import { useAIConfig } from '../../hooks/use-ai';
 import { formatBytes } from '../../lib/format';
 import { bodyMentionsAttachments } from '../../lib/attachment-check';
 import { injectComposeTransition } from '../../lib/animations';
@@ -265,7 +267,7 @@ function LinkPopover({
   );
 }
 
-function FormatToolbar({ editor }: { editor: Editor | null }) {
+function FormatToolbar({ editor, onAIClick, aiEnabled }: { editor: Editor | null; onAIClick?: () => void; aiEnabled?: boolean }) {
   const { t } = useTranslation();
   const [showLinkPopover, setShowLinkPopover] = useState(false);
 
@@ -399,6 +401,24 @@ function FormatToolbar({ editor }: { editor: Editor | null }) {
           isActive={editor.isActive('highlight')}
         />
       </ColorPickerPopover>
+
+      {aiEnabled && onAIClick && (
+        <>
+          <div
+            style={{
+              width: 1,
+              height: 16,
+              background: 'var(--color-border-primary)',
+              margin: '0 var(--spacing-xs)',
+            }}
+          />
+          <ToolbarButton
+            icon={<Sparkles size={14} />}
+            label="AI writing assist"
+            onClick={onAIClick}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -453,6 +473,8 @@ export function ComposeModal() {
   const [isMaximized, setIsMaximized] = useState(false);
   const globalTrackingEnabled = useSettingsStore((s) => s.trackingEnabled);
   const [trackingEnabled, setTrackingEnabled] = useState(globalTrackingEnabled);
+  const [showAIAssist, setShowAIAssist] = useState(false);
+  const aiConfig = useAIConfig();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1053,7 +1075,30 @@ export function ComposeModal() {
           </div>
 
           {/* Format toolbar */}
-          <FormatToolbar editor={editor} />
+          <FormatToolbar
+            editor={editor}
+            aiEnabled={aiConfig.isConfigured && aiConfig.features.writingAssistant}
+            onAIClick={() => setShowAIAssist(true)}
+          />
+
+          {/* AI writing assistant panel */}
+          {showAIAssist && (
+            <div style={{ padding: '0 var(--spacing-lg)', paddingTop: 'var(--spacing-md)' }}>
+              <AIWritingAssist
+                subject={subject}
+                existingDraft={editor?.getText() || ''}
+                threadSnippet={thread?.snippet || undefined}
+                onAccept={(text) => {
+                  if (editor) {
+                    const html = text.replace(/\n/g, '<br>');
+                    editor.commands.setContent(`<p>${html}</p>`);
+                    editor.commands.focus('end');
+                  }
+                }}
+                onClose={() => setShowAIAssist(false)}
+              />
+            </div>
+          )}
 
           {/* Editor with drag-and-drop */}
           <div

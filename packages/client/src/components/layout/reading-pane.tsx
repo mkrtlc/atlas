@@ -9,6 +9,8 @@ import { useMediaQuery } from '../../hooks/use-media-query';
 import { EmailActions } from '../email/email-actions';
 import { EmailMessage } from '../email/email-message';
 import { InlineReply } from '../email/inline-reply';
+import { ThreadSummary } from '../email/thread-summary';
+import { QuickAIReplies } from '../email/quick-ai-replies';
 import { UnsubscribeButton } from '../email/unsubscribe-button';
 import { ContactPanel } from '../email/contact-panel';
 import { Kbd } from '../ui/kbd';
@@ -97,6 +99,9 @@ export function ReadingPane() {
 
   // Whether the "show earlier messages" fold has been opened
   const [showEarlierMessages, setShowEarlierMessages] = useState(false);
+
+  // Quick AI reply prefill
+  const [quickReplyBody, setQuickReplyBody] = useState<string | null>(null);
 
   // Re-initialise collapse state whenever the active thread changes
   useEffect(() => {
@@ -357,6 +362,11 @@ export function ReadingPane() {
             overflowX: 'hidden',
           }}
         >
+          {/* AI thread summary — visible for threads with 3+ messages */}
+          {emails.length >= 3 && (
+            <ThreadSummary threadId={thread.id} messageCount={emails.length} />
+          )}
+
           {emails.length === 0 ? (
             <div
               style={{
@@ -448,12 +458,22 @@ export function ReadingPane() {
             </>
           )}
 
+          {/* Quick AI reply chips — above the inline reply */}
+          {emails.length > 0 && (
+            <QuickAIReplies
+              threadId={thread.id}
+              onSelectReply={(body) => setQuickReplyBody(body)}
+            />
+          )}
+
           {/* Inline reply composer — only shown when there are messages */}
           {emails.length > 0 && (
             <InlineReply
               threadId={thread.id}
               threadSubject={thread.subject}
               lastEmail={emails[emails.length - 1]}
+              prefillBody={quickReplyBody}
+              onPrefillConsumed={() => setQuickReplyBody(null)}
             />
           )}
         </div>
