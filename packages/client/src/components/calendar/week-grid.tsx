@@ -667,31 +667,46 @@ export function WeekGrid({
                   gap: 1,
                 }}
               >
-                {allDayEvs.map((ev) => (
-                  <button
-                    key={ev.id}
-                    data-event
-                    onClick={() => onEventClick(ev)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '1px 4px',
-                      background: calendarColorMap.get(ev.calendarId) || 'var(--color-accent-primary)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 3,
-                      fontSize: 10,
-                      fontFamily: 'var(--font-family)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {ev.summary || '(No title)'}
-                  </button>
-                ))}
+                {allDayEvs.map((ev) => {
+                  const pillBg = calendarColorMap.get(ev.calendarId) || 'var(--color-accent-primary)';
+                  const pillText = isLightColor(pillBg) ? '#1a1a1a' : '#fff';
+                  return (
+                    <button
+                      key={ev.id}
+                      data-event
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick(ev);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        width: '100%',
+                        padding: '2px 6px',
+                        background: pillBg,
+                        color: pillText,
+                        border: 'none',
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-family)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        lineHeight: '16px',
+                        transition: 'box-shadow var(--transition-fast)',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                    >
+                      {ev.hangoutLink && <Video size={9} style={{ flexShrink: 0, opacity: 0.8 }} />}
+                      {ev.summary || '(No title)'}
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
@@ -894,9 +909,27 @@ export function WeekGrid({
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3,
                         }}
                       >
+                        {pe.event.hangoutLink && <Video size={10} style={{ flexShrink: 0, opacity: 0.7 }} />}
                         {pe.event.summary || '(No title)'}
+                        {pe.event.selfResponseStatus && pe.event.selfResponseStatus !== 'accepted' && (
+                          <span
+                            title={pe.event.selfResponseStatus}
+                            style={{
+                              flexShrink: 0,
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              background: pe.event.selfResponseStatus === 'declined' ? 'var(--color-error)'
+                                : pe.event.selfResponseStatus === 'tentative' ? '#f0ad4e'
+                                : '#999',
+                            }}
+                          />
+                        )}
                       </div>
                       {eventHeight > 30 && (
                         <div
@@ -911,6 +944,25 @@ export function WeekGrid({
                             ? `${resizePreview.startLabel} – ${resizePreview.endLabel}`
                             : `${formatTime(pe.start)} – ${formatTime(pe.end)}`
                           }
+                        </div>
+                      )}
+                      {eventHeight > 50 && pe.event.location && (
+                        <div
+                          style={{
+                            fontSize: 9,
+                            color: 'var(--color-text-tertiary)',
+                            lineHeight: '12px',
+                            marginTop: 1,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                          }}
+                        >
+                          <MapPin size={8} style={{ flexShrink: 0 }} />
+                          {pe.event.location}
                         </div>
                       )}
 
