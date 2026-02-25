@@ -13,6 +13,8 @@ import { queryKeys } from '../config/query-keys';
 import {
   useArchiveWithUndo,
   useTrashWithUndo,
+  useBulkArchiveWithUndo,
+  useBulkTrashWithUndo,
   useToggleStar,
   useMarkReadUnread,
   useMailboxThreads,
@@ -36,6 +38,8 @@ export function InboxPage() {
   const { toggleCommandPalette, toggleSidebar, toggleSettings } = useUIStore();
   const archiveWithUndo = useArchiveWithUndo();
   const trashWithUndo = useTrashWithUndo();
+  const bulkArchiveWithUndo = useBulkArchiveWithUndo();
+  const bulkTrashWithUndo = useBulkTrashWithUndo();
   const starMutation = useToggleStar();
   const markReadUnread = useMarkReadUnread();
   const isInbox = activeMailbox === 'inbox';
@@ -92,16 +96,26 @@ export function InboxPage() {
   // advanceAfterRemoval runs first (deferred one tick) so it fires after the
   // optimistic removal has propagated and the list has re-rendered.
   const handleArchive = useCallback(() => {
+    if (selectedThreadIds.size > 0) {
+      bulkArchiveWithUndo(selectedThreadIds, activeListKey);
+      clearSelection();
+      return;
+    }
     if (!activeThreadId) return;
     advanceAfterRemoval(activeThreadId, cursorIndex);
     archiveWithUndo(activeThreadId, activeListKey);
-  }, [activeThreadId, cursorIndex, activeListKey, advanceAfterRemoval, archiveWithUndo]);
+  }, [selectedThreadIds, activeThreadId, cursorIndex, activeListKey, advanceAfterRemoval, archiveWithUndo, bulkArchiveWithUndo, clearSelection]);
 
   const handleTrash = useCallback(() => {
+    if (selectedThreadIds.size > 0) {
+      bulkTrashWithUndo(selectedThreadIds, activeListKey);
+      clearSelection();
+      return;
+    }
     if (!activeThreadId) return;
     advanceAfterRemoval(activeThreadId, cursorIndex);
     trashWithUndo(activeThreadId, activeListKey);
-  }, [activeThreadId, cursorIndex, activeListKey, advanceAfterRemoval, trashWithUndo]);
+  }, [selectedThreadIds, activeThreadId, cursorIndex, activeListKey, advanceAfterRemoval, trashWithUndo, bulkTrashWithUndo, clearSelection]);
 
   const handleStar = useCallback(() => {
     if (activeThreadId) starMutation.mutate(activeThreadId);
