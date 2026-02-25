@@ -335,12 +335,14 @@ export async function createEvent(accountId: string, input: CalendarEventCreateI
     location: input.location,
   };
 
+  const tz = calRow.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   if (input.isAllDay) {
     eventResource.start = { date: input.startTime.slice(0, 10) };
     eventResource.end = { date: input.endTime.slice(0, 10) };
   } else {
-    eventResource.start = { dateTime: input.startTime };
-    eventResource.end = { dateTime: input.endTime };
+    eventResource.start = { dateTime: input.startTime, timeZone: tz };
+    eventResource.end = { dateTime: input.endTime, timeZone: tz };
   }
 
   if (input.attendees?.length) {
@@ -353,7 +355,6 @@ export async function createEvent(accountId: string, input: CalendarEventCreateI
   const res = await cal.events.insert({
     calendarId: calRow.googleCalendarId,
     requestBody: eventResource,
-    sendUpdates: 'all',
   });
 
   const created = res.data;

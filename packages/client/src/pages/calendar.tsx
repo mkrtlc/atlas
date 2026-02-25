@@ -12,6 +12,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useMediaQuery } from '../hooks/use-media-query';
+import { config } from '../config/env';
 import '../styles/calendar.css';
 import { useCalendars, useCalendarEvents, useSyncCalendar, useToggleCalendar, useCreateCalendar, useUpdateCalendarEvent, useCreateCalendarEvent, useDeleteCalendarEvent } from '../hooks/use-calendar';
 import { useCalendarStore } from '../stores/calendar-store';
@@ -377,16 +378,43 @@ export function CalendarPage() {
     if (prevSyncStatus.current === 'pending' && status === 'success') {
       addToast({ message: 'Calendar synced', type: 'success', duration: 3000 });
     } else if (prevSyncStatus.current === 'pending' && status === 'error') {
-      addToast({ message: 'Sync failed — try again', type: 'error', duration: 5000 });
+      const errData = (syncCalendar.error as any)?.response?.data;
+      if (errData?.code === 'SCOPE_MISSING') {
+        addToast({ message: 'Calendar permissions missing — please sign out and sign back in', type: 'error', duration: 10000 });
+      } else {
+        addToast({ message: 'Sync failed — try again', type: 'error', duration: 5000 });
+      }
     }
     prevSyncStatus.current = status;
-  }, [syncCalendar.isPending, syncCalendar.isSuccess, syncCalendar.isError, addToast]);
+  }, [syncCalendar.isPending, syncCalendar.isSuccess, syncCalendar.isError, syncCalendar.error, addToast]);
 
   const isDesktop = !!('atlasDesktop' in window);
   const isNarrow = useMediaQuery('(max-width: 900px)');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const showSidebar = !sidebarCollapsed && !isNarrow;
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Detect if calendar scope is missing (sync failed with 403)
+  const scopeMissing = syncCalendar.isError &&
+    (syncCalendar.error as any)?.response?.data?.code === 'SCOPE_MISSING';
+
+  const handleReAuth = useCallback(() => {
+    const baseUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
+    const params = new URLSearchParams({
+      client_id: config.googleClientId,
+      redirect_uri: `${window.location.origin}/auth/callback`,
+      response_type: 'code',
+      scope: [
+        'openid', 'email', 'profile',
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/contacts.readonly',
+        'https://www.googleapis.com/auth/calendar',
+      ].join(' '),
+      access_type: 'offline',
+      prompt: 'consent',
+    });
+    window.location.href = `${baseUrl}?${params.toString()}`;
+  }, []);
 
   const filteredEvents = useMemo(() => {
     if (!events) return [];
@@ -832,7 +860,42 @@ export function CalendarPage() {
         )}
 
         {/* Calendar grid */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {scopeMissing && (
+            <div
+              style={{
+                padding: '12px 16px',
+                background: 'color-mix(in srgb, var(--color-warning, #f59e0b) 10%, var(--color-bg-primary))',
+                borderBottom: '1px solid var(--color-border-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', flex: 1 }}>
+                Calendar access not granted. Please re-authenticate to enable calendar sync.
+              </span>
+              <button
+                onClick={handleReAuth}
+                style={{
+                  height: 30,
+                  padding: '0 14px',
+                  background: 'var(--color-accent-primary)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-text-inverse)',
+                  fontSize: 'var(--font-size-sm)',
+                  fontFamily: 'var(--font-family)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Grant access
+              </button>
+            </div>
+          )}
           {view === 'month-grid' ? (
             <MonthGrid
               selectedDate={selectedDate}

@@ -303,7 +303,11 @@ export function EventModal() {
   const [timeError, setTimeError] = useState('');
   const [recurringPrompt, setRecurringPrompt] = useState<'save' | 'delete' | null>(null);
 
-  // Populate form on open
+  // Populate form on open — keyed on modal identity, NOT on calendars
+  const modalKey = eventModal.open
+    ? `${eventModal.mode}-${eventModal.event?.id ?? 'new'}-${eventModal.defaultStart}-${eventModal.defaultEnd}`
+    : '';
+
   useEffect(() => {
     if (!eventModal.open) return;
 
@@ -333,7 +337,7 @@ export function EventModal() {
       setStartTime(formatDateTimeLocal(defaultStart));
       setEndTime(formatDateTimeLocal(defaultEnd));
       setIsAllDay(false);
-      setCalendarId(calendars?.find((c) => c.isPrimary)?.id || calendars?.[0]?.id || '');
+      setCalendarId(''); // Will be filled by the calendar-loader effect below
       setAttendees([]);
       setColorId(null);
     }
@@ -343,9 +347,10 @@ export function EventModal() {
 
     // Focus title after render
     setTimeout(() => titleRef.current?.focus(), 50);
-  }, [eventModal.open, eventModal.mode, eventModal.event, eventModal.defaultStart, eventModal.defaultEnd, calendars]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalKey]);
 
-  // Fix: when calendars load after modal opens, set calendarId if still empty
+  // Set calendarId once calendars are available (or when modal opens)
   useEffect(() => {
     if (eventModal.open && eventModal.mode === 'create' && !calendarId && calendars?.length) {
       setCalendarId(calendars.find((c) => c.isPrimary)?.id || calendars[0].id);

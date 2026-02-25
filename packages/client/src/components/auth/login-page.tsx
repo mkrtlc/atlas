@@ -15,6 +15,8 @@ function buildGoogleOAuthUrl(): string {
       'email',
       'profile',
       'https://www.googleapis.com/auth/gmail.modify',
+      'https://www.googleapis.com/auth/contacts.readonly',
+      'https://www.googleapis.com/auth/calendar',
     ].join(' '),
     access_type: 'offline',
     prompt: 'consent',

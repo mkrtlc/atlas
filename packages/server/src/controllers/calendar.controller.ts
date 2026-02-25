@@ -42,8 +42,20 @@ export async function syncCalendars(req: Request, res: Response) {
     // Return updated data
     const events = await calendarService.listEvents(accountId, timeMin, timeMax);
     res.json({ success: true, data: { calendars: cals, events } });
-  } catch (error) {
-    logger.error({ error }, 'Failed to sync calendars');
+  } catch (error: any) {
+    logger.error({ error, status: error?.response?.status, data: error?.response?.data }, 'Failed to sync calendars');
+
+    // Detect Google API insufficient scope / permissions errors
+    const gStatus = error?.response?.status || error?.code;
+    if (gStatus === 403 || gStatus === 'PERMISSION_DENIED') {
+      res.status(403).json({
+        success: false,
+        error: 'Calendar permissions not granted. Please sign out and sign back in to grant calendar access.',
+        code: 'SCOPE_MISSING',
+      });
+      return;
+    }
+
     res.status(500).json({ success: false, error: 'Failed to sync calendars' });
   }
 }
