@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { ArrowLeft, ChevronsUpDown, ChevronsDownUp, PanelRightOpen, PanelRightClose } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useEmailStore } from '../../stores/email-store';
+import { useSettingsStore } from '../../stores/settings-store';
 import { useThread } from '../../hooks/use-threads';
 import { useThreadTracking } from '../../hooks/use-tracking';
 import { useMediaQuery } from '../../hooks/use-media-query';
@@ -63,10 +64,13 @@ function ReadingPaneEmptyState() {
 
 export function ReadingPane() {
   const { activeThreadId, setActiveThread } = useEmailStore();
+  const readingPanePosition = useSettingsStore((s) => s.readingPane);
   const { data: thread, isLoading } = useThread(activeThreadId);
   const { data: trackingStats } = useThreadTracking(activeThreadId);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const isNarrow = useMediaQuery('(max-width: 1100px)');
+  const isHiddenPane = readingPanePosition === 'hidden';
+  const showBackButton = isMobile || isHiddenPane;
   const { t } = useTranslation();
 
   // Contact panel toggle (persisted to localStorage)
@@ -196,8 +200,8 @@ export function ReadingPane() {
         }}
       >
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Mobile back button — only visible on mobile */}
-        {isMobile && (
+        {/* Back button — visible on mobile and when reading pane is hidden (full-width thread view) */}
+        {showBackButton && (
           <button
             onClick={() => setActiveThread(null)}
             aria-label={t('inbox.backToInbox')}

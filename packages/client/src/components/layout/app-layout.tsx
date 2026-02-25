@@ -133,8 +133,10 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
   // On mobile: show reading pane full-width when a thread is active.
   // On tablet: sidebar is an overlay, list + reading pane are shown together.
   // On desktop: full three-column layout (same as before).
+  // When reading pane is 'hidden', clicking an email shows it full-width (replacing the list).
   const showMobileList = isMobile && !activeThreadId;
   const showMobileReadingPane = isMobile && !!activeThreadId;
+  const showHiddenPaneThread = isHidden && !!activeThreadId;
 
   // Hamburger button — shown on tablet and mobile
   const HamburgerButton = (
@@ -307,8 +309,8 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
             minWidth: 0,
           }}
         >
-          {/* Email list pane */}
-          {(!isMobile || showMobileList) && (
+          {/* Email list pane — hidden when a thread is open in 'hidden' pane mode (full-width thread view) */}
+          {(!isMobile || showMobileList) && !showHiddenPaneThread && (
             <section
               id="email-list-main"
               aria-label="Email list"
@@ -337,8 +339,8 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
             />
           )}
 
-          {/* Reading pane */}
-          {!isHidden && (!isMobile || showMobileReadingPane) && (
+          {/* Reading pane — also shown full-width when a thread is open in 'hidden' pane mode */}
+          {(!isHidden || showHiddenPaneThread) && (!isMobile || showMobileReadingPane) && (
             <main
               aria-label="Reading pane"
               style={{
