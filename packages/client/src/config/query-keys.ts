@@ -25,4 +25,8 @@ export const queryKeys = {
     all: ['tracking'] as const,
     thread: (threadId: string) => ['tracking', 'thread', threadId] as const,
   },
+  contacts: {
+    all: ['contacts'] as const,
+    byEmail: (email: string) => ['contacts', 'byEmail', email] as const,
+  },
 };

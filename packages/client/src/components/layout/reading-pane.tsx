@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ArrowLeft, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { ArrowLeft, ChevronsUpDown, ChevronsDownUp, PanelRightOpen, PanelRightClose } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useEmailStore } from '../../stores/email-store';
 import { useThread } from '../../hooks/use-threads';
@@ -9,6 +9,7 @@ import { EmailActions } from '../email/email-actions';
 import { EmailMessage } from '../email/email-message';
 import { InlineReply } from '../email/inline-reply';
 import { UnsubscribeButton } from '../email/unsubscribe-button';
+import { ContactPanel } from '../email/contact-panel';
 import { Kbd } from '../ui/kbd';
 import { EmptyState } from '../ui/empty-state';
 import { ReadingPaneSkeleton } from '../ui/skeleton';
@@ -65,7 +66,27 @@ export function ReadingPane() {
   const { data: thread, isLoading } = useThread(activeThreadId);
   const { data: trackingStats } = useThreadTracking(activeThreadId);
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const isNarrow = useMediaQuery('(max-width: 1100px)');
   const { t } = useTranslation();
+
+  // Contact panel toggle (persisted to localStorage)
+  const [contactPanelOpen, setContactPanelOpen] = useState(() => {
+    try {
+      return localStorage.getItem('atlasmail_contact_panel') !== 'closed';
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleContactPanel = useCallback(() => {
+    setContactPanelOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('atlasmail_contact_panel', next ? 'open' : 'closed');
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   // Set of expanded email IDs — initialised with only the last email's ID
   const [expandedEmailIds, setExpandedEmailIds] = useState<Set<string>>(new Set());
@@ -138,15 +159,30 @@ export function ReadingPane() {
     ? earlierEmails.length - COLLAPSED_PREVIEW_THRESHOLD
     : 0;
 
+  // Extract sender info for the contact panel
+  const senderEmail = lastEmail?.fromAddress || null;
+  const senderName = lastEmail?.fromName || null;
+  const showContactPanel = !isMobile && !isNarrow && contactPanelOpen;
+
   return (
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
       }}
     >
+      {/* Main email content column */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minWidth: 0,
+          height: '100%',
+          overflow: 'hidden',
+        }}
+      >
       {/* Thread subject header */}
       <div
         style={{
@@ -154,8 +190,12 @@ export function ReadingPane() {
           borderBottom: '1px solid var(--color-border-primary)',
           background: 'var(--color-bg-secondary)',
           flexShrink: 0,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 'var(--spacing-md)',
         }}
       >
+      <div style={{ flex: 1, minWidth: 0 }}>
         {/* Mobile back button — only visible on mobile */}
         {isMobile && (
           <button
@@ -245,6 +285,39 @@ export function ReadingPane() {
           </button>
         )}
         <UnsubscribeButton emails={emails} threadId={thread.id} />
+      </div>
+
+      {/* Contact panel toggle */}
+      {!isMobile && !isNarrow && (
+        <button
+          onClick={handleToggleContactPanel}
+          aria-label={contactPanelOpen ? 'Hide contact panel' : 'Show contact panel'}
+          title={contactPanelOpen ? 'Hide contact panel' : 'Show contact panel'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 28,
+            height: 28,
+            padding: 0,
+            background: 'transparent',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            color: contactPanelOpen ? 'var(--color-accent-primary)' : 'var(--color-text-tertiary)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'color var(--transition-normal), background var(--transition-normal)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-surface-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          {contactPanelOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+        </button>
+      )}
       </div>
 
       {/* Action toolbar */}
@@ -381,6 +454,15 @@ export function ReadingPane() {
           )}
         </div>
       </div>
+      </div>
+
+      {/* Contact panel */}
+      {showContactPanel && (
+        <ContactPanel
+          senderEmail={senderEmail}
+          senderName={senderName}
+        />
+      )}
     </div>
   );
 }

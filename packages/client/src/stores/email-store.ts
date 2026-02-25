@@ -11,6 +11,7 @@ interface EmailState {
   selectedThreadIds: Set<string>;
   composeMode: 'new' | 'reply' | 'reply_all' | 'forward' | null;
   composeThreadId: string | null;
+  composeInitialTo: string | null;
   filterByLabel: string | null;
   setActiveCategory: (category: EmailCategory) => void;
   setActiveMailbox: (mailbox: Mailbox) => void;
@@ -20,7 +21,7 @@ interface EmailState {
   toggleSelection: (threadId: string) => void;
   clearSelection: () => void;
   selectThreads: (threadIds: string[]) => void;
-  openCompose: (mode: 'new' | 'reply' | 'reply_all' | 'forward', threadId?: string) => void;
+  openCompose: (mode: 'new' | 'reply' | 'reply_all' | 'forward', threadId?: string, initialTo?: string) => void;
   closeCompose: () => void;
   setFilterByLabel: (labelId: string | null) => void;
 }
@@ -33,6 +34,7 @@ export const useEmailStore = create<EmailState>((set) => ({
   selectedThreadIds: new Set(),
   composeMode: null,
   composeThreadId: null,
+  composeInitialTo: null,
   filterByLabel: null,
   setActiveCategory: (category) =>
     set({ activeCategory: category, activeMailbox: 'inbox', cursorIndex: 0, selectedThreadIds: new Set(), filterByLabel: null }),
@@ -57,7 +59,7 @@ export const useEmailStore = create<EmailState>((set) => ({
     }),
   clearSelection: () => set({ selectedThreadIds: new Set() }),
   selectThreads: (threadIds) => set({ selectedThreadIds: new Set(threadIds) }),
-  openCompose: (mode, threadId) => set({ composeMode: mode, composeThreadId: threadId ?? null }),
-  closeCompose: () => set({ composeMode: null, composeThreadId: null }),
+  openCompose: (mode, threadId, initialTo) => set({ composeMode: mode, composeThreadId: threadId ?? null, composeInitialTo: initialTo ?? null }),
+  closeCompose: () => set({ composeMode: null, composeThreadId: null, composeInitialTo: null }),
   setFilterByLabel: (labelId) => set({ filterByLabel: labelId }),
 }));

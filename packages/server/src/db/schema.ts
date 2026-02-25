@@ -22,6 +22,7 @@ export const accounts = sqliteTable('accounts', {
   lastSync: timestamp(),
   syncStatus: text('sync_status').notNull().default('idle'),
   syncError: text('sync_error'),
+  watchExpiration: integer('watch_expiration'), // Unix ms timestamp when Gmail push watch expires
   createdAt: timestampNow().notNull(),
   updatedAt: timestampNow().notNull(),
 }, (table) => ({
@@ -70,6 +71,7 @@ export const emails = sqliteTable('emails', {
   snippet: text('snippet'),
   bodyText: text('body_text'),
   bodyHtml: text('body_html'),
+  bodyHtmlCompressed: text('body_html_compressed'), // gzip-compressed HTML, base64-encoded
   gmailLabels: text('gmail_labels', { mode: 'json' }).notNull().$type<string[]>().default([]),
   isUnread: integer('is_unread', { mode: 'boolean' }).notNull().default(true),
   isStarred: integer('is_starred', { mode: 'boolean' }).notNull().default(false),
@@ -136,9 +138,20 @@ export const contacts = sqliteTable('contacts', {
   id: uuid().primaryKey(),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
+  emails: text('emails', { mode: 'json' }).notNull().$type<string[]>().default([]),
   name: text('name'),
+  givenName: text('given_name'),
+  familyName: text('family_name'),
+  photoUrl: text('photo_url'),
+  phoneNumbers: text('phone_numbers', { mode: 'json' }).notNull().$type<string[]>().default([]),
+  organization: text('organization'),
+  jobTitle: text('job_title'),
+  notes: text('notes'),
+  googleResourceName: text('google_resource_name'),
   frequency: integer('frequency').notNull().default(1),
   lastContacted: timestamp(),
+  createdAt: timestampNow(),
+  updatedAt: timestampNow(),
 }, (table) => ({
   accountEmailIdx: uniqueIndex('idx_contacts_account_email').on(table.accountId, table.email),
   accountFreqIdx: index('idx_contacts_account_freq').on(table.accountId, table.frequency),
