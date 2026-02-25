@@ -43,6 +43,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../../stores/ui-store';
 import { useSettingsStore, type FontFamilyId } from '../../stores/settings-store';
+import { TRANSLATION_LANGUAGES } from '../../lib/translator';
+import type { TranslationLanguage } from '../../lib/translator';
 import { useAuthStore } from '../../stores/auth-store';
 import { Avatar } from '../ui/avatar';
 import { DEFAULT_LABELS, type Label } from '../../lib/labels';
@@ -1226,12 +1228,16 @@ function AppearancePanel() {
     density,
     fontFamily,
     language,
+    translationLanguage,
+    autoTranslate,
     colorTheme,
     sendAnimation,
     themeTransition,
     setTheme,
     setDensity,
     setFontFamily,
+    setTranslationLanguage,
+    setAutoTranslate,
     setLanguage,
     setColorTheme,
     setSendAnimation,
@@ -1251,6 +1257,11 @@ function AppearancePanel() {
     { value: 'default', label: t('settings.default'), desc: t('settings.defaultDesc') },
     { value: 'comfortable', label: t('settings.comfortable'), desc: t('settings.comfortableDesc') },
   ];
+
+  const translationLangOptions = TRANSLATION_LANGUAGES.map((lang) => ({
+    value: lang.code,
+    label: lang.label,
+  }));
 
   const fontOptions: Array<{ value: FontFamilyId; label: string; css: string }> = [
     { value: 'inter', label: 'Inter', css: "'Inter', sans-serif" },
@@ -1378,6 +1389,30 @@ function AppearancePanel() {
           options={languageOptions}
           onChange={(v) => setLanguage(v as string)}
         />
+      </SettingsSection>
+
+      <SettingsSection title={t('settings.translation')} description={t('settings.translationDescription')}>
+        <SettingsRow
+          label={t('settings.yourLanguage')}
+          description={t('settings.yourLanguageDesc')}
+        >
+          <SettingsSelect
+            value={translationLanguage}
+            options={translationLangOptions}
+            onChange={(v) => setTranslationLanguage(v as TranslationLanguage)}
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          label={t('settings.autoDetect')}
+          description={t('settings.autoDetectDesc')}
+        >
+          <SettingsToggle
+            checked={autoTranslate}
+            onChange={setAutoTranslate}
+            label={t('settings.autoDetect')}
+          />
+        </SettingsRow>
       </SettingsSection>
 
       <SettingsSection title={t('settings.density')} description={t('settings.densityDescription')}>
