@@ -174,13 +174,15 @@ export async function assistWriting(
 ): Promise<{ textStream: AsyncIterable<string> }> {
   const model = createModel(config);
 
+  const needsSubject = !context.subject;
   const systemPrompt = `You are an email writing assistant. Help the user compose or continue their email.
 ${context.subject ? `The email subject is: "${context.subject}"` : ''}
 ${context.threadSnippet ? `Context from the thread:\n${context.threadSnippet}` : ''}
 ${context.existingDraft ? `The user has already written:\n${context.existingDraft}` : ''}
 
 Write naturally and professionally. Match the tone of the existing draft if there is one.
-Output ONLY the email body text. No subject line, no "Dear X" unless appropriate for the context.
+${needsSubject ? 'The email has no subject yet. Output the first line as "Subject: <concise subject line>" followed by a blank line, then the email body.' : 'Output ONLY the email body text. No subject line.'}
+No "Dear X" unless appropriate for the context.
 Keep it concise.`;
 
   return streamText({

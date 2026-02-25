@@ -7,7 +7,7 @@ interface AIWritingAssistProps {
   subject?: string;
   existingDraft?: string;
   threadSnippet?: string;
-  onAccept: (text: string) => void;
+  onAccept: (text: string, suggestedSubject?: string) => void;
   onClose: () => void;
 }
 
@@ -43,7 +43,18 @@ export function AIWritingAssist({
 
   const handleAccept = () => {
     if (output) {
-      onAccept(output);
+      // When no subject was provided, the AI prefixes the output with "Subject: ..."
+      // Parse it out and pass separately.
+      let body = output;
+      let suggestedSubject: string | undefined;
+      if (!subject) {
+        const match = output.match(/^Subject:\s*(.+?)(?:\n\n|\n)/);
+        if (match) {
+          suggestedSubject = match[1].trim();
+          body = output.slice(match[0].length).trimStart();
+        }
+      }
+      onAccept(body, suggestedSubject);
       onClose();
     }
   };

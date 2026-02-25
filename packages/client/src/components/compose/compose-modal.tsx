@@ -1134,11 +1134,14 @@ export function ComposeModal() {
                 subject={subject}
                 existingDraft={editor?.getText() || ''}
                 threadSnippet={thread?.snippet || undefined}
-                onAccept={(text) => {
+                onAccept={(text, suggestedSubject) => {
                   if (editor) {
                     const html = text.replace(/\n/g, '<br>');
                     editor.commands.setContent(`<p>${html}</p>`);
                     editor.commands.focus('end');
+                  }
+                  if (suggestedSubject && !subject) {
+                    setSubject(suggestedSubject);
                   }
                 }}
                 onClose={() => setShowAIAssist(false)}
