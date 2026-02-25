@@ -127,6 +127,8 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
   // ---- Render -----------------------------------------------------------------
 
   const isBottom = readingPanePosition === 'bottom';
+  const isHidden = readingPanePosition === 'hidden';
+  const isRight = readingPanePosition === 'right';
 
   // On mobile: show reading pane full-width when a thread is active.
   // On tablet: sidebar is an overlay, list + reading pane are shown together.
@@ -311,7 +313,7 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
               id="email-list-main"
               aria-label="Email list"
               style={{
-                width: isMobile ? '100%' : isTablet ? '100%' : isBottom ? '100%' : `${listWidth}px`,
+                width: isMobile ? '100%' : isTablet ? '100%' : isRight ? `${listWidth}px` : '100%',
                 maxWidth: isTablet && !isMobile ? '380px' : undefined,
                 height: isBottom && !isMobile ? `${listHeight}px` : '100%',
                 flexShrink: 0,
@@ -325,8 +327,8 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
             </section>
           )}
 
-          {/* Resize handle between email list and reading pane — desktop + non-bottom tablet only */}
-          {!isTablet && readingPanePosition !== 'hidden' && (
+          {/* Resize handle between email list and reading pane — desktop only */}
+          {!isTablet && !isHidden && (
             <ResizeHandle
               orientation={isBottom ? 'horizontal' : 'vertical'}
               onResize={isBottom ? handleListHeightResize : handleListResize}
@@ -335,7 +337,7 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
           )}
 
           {/* Reading pane */}
-          {readingPanePosition !== 'hidden' && (!isMobile || showMobileReadingPane) && (
+          {!isHidden && (!isMobile || showMobileReadingPane) && (
             <main
               aria-label="Reading pane"
               style={{
@@ -345,6 +347,7 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
                 display: 'flex',
                 flexDirection: 'column',
                 background: 'var(--color-bg-primary)',
+                borderLeft: isRight ? '1px solid var(--color-border-primary)' : undefined,
                 minWidth: 0,
               }}
             >
