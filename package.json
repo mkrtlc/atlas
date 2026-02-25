@@ -29,7 +29,6 @@
     "typescript": "^5.6.0"
   },
   "dependencies": {
-    "@browsermt/bergamot-translator": "^0.4.9",
     "@tiptap/extension-link": "^3.20.0",
     "@tiptap/extension-underline": "^3.20.0"
   }

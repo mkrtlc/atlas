@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import i18n from '../i18n';
 import type { ThemeMode, Density, ColorThemeId } from '@atlasmail/shared';
-import type { TranslationLanguage } from '../lib/translator';
 
 export type FontFamilyId = 'inter' | 'geist' | 'system' | 'roboto' | 'open-sans' | 'lato';
 
@@ -11,8 +10,6 @@ interface SettingsState {
   density: Density;
   language: string;
   fontFamily: FontFamilyId;
-  translationLanguage: TranslationLanguage;
-  autoTranslate: boolean;
   customShortcuts: Record<string, string>;
   readingPane: 'right' | 'bottom' | 'hidden';
   autoAdvance: 'next' | 'previous' | 'list';
@@ -33,8 +30,6 @@ interface SettingsState {
   setColorTheme: (colorTheme: ColorThemeId) => void;
   setDensity: (density: Density) => void;
   setFontFamily: (fontFamily: FontFamilyId) => void;
-  setTranslationLanguage: (lang: TranslationLanguage) => void;
-  setAutoTranslate: (value: boolean) => void;
   setCustomShortcut: (id: string, keys: string) => void;
   setReadingPane: (pane: 'right' | 'bottom' | 'hidden') => void;
   setAutoAdvance: (advance: 'next' | 'previous' | 'list') => void;
@@ -59,8 +54,6 @@ export const useSettingsStore = create<SettingsState>()(
       theme: 'dark',
       density: 'default',
       fontFamily: 'inter',
-      translationLanguage: 'en',
-      autoTranslate: true,
       language: i18n.language?.split('-')[0] || 'en',
       customShortcuts: {},
       readingPane: 'right',
@@ -82,8 +75,6 @@ export const useSettingsStore = create<SettingsState>()(
       setColorTheme: (colorTheme) => set({ colorTheme }),
       setDensity: (density) => set({ density }),
       setFontFamily: (fontFamily) => set({ fontFamily }),
-      setTranslationLanguage: (translationLanguage) => set({ translationLanguage }),
-      setAutoTranslate: (autoTranslate) => set({ autoTranslate }),
       setCustomShortcut: (id, keys) =>
         set((s) => ({ customShortcuts: { ...s.customShortcuts, [id]: keys } })),
       setReadingPane: (readingPane) => set({ readingPane }),

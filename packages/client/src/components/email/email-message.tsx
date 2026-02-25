@@ -1,15 +1,13 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
-import { ChevronDown, ChevronUp, Paperclip, FileText, Image as ImageIcon, Download, File, Languages } from 'lucide-react';
+import { ChevronDown, ChevronUp, Paperclip, FileText, Image as ImageIcon, Download, File } from 'lucide-react';
 import { Avatar } from '../ui/avatar';
 import { TrackingStats } from './tracking-stats';
 import { formatFullDate, formatRelativeTime } from '@atlasmail/shared';
 import { formatBytes } from '../../lib/format';
 import { injectThreadExpand } from '../../lib/animations';
 import { useSettingsStore } from '../../stores/settings-store';
-import { detectLanguage, translateText, TRANSLATION_LANGUAGES } from '../../lib/translator';
-import type { TranslationLanguage } from '../../lib/translator';
 import { config } from '../../config/env';
 import type { Email, Attachment, EmailTrackingRecord, TrackingEvent } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
@@ -292,174 +290,9 @@ function AttachmentCard({ attachment }: { attachment: Attachment }) {
 // Email body renderer
 // ---------------------------------------------------------------------------
 
-function TranslationBanner({ text, onTranslated }: { text: string; onTranslated: (html: string | null) => void }) {
-  const translationLanguage = useSettingsStore((s) => s.translationLanguage);
-  const autoTranslate = useSettingsStore((s) => s.autoTranslate);
-  const [status, setStatus] = useState<'idle' | 'translating' | 'done' | 'error'>('idle');
-  const [showOriginal, setShowOriginal] = useState(false);
-  const [detectedLang, setDetectedLang] = useState<TranslationLanguage | null>(null);
-
-  const detection = useMemo(() => {
-    if (!autoTranslate || !text || text.length < 30) return null;
-    const result = detectLanguage(text);
-    if (result.confidence < 0.15) return null;
-    if (result.language === translationLanguage) return null;
-    return result;
-  }, [text, autoTranslate, translationLanguage]);
-
-  useEffect(() => {
-    if (detection) setDetectedLang(detection.language);
-  }, [detection]);
-
-  const handleTranslate = useCallback(async () => {
-    if (!detectedLang) return;
-    setStatus('translating');
-    try {
-      const translated = await translateText(text, detectedLang, translationLanguage, true);
-      onTranslated(translated);
-      setStatus('done');
-      setShowOriginal(false);
-    } catch {
-      setStatus('error');
-    }
-  }, [text, detectedLang, translationLanguage, onTranslated]);
-
-  const handleShowOriginal = useCallback(() => {
-    onTranslated(null);
-    setShowOriginal(true);
-  }, [onTranslated]);
-
-  const handleShowTranslation = useCallback(() => {
-    setShowOriginal(false);
-    // Re-trigger translation from cache (Bergamot caches internally)
-    handleTranslate();
-  }, [handleTranslate]);
-
-  if (!detection && status !== 'done') return null;
-
-  const langLabel = TRANSLATION_LANGUAGES.find((l) => l.code === detectedLang)?.label || detectedLang;
-  const targetLabel = TRANSLATION_LANGUAGES.find((l) => l.code === translationLanguage)?.label || translationLanguage;
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--spacing-sm)',
-        padding: '6px var(--spacing-md)',
-        marginBottom: 'var(--spacing-sm)',
-        background: 'var(--color-accent-subtle)',
-        borderRadius: 'var(--radius-md)',
-        fontSize: 'var(--font-size-sm)',
-        fontFamily: 'var(--font-family)',
-        color: 'var(--color-text-secondary)',
-      }}
-    >
-      <Languages size={14} style={{ flexShrink: 0, color: 'var(--color-accent-primary)' }} />
-
-      {status === 'idle' && (
-        <>
-          <span>This email is in <strong style={{ color: 'var(--color-text-primary)' }}>{langLabel}</strong></span>
-          <button
-            onClick={handleTranslate}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-accent-primary)',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'var(--font-family)',
-              fontWeight: 500,
-              cursor: 'pointer',
-              padding: 0,
-              textDecoration: 'underline',
-              textUnderlineOffset: 2,
-            }}
-          >
-            Translate to {targetLabel}
-          </button>
-        </>
-      )}
-
-      {status === 'translating' && (
-        <span>Translating from {langLabel}...</span>
-      )}
-
-      {status === 'done' && !showOriginal && (
-        <>
-          <span>Translated from <strong style={{ color: 'var(--color-text-primary)' }}>{langLabel}</strong></span>
-          <button
-            onClick={handleShowOriginal}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-accent-primary)',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'var(--font-family)',
-              fontWeight: 500,
-              cursor: 'pointer',
-              padding: 0,
-              textDecoration: 'underline',
-              textUnderlineOffset: 2,
-            }}
-          >
-            Show original
-          </button>
-        </>
-      )}
-
-      {status === 'done' && showOriginal && (
-        <>
-          <span>Showing original ({langLabel})</span>
-          <button
-            onClick={handleShowTranslation}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-accent-primary)',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'var(--font-family)',
-              fontWeight: 500,
-              cursor: 'pointer',
-              padding: 0,
-              textDecoration: 'underline',
-              textUnderlineOffset: 2,
-            }}
-          >
-            Show translation
-          </button>
-        </>
-      )}
-
-      {status === 'error' && (
-        <>
-          <span>Translation failed</span>
-          <button
-            onClick={handleTranslate}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-accent-primary)',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'var(--font-family)',
-              fontWeight: 500,
-              cursor: 'pointer',
-              padding: 0,
-              textDecoration: 'underline',
-              textUnderlineOffset: 2,
-            }}
-          >
-            Retry
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
-
 function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyText: string | null }) {
   const { t } = useTranslation();
   const [showQuoted, setShowQuoted] = useState(false);
-  const [translatedHtml, setTranslatedHtml] = useState<string | null>(null);
   const theme = useSettingsStore((s) => s.theme);
 
   // Detect effective dark mode: explicit dark setting, or system preference
@@ -479,36 +312,18 @@ function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyTe
       }
     : {};
 
-  // Extract plain text for language detection (strip HTML tags)
-  const plainTextForDetection = useMemo(() => {
-    if (bodyText) return bodyText;
-    if (bodyHtml) {
-      const div = document.createElement('div');
-      div.innerHTML = DOMPurify.sanitize(bodyHtml, PURIFY_CONFIG);
-      return div.textContent || '';
-    }
-    return '';
-  }, [bodyHtml, bodyText]);
-
-  // Reset translated content when email changes
-  useEffect(() => {
-    setTranslatedHtml(null);
-  }, [bodyHtml, bodyText]);
-
   // Prefer HTML rendering when available
   if (bodyHtml) {
     const sanitized = DOMPurify.sanitize(bodyHtml, PURIFY_CONFIG);
     const { main, quoted } = separateQuotedContent(sanitized);
-    const displayMain = translatedHtml || main;
 
     return (
       <div>
-        <TranslationBanner text={plainTextForDetection} onTranslated={setTranslatedHtml} />
         <div style={htmlWrapperStyle}>
           <div
             className="email-html-body"
             style={emailHtmlBodyStyle}
-            dangerouslySetInnerHTML={{ __html: displayMain }}
+            dangerouslySetInnerHTML={{ __html: main }}
           />
         </div>
         {quoted && (
@@ -533,20 +348,10 @@ function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyTe
 
   if (bodyText) {
     const { main, quoted } = separateQuotedText(bodyText);
-    const displayMain = translatedHtml || main;
 
     return (
       <div>
-        <TranslationBanner text={plainTextForDetection} onTranslated={setTranslatedHtml} />
-        {translatedHtml ? (
-          <div
-            className="email-html-body"
-            style={emailHtmlBodyStyle}
-            dangerouslySetInnerHTML={{ __html: displayMain }}
-          />
-        ) : (
-          <pre style={textBodyStyle}>{main}</pre>
-        )}
+        <pre style={textBodyStyle}>{main}</pre>
         {quoted && (
           <>
             <button onClick={() => setShowQuoted(!showQuoted)} style={quotedToggleStyle}>

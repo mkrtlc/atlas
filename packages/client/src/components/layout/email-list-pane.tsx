@@ -432,7 +432,6 @@ export function EmailListPane() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [quickFilter, setQuickFilter] = useState<'all' | 'unread' | 'starred'>('all');
   const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
 
   // Debounce search query for server-side search (300ms)
@@ -471,11 +470,9 @@ export function EmailListPane() {
       ? filterThreadsByParsed(baseThreads, parsedFilters)
       : baseThreads;
 
-    if (quickFilter === 'unread') filtered = filtered.filter(t => t.unreadCount > 0);
-    if (quickFilter === 'starred') filtered = filtered.filter(t => t.isStarred);
     if (filterByLabel) filtered = filtered.filter(t => t.labels.includes(filterByLabel));
     return filtered;
-  }, [threads, searchResults, isSearchActive, parsedFilters, quickFilter, filterByLabel]);
+  }, [threads, searchResults, isSearchActive, parsedFilters, filterByLabel]);
 
   // Keep the ref in sync so the cursor-selection event handler is never stale
   displayThreadsRef.current = displayThreads;
@@ -533,7 +530,6 @@ export function EmailListPane() {
     prevMailboxRef.current = activeMailbox;
 
     if (categoryChanged || mailboxChanged) {
-      setQuickFilter('all');
       setFilterByLabel(null);
     }
 
@@ -542,11 +538,6 @@ export function EmailListPane() {
       setCursorIndex(0);
     }
   }, [activeCategory, activeMailbox, displayThreads, setActiveThread, setCursorIndex, setFilterByLabel]);
-
-  // Reset quick filter when search query changes
-  useEffect(() => {
-    setQuickFilter('all');
-  }, [searchQuery]);
 
   // Listen for the cursor-selection event dispatched by inbox.tsx when `x` is pressed
   useEffect(() => {
@@ -764,58 +755,32 @@ export function EmailListPane() {
         <SearchFilterChips query={searchQuery} onChange={setSearchQuery} />
       </div>
 
-      {/* Quick filters / Bulk actions — shared row */}
-      {(() => {
-        const filterChips = (['all', 'unread', 'starred'] as const).map((filter) => {
-          const isActive = quickFilter === filter;
-          const labels = { all: t('email.filterAll'), unread: t('email.filterUnread'), starred: t('email.filterStarred') };
-          return (
-            <Chip
-              key={filter}
-              onClick={() => setQuickFilter(filter)}
-              active={isActive}
-              height={26}
-              aria-pressed={isActive}
-            >
-              {labels[filter]}
-            </Chip>
-          );
-        });
-
-        return (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-sm)',
-              padding: 'var(--spacing-xs) var(--spacing-md)',
-              borderBottom: '1px solid var(--color-border-primary)',
-              flexShrink: 0,
-              minHeight: 34,
-            }}
-          >
-            {selectedThreadIds.size > 0 ? (
-              <>
-                <BulkActions
-                  selectedCount={selectedThreadIds.size}
-                  totalCount={displayThreads.length}
-                  onSelectAll={handleSelectAll}
-                  onArchive={handleBulkArchive}
-                  onTrash={handleBulkTrash}
-                  onStar={handleBulkStar}
-                  onMarkRead={handleBulkMarkRead}
-                  onMarkUnread={handleBulkMarkUnread}
-                  onClearSelection={clearSelection}
-                />
-                <div style={{ flex: 1 }} />
-                {filterChips}
-              </>
-            ) : (
-              filterChips
-            )}
-          </div>
-        );
-      })()}
+      {/* Bulk actions row — only visible when threads are selected */}
+      {selectedThreadIds.size > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-sm)',
+            padding: 'var(--spacing-xs) var(--spacing-md)',
+            borderBottom: '1px solid var(--color-border-primary)',
+            flexShrink: 0,
+            minHeight: 34,
+          }}
+        >
+          <BulkActions
+            selectedCount={selectedThreadIds.size}
+            totalCount={displayThreads.length}
+            onSelectAll={handleSelectAll}
+            onArchive={handleBulkArchive}
+            onTrash={handleBulkTrash}
+            onStar={handleBulkStar}
+            onMarkRead={handleBulkMarkRead}
+            onMarkUnread={handleBulkMarkUnread}
+            onClearSelection={clearSelection}
+          />
+        </div>
+      )}
 
       {/* Active label filter chip */}
       {filterByLabel && (() => {
