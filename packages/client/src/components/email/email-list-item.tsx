@@ -202,14 +202,22 @@ export function EmailListItem({
           <div
             style={{
               position: 'absolute',
-              right: 0,
-              top: 0,
+              right: -4,
+              top: -1,
+              bottom: -1,
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--spacing-xs)',
               opacity: isHovered ? 1 : 0,
               pointerEvents: isHovered ? 'auto' : 'none',
               transition: 'opacity var(--transition-normal)',
+              background: `linear-gradient(to right, transparent 0%, ${
+                isMultiSelected || isSelected
+                  ? 'var(--color-surface-selected)'
+                  : 'var(--color-surface-hover)'
+              } 12px)`,
+              paddingLeft: 20,
+              paddingRight: 4,
             }}
           >
             <IconButton
