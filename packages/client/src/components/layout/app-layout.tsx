@@ -321,6 +321,7 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
                 flexDirection: 'column',
                 overflow: 'hidden',
                 background: 'var(--color-bg-primary)',
+                borderRight: !isTablet && isRight ? '1px solid var(--color-border-primary)' : undefined,
               }}
             >
               {emailList}
@@ -341,14 +342,14 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
             <main
               aria-label="Reading pane"
               style={{
-                flex: 1,
+                flex: '1 1 0%',
                 height: '100%',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 background: 'var(--color-bg-primary)',
-                borderLeft: isRight ? '1px solid var(--color-border-primary)' : undefined,
-                minWidth: 0,
+                borderTop: isBottom ? '1px solid var(--color-border-primary)' : undefined,
+                minWidth: isRight ? 320 : 0,
               }}
             >
               {readingPane}
