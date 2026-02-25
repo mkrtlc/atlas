@@ -91,7 +91,23 @@ interface SearchFilters {
   to: string | null;
   subject: string | null;
   hasAttachment: boolean;
+  inMailbox: string | null;
+  isFilter: string | null;
+  newerThan: string | null;
+  olderThan: string | null;
   freeText: string;
+}
+
+function parseDuration(value: string): number | null {
+  const match = value.match(/^(\d+)([dwm])$/);
+  if (!match) return null;
+  const num = parseInt(match[1]);
+  const unit = match[2];
+  const now = Date.now();
+  if (unit === 'd') return now - num * 86400000;
+  if (unit === 'w') return now - num * 7 * 86400000;
+  if (unit === 'm') return now - num * 30 * 86400000;
+  return null;
 }
 
 function parseSearchQuery(query: string): SearchFilters {
@@ -100,6 +116,10 @@ function parseSearchQuery(query: string): SearchFilters {
     to: null,
     subject: null,
     hasAttachment: false,
+    inMailbox: null,
+    isFilter: null,
+    newerThan: null,
+    olderThan: null,
     freeText: '',
   };
 
@@ -133,6 +153,30 @@ function parseSearchQuery(query: string): SearchFilters {
     return '';
   });
 
+  // Extract in:mailbox (inbox, sent, trash, spam, archive, starred, drafts)
+  remaining = remaining.replace(/\bin:(\S+)/gi, (_, val) => {
+    filters.inMailbox = val.toLowerCase();
+    return '';
+  });
+
+  // Extract is:filter (unread, starred, read)
+  remaining = remaining.replace(/\bis:(\S+)/gi, (_, val) => {
+    filters.isFilter = val.toLowerCase();
+    return '';
+  });
+
+  // Extract newer_than:value (e.g. 7d, 2w, 1m)
+  remaining = remaining.replace(/\bnewer_than:(\S+)/gi, (_, val) => {
+    filters.newerThan = val;
+    return '';
+  });
+
+  // Extract older_than:value
+  remaining = remaining.replace(/\bolder_than:(\S+)/gi, (_, val) => {
+    filters.olderThan = val;
+    return '';
+  });
+
   filters.freeText = remaining.trim();
 
   return filters;
@@ -144,6 +188,10 @@ function hasActiveFilters(filters: SearchFilters): boolean {
     filters.to !== null ||
     filters.subject !== null ||
     filters.hasAttachment ||
+    filters.inMailbox !== null ||
+    filters.isFilter !== null ||
+    filters.newerThan !== null ||
+    filters.olderThan !== null ||
     filters.freeText.length > 0
   );
 }
@@ -177,6 +225,30 @@ function filterThreadsByParsed(threads: Thread[], filters: SearchFilters): Threa
     if (filters.subject) {
       const q = filters.subject.toLowerCase();
       if (!(t.subject?.toLowerCase().includes(q) ?? false)) return false;
+    }
+
+    // is:unread / is:starred filters
+    if (filters.isFilter) {
+      if (filters.isFilter === 'unread' && t.unreadCount === 0) return false;
+      if (filters.isFilter === 'starred' && !t.isStarred) return false;
+      if (filters.isFilter === 'read' && t.unreadCount > 0) return false;
+    }
+
+    // newer_than: / older_than: time-based filters
+    if (filters.newerThan) {
+      const cutoff = parseDuration(filters.newerThan);
+      if (cutoff) {
+        const threadDate = new Date(t.lastMessageAt).getTime();
+        if (threadDate < cutoff) return false;
+      }
+    }
+
+    if (filters.olderThan) {
+      const cutoff = parseDuration(filters.olderThan);
+      if (cutoff) {
+        const threadDate = new Date(t.lastMessageAt).getTime();
+        if (threadDate > cutoff) return false;
+      }
     }
 
     if (filters.freeText) {
@@ -253,6 +325,34 @@ function SearchFilterChips({ query, onChange }: SearchFilterChipsProps) {
     chips.push({
       label: 'has:attachment',
       remove: () => onChange(query.replace(/\bhas:attachment\b/i, '').trim()),
+    });
+  }
+  if (filters.inMailbox) {
+    const escaped = escapeRegExp(filters.inMailbox);
+    chips.push({
+      label: `in:${filters.inMailbox}`,
+      remove: () => onChange(query.replace(new RegExp(`\\bin:${escaped}\\b`, 'i'), '').trim()),
+    });
+  }
+  if (filters.isFilter) {
+    const escaped = escapeRegExp(filters.isFilter);
+    chips.push({
+      label: `is:${filters.isFilter}`,
+      remove: () => onChange(query.replace(new RegExp(`\\bis:${escaped}\\b`, 'i'), '').trim()),
+    });
+  }
+  if (filters.newerThan) {
+    const escaped = escapeRegExp(filters.newerThan);
+    chips.push({
+      label: `newer_than:${filters.newerThan}`,
+      remove: () => onChange(query.replace(new RegExp(`\\bnewer_than:${escaped}\\b`, 'i'), '').trim()),
+    });
+  }
+  if (filters.olderThan) {
+    const escaped = escapeRegExp(filters.olderThan);
+    chips.push({
+      label: `older_than:${filters.olderThan}`,
+      remove: () => onChange(query.replace(new RegExp(`\\bolder_than:${escaped}\\b`, 'i'), '').trim()),
     });
   }
 

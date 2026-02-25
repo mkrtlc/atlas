@@ -354,6 +354,26 @@
     "conversationTrashed": "Conversation moved to trash",
     "conversationSpammed": "Conversation moved to spam"
   },
+  "search": {
+    "ariaLabel": "Search emails",
+    "clear": "Clear search",
+    "recentSearches": "Recent",
+    "clearRecent": "Clear",
+    "searchOperators": "Search operators",
+    "opFromDesc": "Emails from a sender",
+    "opToDesc": "Emails sent to someone",
+    "opSubjectDesc": "Search by subject line",
+    "opHasAttachmentDesc": "Emails with attachments",
+    "opInInboxDesc": "Only inbox messages",
+    "opInSentDesc": "Only sent messages",
+    "opIsUnreadDesc": "Only unread emails",
+    "opIsStarredDesc": "Only starred emails",
+    "opNewerThanDesc": "Emails newer than a period (e.g. 7d, 2w, 1m)",
+    "opOlderThanDesc": "Emails older than a period (e.g. 30d, 3m)",
+    "toNavigate": "navigate",
+    "toSelect": "select",
+    "toDismiss": "dismiss"
+  },
   "errors": {
     "recipientRequired": "At least one recipient is required",
     "subjectRequired": "Subject is required",
