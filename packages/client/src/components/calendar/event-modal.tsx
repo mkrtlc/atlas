@@ -1,9 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MapPin, AlignLeft, Users, Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react';
+import { X, MapPin, AlignLeft, Users, Calendar as CalendarIcon, Clock, Trash2, Palette } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendar-store';
 import { useCalendars, useCreateCalendarEvent, useUpdateCalendarEvent, useDeleteCalendarEvent } from '../../hooks/use-calendar';
 import { useSearchContacts } from '../../hooks/use-contacts';
 import type { CSSProperties } from 'react';
+
+/** Google Calendar event color IDs mapped to hex values */
+const EVENT_COLORS: { id: string; label: string; hex: string }[] = [
+  { id: '1', label: 'Lavender', hex: '#7986cb' },
+  { id: '2', label: 'Sage', hex: '#33b679' },
+  { id: '3', label: 'Grape', hex: '#8e24aa' },
+  { id: '4', label: 'Flamingo', hex: '#e67c73' },
+  { id: '5', label: 'Banana', hex: '#f6bf26' },
+  { id: '6', label: 'Tangerine', hex: '#f4511e' },
+  { id: '7', label: 'Peacock', hex: '#039be5' },
+  { id: '8', label: 'Graphite', hex: '#616161' },
+  { id: '9', label: 'Blueberry', hex: '#3f51b5' },
+  { id: '10', label: 'Basil', hex: '#0b8043' },
+  { id: '11', label: 'Tomato', hex: '#d50000' },
+];
 
 function formatDateTimeLocal(iso: string): string {
   if (!iso) return '';
@@ -283,6 +298,7 @@ export function EventModal() {
   const [isAllDay, setIsAllDay] = useState(false);
   const [calendarId, setCalendarId] = useState('');
   const [attendees, setAttendees] = useState<AttendeeChip[]>([]);
+  const [colorId, setColorId] = useState<string | null>(null);
   const [timeError, setTimeError] = useState('');
 
   // Populate form on open
@@ -301,6 +317,7 @@ export function EventModal() {
       setAttendees(
         ev.attendees?.map((a) => ({ email: a.email, name: a.displayName })) || [],
       );
+      setColorId(ev.colorId || null);
     } else {
       // Create mode
       const now = new Date();
@@ -316,6 +333,7 @@ export function EventModal() {
       setIsAllDay(false);
       setCalendarId(calendars?.find((c) => c.isPrimary)?.id || calendars?.[0]?.id || '');
       setAttendees([]);
+      setColorId(null);
     }
     setTimeError('');
 
@@ -361,6 +379,7 @@ export function EventModal() {
           endTime: toISOString(endTime),
           isAllDay,
           attendees: attendeeList.length > 0 ? attendeeList : undefined,
+          colorId: colorId || undefined,
         },
         { onSuccess: () => closeEventModal() },
       );
@@ -375,6 +394,7 @@ export function EventModal() {
           endTime: toISOString(endTime),
           isAllDay,
           attendees: attendeeList.length > 0 ? attendeeList : undefined,
+          colorId: colorId !== undefined ? colorId : undefined,
         },
         { onSuccess: () => closeEventModal() },
       );
@@ -589,6 +609,50 @@ export function EventModal() {
               </select>
             </div>
           )}
+
+          {/* Event color */}
+          <div>
+            <label style={labelStyle}>
+              <Palette size={14} />
+              Color
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              {/* Calendar default (no color override) */}
+              <button
+                type="button"
+                onClick={() => setColorId(null)}
+                title="Calendar default"
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  border: colorId === null ? '2px solid var(--color-text-primary)' : '2px solid var(--color-border-primary)',
+                  background: 'linear-gradient(135deg, #ccc 50%, #999 50%)',
+                  cursor: 'pointer',
+                  padding: 0,
+                  boxSizing: 'border-box',
+                }}
+              />
+              {EVENT_COLORS.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setColorId(c.id)}
+                  title={c.label}
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    border: colorId === c.id ? '2px solid var(--color-text-primary)' : '2px solid transparent',
+                    background: c.hex,
+                    cursor: 'pointer',
+                    padding: 0,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
 
           {/* Location */}
           <div>

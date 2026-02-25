@@ -346,6 +346,9 @@ export async function createEvent(accountId: string, input: CalendarEventCreateI
   if (input.attendees?.length) {
     eventResource.attendees = input.attendees;
   }
+  if (input.colorId) {
+    eventResource.colorId = input.colorId;
+  }
 
   const res = await cal.events.insert({
     calendarId: calRow.googleCalendarId,
@@ -402,6 +405,7 @@ export async function updateEvent(
   if (input.description !== undefined) patch.description = input.description;
   if (input.location !== undefined) patch.location = input.location;
   if (input.attendees !== undefined) patch.attendees = input.attendees;
+  if (input.colorId !== undefined) patch.colorId = input.colorId;
 
   if (input.startTime !== undefined || input.endTime !== undefined) {
     const isAllDay = input.isAllDay ?? existing.isAllDay;

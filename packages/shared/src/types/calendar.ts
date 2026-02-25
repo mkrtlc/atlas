@@ -48,6 +48,7 @@ export interface CalendarEventCreateInput {
   endTime: string;
   isAllDay?: boolean;
   attendees?: Array<{ email: string }>;
+  colorId?: string;
 }
 
 export interface CalendarEventUpdateInput {
@@ -58,4 +59,5 @@ export interface CalendarEventUpdateInput {
   endTime?: string;
   isAllDay?: boolean;
   attendees?: Array<{ email: string }>;
+  colorId?: string | null;
 }

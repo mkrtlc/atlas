@@ -93,6 +93,7 @@ export function useUpdateCalendarEvent() {
                   ...(input.description !== undefined && { description: input.description }),
                   ...(input.location !== undefined && { location: input.location }),
                   ...(input.isAllDay !== undefined && { isAllDay: input.isAllDay }),
+                  ...(input.colorId !== undefined && { colorId: input.colorId }),
                 }
               : ev,
           );

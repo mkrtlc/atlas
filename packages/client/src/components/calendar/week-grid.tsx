@@ -42,6 +42,13 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MIN_EVENT_HEIGHT = 18;
 const RESIZE_HANDLE_HEIGHT = 6;
 
+/** Google Calendar event colorId → hex */
+const EVENT_COLOR_MAP: Record<string, string> = {
+  '1': '#7986cb', '2': '#33b679', '3': '#8e24aa', '4': '#e67c73',
+  '5': '#f6bf26', '6': '#f4511e', '7': '#039be5', '8': '#616161',
+  '9': '#3f51b5', '10': '#0b8043', '11': '#d50000',
+};
+
 /** Parse hex color to RGB and compute relative luminance (0–1). Returns true if color is "light". */
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -671,7 +678,9 @@ export function WeekGrid({
                 }}
               >
                 {allDayEvs.map((ev) => {
-                  const pillBg = calendarColorMap.get(ev.calendarId) || 'var(--color-accent-primary)';
+                  const pillBg = (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
+                    || calendarColorMap.get(ev.calendarId)
+                    || 'var(--color-accent-primary)';
                   const pillText = isLightColor(pillBg) ? '#1a1a1a' : '#fff';
                   return (
                     <button
@@ -865,7 +874,9 @@ export function WeekGrid({
 
                   const colWidth = 100 / pe.totalColumns;
                   const left = pe.column * colWidth;
-                  const bgColor = calendarColorMap.get(pe.event.calendarId) || 'var(--color-accent-primary)';
+                  const bgColor = (pe.event.colorId && EVENT_COLOR_MAP[pe.event.colorId])
+                    || calendarColorMap.get(pe.event.calendarId)
+                    || 'var(--color-accent-primary)';
                   const textColor = isLightColor(bgColor) ? '#1a1a1a' : bgColor;
 
                   return (
