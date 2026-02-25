@@ -1,6 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import { useQuickReplies } from '../../hooks/use-ai';
+import { injectAISparkle } from '../../lib/animations';
+
+// Inject a shimmer keyframe for the loading text
+const injectShimmer = (() => {
+  let injected = false;
+  return () => {
+    if (injected || typeof document === 'undefined') return;
+    injected = true;
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes atlasmail-ai-shimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position: 200% center; }
+      }
+    `;
+    document.head.appendChild(style);
+  };
+})();
 
 interface QuickAIRepliesProps {
   threadId: string;
@@ -25,6 +43,12 @@ export function QuickAIReplies({ threadId, onSelectReply }: QuickAIRepliesProps)
     return () => clear();
   }, [threadId, clear]);
 
+  // Inject animation keyframes on mount
+  useEffect(() => {
+    injectAISparkle();
+    injectShimmer();
+  }, []);
+
   if (!enabled) return null;
   if (!loading && replies.length === 0 && !error) return null;
 
@@ -43,9 +67,11 @@ export function QuickAIReplies({ threadId, onSelectReply }: QuickAIRepliesProps)
       <Sparkles
         size={12}
         style={{
-          color: 'var(--color-accent-primary)',
           flexShrink: 0,
-          animation: loading ? 'pulse 1.5s ease-in-out infinite' : undefined,
+          animation: loading
+            ? 'atlasmail-ai-sparkle-color 2s ease-in-out infinite, atlasmail-ai-sparkle-rotate 0.8s ease-in-out infinite'
+            : undefined,
+          color: loading ? undefined : 'var(--color-accent-primary)',
         }}
       />
 
@@ -53,9 +79,14 @@ export function QuickAIReplies({ threadId, onSelectReply }: QuickAIRepliesProps)
         <span
           style={{
             fontSize: 'var(--font-size-xs)',
-            color: 'var(--color-text-tertiary)',
             fontFamily: 'var(--font-family)',
-            fontStyle: 'italic',
+            fontWeight: 500,
+            background: 'linear-gradient(90deg, #f59e0b, #ec4899, #8b5cf6, #3b82f6, #10b981, #f59e0b)',
+            backgroundSize: '200% auto',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            animation: 'atlasmail-ai-shimmer 2s linear infinite',
           }}
         >
           Generating replies...

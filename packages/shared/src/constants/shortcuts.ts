@@ -26,6 +26,8 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'mark_unread', keys: 'shift+u', label: 'Mark as unread', description: 'Mark as unread', category: 'actions', when: 'inbox' },
   { id: 'snooze', keys: 'h', label: 'Snooze', description: 'Snooze the selected conversation', category: 'actions', when: 'thread' },
   { id: 'select_toggle', keys: 'x', label: 'Select/Deselect', description: 'Toggle selection', category: 'actions', when: 'inbox' },
+  { id: 'select_down', keys: 'shift+j', label: 'Select down', description: 'Select and move down', category: 'actions', when: 'global' },
+  { id: 'select_up', keys: 'shift+k', label: 'Select up', description: 'Select and move up', category: 'actions', when: 'global' },
   { id: 'undo', keys: 'mod+z', label: 'Undo', description: 'Undo last action', category: 'actions', when: 'global' },
   { id: 'compose_new', keys: 'c', label: 'Compose', description: 'Start a new email', category: 'compose', when: 'inbox' },
   { id: 'reply', keys: 'r', label: 'Reply', description: 'Reply to current email', category: 'compose', when: 'thread' },

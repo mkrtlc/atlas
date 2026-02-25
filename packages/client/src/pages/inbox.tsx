@@ -163,10 +163,35 @@ export function InboxPage() {
     );
   }, [cursorIndex]);
 
+  // Shift+j / Shift+k — select the current thread then move cursor
+  const handleSelectDown = useCallback(() => {
+    document.dispatchEvent(
+      new CustomEvent('atlasmail:select_cursor', { detail: { cursorIndex } }),
+    );
+    moveCursor(1, maxCursorIndex);
+  }, [cursorIndex, moveCursor, maxCursorIndex]);
+
+  const handleSelectUp = useCallback(() => {
+    document.dispatchEvent(
+      new CustomEvent('atlasmail:select_cursor', { detail: { cursorIndex } }),
+    );
+    moveCursor(-1, maxCursorIndex);
+  }, [cursorIndex, moveCursor, maxCursorIndex]);
+
   // Escape clears multi-selection when threads are selected (inbox context only)
   const handleClearSelection = useCallback(() => {
     clearSelection();
   }, [clearSelection]);
+
+  // Register Shift+Arrow variants directly — these complement Shift+j/k
+  useEffect(() => {
+    shortcutEngine.register('select_down_arrow', 'shift+arrowdown', handleSelectDown, 'global');
+    shortcutEngine.register('select_up_arrow', 'shift+arrowup', handleSelectUp, 'global');
+    return () => {
+      shortcutEngine.unregister('select_down_arrow');
+      shortcutEngine.unregister('select_up_arrow');
+    };
+  }, [shortcutEngine, handleSelectDown, handleSelectUp]);
 
   // Register Escape to clear selection directly — only fires when there are selections.
   // `go_back` already owns Escape in 'thread' context so there's no conflict.
@@ -200,6 +225,8 @@ export function InboxPage() {
   useShortcut('forward', handleForward, 'global');
   useShortcut('snooze', handleSnooze, 'global');
   useShortcut('select_toggle', handleSelectToggle, 'global');
+  useShortcut('select_down', handleSelectDown, 'global');
+  useShortcut('select_up', handleSelectUp, 'global');
   useShortcut('command_palette', handleCommandPalette, 'global');
   useShortcut('toggle_sidebar', handleToggleSidebar, 'global');
   useShortcut('search', handleSearchFocus, 'global');
