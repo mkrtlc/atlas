@@ -314,6 +314,7 @@
    variables that resolve to dark-mode values. Only add layout fixes. */
 
 .email-html-body a {
+  color: revert;
   text-decoration: underline;
 }
 
