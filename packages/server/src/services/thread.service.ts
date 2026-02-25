@@ -38,6 +38,8 @@ export async function getThreadCounts(accountId: string) {
   // This avoids fetching thousands of rows into JS.
   const [row] = await db.select({
     // Mailbox counts
+    allTotal:         sql<number>`sum(case when is_trashed = 0 and is_spam = 0 then 1 else 0 end)`,
+    allUnread:        sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and unread_count > 0 then 1 else 0 end)`,
     inboxTotal:       sql<number>`sum(case when is_archived = 0 and is_trashed = 0 and is_spam = 0 then 1 else 0 end)`,
     inboxUnread:      sql<number>`sum(case when is_archived = 0 and is_trashed = 0 and is_spam = 0 and unread_count > 0 then 1 else 0 end)`,
     archiveTotal:     sql<number>`sum(case when is_archived = 1 and is_trashed = 0 then 1 else 0 end)`,
@@ -66,7 +68,7 @@ export async function getThreadCounts(accountId: string) {
 
   return {
     categories: {
-      all:           { total: n(row.inboxTotal),         unread: n(row.inboxUnread) },
+      all:           { total: n(row.allTotal),           unread: n(row.allUnread) },
       important:     { total: n(row.importantTotal),     unread: n(row.importantUnread) },
       other:         { total: n(row.otherTotal),         unread: n(row.otherUnread) },
       newsletters:   { total: n(row.newslettersTotal),   unread: n(row.newslettersUnread) },
@@ -146,7 +148,12 @@ export async function getThreads(
       break;
     case 'inbox':
     default:
-      conditions.push(eq(threads.isArchived, false));
+      // When no category filter is applied (i.e. "All mail"), show everything
+      // except trash and spam.  When a specific category is selected, also
+      // exclude archived threads so the category views behave like sub-inboxes.
+      if (options.category) {
+        conditions.push(eq(threads.isArchived, false));
+      }
       conditions.push(eq(threads.isTrashed, false));
       conditions.push(eq(threads.isSpam, false));
       break;
