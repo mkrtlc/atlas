@@ -3,10 +3,13 @@ import { persist } from 'zustand/middleware';
 import i18n from '../i18n';
 import type { ThemeMode, Density, ColorThemeId } from '@atlasmail/shared';
 
+export type FontFamilyId = 'inter' | 'geist' | 'system' | 'roboto' | 'open-sans' | 'lato';
+
 interface SettingsState {
   theme: ThemeMode;
   density: Density;
   language: string;
+  fontFamily: FontFamilyId;
   customShortcuts: Record<string, string>;
   readingPane: 'right' | 'bottom' | 'hidden';
   autoAdvance: 'next' | 'previous' | 'list';
@@ -26,6 +29,7 @@ interface SettingsState {
   setTheme: (theme: ThemeMode) => void;
   setColorTheme: (colorTheme: ColorThemeId) => void;
   setDensity: (density: Density) => void;
+  setFontFamily: (fontFamily: FontFamilyId) => void;
   setCustomShortcut: (id: string, keys: string) => void;
   setReadingPane: (pane: 'right' | 'bottom' | 'hidden') => void;
   setAutoAdvance: (advance: 'next' | 'previous' | 'list') => void;
@@ -49,6 +53,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       theme: 'dark',
       density: 'default',
+      fontFamily: 'inter',
       language: i18n.language?.split('-')[0] || 'en',
       customShortcuts: {},
       readingPane: 'right',
@@ -69,6 +74,7 @@ export const useSettingsStore = create<SettingsState>()(
       setTheme: (theme) => set({ theme }),
       setColorTheme: (colorTheme) => set({ colorTheme }),
       setDensity: (density) => set({ density }),
+      setFontFamily: (fontFamily) => set({ fontFamily }),
       setCustomShortcut: (id, keys) =>
         set((s) => ({ customShortcuts: { ...s.customShortcuts, [id]: keys } })),
       setReadingPane: (readingPane) => set({ readingPane }),

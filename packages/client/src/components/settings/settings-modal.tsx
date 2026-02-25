@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../../stores/ui-store';
-import { useSettingsStore } from '../../stores/settings-store';
+import { useSettingsStore, type FontFamilyId } from '../../stores/settings-store';
 import { useAuthStore } from '../../stores/auth-store';
 import { Avatar } from '../ui/avatar';
 import { DEFAULT_LABELS, type Label } from '../../lib/labels';
@@ -1224,12 +1224,14 @@ function AppearancePanel() {
   const {
     theme,
     density,
+    fontFamily,
     language,
     colorTheme,
     sendAnimation,
     themeTransition,
     setTheme,
     setDensity,
+    setFontFamily,
     setLanguage,
     setColorTheme,
     setSendAnimation,
@@ -1248,6 +1250,15 @@ function AppearancePanel() {
     { value: 'compact', label: t('settings.compact'), desc: t('settings.compactDesc') },
     { value: 'default', label: t('settings.default'), desc: t('settings.defaultDesc') },
     { value: 'comfortable', label: t('settings.comfortable'), desc: t('settings.comfortableDesc') },
+  ];
+
+  const fontOptions: Array<{ value: FontFamilyId; label: string; css: string }> = [
+    { value: 'inter', label: 'Inter', css: "'Inter', sans-serif" },
+    { value: 'geist', label: 'Geist', css: "'Geist', sans-serif" },
+    { value: 'roboto', label: 'Roboto', css: "'Roboto', sans-serif" },
+    { value: 'open-sans', label: 'Open Sans', css: "'Open Sans', sans-serif" },
+    { value: 'lato', label: 'Lato', css: "'Lato', sans-serif" },
+    { value: 'system', label: 'System default', css: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   ];
 
   const languageOptions = SUPPORTED_LANGUAGES.map((lang) => ({
@@ -1398,6 +1409,69 @@ function AppearancePanel() {
               </span>
             </SelectableCard>
           ))}
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title={t('settings.font')} description={t('settings.fontDescription')}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 'var(--spacing-sm)',
+        }}>
+          {fontOptions.map((font) => {
+            const isActive = fontFamily === font.value;
+            return (
+              <button
+                key={font.value}
+                onClick={() => setFontFamily(font.value)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: 'var(--spacing-md) var(--spacing-sm)',
+                  background: isActive
+                    ? 'var(--color-accent-subtle)'
+                    : 'transparent',
+                  border: isActive
+                    ? '1.5px solid var(--color-accent-primary)'
+                    : '1px solid var(--color-border-secondary)',
+                  borderRadius: 'var(--radius-lg)',
+                  cursor: 'pointer',
+                  fontFamily: font.css,
+                  transition: 'border-color var(--transition-normal), background var(--transition-normal)',
+                  outline: 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                    e.currentTarget.style.background = 'var(--color-surface-hover)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                <span style={{
+                  fontSize: 'var(--font-size-lg)',
+                  fontWeight: 500,
+                  color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                }}>
+                  Aa
+                </span>
+                <span style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                  fontWeight: isActive ? 500 : 400,
+                }}>
+                  {font.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </SettingsSection>
 

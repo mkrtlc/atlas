@@ -1,6 +1,16 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useSettingsStore } from '../stores/settings-store';
+import type { FontFamilyId } from '../stores/settings-store';
 import { applyColorTheme } from '../lib/color-themes';
+
+const FONT_FAMILY_CSS: Record<FontFamilyId, string> = {
+  inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  geist: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+  roboto: "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  'open-sans': "'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  lato: "'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+};
 
 /**
  * Smoothly transition the theme by sweeping from top to bottom.
@@ -78,6 +88,7 @@ function applyThemeWithTransition(root: HTMLElement, newValue: string) {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const theme = useSettingsStore((s) => s.theme);
   const density = useSettingsStore((s) => s.density);
+  const fontFamily = useSettingsStore((s) => s.fontFamily);
   const colorTheme = useSettingsStore((s) => s.colorTheme);
   const themeTransition = useSettingsStore((s) => s.themeTransition);
   const isFirstRender = useRef(true);
@@ -112,6 +123,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.setAttribute('data-density', density);
   }, [density]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--font-family',
+      FONT_FAMILY_CSS[fontFamily] || FONT_FAMILY_CSS.inter,
+    );
+  }, [fontFamily]);
 
   return <>{children}</>;
 }

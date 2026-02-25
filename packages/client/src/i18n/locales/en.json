@@ -236,6 +236,8 @@
     "systemDesc": "Match your OS",
     "density": "Density",
     "densityDescription": "Control the spacing of email list items",
+    "font": "Font",
+    "fontDescription": "Choose the typeface for the interface",
     "compact": "Compact",
     "compactDesc": "More emails visible",
     "default": "Default",
