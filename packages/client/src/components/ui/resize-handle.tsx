@@ -83,8 +83,8 @@ export function ResizeHandle({ orientation, onResize, onResizeEnd }: ResizeHandl
 
   // --- Styles ---
 
-  // Outer hit area: 8px wide/tall, transparent, flex-shrink: 0 so it never
-  // gets squeezed out of the layout.
+  // Outer hit area: visually 1px (no gap) but the 8px hit target overlaps
+  // adjacent panes via negative margins so it's still easy to grab.
   const hitAreaStyle: CSSProperties = {
     flexShrink: 0,
     position: 'relative',
@@ -93,9 +93,13 @@ export function ResizeHandle({ orientation, onResize, onResizeEnd }: ResizeHandl
     alignItems: 'center',
     justifyContent: 'center',
     cursor: isVertical ? 'col-resize' : 'row-resize',
-    // Vertical handle → 8px wide, full height; horizontal → 8px tall, full width
-    width: isVertical ? '8px' : '100%',
-    height: isVertical ? '100%' : '8px',
+    width: isVertical ? '1px' : '100%',
+    height: isVertical ? '100%' : '1px',
+    // Expand clickable area without taking layout space
+    ...(isVertical
+      ? { padding: '0 4px', margin: '0 -4px' }
+      : { padding: '4px 0', margin: '-4px 0' }),
+    boxSizing: 'content-box',
   };
 
   // Inner visible line: always visible with the border color, highlights on interaction.
