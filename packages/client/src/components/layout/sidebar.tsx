@@ -113,6 +113,14 @@ function CategoryNavItem({
   totalCount: number;
   onSelect: () => void;
 }) {
+  const [hovered, setHovered] = useState(false);
+
+  const bg = isActive
+    ? 'var(--color-surface-selected)'
+    : hovered
+      ? 'var(--color-surface-hover)'
+      : 'transparent';
+  const fg = isActive ? 'var(--color-text-primary)' : hovered ? 'var(--color-text-primary)' : 'var(--color-text-secondary)';
 
   return (
     <button
@@ -120,16 +128,18 @@ function CategoryNavItem({
       className="sidebar-nav-btn"
       onClick={onSelect}
       aria-current={isActive ? 'page' : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 'var(--spacing-sm)',
         width: '100%',
         padding: '6px var(--spacing-md)',
-        background: isActive ? 'var(--color-surface-selected)' : 'transparent',
+        background: bg,
         border: 'none',
         borderRadius: 'var(--radius-md)',
-        color: isActive ? color : 'var(--color-text-secondary)',
+        color: fg,
         fontSize: 'var(--font-size-sm)',
         fontFamily: 'var(--font-family)',
         fontWeight: isActive
@@ -138,18 +148,6 @@ function CategoryNavItem({
         cursor: 'pointer',
         transition: 'background var(--transition-normal), color var(--transition-normal)',
         textAlign: 'left',
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'var(--color-surface-hover)';
-          e.currentTarget.style.color = 'var(--color-text-primary)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--color-text-secondary)';
-        }
       }}
     >
       <Icon size={16} className="sidebar-nav-icon" style={{ flexShrink: 0, color: color }} />
@@ -202,21 +200,32 @@ function MailboxNavItem({
   totalCount: number;
   onSelect: () => void;
 }) {
+  const [hovered, setHovered] = useState(false);
+
+  const bg = isActive
+    ? 'var(--color-surface-selected)'
+    : hovered
+      ? 'var(--color-surface-hover)'
+      : 'transparent';
+  const fg = isActive ? 'var(--color-text-primary)' : hovered ? 'var(--color-text-primary)' : 'var(--color-text-secondary)';
+
   return (
     <button
       className="sidebar-nav-btn"
       onClick={onSelect}
       aria-current={isActive ? 'page' : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 'var(--spacing-sm)',
         width: '100%',
         padding: '6px var(--spacing-md)',
-        background: isActive ? 'var(--color-surface-selected)' : 'transparent',
+        background: bg,
         border: 'none',
         borderRadius: 'var(--radius-md)',
-        color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        color: fg,
         fontSize: 'var(--font-size-sm)',
         fontFamily: 'var(--font-family)',
         fontWeight: isActive
@@ -225,18 +234,6 @@ function MailboxNavItem({
         cursor: 'pointer',
         transition: 'background var(--transition-normal), color var(--transition-normal)',
         textAlign: 'left',
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'var(--color-surface-hover)';
-          e.currentTarget.style.color = 'var(--color-text-primary)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--color-text-secondary)';
-        }
       }}
     >
       <Icon size={16} className="sidebar-nav-icon" style={{ flexShrink: 0, color: color }} />
@@ -838,6 +835,8 @@ export function Sidebar() {
   const { t } = useTranslation();
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsAnchorTop, setLabelsAnchorTop] = useState(0);
+  const [labelsHovered, setLabelsHovered] = useState(false);
+  const [settingsHovered, setSettingsHovered] = useState(false);
   const labelsBtnRef = useRef<HTMLButtonElement>(null);
   const { data: gmailLabels } = useGmailLabels();
   const { data: counts } = useThreadCounts();
@@ -1040,34 +1039,28 @@ export function Sidebar() {
           ref={labelsBtnRef}
           className="sidebar-nav-btn"
           onClick={handleOpenLabels}
+          onMouseEnter={() => setLabelsHovered(true)}
+          onMouseLeave={() => setLabelsHovered(false)}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--spacing-sm)',
             width: '100%',
             padding: '6px var(--spacing-md)',
-            background: (filterByLabel || labelsOpen) ? 'var(--color-surface-selected)' : 'transparent',
+            background: (filterByLabel || labelsOpen)
+              ? 'var(--color-surface-selected)'
+              : labelsHovered
+                ? 'var(--color-surface-hover)'
+                : 'transparent',
             border: 'none',
             borderRadius: 'var(--radius-md)',
-            color: (filterByLabel || labelsOpen) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+            color: (filterByLabel || labelsOpen || labelsHovered) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
             fontSize: 'var(--font-size-sm)',
             fontFamily: 'var(--font-family)',
             fontWeight: filterByLabel ? 500 : 400,
             cursor: 'pointer',
             transition: 'background var(--transition-normal), color var(--transition-normal)',
             textAlign: 'left',
-          }}
-          onMouseEnter={(e) => {
-            if (!filterByLabel && !labelsOpen) {
-              e.currentTarget.style.background = 'var(--color-surface-hover)';
-              e.currentTarget.style.color = 'var(--color-text-primary)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!filterByLabel && !labelsOpen) {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--color-text-secondary)';
-            }
           }}
         >
           <Tag size={16} className="sidebar-nav-icon" style={{ flexShrink: 0 }} />
@@ -1109,29 +1102,23 @@ export function Sidebar() {
           className="sidebar-nav-btn"
           onClick={toggleSettings}
           aria-label={t('settings.title')}
+          onMouseEnter={() => setSettingsHovered(true)}
+          onMouseLeave={() => setSettingsHovered(false)}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--spacing-sm)',
             width: '100%',
             padding: '6px var(--spacing-md)',
-            background: 'transparent',
+            background: settingsHovered ? 'var(--color-surface-hover)' : 'transparent',
             border: 'none',
             borderRadius: 'var(--radius-md)',
-            color: 'var(--color-text-secondary)',
+            color: settingsHovered ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
             fontSize: 'var(--font-size-sm)',
             fontFamily: 'var(--font-family)',
             cursor: 'pointer',
             transition: 'background var(--transition-normal), color var(--transition-normal)',
             textAlign: 'left',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--color-surface-hover)';
-            e.currentTarget.style.color = 'var(--color-text-primary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--color-text-secondary)';
           }}
         >
           <Settings size={16} className="sidebar-nav-icon" style={{ color: '#7889a0' }} />

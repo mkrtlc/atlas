@@ -556,7 +556,13 @@ export function EmailListPane() {
       setActiveThread(displayThreads[0].id);
       setCursorIndex(0);
     }
-  }, [activeCategory, activeMailbox, filterByLabel, displayThreads, setActiveThread, setCursorIndex, setFilterByLabel]);
+
+    // On initial load (or after clearing active thread), select the first thread
+    if (!activeThreadId && displayThreads.length > 0 && !categoryChanged && !mailboxChanged && !labelChanged) {
+      setActiveThread(displayThreads[0].id);
+      setCursorIndex(0);
+    }
+  }, [activeCategory, activeMailbox, filterByLabel, displayThreads, activeThreadId, setActiveThread, setCursorIndex, setFilterByLabel]);
 
   // Listen for the cursor-selection event dispatched by inbox.tsx when `x` is pressed
   useEffect(() => {
