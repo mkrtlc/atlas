@@ -237,8 +237,21 @@ export function WeekGrid({
           }
         }
       } else {
-        const dayStr = toYMD(start);
-        map.get(dayStr)?.push({ event: ev, start, end });
+        // Handle multi-day timed events: split across day columns
+        for (const day of days) {
+          const dayStr = toYMD(day);
+          const dayStart = new Date(day);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(day);
+          dayEnd.setHours(23, 59, 59, 999);
+
+          if (start > dayEnd || end <= dayStart) continue;
+
+          // Clamp start/end to this day's boundaries
+          const segStart = start < dayStart ? dayStart : start;
+          const segEnd = end > dayEnd ? new Date(dayEnd.getTime() + 1) : end; // 24:00
+          map.get(dayStr)?.push({ event: ev, start: segStart, end: segEnd });
+        }
       }
     }
 
@@ -366,6 +379,18 @@ export function WeekGrid({
     const handleMouseMove = (e: MouseEvent) => {
       const d = dragRef.current;
       if (!d) return;
+
+      // Auto-scroll when near edges
+      if (scrollRef.current) {
+        const rect = scrollRef.current.getBoundingClientRect();
+        const edgeZone = 40;
+        const scrollSpeed = 8;
+        if (e.clientY < rect.top + edgeZone) {
+          scrollRef.current.scrollTop -= scrollSpeed;
+        } else if (e.clientY > rect.bottom - edgeZone) {
+          scrollRef.current.scrollTop += scrollSpeed;
+        }
+      }
 
       const cols = getDayColumns();
 

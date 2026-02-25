@@ -69,7 +69,47 @@ export function useUpdateCalendarEvent() {
       const { data } = await api.patch(`/calendar/events/${eventId}`, input);
       return data.data as CalendarEvent;
     },
-    onSuccess: () => {
+    onMutate: async ({ eventId, ...input }) => {
+      // Cancel ongoing fetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.calendar.all });
+
+      // Snapshot all event caches
+      const previousQueries = queryClient.getQueriesData<CalendarEvent[]>({
+        queryKey: ['calendar', 'events'],
+      });
+
+      // Optimistically update all event caches
+      queryClient.setQueriesData<CalendarEvent[]>(
+        { queryKey: ['calendar', 'events'] },
+        (old) => {
+          if (!old) return old;
+          return old.map((ev) =>
+            ev.id === eventId
+              ? {
+                  ...ev,
+                  ...(input.summary !== undefined && { summary: input.summary }),
+                  ...(input.startTime !== undefined && { startTime: input.startTime }),
+                  ...(input.endTime !== undefined && { endTime: input.endTime }),
+                  ...(input.description !== undefined && { description: input.description }),
+                  ...(input.location !== undefined && { location: input.location }),
+                  ...(input.isAllDay !== undefined && { isAllDay: input.isAllDay }),
+                }
+              : ev,
+          );
+        },
+      );
+
+      return { previousQueries };
+    },
+    onError: (_err, _vars, context) => {
+      // Roll back to previous state
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
     },
   });
@@ -82,7 +122,32 @@ export function useDeleteCalendarEvent() {
     mutationFn: async (eventId: string) => {
       await api.delete(`/calendar/events/${eventId}`);
     },
-    onSuccess: () => {
+    onMutate: async (eventId) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.calendar.all });
+
+      const previousQueries = queryClient.getQueriesData<CalendarEvent[]>({
+        queryKey: ['calendar', 'events'],
+      });
+
+      // Optimistically remove from all event caches
+      queryClient.setQueriesData<CalendarEvent[]>(
+        { queryKey: ['calendar', 'events'] },
+        (old) => {
+          if (!old) return old;
+          return old.filter((ev) => ev.id !== eventId);
+        },
+      );
+
+      return { previousQueries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
     },
   });
@@ -95,7 +160,24 @@ export function useToggleCalendar() {
     mutationFn: async ({ calendarId, isSelected }: { calendarId: string; isSelected: boolean }) => {
       await api.patch(`/calendar/calendars/${calendarId}/toggle`, { isSelected });
     },
-    onSuccess: () => {
+    onMutate: async ({ calendarId, isSelected }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.calendar.calendars });
+
+      const previous = queryClient.getQueryData<Calendar[]>(queryKeys.calendar.calendars);
+
+      queryClient.setQueryData<Calendar[]>(queryKeys.calendar.calendars, (old) => {
+        if (!old) return old;
+        return old.map((c) => (c.id === calendarId ? { ...c, isSelected } : c));
+      });
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.calendar.calendars, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
     },
   });
