@@ -104,11 +104,11 @@ export async function trashMessage(accountId: string, messageId: string) {
   await gmail.users.messages.trash({ userId: 'me', id: messageId });
 }
 
-export async function sendMessage(accountId: string, raw: string) {
+export async function sendMessage(accountId: string, raw: string, gmailThreadId?: string) {
   const gmail = await getGmailClient(accountId);
   const response = await gmail.users.messages.send({
     userId: 'me',
-    requestBody: { raw },
+    requestBody: { raw, threadId: gmailThreadId },
   });
   return response.data;
 }

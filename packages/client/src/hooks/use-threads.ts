@@ -439,6 +439,7 @@ export function useSendEmail() {
       bodyHtml: string;
       threadId?: string;
       inReplyTo?: string;
+      referencesHeader?: string;
       trackingEnabled?: boolean;
     }) => {
       if (USE_MOCK) {
@@ -447,9 +448,13 @@ export function useSendEmail() {
       }
       await api.post('/threads/send', payload);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.threads.counts });
       queryClient.invalidateQueries({ queryKey: queryKeys.threads.mailbox('sent') });
+      // Refresh the active thread so the sent reply appears immediately
+      if (variables.threadId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.threads.detail(variables.threadId) });
+      }
       addToast({ type: 'success', message: i18n.t('toast.messageSent'), duration: 3000 });
     },
     onError: () => {

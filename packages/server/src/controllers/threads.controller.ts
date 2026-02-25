@@ -132,7 +132,7 @@ export async function starThread(req: Request, res: Response) {
 
 export async function sendEmail(req: Request, res: Response) {
   try {
-    const { to, cc, bcc, subject, bodyHtml, threadId, inReplyTo, trackingEnabled } = req.body;
+    const { to, cc, bcc, subject, bodyHtml, threadId, inReplyTo, referencesHeader, trackingEnabled } = req.body;
 
     if (!to || !Array.isArray(to) || to.length === 0) {
       res.status(400).json({ success: false, error: 'At least one recipient is required' });
@@ -155,6 +155,7 @@ export async function sendEmail(req: Request, res: Response) {
       bodyHtml,
       threadId,
       inReplyTo,
+      referencesHeader,
       trackingEnabled: typeof trackingEnabled === 'boolean' ? trackingEnabled : undefined,
     });
 

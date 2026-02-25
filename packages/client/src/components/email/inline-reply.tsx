@@ -223,12 +223,13 @@ export function InlineReply({ threadId, threadSubject, lastEmail, prefillBody, o
       bodyHtml,
       threadId,
       inReplyTo: lastEmail.messageIdHeader ?? undefined,
+      referencesHeader: lastEmail.referencesHeader ?? undefined,
       trackingEnabled,
     });
 
     handleCollapse();
     document.dispatchEvent(new CustomEvent('atlasmail:email_sent'));
-  }, [toAddress, editor, sendEmail, sendEmail.isPending, threadSubject, threadId, lastEmail.messageIdHeader, handleCollapse, trackingEnabled, quotedHtml]);
+  }, [toAddress, editor, sendEmail, sendEmail.isPending, threadSubject, threadId, lastEmail.messageIdHeader, lastEmail.referencesHeader, handleCollapse, trackingEnabled, quotedHtml]);
 
   // Cmd/Ctrl+Enter to send
   useEffect(() => {

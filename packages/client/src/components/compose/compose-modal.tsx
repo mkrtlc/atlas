@@ -719,6 +719,10 @@ export function ComposeModal() {
     // up even after draftIdRef is cleared by handleClose.
     const draftId = draftIdRef.current;
 
+    // For replies, include In-Reply-To and References headers for proper threading
+    const isReply = composeMode === 'reply' || composeMode === 'reply_all';
+    const lastEmail = isReply && thread?.emails?.length ? thread.emails[thread.emails.length - 1] : null;
+
     sendEmail.mutate(
       {
         to,
@@ -727,6 +731,8 @@ export function ComposeModal() {
         subject,
         bodyHtml,
         threadId: composeThreadId ?? undefined,
+        inReplyTo: lastEmail?.messageIdHeader ?? undefined,
+        referencesHeader: lastEmail?.referencesHeader ?? undefined,
         trackingEnabled,
       },
       {
@@ -746,7 +752,7 @@ export function ComposeModal() {
     document.dispatchEvent(new CustomEvent('atlasmail:email_sent'));
     // Use sendEmail.mutate (stable function ref) rather than the entire
     // sendEmail mutation object to avoid a dep that changes every render.
-  }, [handleClose, deleteDraft, sendEmail.mutate, editor, toRecipients, ccRecipients, bccRecipients, subject, composeThreadId, trackingEnabled]);
+  }, [handleClose, deleteDraft, sendEmail.mutate, editor, toRecipients, ccRecipients, bccRecipients, subject, composeThreadId, composeMode, thread, trackingEnabled]);
 
   const handleSend = useCallback(() => {
     const bodyText = editor?.getText() ?? '';

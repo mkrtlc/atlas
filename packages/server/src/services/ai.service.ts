@@ -201,7 +201,7 @@ export async function testApiKey(config: ProviderConfig): Promise<{ valid: boole
     await generateText({
       model,
       prompt: 'Say "ok".',
-      maxOutputTokens: 5,
+      maxOutputTokens: 20,
     });
     return { valid: true };
   } catch (err: any) {

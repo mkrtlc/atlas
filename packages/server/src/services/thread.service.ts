@@ -4,6 +4,7 @@ import { threads, emails, accounts, userSettings, attachments } from '../db/sche
 import * as gmailService from './gmail.service';
 import * as trackingService from './tracking.service';
 import { fetchEmailBodiesOnDemand } from './sync.service';
+import { parseGmailMessage } from '../utils/gmail-parser';
 import { logger } from '../utils/logger';
 
 /** Augment a plain thread query result with sender info from the latest email. */
@@ -285,6 +286,7 @@ interface SendEmailPayload {
   bodyHtml: string;
   threadId?: string;
   inReplyTo?: string;
+  referencesHeader?: string;
   trackingEnabled?: boolean;
 }
 
@@ -309,11 +311,9 @@ function buildRawEmail(
 
   if (payload.inReplyTo) {
     lines.push(`In-Reply-To: ${payload.inReplyTo}`);
-    // References should include the full thread chain when available.
-    // If the caller provides referencesHeader pass it through; otherwise seed
-    // from inReplyTo so threading works in clients that respect References.
-    const references = (payload as any).referencesHeader
-      ? `${(payload as any).referencesHeader} ${payload.inReplyTo}`
+    // References should include the full thread chain plus the message being replied to.
+    const references = payload.referencesHeader
+      ? `${payload.referencesHeader} ${payload.inReplyTo}`
       : payload.inReplyTo;
     lines.push(`References: ${references}`);
   }
@@ -399,7 +399,118 @@ export async function sendEmail(accountId: string, payload: SendEmailPayload) {
   const rawEmail = buildRawEmail(account.email, payload);
   const encodedEmail = Buffer.from(rawEmail).toString('base64url');
 
-  const result = await gmailService.sendMessage(accountId, encodedEmail);
+  // Look up the Gmail thread ID so the reply is properly threaded in Gmail
+  let gmailThreadId: string | undefined;
+  if (payload.threadId) {
+    const [thread] = await db.select({ gmailThreadId: threads.gmailThreadId })
+      .from(threads)
+      .where(and(eq(threads.id, payload.threadId), eq(threads.accountId, accountId)))
+      .limit(1);
+    gmailThreadId = thread?.gmailThreadId;
+  }
+
+  const result = await gmailService.sendMessage(accountId, encodedEmail, gmailThreadId);
+
+  // Fetch the sent message from Gmail and insert it into the local DB so it
+  // appears immediately without waiting for the next sync cycle.
+  if (result.id) {
+    try {
+      const fullMessage = await gmailService.getMessage(accountId, result.id);
+      const parsed = parseGmailMessage(fullMessage);
+      const now = new Date().toISOString();
+
+      // Determine the local threadId — either the existing one or create from Gmail's threadId
+      let localThreadId = payload.threadId;
+
+      if (!localThreadId && parsed.gmailThreadId) {
+        // New thread — check if it was already created by sync
+        const [existingThread] = await db.select({ id: threads.id })
+          .from(threads)
+          .where(and(eq(threads.accountId, accountId), eq(threads.gmailThreadId, parsed.gmailThreadId)))
+          .limit(1);
+
+        if (existingThread) {
+          localThreadId = existingThread.id;
+        } else {
+          // Create a new thread for this sent message
+          const [newThread] = await db.insert(threads)
+            .values({
+              accountId,
+              gmailThreadId: parsed.gmailThreadId,
+              subject: parsed.subject,
+              snippet: parsed.snippet,
+              messageCount: 1,
+              unreadCount: 0,
+              hasAttachments: false,
+              lastMessageAt: parsed.internalDate,
+              category: 'other',
+              labels: parsed.gmailLabels,
+              isStarred: false,
+              isArchived: true, // sent messages are not in inbox
+              isTrashed: false,
+              isSpam: false,
+              createdAt: now,
+              updatedAt: now,
+            })
+            .returning({ id: threads.id });
+          localThreadId = newThread.id;
+        }
+      }
+
+      if (localThreadId) {
+        // Upsert the email
+        await db.insert(emails)
+          .values({
+            accountId,
+            threadId: localThreadId,
+            gmailMessageId: parsed.gmailMessageId,
+            messageIdHeader: parsed.messageIdHeader,
+            inReplyTo: parsed.inReplyTo,
+            referencesHeader: parsed.referencesHeader,
+            fromAddress: parsed.fromAddress,
+            fromName: parsed.fromName,
+            toAddresses: parsed.toAddresses,
+            ccAddresses: parsed.ccAddresses,
+            bccAddresses: parsed.bccAddresses || [],
+            replyTo: parsed.replyTo,
+            subject: parsed.subject,
+            snippet: parsed.snippet,
+            bodyText: parsed.bodyText,
+            bodyHtml: parsed.bodyHtml,
+            gmailLabels: parsed.gmailLabels,
+            isUnread: false,
+            isStarred: false,
+            isDraft: false,
+            internalDate: parsed.internalDate,
+            sizeEstimate: parsed.sizeEstimate,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoNothing();
+
+        // Update thread metadata
+        const [emailCount] = await db.select({
+          count: sql<number>`count(*)`,
+        })
+          .from(emails)
+          .where(eq(emails.threadId, localThreadId));
+
+        await db.update(threads)
+          .set({
+            snippet: parsed.snippet,
+            messageCount: emailCount.count,
+            lastMessageAt: parsed.internalDate,
+            updatedAt: now,
+          })
+          .where(eq(threads.id, localThreadId));
+      }
+    } catch (err) {
+      // Inserting the sent email into the local DB is best-effort — the next sync
+      // cycle will pick it up anyway.
+      logger.warn({ err, messageId: result.id }, 'Failed to insert sent message into local DB');
+    }
+  }
+
   return result;
 }
 
