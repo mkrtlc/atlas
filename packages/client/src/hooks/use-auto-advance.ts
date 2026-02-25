@@ -35,8 +35,12 @@ export function useAutoAdvance(displayThreads: Thread[]) {
       if (activeThreadId !== removedThreadId) return;
 
       setTimeout(() => {
+        // Re-check: the user may have manually selected another thread
+        // between the removal and this deferred callback.
+        const { activeThreadId: currentActive } = useEmailStore.getState();
+        if (currentActive && currentActive !== removedThreadId) return;
+
         const threads = threadsRef.current;
-        // At this point the list has already been updated optimistically
         const nextLength = threads.length;
 
         if (autoAdvance === 'list' || nextLength === 0) {

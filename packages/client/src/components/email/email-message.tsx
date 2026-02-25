@@ -309,6 +309,8 @@ function SafeEmailBody({ bodyHtml, bodyText }: { bodyHtml: string | null; bodyTe
         borderRadius: 'var(--radius-md)',
         padding: 'var(--spacing-md)',
         margin: 'var(--spacing-xs) 0',
+        maxWidth: '100%',
+        overflow: 'auto',
       }
     : {};
 
@@ -438,7 +440,12 @@ export function EmailMessage({
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
-        onKeyDown={(e) => e.key === 'Enter' && toggleExpanded()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpanded();
+          }
+        }}
         style={{
           display: 'flex',
           alignItems: expanded ? 'flex-start' : 'center',

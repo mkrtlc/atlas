@@ -16,11 +16,13 @@ export async function getThreadCounts(req: Request, res: Response) {
 export async function listThreads(req: Request, res: Response) {
   try {
     const { mailbox, category, limit, offset, gmailLabel } = req.query;
+    const parsedLimit = limit ? Math.min(Math.max(1, parseInt(limit as string, 10) || 50), 200) : 50;
+    const parsedOffset = offset ? Math.max(0, parseInt(offset as string, 10) || 0) : 0;
     const result = await threadService.getThreads(req.auth!.accountId, {
       mailbox: mailbox as string | undefined,
       category: category as string | undefined,
-      limit: limit ? parseInt(limit as string, 10) : 50,
-      offset: offset ? parseInt(offset as string, 10) : 0,
+      limit: parsedLimit,
+      offset: parsedOffset,
       gmailLabel: gmailLabel as string | undefined,
     });
     res.json({ success: true, data: result });

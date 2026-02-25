@@ -43,10 +43,10 @@ function applyThemeWithTransition(root: HTMLElement, newValue: string) {
         root.setAttribute('data-theme', newValue);
       },
     );
-    transition.finished.then(
-      () => doc.removeEventListener('pointerdown', suppress, { capture: true }),
-      () => doc.removeEventListener('pointerdown', suppress, { capture: true }),
-    );
+    const cleanup = () => doc.removeEventListener('pointerdown', suppress, { capture: true });
+    transition.finished.then(cleanup, cleanup);
+    // Safety timeout in case the transition promise never settles
+    setTimeout(cleanup, 2000);
     return;
   }
 

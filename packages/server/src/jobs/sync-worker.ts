@@ -125,10 +125,16 @@ export function startSyncWorker() {
   return worker;
 }
 
-export function stopSyncWorker() {
+export async function stopSyncWorker() {
   if (worker) {
-    return worker.close();
+    await worker.close();
+    worker = null;
   }
+  if (connection) {
+    await connection.quit().catch(() => {});
+    connection = null;
+  }
+  syncQueue = null;
 }
 
 // ---------------------------------------------------------------------------

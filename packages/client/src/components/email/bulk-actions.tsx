@@ -14,6 +14,8 @@ interface BulkActionsProps {
   onMarkRead: () => void;
   onMarkUnread: () => void;
   onClearSelection: () => void;
+  /** Disable action buttons while a mutation is in-flight */
+  busy?: boolean;
 }
 
 interface BulkActionButtonProps {
@@ -21,13 +23,15 @@ interface BulkActionButtonProps {
   label: string;
   onClick: () => void;
   destructive?: boolean;
+  disabled?: boolean;
 }
 
-function BulkActionButton({ icon: Icon, label, onClick, destructive = false }: BulkActionButtonProps) {
+function BulkActionButton({ icon: Icon, label, onClick, destructive = false, disabled = false }: BulkActionButtonProps) {
   return (
     <Tooltip content={label} side="bottom">
       <button
-        onClick={onClick}
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
         aria-label={label}
         style={{
           display: 'inline-flex',
@@ -39,7 +43,8 @@ function BulkActionButton({ icon: Icon, label, onClick, destructive = false }: B
           borderRadius: 'var(--radius-md)',
           background: 'transparent',
           color: destructive ? 'var(--color-text-tertiary)' : 'var(--color-text-secondary)',
-          cursor: 'pointer',
+          cursor: disabled ? 'default' : 'pointer',
+          opacity: disabled ? 0.4 : 1,
           flexShrink: 0,
           transition: 'background var(--transition-normal), color var(--transition-normal)',
         }}
@@ -72,6 +77,7 @@ export function BulkActions({
   onMarkRead,
   onMarkUnread,
   onClearSelection,
+  busy = false,
 }: BulkActionsProps) {
   const { t } = useTranslation();
   const allSelected = selectedCount === totalCount && totalCount > 0;
@@ -144,11 +150,11 @@ export function BulkActions({
         }}
       />
 
-      <BulkActionButton icon={Archive} label={t('bulk.archiveSelected')} onClick={onArchive} />
-      <BulkActionButton icon={Trash2} label={t('bulk.trashSelected')} onClick={() => setConfirmTrash(true)} destructive />
-      <BulkActionButton icon={Star} label={t('bulk.starSelected')} onClick={onStar} />
-      <BulkActionButton icon={Mail} label={t('bulk.markAsUnread')} onClick={onMarkUnread} />
-      <BulkActionButton icon={MailOpen} label={t('bulk.markAsRead')} onClick={onMarkRead} />
+      <BulkActionButton icon={Archive} label={t('bulk.archiveSelected')} onClick={onArchive} disabled={busy} />
+      <BulkActionButton icon={Trash2} label={t('bulk.trashSelected')} onClick={() => setConfirmTrash(true)} destructive disabled={busy} />
+      <BulkActionButton icon={Star} label={t('bulk.starSelected')} onClick={onStar} disabled={busy} />
+      <BulkActionButton icon={Mail} label={t('bulk.markAsUnread')} onClick={onMarkUnread} disabled={busy} />
+      <BulkActionButton icon={MailOpen} label={t('bulk.markAsRead')} onClick={onMarkRead} disabled={busy} />
 
       <ConfirmDialog
         open={confirmTrash}

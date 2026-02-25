@@ -33,14 +33,20 @@ export function useShortcut(
   enabled = true,
 ) {
   const engine = useShortcutEngine();
-  const customShortcuts = useSettingsStore((s) => s.customShortcuts);
+  // Narrow selector: only re-render when this action's custom binding changes,
+  // not when any unrelated setting changes.
+  const customKeys = useSettingsStore((s) => s.customShortcuts[actionId]);
+  // Stable ref for the handler so the effect doesn't re-run on every render
+  // when the caller forgets to memoize the callback.
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
 
   useEffect(() => {
     if (!enabled) return;
     const defaultDef = DEFAULT_SHORTCUTS.find((s) => s.id === actionId);
-    const keys = customShortcuts[actionId] || defaultDef?.keys;
+    const keys = customKeys || defaultDef?.keys;
     if (!keys) return;
-    engine.register(actionId, keys, handler, context);
+    engine.register(actionId, keys, () => handlerRef.current(), context);
     return () => engine.unregister(actionId);
-  }, [actionId, handler, context, enabled, customShortcuts, engine]);
+  }, [actionId, context, enabled, customKeys, engine]);
 }

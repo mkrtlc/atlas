@@ -111,6 +111,7 @@ export function useMailboxThreads(mailbox: string, category?: string, gmailLabel
   }, [mailbox, category, gmailLabel]);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const pageCount = infiniteQuery.data?.pages.length ?? 0;
     if (
       !isDrafts && !USE_MOCK &&
@@ -120,13 +121,13 @@ export function useMailboxThreads(mailbox: string, category?: string, gmailLabel
       prefetchedForRef.current < pageCount
     ) {
       prefetchedForRef.current = pageCount;
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         if (infiniteQuery.hasNextPage && !infiniteQuery.isFetchingNextPage) {
           infiniteQuery.fetchNextPage();
         }
       }, 2000);
-      return () => clearTimeout(timer);
     }
+    return () => { if (timer) clearTimeout(timer); };
   }, [infiniteQuery.data?.pages.length, infiniteQuery.hasNextPage, infiniteQuery.isFetchingNextPage, isDrafts]);
 
   return {
@@ -153,27 +154,28 @@ export function useThread(id: string | null) {
   });
 }
 
-// #5 — Selective invalidation: only invalidate affected mailbox keys + counts
+// #5 — Selective invalidation: only invalidate affected mailbox keys + counts.
+// All mutations that move threads also invalidate search results so stale
+// items don't linger in the search view.
 function invalidateForArchive(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.threads.counts });
-  // Invalidate all mailbox lists since archive affects inbox → archive
   queryClient.invalidateQueries({ queryKey: ['threads', 'mailbox'] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.search.all });
 }
 
 function invalidateForTrash(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.threads.counts });
   queryClient.invalidateQueries({ queryKey: ['threads', 'mailbox'] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.search.all });
 }
 
 function invalidateForStar(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.threads.counts });
-  // Star only affects the current list and the starred mailbox
   queryClient.invalidateQueries({ queryKey: queryKeys.threads.mailbox('starred') });
 }
 
 function invalidateForReadStatus(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.threads.counts });
-  // Read/unread changes badge counts but threads stay in the same list
 }
 
 export function useArchiveThread() {
@@ -185,6 +187,10 @@ export function useArchiveThread() {
     },
     onSuccess: () => {
       invalidateForArchive(queryClient);
+    },
+    onError: () => {
+      // Refetch so the optimistically-removed thread reappears
+      queryClient.invalidateQueries({ queryKey: ['threads', 'mailbox'] });
     },
   });
 }
@@ -198,6 +204,9 @@ export function useTrashThread() {
     },
     onSuccess: () => {
       invalidateForTrash(queryClient);
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['threads', 'mailbox'] });
     },
   });
 }
@@ -514,6 +523,10 @@ export function useSpamThread() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.threads.counts });
+      queryClient.invalidateQueries({ queryKey: ['threads', 'mailbox'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.search.all });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ['threads', 'mailbox'] });
     },
   });

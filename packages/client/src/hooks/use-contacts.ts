@@ -22,8 +22,24 @@ export function useUpdateContactNotes() {
     mutationFn: async ({ email, notes }: { email: string; notes: string }) => {
       await api.patch(`/contacts/by-email/${encodeURIComponent(email)}/notes`, { notes });
     },
-    onSuccess: (_data, variables) => {
-      // Invalidate the contact query so the panel shows the updated notes
+    onMutate: async ({ email, notes }) => {
+      const key = queryKeys.contacts.byEmail(email);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<ContactByEmailResponse>(key);
+      if (previous?.contact) {
+        queryClient.setQueryData<ContactByEmailResponse>(key, {
+          ...previous,
+          contact: { ...previous.contact, notes },
+        });
+      }
+      return { previous, key };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(context.key, context.previous);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.contacts.byEmail(variables.email),
       });

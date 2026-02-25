@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ThemeProvider } from './providers/theme-provider';
 import { QueryProvider } from './providers/query-provider';
 import { ShortcutProvider } from './providers/shortcut-provider';
+import { TooltipProvider } from './components/ui/tooltip';
 import { useAuthStore } from './stores/auth-store';
 import { ROUTES } from './config/routes';
 import { InboxPage } from './pages/inbox';
@@ -72,8 +73,9 @@ export function App() {
   return (
     <QueryProvider>
       <ThemeProvider>
-        <ShortcutProvider>
-          <BrowserRouter>
+        <TooltipProvider>
+          <ShortcutProvider>
+            <BrowserRouter>
             <DevAuthInit />
             <ErrorBoundary>
               <Routes>
@@ -99,8 +101,9 @@ export function App() {
               </Routes>
               <CommandPalette />
             </ErrorBoundary>
-          </BrowserRouter>
-        </ShortcutProvider>
+            </BrowserRouter>
+          </ShortcutProvider>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryProvider>
   );

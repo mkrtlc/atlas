@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { api } from '../lib/api-client';
 import { config as envConfig } from '../config/env';
 import { useSettingsStore } from '../stores/settings-store';
@@ -142,6 +142,14 @@ export function useWritingAssist() {
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight stream on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const assist = useCallback(
     async (
@@ -149,6 +157,11 @@ export function useWritingAssist() {
       context?: { subject?: string; existingDraft?: string; threadSnippet?: string },
     ) => {
       if (!config.isConfigured || !config.features.writingAssistant) return;
+
+      // Abort any previous in-flight request
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       setLoading(true);
       setError(null);
@@ -170,6 +183,7 @@ export function useWritingAssist() {
               baseUrl: config.baseUrl,
               context,
             }),
+            signal: controller.signal,
           },
         );
 
@@ -187,23 +201,29 @@ export function useWritingAssist() {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+          if (controller.signal.aborted) break;
           const chunk = decoder.decode(value, { stream: true });
           accumulated += chunk;
           setOutput(accumulated);
         }
       } catch (err: any) {
+        if (err?.name === 'AbortError') return;
         const msg = err?.message || 'Failed to generate';
         setError(msg);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     },
     [config.isConfigured, config.features.writingAssistant, config.provider, config.apiKey, config.baseUrl],
   );
 
   const clear = useCallback(() => {
+    abortRef.current?.abort();
     setOutput('');
     setError(null);
+    setLoading(false);
   }, []);
 
   return { output, loading, error, assist, clear, enabled: config.isConfigured && config.features.writingAssistant };
