@@ -1427,3 +1427,19 @@
   background: var(--color-surface-hover);
   border-color: var(--color-border-secondary);
 }
+
+/* ─── Inline task title editing ──────────────────────────────────── */
+
+.task-inline-edit {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-md);
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--color-accent-primary);
+  outline: none;
+  padding: 0 0 1px;
+  line-height: var(--line-height-normal);
+}

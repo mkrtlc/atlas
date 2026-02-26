@@ -59,30 +59,36 @@ const NAV_ITEMS: NavItem[] = [
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function isToday(dateStr: string): boolean {
-  const d = new Date(dateStr);
+function getTodayStr(): string {
   const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function isToday(dateStr: string): boolean {
+  return dateStr.slice(0, 10) === getTodayStr();
 }
 
 function isOverdue(dateStr: string): boolean {
-  const d = new Date(dateStr);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return d < now;
+  return dateStr.slice(0, 10) < getTodayStr();
 }
 
 function formatDueDate(dateStr: string): string {
-  const d = new Date(dateStr);
+  const dd = dateStr.slice(0, 10);
+  const todayStr = getTodayStr();
+  if (dd === todayStr) return 'Today';
+
+  // Use local date parts to avoid timezone issues
+  const [y, m, d] = dd.split('-').map(Number);
+  const dueLocal = new Date(y, m - 1, d);
   const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff === 0) return 'Today';
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((dueLocal.getTime() - todayLocal.getTime()) / (1000 * 60 * 60 * 24));
+
   if (diff === 1) return 'Tomorrow';
   if (diff === -1) return 'Yesterday';
   if (diff < -1) return `${Math.abs(diff)}d overdue`;
-  if (diff <= 7) return d.toLocaleDateString([], { weekday: 'short' });
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  if (diff <= 7) return dueLocal.toLocaleDateString([], { weekday: 'short' });
+  return dueLocal.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 function getDueBadgeClass(dateStr: string): string {
@@ -136,9 +142,11 @@ function TaskItem({
   isSelected,
   onClick,
   onComplete,
+  onTitleSave,
   projects,
   showWhenBadge,
   showProject = true,
+  showDueDate = true,
   onDragStart,
   onDragOver,
   onDrop,
@@ -148,21 +156,63 @@ function TaskItem({
   isSelected: boolean;
   onClick: () => void;
   onComplete: () => void;
+  onTitleSave: (title: string) => void;
   projects: TaskProject[];
   showWhenBadge: boolean;
   showProject?: boolean;
+  showDueDate?: boolean;
   onDragStart?: (e: React.DragEvent, taskId: string) => void;
   onDragOver?: (e: React.DragEvent, taskId: string) => void;
   onDrop?: (e: React.DragEvent, taskId: string) => void;
   onDragEnd?: () => void;
 }) {
   const [completing, setCompleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const editRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setEditTitle(task.title);
+  }, [task.title]);
+
+  useEffect(() => {
+    if (isEditing && editRef.current) {
+      editRef.current.focus();
+      editRef.current.select();
+    }
+  }, [isEditing]);
 
   const handleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (task.status === 'completed') return;
     setCompleting(true);
     setTimeout(() => onComplete(), 800);
+  };
+
+  const handleTitleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+  };
+
+  const handleTitleSave = () => {
+    setIsEditing(false);
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== task.title) {
+      onTitleSave(trimmed);
+    } else {
+      setEditTitle(task.title);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleTitleSave();
+    }
+    if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditTitle(task.title);
+    }
   };
 
   const project = task.projectId ? projects.find(p => p.id === task.projectId) : null;
@@ -198,15 +248,30 @@ function TaskItem({
             <div className={`task-priority-dot ${task.priority}`} />
           )}
           {task.icon && <span className="task-item-emoji">{task.icon}</span>}
-          <span className={`task-title-text${task.status === 'completed' ? ' completed' : ''}`}>
-            {task.title || 'Untitled'}
-          </span>
+          {isEditing ? (
+            <input
+              ref={editRef}
+              className="task-inline-edit"
+              value={editTitle}
+              onChange={e => setEditTitle(e.target.value)}
+              onKeyDown={handleTitleKeyDown}
+              onBlur={handleTitleSave}
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <span
+              className={`task-title-text${task.status === 'completed' ? ' completed' : ''}`}
+              onClick={handleTitleClick}
+            >
+              {task.title || 'Untitled'}
+            </span>
+          )}
           <WhenBadge when={task.when} dueDate={task.dueDate} showBadge={showWhenBadge} />
         </div>
 
-        {(task.dueDate || (showProject && project) || task.tags.length > 0) && (
+        {((showDueDate && task.dueDate) || (showProject && project) || task.tags.length > 0) && (
           <div className="task-meta-row">
-            {task.dueDate && (
+            {showDueDate && task.dueDate && (
               <span className={getDueBadgeClass(task.dueDate)}>
                 {formatDueDate(task.dueDate)}
               </span>
@@ -765,7 +830,7 @@ export function TasksPage() {
 
   // Determine filters based on active section
   const taskFilters = useMemo(() => {
-    if (activeSection === 'inbox') return { when: 'inbox', status: 'todo' };
+    if (activeSection === 'inbox') return { status: 'todo' }; // fetch ALL todo tasks for inbox overview
     if (activeSection === 'today') return { when: 'today', status: 'todo' };
     if (activeSection === 'anytime') return { when: 'anytime', status: 'todo' };
     if (activeSection === 'someday') return { when: 'someday', status: 'todo' };
@@ -846,50 +911,39 @@ export function TasksPage() {
     return groups;
   }, [activeSection, displayTasks]);
 
-  // Group inbox tasks by time periods (Today, Tomorrow, This week, Later, No date)
+  // Group inbox tasks by "when" category (Inbox is a unified overview of all todo tasks)
+  // Tasks with overdue due dates are pulled into an "Overdue" section at the top
   const inboxGroups = useMemo(() => {
     if (activeSection !== 'inbox') return null;
 
     const tasks = displayTasks.filter(t => t.type !== 'heading');
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const tomorrowEnd = new Date(tomorrowStart);
-    tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
-    // End of this week (Sunday)
-    const dayOfWeek = todayStart.getDay(); // 0=Sun
-    const weekEnd = new Date(todayStart);
-    weekEnd.setDate(weekEnd.getDate() + (7 - dayOfWeek));
+    const todayStr = getTodayStr();
 
     const overdue: Task[] = [];
+    const inbox: Task[] = [];
     const today: Task[] = [];
-    const tomorrow: Task[] = [];
-    const thisWeek: Task[] = [];
-    const later: Task[] = [];
-    const noDate: Task[] = [];
+    const evening: Task[] = [];
+    const anytime: Task[] = [];
+    const someday: Task[] = [];
 
     for (const t of tasks) {
-      if (!t.dueDate) {
-        noDate.push(t);
-        continue;
-      }
-      const d = new Date(t.dueDate);
-      d.setHours(0, 0, 0, 0);
-      if (d < todayStart) overdue.push(t);
-      else if (d < tomorrowStart) today.push(t);
-      else if (d < tomorrowEnd) tomorrow.push(t);
-      else if (d < weekEnd) thisWeek.push(t);
-      else later.push(t);
+      // Tasks with overdue due dates go to the Overdue section regardless of "when"
+      if (t.dueDate && t.dueDate.slice(0, 10) < todayStr) {
+        overdue.push(t);
+      } else if (t.when === 'today') today.push(t);
+      else if (t.when === 'evening') evening.push(t);
+      else if (t.when === 'anytime') anytime.push(t);
+      else if (t.when === 'someday') someday.push(t);
+      else inbox.push(t); // 'inbox' or any other value
     }
 
     const groups: { label: string; icon: typeof Inbox; color: string; tasks: Task[] }[] = [];
     if (overdue.length > 0) groups.push({ label: 'Overdue', icon: Calendar, color: '#ef4444', tasks: overdue });
+    if (inbox.length > 0) groups.push({ label: 'Inbox', icon: Inbox, color: '#3b82f6', tasks: inbox });
     if (today.length > 0) groups.push({ label: 'Today', icon: Star, color: '#f59e0b', tasks: today });
-    if (tomorrow.length > 0) groups.push({ label: 'Tomorrow', icon: Calendar, color: '#f97316', tasks: tomorrow });
-    if (thisWeek.length > 0) groups.push({ label: 'This week', icon: Calendar, color: '#3b82f6', tasks: thisWeek });
-    if (later.length > 0) groups.push({ label: 'Later', icon: Coffee, color: '#a78bfa', tasks: later });
-    if (noDate.length > 0) groups.push({ label: 'No date', icon: Inbox, color: 'var(--color-text-tertiary)', tasks: noDate });
+    if (evening.length > 0) groups.push({ label: 'This evening', icon: Moon, color: '#6366f1', tasks: evening });
+    if (anytime.length > 0) groups.push({ label: 'Anytime', icon: CircleDot, color: '#06b6d4', tasks: anytime });
+    if (someday.length > 0) groups.push({ label: 'Someday', icon: Coffee, color: '#a78bfa', tasks: someday });
 
     return groups;
   }, [activeSection, displayTasks]);
@@ -902,6 +956,11 @@ export function TasksPage() {
   // Show project name only in project views, tags, upcoming, logbook (not in inbox/today/anytime/someday)
   const showProjectInList = useMemo(() => {
     return activeSection.startsWith('project:') || activeSection.startsWith('tag:') || activeSection === 'upcoming' || activeSection === 'logbook';
+  }, [activeSection]);
+
+  // Hide due date chips in views where tasks are already grouped by time (inbox, today)
+  const showDueDateInList = useMemo(() => {
+    return activeSection !== 'inbox' && activeSection !== 'today';
   }, [activeSection]);
 
   const selectedTask = displayTasks.find(t => t.id === selectedTaskId) ?? null;
@@ -1114,9 +1173,11 @@ export function TasksPage() {
       isSelected={selectedTaskId === task.id}
       onClick={() => setSelectedTaskId(task.id)}
       onComplete={() => handleComplete(task.id)}
+      onTitleSave={(title) => updateTask.mutate({ id: task.id, title })}
       projects={projects}
       showWhenBadge={showWhenBadges}
       showProject={showProjectInList}
+      showDueDate={showDueDateInList}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
