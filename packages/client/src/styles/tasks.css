@@ -1193,46 +1193,7 @@
   border-color: var(--color-border-focus);
 }
 
-/* ─── Emoji picker (feature 10) ──────────────────────────────────── */
-
-.task-emoji-picker {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 100;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
-  padding: var(--spacing-sm);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  animation: task-pop-in 0.12s ease-out;
-  width: 260px;
-}
-
-.task-emoji-option {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 16px;
-  transition: background var(--transition-fast);
-}
-
-.task-emoji-option:hover {
-  background: var(--color-surface-hover);
-}
-
-.task-emoji-clear {
-  color: var(--color-text-tertiary);
-}
+/* Emoji picker styles now use shared-pickers.css via the EmojiPicker component */
 
 /* ─── Project emoji in sidebar ───────────────────────────────────── */
 

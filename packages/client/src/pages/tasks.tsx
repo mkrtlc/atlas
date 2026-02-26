@@ -19,6 +19,7 @@ import { queryKeys } from '../config/query-keys';
 import { api } from '../lib/api-client';
 import { ROUTES } from '../config/routes';
 import type { Task, TaskProject, TaskWhen } from '@atlasmail/shared';
+import { EmojiPicker } from '../components/shared/emoji-picker';
 import '../styles/tasks.css';
 
 // ─── Constants ───────────────────────────────────────────────────────
@@ -54,15 +55,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'anytime', labelKey: 'tasks.anytime', icon: CircleDot, color: '#06b6d4' },
   { id: 'someday', labelKey: 'tasks.someday', icon: Coffee, color: '#a78bfa' },
   { id: 'logbook', labelKey: 'tasks.logbook', icon: BookOpen, color: '#6b7280' },
-];
-
-// ─── Emoji picker data ──────────────────────────────────────────────
-
-const COMMON_EMOJIS = [
-  '📋', '📌', '🎯', '🚀', '💼', '🏠', '❤️', '⭐',
-  '🔥', '💡', '📚', '🎨', '🎵', '🏋️', '🌱', '🛒',
-  '✈️', '💻', '📱', '🎮', '🍳', '🧘', '📸', '🔧',
-  '🎓', '💰', '🏗️', '🧪', '📦', '🌍', '🎉', '🔒',
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -297,32 +289,7 @@ function TodayCalendarEvents() {
   );
 }
 
-// ─── Emoji Picker (feature 10) ──────────────────────────────────────
-
-function EmojiPicker({ onSelect, onClose }: { onSelect: (emoji: string) => void; onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    window.addEventListener('mousedown', handler);
-    return () => window.removeEventListener('mousedown', handler);
-  }, [onClose]);
-
-  return (
-    <div className="task-emoji-picker" ref={ref}>
-      {COMMON_EMOJIS.map(emoji => (
-        <button key={emoji} className="task-emoji-option" onClick={() => { onSelect(emoji); onClose(); }}>
-          {emoji}
-        </button>
-      ))}
-      <button className="task-emoji-option task-emoji-clear" onClick={() => { onSelect(''); onClose(); }} title="Remove icon">
-        <X size={14} />
-      </button>
-    </div>
-  );
-}
+// EmojiPicker is now imported from ../components/shared/emoji-picker
 
 // ─── New Task Inline Creator ────────────────────────────────────────
 
@@ -686,7 +653,8 @@ function ProjectHeader({
           </button>
           {showEmojiPicker && (
             <EmojiPicker
-              onSelect={handleEmojiSelect}
+              onSelect={(emoji) => { handleEmojiSelect(emoji); setShowEmojiPicker(false); }}
+              onRemove={() => { handleEmojiSelect(''); setShowEmojiPicker(false); }}
               onClose={() => setShowEmojiPicker(false)}
             />
           )}
@@ -796,6 +764,54 @@ export function TasksPage() {
       const children = regularTasks.filter(t => t.headingId === h.id);
       groups.push({ heading: h, tasks: children });
     }
+
+    return groups;
+  }, [activeSection, displayTasks]);
+
+  // Group inbox tasks by time periods (Today, Tomorrow, This week, Later, No date)
+  const inboxGroups = useMemo(() => {
+    if (activeSection !== 'inbox') return null;
+
+    const tasks = displayTasks.filter(t => t.type !== 'heading');
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const tomorrowEnd = new Date(tomorrowStart);
+    tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+    // End of this week (Sunday)
+    const dayOfWeek = todayStart.getDay(); // 0=Sun
+    const weekEnd = new Date(todayStart);
+    weekEnd.setDate(weekEnd.getDate() + (7 - dayOfWeek));
+
+    const overdue: Task[] = [];
+    const today: Task[] = [];
+    const tomorrow: Task[] = [];
+    const thisWeek: Task[] = [];
+    const later: Task[] = [];
+    const noDate: Task[] = [];
+
+    for (const t of tasks) {
+      if (!t.dueDate) {
+        noDate.push(t);
+        continue;
+      }
+      const d = new Date(t.dueDate);
+      d.setHours(0, 0, 0, 0);
+      if (d < todayStart) overdue.push(t);
+      else if (d < tomorrowStart) today.push(t);
+      else if (d < tomorrowEnd) tomorrow.push(t);
+      else if (d < weekEnd) thisWeek.push(t);
+      else later.push(t);
+    }
+
+    const groups: { label: string; icon: typeof Inbox; color: string; tasks: Task[] }[] = [];
+    if (overdue.length > 0) groups.push({ label: 'Overdue', icon: Calendar, color: '#ef4444', tasks: overdue });
+    if (today.length > 0) groups.push({ label: 'Today', icon: Star, color: '#f59e0b', tasks: today });
+    if (tomorrow.length > 0) groups.push({ label: 'Tomorrow', icon: Calendar, color: '#f97316', tasks: tomorrow });
+    if (thisWeek.length > 0) groups.push({ label: 'This week', icon: Calendar, color: '#3b82f6', tasks: thisWeek });
+    if (later.length > 0) groups.push({ label: 'Later', icon: Coffee, color: '#a78bfa', tasks: later });
+    if (noDate.length > 0) groups.push({ label: 'No date', icon: Inbox, color: 'var(--color-text-tertiary)', tasks: noDate });
 
     return groups;
   }, [activeSection, displayTasks]);
@@ -1203,6 +1219,26 @@ export function TasksPage() {
                 {projectIdForNew && <NewHeadingCreator projectId={projectIdForNew} />}
 
                 {displayTasks.filter(t => t.type !== 'heading').length === 0 && !isLoading && (
+                  <EmptyState section={activeSection} seeding={seeding} onSeed={handleSeedSampleData} />
+                )}
+              </>
+            ) : inboxGroups ? (
+              /* ─── Inbox grouped by time periods ─── */
+              <>
+                <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} />
+
+                {inboxGroups.map((group) => (
+                  <div key={group.label}>
+                    <div className="task-section-header" style={{ color: group.color }}>
+                      <group.icon size={13} />
+                      <span>{group.label}</span>
+                      <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.7 }}>{group.tasks.length}</span>
+                    </div>
+                    {group.tasks.map(renderTaskItem)}
+                  </div>
+                ))}
+
+                {displayTasks.length === 0 && !isLoading && (
                   <EmptyState section={activeSection} seeding={seeding} onSeed={handleSeedSampleData} />
                 )}
               </>

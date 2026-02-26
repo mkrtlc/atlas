@@ -11,6 +11,7 @@ import {
   Printer,
   ArrowLeft,
   Search,
+  Settings,
 } from 'lucide-react';
 import { DocSidebar } from '../components/docs/doc-sidebar';
 import { DocEditor } from '../components/docs/doc-editor';
@@ -24,43 +25,12 @@ import {
   useCreateVersion,
   useRestoreVersion,
 } from '../hooks/use-documents';
+import { DocSettingsModal } from '../components/docs/doc-settings-modal';
+import { useDocSettingsStore } from '../stores/docs-settings-store';
+import { useDrawingList } from '../hooks/use-drawings';
+import { EmojiPicker } from '../components/shared/emoji-picker';
+import { CoverPicker, isCoverGradient } from '../components/shared/cover-picker';
 import '../styles/docs.css';
-
-// ─── Common emoji sets ──────────────────────────────────────────────────
-
-const EMOJI_CATEGORIES: { label: string; emojis: string[] }[] = [
-  {
-    label: 'Smileys',
-    emojis: ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😬'],
-  },
-  {
-    label: 'Objects',
-    emojis: ['📄','📝','📖','📚','📁','📂','📌','📎','📐','📏','✂️','🗂️','🗃️','🗄️','📮','📯','📰','🗞️','📜','🏷️','💼','🎒','👜','📦','🔑','🗝️','🔒','🔓','🛠️','⚙️','🔧','🔨','⚡','💡','🔬','🔭','📡'],
-  },
-  {
-    label: 'Symbols',
-    emojis: ['🚀','⭐','🌟','💫','✨','🔥','💎','🎯','🏆','🎨','🎭','🎪','🎬','🎮','🎲','🧩','🔮','🧪','🧬','💻','🖥️','📱','⌨️','🖱️','💾','💿','📀','🎵','🎶','🔔','📣','💬','💭','🗯️','❤️','💙','💚','💛','🧡','💜'],
-  },
-  {
-    label: 'Nature',
-    emojis: ['🌸','🌺','🌻','🌹','🌷','🌱','🌲','🌳','🌴','🍀','🍁','🍂','🍃','🌿','☘️','🌾','🌵','🌈','☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','🌊','🏔️','⛰️','🗻','🌋'],
-  },
-  {
-    label: 'Food',
-    emojis: ['🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🥦','🥬','🌽','🥕','🧄','🧅','🥔','🍠','🥯','🍞','🥖','🥐','🧇','🥞','🧀','🍳','🥚','🥓','🥩'],
-  },
-];
-
-// ─── Cover image presets ────────────────────────────────────────────────
-
-const COVER_PRESETS = [
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1494500764479-0c8f2919a3d8?w=1200&h=300&fit=crop',
-];
 
 // ─── Page templates ──────────────────────────────────────────────────────
 
@@ -953,17 +923,29 @@ export function DocsPage() {
   const { save, isSaving } = useAutoSaveDocument();
   const updateDoc = useUpdateDocument();
   const createDoc = useCreateDocument();
+  const { data: drawingListData } = useDrawingList();
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showDocSettings, setShowDocSettings] = useState(false);
 
-  // Auto-select the first document when none is selected
+  // Auto-select a document when none is selected.
+  // If openLastVisited is on, prefer the most recently viewed doc.
+  const openLastVisited = useDocSettingsStore((s) => s.openLastVisited);
   useEffect(() => {
     if (!selectedId && listData?.tree && listData.tree.length > 0) {
-      const firstDoc = listData.tree[0];
-      setSelectedId(firstDoc.id);
-      navigate(`/docs/${firstDoc.id}`, { replace: true });
+      let target: string | undefined;
+      if (openLastVisited) {
+        try {
+          const recent: string[] = JSON.parse(localStorage.getItem('atlasmail_doc_recent') || '[]');
+          const allIds = new Set(listData.documents.map((d) => d.id));
+          target = recent.find((rid) => allIds.has(rid));
+        } catch { /* ignore */ }
+      }
+      if (!target) target = listData.tree[0].id;
+      setSelectedId(target);
+      navigate(`/docs/${target}`, { replace: true });
     }
-  }, [selectedId, listData, navigate]);
+  }, [selectedId, listData, navigate, openLastVisited]);
 
   const handleSelect = useCallback(
     (docId: string) => {
@@ -1097,6 +1079,7 @@ export function DocsPage() {
             isSaving={isSaving}
             onNavigate={handleSelect}
             onShowVersionHistory={() => setShowVersionHistory(true)}
+            onOpenSettings={() => setShowDocSettings(true)}
           />
         )}
 
@@ -1123,6 +1106,7 @@ export function DocsPage() {
                 onCoverChange={handleCoverChange}
                 allDocuments={listData?.documents}
                 onNavigate={handleSelect}
+                allDrawings={drawingListData?.drawings?.map((d) => ({ id: d.id, title: d.title }))}
               />
             </div>
           ) : (
@@ -1139,6 +1123,7 @@ export function DocsPage() {
           onRestore={handleRestoreVersion}
         />
       )}
+      <DocSettingsModal open={showDocSettings} onClose={() => setShowDocSettings(false)} />
     </div>
   );
 }
@@ -1151,12 +1136,14 @@ function TopBar({
   isSaving,
   onNavigate,
   onShowVersionHistory,
+  onOpenSettings,
 }: {
   doc: { id: string; title: string; icon: string | null; content: Record<string, unknown> | null };
   breadcrumbs: { id: string; title: string; icon: string | null }[];
   isSaving: boolean;
   onNavigate: (id: string) => void;
   onShowVersionHistory: () => void;
+  onOpenSettings: () => void;
 }) {
   const [showExport, setShowExport] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -1363,6 +1350,29 @@ function TopBar({
         <History size={14} />
       </button>
 
+      {/* Settings button */}
+      <button
+        onClick={onOpenSettings}
+        title="Document settings"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 26,
+          height: 26,
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 4,
+          color: 'var(--color-text-tertiary)',
+          cursor: 'pointer',
+          flexShrink: 0,
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <Settings size={14} />
+      </button>
+
       {/* Export button */}
       <div ref={exportRef} style={{ position: 'relative', flexShrink: 0 }}>
         <button
@@ -1470,6 +1480,8 @@ interface DocumentViewProps {
   /** All documents for @ mention picker */
   allDocuments?: Array<{ id: string; title: string; icon: string | null }>;
   onNavigate?: (docId: string) => void;
+  /** All drawings for embed picker */
+  allDrawings?: Array<{ id: string; title: string }>;
 }
 
 function DocumentView({
@@ -1481,10 +1493,12 @@ function DocumentView({
   onCoverChange,
   allDocuments,
   onNavigate,
+  allDrawings,
 }: DocumentViewProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const docFullWidth = useDocSettingsStore((s) => s.fullWidth);
 
   useEffect(() => {
     if (titleRef.current) {
@@ -1495,10 +1509,14 @@ function DocumentView({
 
   return (
     <div style={{ height: '100%', overflow: 'auto' }}>
-      {/* Cover image */}
+      {/* Cover image or gradient */}
       {doc.coverImage && (
         <div className="doc-cover-image" style={{ position: 'relative' }}>
-          <img src={doc.coverImage} alt="" />
+          {isCoverGradient(doc.coverImage) ? (
+            <div style={{ width: '100%', height: '100%', background: doc.coverImage }} />
+          ) : (
+            <img src={doc.coverImage} alt="" />
+          )}
           <div className="doc-cover-image-actions">
             <button
               onClick={() => setShowCoverPicker(true)}
@@ -1537,10 +1555,11 @@ function DocumentView({
       <div
         className="doc-header"
         style={{
-          maxWidth: 800,
+          maxWidth: docFullWidth ? '100%' : 800,
           margin: '0 auto',
           width: '100%',
           padding: doc.coverImage ? '24px 24px 0' : '80px 24px 0',
+          transition: 'max-width 0.2s ease',
         }}
       >
         {/* Icon */}
@@ -1629,6 +1648,7 @@ function DocumentView({
         onChange={onContentChange}
         documents={allDocuments}
         onNavigate={onNavigate}
+        drawings={allDrawings}
       />
 
       {showCoverPicker && (
@@ -1641,149 +1661,7 @@ function DocumentView({
   );
 }
 
-// ─── Emoji picker ───────────────────────────────────────────────────────
-
-function EmojiPicker({
-  onSelect,
-  onRemove,
-  onClose,
-}: {
-  onSelect: (emoji: string) => void;
-  onRemove: () => void;
-  onClose: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
-
-  return (
-    <div ref={ref} className="emoji-picker-popover" style={{ top: '100%', left: 0, marginTop: 4 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-        <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-          Pick an icon
-        </span>
-        <button
-          onClick={onRemove}
-          style={{
-            padding: '4px 8px',
-            background: 'transparent',
-            border: '1px solid var(--color-border-primary)',
-            borderRadius: 4,
-            fontSize: 11,
-            color: 'var(--color-text-tertiary)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-family)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Remove
-        </button>
-      </div>
-      <div style={{ maxHeight: 240, overflowY: 'auto' }}>
-        {EMOJI_CATEGORIES.map((cat) => (
-          <div key={cat.label}>
-            <div className="emoji-picker-category">{cat.label}</div>
-            <div className="emoji-picker-grid">
-              {cat.emojis.map((emoji, i) => (
-                <button key={`${emoji}-${i}`} className="emoji-picker-btn" onClick={() => onSelect(emoji)}>
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Cover image picker ─────────────────────────────────────────────────
-
-function CoverPicker({ onSelect, onClose }: { onSelect: (url: string) => void; onClose: () => void }) {
-  const [customUrl, setCustomUrl] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
-
-  return (
-    <div
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.3)',
-      }}
-      onClick={onClose}
-    >
-      <div
-        ref={ref}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'var(--color-bg-elevated)',
-          border: '1px solid var(--color-border-primary)',
-          borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          padding: 16, width: 480, maxHeight: '80vh', overflow: 'auto',
-          fontFamily: 'var(--font-family)',
-        }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--color-text-primary)' }}>
-          Choose a cover
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-          {COVER_PRESETS.map((url) => (
-            <button
-              key={url}
-              onClick={() => onSelect(url)}
-              style={{
-                width: '100%', height: 80, borderRadius: 6,
-                border: '1px solid var(--color-border-primary)',
-                overflow: 'hidden', cursor: 'pointer', padding: 0,
-                background: 'var(--color-bg-secondary)',
-              }}
-            >
-              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            placeholder="Or paste an image URL..."
-            style={{
-              flex: 1, padding: '6px 10px',
-              border: '1px solid var(--color-border-primary)', borderRadius: 4,
-              background: 'var(--color-bg-primary)', fontSize: 13,
-              fontFamily: 'var(--font-family)', color: 'var(--color-text-primary)', outline: 'none',
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter' && customUrl.trim()) onSelect(customUrl.trim()); }}
-          />
-          <button
-            onClick={() => { if (customUrl.trim()) onSelect(customUrl.trim()); }}
-            style={{
-              padding: '6px 12px', background: 'var(--color-accent-primary, #13715B)',
-              color: '#fff', border: 'none', borderRadius: 4, fontSize: 13,
-              fontFamily: 'var(--font-family)', cursor: 'pointer',
-            }}
-          >
-            Add
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// EmojiPicker and CoverPicker are now imported from ../components/shared/
 
 // ─── Empty and loading states ───────────────────────────────────────────
 
