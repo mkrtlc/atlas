@@ -1430,15 +1430,21 @@
 
 /* ─── Inline task title editing ──────────────────────────────────── */
 
-.task-inline-edit {
+.task-inline-edit,
+.task-inline-edit:focus,
+.task-inline-edit:active,
+.task-inline-edit:focus-visible {
   flex: 1;
   min-width: 0;
   font-size: var(--font-size-md);
   font-family: var(--font-family);
   color: var(--color-text-primary);
   background: transparent;
-  border: none;
-  outline: none;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   padding: 0;
   line-height: var(--line-height-normal);
+  -webkit-appearance: none;
+  appearance: none;
 }
