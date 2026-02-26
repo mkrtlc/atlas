@@ -288,13 +288,14 @@ export function useArchiveWithUndo() {
   const { addToast } = useToastStore();
 
   return useCallback(
-    (threadId: string, listKey: readonly unknown[]) => {
-      // Snapshot the current infinite data so we can restore it on undo
-      const previousData = queryClient.getQueryData<InfiniteData>(listKey);
+    (threadId: string, _listKey: readonly unknown[]) => {
+      // Snapshot ALL mailbox caches for rollback (prefix match)
+      const previousQueries = queryClient.getQueriesData<InfiniteData>({ queryKey: ['threads', 'mailbox'] });
 
-      // Optimistically remove the thread from all pages
-      queryClient.setQueryData<InfiniteData>(listKey, (old) =>
-        removeFromInfiniteCache(old, threadId),
+      // Optimistically remove from ALL mailbox caches
+      queryClient.setQueriesData<InfiniteData>(
+        { queryKey: ['threads', 'mailbox'] },
+        (old) => removeFromInfiniteCache(old, threadId),
       );
 
       addToast({
@@ -302,7 +303,9 @@ export function useArchiveWithUndo() {
         message: i18n.t('toast.conversationArchived'),
         duration: 5000,
         undoAction: () => {
-          queryClient.setQueryData<InfiniteData>(listKey, previousData);
+          for (const [key, data] of previousQueries) {
+            queryClient.setQueryData(key, data);
+          }
         },
         commitAction: () => {
           archiveMutation.mutate(threadId);
@@ -321,11 +324,14 @@ export function useTrashWithUndo() {
   const { addToast } = useToastStore();
 
   return useCallback(
-    (threadId: string, listKey: readonly unknown[]) => {
-      const previousData = queryClient.getQueryData<InfiniteData>(listKey);
+    (threadId: string, _listKey: readonly unknown[]) => {
+      // Snapshot ALL mailbox caches for rollback (prefix match)
+      const previousQueries = queryClient.getQueriesData<InfiniteData>({ queryKey: ['threads', 'mailbox'] });
 
-      queryClient.setQueryData<InfiniteData>(listKey, (old) =>
-        removeFromInfiniteCache(old, threadId),
+      // Optimistically remove from ALL mailbox caches
+      queryClient.setQueriesData<InfiniteData>(
+        { queryKey: ['threads', 'mailbox'] },
+        (old) => removeFromInfiniteCache(old, threadId),
       );
 
       addToast({
@@ -333,7 +339,9 @@ export function useTrashWithUndo() {
         message: i18n.t('toast.conversationTrashed'),
         duration: 5000,
         undoAction: () => {
-          queryClient.setQueryData<InfiniteData>(listKey, previousData);
+          for (const [key, data] of previousQueries) {
+            queryClient.setQueryData(key, data);
+          }
         },
         commitAction: () => {
           trashMutation.mutate(threadId);
@@ -352,11 +360,14 @@ export function useBulkArchiveWithUndo() {
   const { addToast } = useToastStore();
 
   return useCallback(
-    (threadIds: Set<string>, listKey: readonly unknown[]) => {
-      const previousData = queryClient.getQueryData<InfiniteData>(listKey);
+    (threadIds: Set<string>, _listKey: readonly unknown[]) => {
+      // Snapshot ALL mailbox caches for rollback (prefix match)
+      const previousQueries = queryClient.getQueriesData<InfiniteData>({ queryKey: ['threads', 'mailbox'] });
 
-      queryClient.setQueryData<InfiniteData>(listKey, (old) =>
-        removeManyFromInfiniteCache(old, threadIds),
+      // Optimistically remove from ALL mailbox caches
+      queryClient.setQueriesData<InfiniteData>(
+        { queryKey: ['threads', 'mailbox'] },
+        (old) => removeManyFromInfiniteCache(old, threadIds),
       );
 
       const count = threadIds.size;
@@ -365,7 +376,9 @@ export function useBulkArchiveWithUndo() {
         message: i18n.t('toast.conversationArchived') + (count > 1 ? ` (${count})` : ''),
         duration: 5000,
         undoAction: () => {
-          queryClient.setQueryData<InfiniteData>(listKey, previousData);
+          for (const [key, data] of previousQueries) {
+            queryClient.setQueryData(key, data);
+          }
         },
         commitAction: () => {
           threadIds.forEach((id) => archiveMutation.mutate(id));
@@ -384,11 +397,14 @@ export function useBulkTrashWithUndo() {
   const { addToast } = useToastStore();
 
   return useCallback(
-    (threadIds: Set<string>, listKey: readonly unknown[]) => {
-      const previousData = queryClient.getQueryData<InfiniteData>(listKey);
+    (threadIds: Set<string>, _listKey: readonly unknown[]) => {
+      // Snapshot ALL mailbox caches for rollback (prefix match)
+      const previousQueries = queryClient.getQueriesData<InfiniteData>({ queryKey: ['threads', 'mailbox'] });
 
-      queryClient.setQueryData<InfiniteData>(listKey, (old) =>
-        removeManyFromInfiniteCache(old, threadIds),
+      // Optimistically remove from ALL mailbox caches
+      queryClient.setQueriesData<InfiniteData>(
+        { queryKey: ['threads', 'mailbox'] },
+        (old) => removeManyFromInfiniteCache(old, threadIds),
       );
 
       const count = threadIds.size;
@@ -397,7 +413,9 @@ export function useBulkTrashWithUndo() {
         message: i18n.t('toast.conversationTrashed') + (count > 1 ? ` (${count})` : ''),
         duration: 5000,
         undoAction: () => {
-          queryClient.setQueryData<InfiniteData>(listKey, previousData);
+          for (const [key, data] of previousQueries) {
+            queryClient.setQueryData(key, data);
+          }
         },
         commitAction: () => {
           threadIds.forEach((id) => trashMutation.mutate(id));
@@ -682,11 +700,14 @@ export function useSpamWithUndo() {
   const { addToast } = useToastStore();
 
   return useCallback(
-    (threadId: string, listKey: readonly unknown[]) => {
-      const previousData = queryClient.getQueryData<InfiniteData>(listKey);
+    (threadId: string, _listKey: readonly unknown[]) => {
+      // Snapshot ALL mailbox caches for rollback (prefix match)
+      const previousQueries = queryClient.getQueriesData<InfiniteData>({ queryKey: ['threads', 'mailbox'] });
 
-      queryClient.setQueryData<InfiniteData>(listKey, (old) =>
-        removeFromInfiniteCache(old, threadId),
+      // Optimistically remove from ALL mailbox caches
+      queryClient.setQueriesData<InfiniteData>(
+        { queryKey: ['threads', 'mailbox'] },
+        (old) => removeFromInfiniteCache(old, threadId),
       );
 
       addToast({
@@ -694,7 +715,9 @@ export function useSpamWithUndo() {
         message: i18n.t('toast.conversationSpammed'),
         duration: 5000,
         undoAction: () => {
-          queryClient.setQueryData<InfiniteData>(listKey, previousData);
+          for (const [key, data] of previousQueries) {
+            queryClient.setQueryData(key, data);
+          }
         },
         commitAction: () => {
           spamMutation.mutate(threadId);
