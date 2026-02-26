@@ -139,6 +139,17 @@ export const userSettings = sqliteTable('user_settings', {
   notificationSound: integer('notification_sound', { mode: 'boolean' }).notNull().default(false),
   signatureHtml: text('signature_html'),
   trackingEnabled: integer('tracking_enabled', { mode: 'boolean' }).notNull().default(false),
+  // Tasks settings
+  tasksDefaultView: text('tasks_default_view').notNull().default('inbox'),
+  tasksConfirmDelete: integer('tasks_confirm_delete', { mode: 'boolean' }).notNull().default(true),
+  tasksShowCalendar: integer('tasks_show_calendar', { mode: 'boolean' }).notNull().default(true),
+  tasksShowEvening: integer('tasks_show_evening', { mode: 'boolean' }).notNull().default(true),
+  tasksShowWhenBadges: integer('tasks_show_when_badges', { mode: 'boolean' }).notNull().default(true),
+  tasksShowProject: integer('tasks_show_project', { mode: 'boolean' }).notNull().default(true),
+  tasksShowNotesIndicator: integer('tasks_show_notes_indicator', { mode: 'boolean' }).notNull().default(true),
+  tasksCompactMode: integer('tasks_compact_mode', { mode: 'boolean' }).notNull().default(false),
+  tasksCompletedBehavior: text('tasks_completed_behavior').notNull().default('fade'),
+  tasksDefaultSort: text('tasks_default_sort').notNull().default('manual'),
   createdAt: timestampNow().notNull(),
   updatedAt: timestampNow().notNull(),
 });

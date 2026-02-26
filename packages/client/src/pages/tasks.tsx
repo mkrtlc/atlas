@@ -627,14 +627,15 @@ function TaskDetailPanel({
           />
         </div>
 
-        {/* Rich notes editor (feature 1 + 5: subtasks via checklists) */}
-        <TaskNotesEditor
-          content={task.description || task.notes || ''}
-          onChange={(html) => {
-            autoSave({ description: html || null });
-          }}
-          placeholder="Add notes..."
-        />
+        {/* Timestamps */}
+        <div className="task-detail-timestamps">
+          <div className="task-detail-timestamp-text">
+            Created {new Date(task.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+            {task.completedAt && (
+              <> · Completed {new Date(task.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</>
+            )}
+          </div>
+        </div>
 
         {/* Metadata fields */}
         <div className="task-detail-fields">
@@ -721,15 +722,14 @@ function TaskDetailPanel({
           )}
         </div>
 
-        {/* Timestamps */}
-        <div className="task-detail-timestamps">
-          <div className="task-detail-timestamp-text">
-            Created {new Date(task.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-            {task.completedAt && (
-              <> · Completed {new Date(task.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</>
-            )}
-          </div>
-        </div>
+        {/* Rich notes editor (below details) */}
+        <TaskNotesEditor
+          content={task.description || task.notes || ''}
+          onChange={(html) => {
+            autoSave({ description: html || null });
+          }}
+          placeholder="Add notes..."
+        />
       </div>
     </div>
   );
@@ -1114,7 +1114,11 @@ export function TasksPage() {
       ghost.style.opacity = '0.92';
       ghost.style.padding = '10px 16px';
       document.body.appendChild(ghost);
-      e.dataTransfer.setDragImage(ghost, taskEl.offsetWidth / 2, 20);
+      // Calculate cursor offset relative to the task element so ghost aligns with cursor
+      const rect = taskEl.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+      e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
       // Clean up ghost after drag starts
       requestAnimationFrame(() => document.body.removeChild(ghost));
     }

@@ -17,6 +17,7 @@ export const queryKeys = {
   },
   settings: {
     all: ['settings'] as const,
+    tasks: ['settings', 'tasks'] as const,
   },
   account: {
     all: ['account'] as const,

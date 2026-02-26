@@ -36,4 +36,15 @@ export const settingsSchema = z.object({
   notificationSound: z.boolean().optional(),
   signatureHtml: z.string().nullable().optional(),
   trackingEnabled: z.boolean().optional(),
+  // Tasks settings
+  tasksDefaultView: z.enum(['inbox', 'today', 'anytime']).optional(),
+  tasksConfirmDelete: z.boolean().optional(),
+  tasksShowCalendar: z.boolean().optional(),
+  tasksShowEvening: z.boolean().optional(),
+  tasksShowWhenBadges: z.boolean().optional(),
+  tasksShowProject: z.boolean().optional(),
+  tasksShowNotesIndicator: z.boolean().optional(),
+  tasksCompactMode: z.boolean().optional(),
+  tasksCompletedBehavior: z.enum(['fade', 'move', 'hide']).optional(),
+  tasksDefaultSort: z.enum(['manual', 'priority', 'dueDate', 'title', 'created']).optional(),
 });
