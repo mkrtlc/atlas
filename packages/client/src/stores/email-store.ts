@@ -13,8 +13,10 @@ interface EmailState {
   composeThreadId: string | null;
   composeInitialTo: string | null;
   filterByLabel: string | null;
+  searchQuery: string;
   setActiveCategory: (category: EmailCategory) => void;
   setActiveMailbox: (mailbox: Mailbox) => void;
+  setSearchQuery: (query: string) => void;
   setActiveThread: (id: string | null) => void;
   moveCursor: (delta: number, max: number) => void;
   setCursorIndex: (index: number) => void;
@@ -36,8 +38,9 @@ export const useEmailStore = create<EmailState>((set) => ({
   composeThreadId: null,
   composeInitialTo: null,
   filterByLabel: null,
+  searchQuery: '',
   setActiveCategory: (category) =>
-    set({ activeCategory: category, activeMailbox: 'inbox', cursorIndex: 0, selectedThreadIds: new Set(), filterByLabel: null }),
+    set({ activeCategory: category, activeMailbox: 'inbox', cursorIndex: 0, selectedThreadIds: new Set(), filterByLabel: null, searchQuery: '' }),
   setActiveMailbox: (mailbox) =>
     set({
       activeMailbox: mailbox,
@@ -45,7 +48,9 @@ export const useEmailStore = create<EmailState>((set) => ({
       cursorIndex: 0,
       selectedThreadIds: new Set(),
       filterByLabel: null,
+      searchQuery: '',
     }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
   setActiveThread: (id) => set({ activeThreadId: id }),
   moveCursor: (delta, max) =>
     set((state) => ({ cursorIndex: Math.max(0, Math.min(max, state.cursorIndex + delta)) })),

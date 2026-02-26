@@ -11,6 +11,7 @@ import { LoginPage } from './pages/login';
 import { OAuthCallback } from './components/auth/oauth-callback';
 import { SettingsPage } from './pages/settings';
 import { CalendarPage } from './pages/calendar';
+import { DocsPage } from './pages/docs';
 import { CommandPalette } from './components/ui/command-palette';
 import { ErrorBoundary } from './components/ui/error-boundary';
 import { useEffect, type ReactNode } from 'react';
@@ -103,6 +104,22 @@ export function App() {
                   element={
                     <ProtectedRoute>
                       <CalendarPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path={ROUTES.DOCS}
+                  element={
+                    <ProtectedRoute>
+                      <DocsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path={ROUTES.DOC_DETAIL}
+                  element={
+                    <ProtectedRoute>
+                      <DocsPage />
                     </ProtectedRoute>
                   }
                 />

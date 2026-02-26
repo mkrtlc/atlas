@@ -276,6 +276,9 @@ export function AccountSwitcher() {
             }}
           />
 
+          {/* Sign out */}
+          <SignOutButton onClick={() => { setOpen(false); logout(); }} />
+
           {/* Add account */}
           <AddAccountButton onClick={handleAddAccount} />
         </div>
@@ -382,6 +385,53 @@ export function AccountSwitcher() {
       )}
       <AddAccountModal open={showAddModal} onOpenChange={setShowAddModal} />
     </div>
+  );
+}
+
+// ─── Sign out button ──────────────────────────────────────────────────────────
+
+function SignOutButton({ onClick }: { onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      role="menuitem"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--spacing-sm)',
+        width: '100%',
+        padding: '8px 12px',
+        background: hovered ? 'var(--color-surface-hover)' : 'transparent',
+        border: 'none',
+        borderRadius: 'var(--radius-md)',
+        color: 'var(--color-text-secondary)',
+        fontSize: 'var(--font-size-sm)',
+        fontFamily: 'var(--font-family)',
+        fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+        cursor: 'pointer',
+        transition: 'background var(--transition-normal), color var(--transition-normal)',
+        textAlign: 'left',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <LogOut size={14} style={{ color: 'var(--color-text-tertiary)' }} />
+      </div>
+      Sign out
+    </button>
   );
 }
 

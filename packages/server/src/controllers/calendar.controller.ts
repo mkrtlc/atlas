@@ -30,8 +30,9 @@ export async function syncCalendars(req: Request, res: Response) {
     const timeMax = req.query.timeMax as string ||
       new Date(now.getFullYear(), now.getMonth() + 12, 0).toISOString();
 
-    // Sync events for each selected calendar
+    // Sync events for each selected calendar (skip freeBusyReader — those only expose time blocks, not event details)
     for (const cal of selected) {
+      if (cal.accessRole === 'freeBusyReader') continue;
       try {
         await calendarService.syncCalendarEvents(accountId, cal.id, timeMin, timeMax);
       } catch (err) {
@@ -99,7 +100,7 @@ export async function listEvents(req: Request, res: Response) {
 
 export async function createEvent(req: Request, res: Response) {
   try {
-    const { calendarId, summary, description, location, startTime, endTime, isAllDay, attendees, colorId } = req.body;
+    const { calendarId, summary, description, location, startTime, endTime, isAllDay, attendees, colorId, recurrence, transparency, reminders } = req.body;
 
     if (!calendarId || !summary || !startTime || !endTime) {
       res.status(400).json({ success: false, error: 'calendarId, summary, startTime, and endTime are required' });
@@ -116,6 +117,9 @@ export async function createEvent(req: Request, res: Response) {
       isAllDay,
       attendees,
       colorId,
+      recurrence,
+      transparency,
+      reminders,
     });
 
     res.json({ success: true, data: event });
@@ -148,6 +152,22 @@ export async function deleteEvent(req: Request, res: Response) {
   }
 }
 
+export async function searchEvents(req: Request, res: Response) {
+  try {
+    const q = req.query.q as string;
+    if (!q || !q.trim()) {
+      res.status(400).json({ success: false, error: 'Search query "q" is required' });
+      return;
+    }
+    const limit = parseInt(req.query.limit as string) || 50;
+    const events = await calendarService.searchEvents(req.auth!.accountId, q.trim(), limit);
+    res.json({ success: true, data: events });
+  } catch (error) {
+    logger.error({ error }, 'Failed to search calendar events');
+    res.status(500).json({ success: false, error: 'Failed to search events' });
+  }
+}
+
 export async function createCalendar(req: Request, res: Response) {
   try {
     const { summary, description, backgroundColor } = req.body;
@@ -167,6 +187,27 @@ export async function createCalendar(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to create calendar');
     res.status(500).json({ success: false, error: 'Failed to create calendar' });
+  }
+}
+
+export async function getFreeBusy(req: Request, res: Response) {
+  try {
+    const { emails, timeMin, timeMax } = req.body;
+
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+      res.status(400).json({ success: false, error: 'emails array is required' });
+      return;
+    }
+    if (!timeMin || !timeMax) {
+      res.status(400).json({ success: false, error: 'timeMin and timeMax are required' });
+      return;
+    }
+
+    const data = await calendarService.getFreeBusy(req.auth!.accountId, emails, timeMin, timeMax);
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get free/busy data');
+    res.status(500).json({ success: false, error: 'Failed to get free/busy data' });
   }
 }
 

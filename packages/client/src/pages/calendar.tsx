@@ -14,13 +14,14 @@ import {
 import { useMediaQuery } from '../hooks/use-media-query';
 import { config } from '../config/env';
 import '../styles/calendar.css';
-import { useCalendars, useCalendarEvents, useSyncCalendar, useToggleCalendar, useCreateCalendar, useUpdateCalendarEvent, useCreateCalendarEvent, useDeleteCalendarEvent } from '../hooks/use-calendar';
+import { useCalendars, useCalendarEvents, useSyncCalendar, useToggleCalendar, useCreateCalendar, useUpdateCalendarEvent, useCreateCalendarEvent, useDeleteCalendarEvent, useSearchCalendarEvents } from '../hooks/use-calendar';
 import { useCalendarStore } from '../stores/calendar-store';
 import { useToastStore } from '../stores/toast-store';
 import { EventModal } from '../components/calendar/event-modal';
 import { MiniMonth } from '../components/calendar/mini-month';
 import { WeekGrid } from '../components/calendar/week-grid';
 import { MonthGrid } from '../components/calendar/month-grid';
+import { AgendaView } from '../components/calendar/agenda-view';
 import type { CSSProperties } from 'react';
 
 function toYMD(date: Date): string {
@@ -77,9 +78,21 @@ export function CalendarPage() {
     setView,
     weekStartsOnMonday,
     setWeekStartsOnMonday,
+    showWeekNumbers,
+    setShowWeekNumbers,
+    calendarDensity,
+    setCalendarDensity,
+    workStartHour,
+    workEndHour,
+    setWorkStartHour,
+    setWorkEndHour,
+    secondaryTimezone,
+    setSecondaryTimezone,
     openCreateModal,
     openEditModal,
   } = useCalendarStore();
+
+  const hourHeight = calendarDensity === 'compact' ? 40 : calendarDensity === 'comfortable' ? 72 : 56;
 
   const weekStart = useMemo(() => {
     if (view === 'day') {
@@ -101,6 +114,13 @@ export function CalendarPage() {
   }, [selectedDate, view, weekStartsOnMonday]);
 
   const { timeMin, timeMax } = useMemo(() => {
+    if (view === 'agenda') {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 90);
+      return { timeMin: start.toISOString(), timeMax: end.toISOString() };
+    }
     if (view === 'month-grid') {
       // Month view needs ~6 weeks of data
       const start = new Date(weekStart);
@@ -112,7 +132,7 @@ export function CalendarPage() {
     return getTimeRange(weekStart);
   }, [weekStart, view]);
   const { data: calendars } = useCalendars();
-  const { data: events } = useCalendarEvents(timeMin, timeMax);
+  const { data: events, isLoading: eventsLoading } = useCalendarEvents(timeMin, timeMax);
   const syncCalendar = useSyncCalendar();
   const toggleCalendar = useToggleCalendar();
   const updateEvent = useUpdateCalendarEvent();
@@ -123,6 +143,19 @@ export function CalendarPage() {
   const [showAddCalendar, setShowAddCalendar] = useState(false);
   const [newCalName, setNewCalName] = useState('');
   const [newCalColor, setNewCalColor] = useState('#039be5');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const datePickerRef = useRef<HTMLDivElement>(null);
+  const [showTzPicker, setShowTzPicker] = useState(false);
+  const tzPickerRef = useRef<HTMLDivElement>(null);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [scrollToTime, setScrollToTime] = useState<string | null>(null);
+
+  // Clear scrollToTime after it's been consumed
+  useEffect(() => {
+    if (!scrollToTime) return;
+    const id = setTimeout(() => setScrollToTime(null), 500);
+    return () => clearTimeout(id);
+  }, [scrollToTime]);
 
   // Derive selected calendar IDs and color map
   const selectedCalendarIds = useMemo(() => {
@@ -240,21 +273,71 @@ export function CalendarPage() {
   }, [weekStart, view, selectedDate]);
 
   const handleDragCreate = useCallback(
-    (start: Date, end: Date) => {
-      openCreateModal(start.toISOString(), end.toISOString());
+    (start: Date, end: Date, isAllDay?: boolean) => {
+      openCreateModal(start.toISOString(), end.toISOString(), isAllDay);
     },
     [openCreateModal],
   );
 
-  const handleEventUpdate = useCallback(
-    (eventId: string, startTime: string, endTime: string) => {
-      updateEvent.mutate({ eventId, startTime, endTime });
+  const handleRSVP = useCallback(
+    (eventId: string, status: 'accepted' | 'declined' | 'tentative') => {
+      updateEvent.mutate({ eventId, responseStatus: status });
     },
     [updateEvent],
   );
 
+  const handleEventUpdate = useCallback(
+    (eventId: string, startTime: string, endTime: string) => {
+      // Commit any pending undo toasts to avoid stale-snapshot race conditions
+      const currentToasts = useToastStore.getState().toasts;
+      for (const t of currentToasts) {
+        if (t.type === 'undo' && t.commitAction) {
+          useToastStore.getState().commitToast(t.id);
+        }
+      }
+
+      // Cancel in-flight calendar queries so they don't overwrite our optimistic update
+      queryClient.cancelQueries({ queryKey: ['calendar', 'events'] });
+
+      // Snapshot all event caches so undo can restore exact previous state
+      const previousQueries = queryClient.getQueriesData<any>({ queryKey: ['calendar', 'events'] });
+
+      // Optimistically apply the new times to every matching cache entry
+      queryClient.setQueriesData<any>(
+        { queryKey: ['calendar', 'events'] },
+        (old: any) => {
+          if (!old) return old;
+          return (old as any[]).map((ev: any) =>
+            ev.id === eventId ? { ...ev, startTime, endTime } : ev,
+          );
+        },
+      );
+
+      addToast({
+        type: 'undo',
+        message: 'Event updated',
+        duration: 5000,
+        undoAction: () => {
+          // Restore the snapshot — refetch will reconcile with the server
+          for (const [key, data] of previousQueries) {
+            queryClient.setQueryData(key, data);
+          }
+          // Refetch to reconcile with server
+          queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] });
+        },
+        commitAction: () => {
+          updateEvent.mutate({ eventId, startTime, endTime });
+        },
+      });
+    },
+    [updateEvent, queryClient, addToast],
+  );
+
   const handleEventDelete = useCallback(
     (eventId: string) => {
+      // Cancel in-flight queries so they don't overwrite our optimistic update
+      queryClient.cancelQueries({ queryKey: ['calendar', 'events'] });
+
       // Snapshot current event caches for rollback
       const previousQueries = queryClient.getQueriesData<any>({ queryKey: ['calendar', 'events'] });
 
@@ -276,6 +359,8 @@ export function CalendarPage() {
           for (const [key, data] of previousQueries) {
             queryClient.setQueryData(key, data);
           }
+          // Refetch to reconcile with server
+          queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] });
         },
         commitAction: () => {
           deleteEvent.mutate({ eventId });
@@ -295,6 +380,7 @@ export function CalendarPage() {
         startTime: start.toISOString(),
         endTime: end.toISOString(),
       });
+      setScrollToTime(start.toISOString());
     },
     [calendars, createEvent],
   );
@@ -311,6 +397,7 @@ export function CalendarPage() {
         isAllDay: event.isAllDay,
         colorId: event.colorId || undefined,
       });
+      setScrollToTime(event.startTime);
     },
     [createEvent],
   );
@@ -365,11 +452,23 @@ export function CalendarPage() {
           e.preventDefault();
           setView('month-grid');
           break;
+        case 'a':
+          e.preventDefault();
+          setView('agenda');
+          break;
+        case 'g':
+          e.preventDefault();
+          setShowDatePicker(true);
+          break;
+        case '?':
+          e.preventDefault();
+          setShowShortcutsHelp((v) => !v);
+          break;
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [openCreateModal, goToday, goNext, goPrev, syncCalendar, setView, eventModal.open]);
+  }, [openCreateModal, goToday, goNext, goPrev, syncCalendar, setView, setShowDatePicker, eventModal.open]);
 
   // ─── Sync toasts ────────────────────────────────────────────────────
   const prevSyncStatus = useRef<'idle' | 'pending' | 'success' | 'error'>('idle');
@@ -421,6 +520,45 @@ export function CalendarPage() {
     window.location.href = `${baseUrl}?${params.toString()}`;
   }, []);
 
+  // Server-side search for global results across all time ranges
+  const { data: searchResults } = useSearchCalendarEvents(searchQuery);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close search dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close date picker popover on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+        setShowDatePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close timezone picker on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (tzPickerRef.current && !tzPickerRef.current.contains(e.target as Node)) {
+        setShowTzPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Client-side filtering for the week/day/month grid view
   const filteredEvents = useMemo(() => {
     if (!events) return [];
     if (!searchQuery.trim()) return events;
@@ -432,6 +570,9 @@ export function CalendarPage() {
         ev.description?.toLowerCase().includes(q),
     );
   }, [events, searchQuery]);
+
+  // Show overlay only on the very first load before any cached data is available
+  const showLoadingOverlay = eventsLoading && events === undefined;
 
   return (
     <div
@@ -446,6 +587,7 @@ export function CalendarPage() {
     >
       {/* Top toolbar */}
       <div
+        data-calendar-toolbar
         className={isDesktop ? 'desktop-drag-region' : undefined}
         style={{
           display: 'flex',
@@ -493,17 +635,83 @@ export function CalendarPage() {
           <ChevronRight size={16} />
         </button>
 
-        {/* Week range label */}
-        <span
-          style={{
-            fontSize: 'var(--font-size-md)',
-            fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
-            color: 'var(--color-text-primary)',
-            marginLeft: 4,
-          }}
+        {/* Week range label — click to jump to a date */}
+        <div
+          ref={datePickerRef}
+          style={{ position: 'relative', marginLeft: 4 }}
         >
-          {dateLabel}
-        </span>
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={() => setShowDatePicker((v) => !v)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setShowDatePicker((v) => !v);
+              }
+            }}
+            title="Go to date (G)"
+            style={{
+              fontSize: 'var(--font-size-md)',
+              fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
+              color: 'var(--color-text-primary)',
+              cursor: 'pointer',
+              userSelect: 'none',
+              textDecoration: showDatePicker ? 'underline' : 'none',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.textDecoration = 'underline'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.textDecoration = showDatePicker ? 'underline' : 'none'; }}
+          >
+            {dateLabel}
+          </span>
+
+          {showDatePicker && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: 4,
+                background: 'var(--color-bg-elevated)',
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                zIndex: 50,
+                padding: 8,
+              }}
+            >
+              <input
+                autoFocus
+                type="date"
+                defaultValue={selectedDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedDate(e.target.value);
+                    setShowDatePicker(false);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setShowDatePicker(false);
+                  }
+                }}
+                style={{
+                  display: 'block',
+                  height: 28,
+                  padding: '0 8px',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--color-bg-primary)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: 'var(--font-size-sm)',
+                  fontFamily: 'var(--font-family)',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              />
+            </div>
+          )}
+        </div>
 
         {/* View switcher */}
         <div
@@ -515,7 +723,7 @@ export function CalendarPage() {
             overflow: 'hidden',
           }}
         >
-          {(['day', 'week', 'month-grid'] as const).map((v) => (
+          {(['day', 'week', 'month-grid', 'agenda'] as const).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -532,7 +740,7 @@ export function CalendarPage() {
                 textTransform: 'capitalize',
               }}
             >
-              {v === 'month-grid' ? 'Month' : v}
+              {v === 'month-grid' ? 'Month' : v === 'agenda' ? 'Agenda' : v}
             </button>
           ))}
         </div>
@@ -541,6 +749,7 @@ export function CalendarPage() {
 
         {/* Search */}
         <div
+          ref={searchRef}
           style={{
             position: 'relative',
             display: 'flex',
@@ -559,6 +768,7 @@ export function CalendarPage() {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
             placeholder="Search events"
             style={{
               width: isNarrow ? 120 : 180,
@@ -574,19 +784,213 @@ export function CalendarPage() {
               outline: 'none',
             }}
           />
+          {/* Search results dropdown */}
+          {searchFocused && searchQuery.trim().length >= 2 && searchResults && searchResults.length > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: 4,
+                width: 320,
+                maxHeight: 360,
+                overflowY: 'auto',
+                background: 'var(--color-bg-primary)',
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                zIndex: 100,
+              }}
+            >
+              <div
+                style={{
+                  padding: '8px 12px',
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                  borderBottom: '1px solid var(--color-border-primary)',
+                }}
+              >
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} across all dates
+              </div>
+              {searchResults.slice(0, 20).map((ev) => {
+                const startDate = new Date(ev.startTime);
+                const color = calendarColorMap.get(ev.calendarId) || '#5a7fa0';
+                return (
+                  <button
+                    key={ev.id}
+                    onClick={() => {
+                      setSearchFocused(false);
+                      setSelectedDate(toYMD(startDate));
+                      openEditModal(ev);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 8,
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: 'none',
+                      borderBottom: '1px solid var(--color-border-primary)',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'var(--font-family)',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-hover)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <div
+                      style={{
+                        width: 4,
+                        height: 32,
+                        borderRadius: 2,
+                        background: color,
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 'var(--font-size-sm)',
+                          color: 'var(--color-text-primary)',
+                          fontWeight: 500,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {ev.summary || '(No title)'}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 'var(--font-size-xs)',
+                          color: 'var(--color-text-tertiary)',
+                          marginTop: 2,
+                        }}
+                      >
+                        {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {!ev.isAllDay && (
+                          <> · {startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</>
+                        )}
+                      </div>
+                      {ev.location && (
+                        <div
+                          style={{
+                            fontSize: 'var(--font-size-xs)',
+                            color: 'var(--color-text-tertiary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {ev.location}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Timezone label */}
-        <span
-          style={{
-            fontSize: 'var(--font-size-xs)',
-            color: 'var(--color-text-tertiary)',
-            whiteSpace: 'nowrap',
-          }}
-          title={Intl.DateTimeFormat().resolvedOptions().timeZone}
-        >
-          {new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop()}
-        </span>
+        {/* Timezone label — click to set secondary timezone */}
+        <div ref={tzPickerRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowTzPicker((v) => !v)}
+            title="Set secondary timezone"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              height: 26,
+              padding: '0 8px',
+              background: secondaryTimezone ? 'color-mix(in srgb, var(--color-accent-primary) 10%, transparent)' : 'transparent',
+              border: secondaryTimezone ? '1px solid color-mix(in srgb, var(--color-accent-primary) 40%, transparent)' : '1px solid transparent',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--color-text-tertiary)',
+              fontSize: 'var(--font-size-xs)',
+              fontFamily: 'var(--font-family)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop()}
+            {secondaryTimezone && (
+              <span style={{ opacity: 0.65, fontSize: 9, marginLeft: 2 }}>
+                +{new Date().toLocaleTimeString('en-US', { timeZone: secondaryTimezone, timeZoneName: 'short' }).split(' ').pop()}
+              </span>
+            )}
+          </button>
+
+          {showTzPicker && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: 4,
+                background: 'var(--color-bg-elevated)',
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                zIndex: 50,
+                padding: 12,
+                minWidth: 220,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: 600,
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 8,
+                }}
+              >
+                Secondary timezone
+              </div>
+              <select
+                value={secondaryTimezone || ''}
+                onChange={(e) => {
+                  setSecondaryTimezone(e.target.value || null);
+                  setShowTzPicker(false);
+                }}
+                style={{
+                  width: '100%',
+                  height: 28,
+                  padding: '0 6px',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--color-bg-primary)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontFamily: 'var(--font-family)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <option value="">Off</option>
+                <option value="America/New_York">America/New York (ET)</option>
+                <option value="America/Chicago">America/Chicago (CT)</option>
+                <option value="America/Denver">America/Denver (MT)</option>
+                <option value="America/Los_Angeles">America/Los Angeles (PT)</option>
+                <option value="America/Sao_Paulo">America/Sao Paulo (BRT)</option>
+                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                <option value="Europe/Paris">Europe/Paris (CET)</option>
+                <option value="Europe/Berlin">Europe/Berlin (CET)</option>
+                <option value="Europe/Istanbul">Europe/Istanbul (TRT)</option>
+                <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+                <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
+                <option value="Pacific/Auckland">Pacific/Auckland (NZST)</option>
+              </select>
+            </div>
+          )}
+        </div>
 
         {/* Sync button */}
         <button
@@ -636,6 +1040,7 @@ export function CalendarPage() {
         {/* Left sidebar */}
         {showSidebar && (
         <div
+          data-sidebar
           style={{
             width: 210,
             flexShrink: 0,
@@ -647,7 +1052,7 @@ export function CalendarPage() {
           }}
         >
           {/* Mini month picker */}
-          <MiniMonth selectedDate={selectedDate} onSelectDate={setSelectedDate} weekStartsOnMonday={weekStartsOnMonday} eventDays={eventDays} />
+          <MiniMonth selectedDate={selectedDate} onSelectDate={setSelectedDate} weekStartsOnMonday={weekStartsOnMonday} showWeekNumbers={showWeekNumbers} eventDays={eventDays} />
 
           <div style={{ height: 1, background: 'var(--color-border-primary)', margin: '4px 8px' }} />
 
@@ -860,12 +1265,169 @@ export function CalendarPage() {
               />
               Week starts on Monday
             </label>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '4px 0',
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-text-primary)',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={showWeekNumbers}
+                onChange={(e) => setShowWeekNumbers(e.target.checked)}
+                style={{ width: 14, height: 14, cursor: 'pointer' }}
+              />
+              Show week numbers
+            </label>
+
+            {/* Density selector */}
+            <div style={{ padding: '4px 0' }}>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 4,
+                }}
+              >
+                Density
+              </div>
+              <select
+                value={calendarDensity}
+                onChange={(e) => setCalendarDensity(e.target.value as 'compact' | 'default' | 'comfortable')}
+                style={{
+                  width: '100%',
+                  height: 26,
+                  padding: '0 6px',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--color-bg-primary)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontFamily: 'var(--font-family)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <option value="compact">Compact</option>
+                <option value="default">Default</option>
+                <option value="comfortable">Comfortable</option>
+              </select>
+            </div>
+
+            {/* Working hours */}
+            <div style={{ padding: '4px 0' }}>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 4,
+                }}
+              >
+                Working hours
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <select
+                  value={workStartHour}
+                  onChange={(e) => setWorkStartHour(parseInt(e.target.value, 10))}
+                  style={{
+                    flex: 1,
+                    height: 26,
+                    padding: '0 6px',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-bg-primary)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: 'var(--font-size-xs)',
+                    fontFamily: 'var(--font-family)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', flexShrink: 0 }}>to</span>
+                <select
+                  value={workEndHour}
+                  onChange={(e) => setWorkEndHour(parseInt(e.target.value, 10))}
+                  style={{
+                    flex: 1,
+                    height: 26,
+                    padding: '0 6px',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-bg-primary)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: 'var(--font-size-xs)',
+                    fontFamily: 'var(--font-family)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         )}
 
         {/* Calendar grid */}
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div data-calendar-grid style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          {showLoadingOverlay && (
+            <div
+              aria-label="Loading events"
+              aria-live="polite"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 10,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                background: 'color-mix(in srgb, var(--color-bg-primary) 80%, transparent)',
+                pointerEvents: 'none',
+              }}
+            >
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  border: '2.5px solid var(--color-border-primary)',
+                  borderTopColor: 'var(--color-accent-primary)',
+                  animation: 'spin 0.75s linear infinite',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                  fontFamily: 'var(--font-family)',
+                }}
+              >
+                Loading...
+              </span>
+            </div>
+          )}
           {(scopeMissing || apiNotEnabled) && (
             <div
               style={{
@@ -927,7 +1489,14 @@ export function CalendarPage() {
               )}
             </div>
           )}
-          {view === 'month-grid' ? (
+          {view === 'agenda' ? (
+            <AgendaView
+              events={filteredEvents}
+              selectedCalendarIds={selectedCalendarIds}
+              calendarColorMap={calendarColorMap}
+              onEventClick={openEditModal}
+            />
+          ) : view === 'month-grid' ? (
             <MonthGrid
               selectedDate={selectedDate}
               events={filteredEvents}
@@ -952,8 +1521,18 @@ export function CalendarPage() {
               onQuickCreate={handleQuickCreate}
               onEventDelete={handleEventDelete}
               onEventDuplicate={handleEventDuplicate}
+              onRSVP={handleRSVP}
               dayCount={isNarrow ? 1 : view === 'day' ? 1 : 7}
               weekStartsOnMonday={weekStartsOnMonday}
+              hourHeight={hourHeight}
+              workStartHour={workStartHour}
+              workEndHour={workEndHour}
+              secondaryTimezone={secondaryTimezone}
+              scrollToTime={scrollToTime}
+              onDayClick={(date) => {
+                setSelectedDate(toYMD(date));
+                setView('day');
+              }}
             />
           )}
         </div>
@@ -961,6 +1540,82 @@ export function CalendarPage() {
 
       {/* Event modal */}
       <EventModal />
+
+      {/* Keyboard shortcuts help dialog */}
+      {showShortcutsHelp && (
+        <div
+          onClick={() => setShowShortcutsHelp(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--color-bg-elevated)',
+              border: '1px solid var(--color-border-primary)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-lg)',
+              padding: 24,
+              minWidth: 320,
+              maxWidth: 400,
+              fontFamily: 'var(--font-family)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                Keyboard shortcuts
+              </span>
+              <button
+                onClick={() => setShowShortcutsHelp(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', padding: 4 }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr', rowGap: 8, columnGap: 12, fontSize: 'var(--font-size-sm)' }}>
+              {([
+                ['C', 'Create event'],
+                ['T', 'Go to today'],
+                ['J / →', 'Next period'],
+                ['K / ←', 'Previous period'],
+                ['R', 'Refresh / sync'],
+                ['D', 'Day view'],
+                ['W', 'Week view'],
+                ['M', 'Month view'],
+                ['A', 'Agenda view'],
+                ['G', 'Go to date'],
+                ['?', 'This help'],
+              ] as const).map(([key, desc]) => (
+                <div key={key} style={{ display: 'contents' }}>
+                  <kbd style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: 22,
+                    padding: '0 6px',
+                    background: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--color-text-secondary)',
+                  }}>
+                    {key}
+                  </kbd>
+                  <span style={{ color: 'var(--color-text-primary)', lineHeight: '22px' }}>{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin {

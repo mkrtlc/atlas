@@ -8,4 +8,6 @@ export const ROUTES = {
   SEARCH: '/search',
   SETTINGS: '/settings',
   CALENDAR: '/calendar',
+  DOCS: '/docs',
+  DOC_DETAIL: '/docs/:id',
 } as const;

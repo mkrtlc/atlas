@@ -231,6 +231,7 @@ export const calendarEvents = sqliteTable('calendar_events', {
   attendees: text('attendees', { mode: 'json' }).$type<Array<{ email: string; displayName?: string; responseStatus?: string }>>(),
   recurrence: text('recurrence', { mode: 'json' }).$type<string[]>(),
   recurringEventId: text('recurring_event_id'),
+  transparency: text('transparency'),
   colorId: text('color_id'),
   reminders: text('reminders', { mode: 'json' }).$type<{ useDefault: boolean; overrides?: Array<{ method: string; minutes: number }> }>(),
   createdAt: timestampNow().notNull(),
@@ -239,4 +240,35 @@ export const calendarEvents = sqliteTable('calendar_events', {
   accountGoogleIdx: uniqueIndex('idx_cal_events_account_google').on(table.accountId, table.googleEventId),
   calendarIdx: index('idx_cal_events_calendar').on(table.calendarId),
   timeRangeIdx: index('idx_cal_events_time_range').on(table.accountId, table.startTime, table.endTime),
+}));
+
+// ─── Documents (Notion-style pages) ─────────────────────────────────
+
+export const documents = sqliteTable('documents', {
+  id: uuid().primaryKey(),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  parentId: text('parent_id').references((): AnySQLiteColumn => documents.id, { onDelete: 'set null' }),
+  title: text('title').notNull().default('Untitled'),
+  content: text('content', { mode: 'json' }).$type<Record<string, unknown> | null>().default(null),
+  icon: text('icon'),
+  coverImage: text('cover_image'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+  createdAt: timestampNow().notNull(),
+  updatedAt: timestampNow().notNull(),
+}, (table) => ({
+  accountIdx: index('idx_documents_account').on(table.accountId, table.isArchived),
+  parentIdx: index('idx_documents_parent').on(table.parentId, table.sortOrder),
+  accountParentIdx: index('idx_documents_account_parent').on(table.accountId, table.parentId, table.sortOrder),
+}));
+
+export const documentVersions = sqliteTable('document_versions', {
+  id: uuid().primaryKey(),
+  documentId: text('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  content: text('content', { mode: 'json' }).$type<Record<string, unknown> | null>().default(null),
+  createdAt: timestampNow().notNull(),
+}, (table) => ({
+  docIdx: index('idx_document_versions_doc').on(table.documentId, table.createdAt),
 }));

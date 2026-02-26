@@ -843,10 +843,12 @@ export function Sidebar() {
   const [labelsHovered, setLabelsHovered] = useState(false);
   const [settingsHovered, setSettingsHovered] = useState(false);
   const [calendarHovered, setCalendarHovered] = useState(false);
+  const [docsHovered, setDocsHovered] = useState(false);
   const labelsBtnRef = useRef<HTMLButtonElement>(null);
   const { data: gmailLabels } = useGmailLabels();
   const { data: counts } = useThreadCounts();
   const isOnCalendar = location.pathname === ROUTES.CALENDAR;
+  const isOnDocs = location.pathname.startsWith(ROUTES.DOCS);
 
   const handleOpenLabels = useCallback(() => {
     if (labelsBtnRef.current) {
@@ -1135,6 +1137,39 @@ export function Sidebar() {
         >
           <Calendar size={16} className="sidebar-nav-icon" style={{ color: '#4a9e8f' }} />
           Calendar
+        </button>
+
+        {/* Docs button */}
+        <button
+          className="sidebar-nav-btn"
+          onClick={() => navigate(ROUTES.DOCS)}
+          aria-label="Documents"
+          onMouseEnter={() => setDocsHovered(true)}
+          onMouseLeave={() => setDocsHovered(false)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-sm)',
+            width: '100%',
+            padding: '6px var(--spacing-md)',
+            background: isOnDocs
+              ? 'var(--color-surface-selected)'
+              : docsHovered
+                ? 'var(--color-surface-hover)'
+                : 'transparent',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            color: (isOnDocs || docsHovered) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+            fontSize: 'var(--font-size-sm)',
+            fontFamily: 'var(--font-family)',
+            fontWeight: isOnDocs ? 500 : 400,
+            cursor: 'pointer',
+            transition: 'background var(--transition-normal), color var(--transition-normal)',
+            textAlign: 'left',
+          }}
+        >
+          <FileText size={16} className="sidebar-nav-icon" style={{ color: '#7c6fbd' }} />
+          Documents
         </button>
 
         {/* Settings button */}

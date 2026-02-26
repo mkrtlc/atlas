@@ -7,3 +7,4 @@ export * from './settings';
 export * from './tracking';
 export * from './calendar';
 export * from './api';
+export * from './document';

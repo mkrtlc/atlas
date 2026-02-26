@@ -4,6 +4,7 @@ import { GroupedVirtuoso, type GroupedVirtuosoHandle } from 'react-virtuoso';
 import { ArrowLeft, WifiOff, RefreshCw } from 'lucide-react';
 import { useEmailStore } from '../../stores/email-store';
 import { useSettingsStore } from '../../stores/settings-store';
+import { hasActiveFilters } from './content-toolbar';
 import { useDraftStore } from '../../stores/draft-store';
 import { useMailboxThreads, useToggleStar, useArchiveWithUndo, useTrashWithUndo, useBulkArchiveWithUndo, useBulkTrashWithUndo, useMarkReadUnread, useSnoozeThread, useGmailLabels } from '../../hooks/use-threads';
 import { useToastStore } from '../../stores/toast-store';
@@ -12,14 +13,12 @@ import { useMediaQuery } from '../../hooks/use-media-query';
 import { queryKeys } from '../../config/query-keys';
 import { EmailListItem } from '../email/email-list-item';
 import { BulkActions } from '../email/bulk-actions';
-import { SearchBar } from '../search/search-bar';
 import { EmptyState } from '../ui/empty-state';
 import { EmailListSkeleton } from '../ui/skeleton';
 import { Chip } from '../ui/chip';
 import { useSearch } from '../../hooks/use-search';
 import type { EmailCategory, Thread } from '@atlasmail/shared';
 import type { Mailbox } from '../../stores/email-store';
-import type { CSSProperties } from 'react';
 
 // ---------------------------------------------------------------------------
 // Date grouping (Outlook-style: Today, Yesterday, This week, etc.)
@@ -182,20 +181,6 @@ function parseSearchQuery(query: string): SearchFilters {
   return filters;
 }
 
-function hasActiveFilters(filters: SearchFilters): boolean {
-  return (
-    filters.from !== null ||
-    filters.to !== null ||
-    filters.subject !== null ||
-    filters.hasAttachment ||
-    filters.inMailbox !== null ||
-    filters.isFilter !== null ||
-    filters.newerThan !== null ||
-    filters.olderThan !== null ||
-    filters.freeText.length > 0
-  );
-}
-
 function filterThreadsByParsed(threads: Thread[], filters: SearchFilters): Thread[] {
   return threads.filter((t) => {
     const emails = t.emails ?? [];
@@ -265,117 +250,6 @@ function filterThreadsByParsed(threads: Thread[], filters: SearchFilters): Threa
   });
 }
 
-// ---------------------------------------------------------------------------
-// Search filter chips
-// ---------------------------------------------------------------------------
-
-interface FilterChipProps {
-  label: string;
-  onRemove: () => void;
-}
-
-function FilterChip({ label, onRemove }: FilterChipProps) {
-  return (
-    <Chip color="var(--color-accent-primary)" onRemove={onRemove} aria-label={`Remove filter ${label}`}>
-      {label}
-    </Chip>
-  );
-}
-
-interface SearchFilterChipsProps {
-  query: string;
-  onChange: (newQuery: string) => void;
-}
-
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function SearchFilterChips({ query, onChange }: SearchFilterChipsProps) {
-  const filters = useMemo(() => parseSearchQuery(query), [query]);
-  const chips: Array<{ label: string; remove: () => void }> = [];
-
-  if (filters.from) {
-    const escaped = escapeRegExp(filters.from);
-    chips.push({
-      label: `from:${filters.from}`,
-      remove: () => onChange(query.replace(new RegExp(`\\bfrom:${escaped}\\b`, 'i'), '').trim()),
-    });
-  }
-  if (filters.to) {
-    const escaped = escapeRegExp(filters.to);
-    chips.push({
-      label: `to:${filters.to}`,
-      remove: () => onChange(query.replace(new RegExp(`\\bto:${escaped}\\b`, 'i'), '').trim()),
-    });
-  }
-  if (filters.subject) {
-    const escaped = escapeRegExp(filters.subject);
-    chips.push({
-      label: `subject:${filters.subject}`,
-      remove: () => onChange(
-        query
-          .replace(new RegExp(`\\bsubject:"${escaped}"`, 'i'), '')
-          .replace(new RegExp(`\\bsubject:${escaped}\\b`, 'i'), '')
-          .trim(),
-      ),
-    });
-  }
-  if (filters.hasAttachment) {
-    chips.push({
-      label: 'has:attachment',
-      remove: () => onChange(query.replace(/\bhas:attachment\b/i, '').trim()),
-    });
-  }
-  if (filters.inMailbox) {
-    const escaped = escapeRegExp(filters.inMailbox);
-    chips.push({
-      label: `in:${filters.inMailbox}`,
-      remove: () => onChange(query.replace(new RegExp(`\\bin:${escaped}\\b`, 'i'), '').trim()),
-    });
-  }
-  if (filters.isFilter) {
-    const escaped = escapeRegExp(filters.isFilter);
-    chips.push({
-      label: `is:${filters.isFilter}`,
-      remove: () => onChange(query.replace(new RegExp(`\\bis:${escaped}\\b`, 'i'), '').trim()),
-    });
-  }
-  if (filters.newerThan) {
-    const escaped = escapeRegExp(filters.newerThan);
-    chips.push({
-      label: `newer_than:${filters.newerThan}`,
-      remove: () => onChange(query.replace(new RegExp(`\\bnewer_than:${escaped}\\b`, 'i'), '').trim()),
-    });
-  }
-  if (filters.olderThan) {
-    const escaped = escapeRegExp(filters.olderThan);
-    chips.push({
-      label: `older_than:${filters.olderThan}`,
-      remove: () => onChange(query.replace(new RegExp(`\\bolder_than:${escaped}\\b`, 'i'), '').trim()),
-    });
-  }
-
-  if (chips.length === 0) return null;
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 'var(--spacing-xs)',
-        padding: 'var(--spacing-xs) var(--spacing-md)',
-        paddingTop: 0,
-      }}
-    >
-      {chips.map((chip) => (
-        <FilterChip key={chip.label} label={chip.label} onRemove={chip.remove} />
-      ))}
-    </div>
-  );
-}
-
-
 export function EmailListPane() {
   const { t } = useTranslation();
   const {
@@ -394,25 +268,7 @@ export function EmailListPane() {
     setFilterByLabel,
   } = useEmailStore();
   const readingPanePosition = useSettingsStore((s) => s.readingPane);
-
-  const CATEGORY_LABELS: Record<EmailCategory, string> = {
-    all: t('sidebar.allMail'),
-    important: t('sidebar.important'),
-    other: t('sidebar.other'),
-    newsletters: t('sidebar.newsletters'),
-    notifications: t('sidebar.notifications'),
-  };
-
-  const MAILBOX_LABELS: Record<Mailbox, string> = {
-    inbox: t('sidebar.allMail'),
-    starred: t('sidebar.starred'),
-    unread: t('sidebar.unread'),
-    sent: t('sidebar.sent'),
-    drafts: t('sidebar.drafts'),
-    archive: t('sidebar.archive'),
-    trash: t('sidebar.trash'),
-    spam: t('sidebar.spam'),
-  };
+  const searchQuery = useEmailStore((s) => s.searchQuery);
   const DATE_GROUP_LABELS: Record<DateGroup, string> = {
     today: t('email.groupToday'),
     yesterday: t('email.groupYesterday'),
@@ -432,7 +288,6 @@ export function EmailListPane() {
   const markReadUnread = useMarkReadUnread();
   const addToast = useToastStore((s) => s.addToast);
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
 
@@ -739,62 +594,6 @@ export function EmailListPane() {
             <ArrowLeft size={15} />
             Back
           </button>
-        </div>
-      )}
-
-      {/* Pane header — folder name left, search bar centered */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
-          alignItems: 'center',
-          padding: 'var(--spacing-sm) var(--spacing-lg)',
-          borderBottom: '1px solid var(--color-border-primary)',
-          background: 'var(--color-bg-primary)',
-          flexShrink: 0,
-          minHeight: 40,
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 'var(--font-size-md)',
-            fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
-            fontFamily: 'var(--font-family)',
-            color: 'var(--color-text-primary)',
-            lineHeight: 1.4,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {isInbox ? CATEGORY_LABELS[activeCategory] : MAILBOX_LABELS[activeMailbox]}
-        </h2>
-
-        <div
-          role="search"
-          style={{
-            width: 320,
-          }}
-        >
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search..."
-          />
-        </div>
-
-        {/* Empty spacer to balance the grid */}
-        <div />
-      </div>
-
-      {/* Search filter chips — shown below header when active */}
-      {hasActiveFilters(parsedFilters) && (
-        <div
-          style={{
-            borderBottom: '1px solid var(--color-border-primary)',
-            flexShrink: 0,
-          }}
-        >
-          <SearchFilterChips query={searchQuery} onChange={setSearchQuery} />
         </div>
       )}
 

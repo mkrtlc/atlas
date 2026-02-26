@@ -32,7 +32,9 @@ export interface CalendarEvent {
   hangoutLink: string | null;
   organizer: { email: string; displayName?: string; self?: boolean } | null;
   attendees: Array<{ email: string; displayName?: string; responseStatus?: string }> | null;
+  recurrence: string[] | null;
   recurringEventId: string | null;
+  transparency: 'opaque' | 'transparent' | null;
   colorId: string | null;
   reminders: { useDefault: boolean; overrides?: Array<{ method: string; minutes: number }> } | null;
   createdAt: string;
@@ -49,11 +51,15 @@ export interface CalendarEventCreateInput {
   isAllDay?: boolean;
   attendees?: Array<{ email: string }>;
   colorId?: string;
+  recurrence?: string[];
+  transparency?: 'opaque' | 'transparent';
+  reminders?: { useDefault: boolean; overrides?: Array<{ method: string; minutes: number }> };
 }
 
 export type RecurringEditScope = 'single' | 'thisAndFollowing' | 'all';
 
 export interface CalendarEventUpdateInput {
+  calendarId?: string;
   summary?: string;
   description?: string;
   location?: string;
@@ -63,4 +69,7 @@ export interface CalendarEventUpdateInput {
   attendees?: Array<{ email: string }>;
   colorId?: string | null;
   recurringEditScope?: RecurringEditScope;
+  transparency?: 'opaque' | 'transparent';
+  reminders?: { useDefault: boolean; overrides?: Array<{ method: string; minutes: number }> };
+  responseStatus?: 'accepted' | 'declined' | 'tentative';
 }

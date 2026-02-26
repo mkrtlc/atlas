@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MapPin, AlignLeft, Users, Calendar as CalendarIcon, Clock, Trash2, Palette, Repeat } from 'lucide-react';
+import { X, MapPin, AlignLeft, Users, Calendar as CalendarIcon, Clock, Mail, Trash2, Palette, Repeat, Check, Bell, Eye, Video } from 'lucide-react';
+import type { RecurringEditScope } from '@atlasmail/shared';
 import { useCalendarStore } from '../../stores/calendar-store';
 import { useCalendars, useCreateCalendarEvent, useUpdateCalendarEvent, useDeleteCalendarEvent } from '../../hooks/use-calendar';
 import { useSearchContacts } from '../../hooks/use-contacts';
+import { SchedulingAssistant } from './scheduling-assistant';
 import type { CSSProperties } from 'react';
 
 /** Google Calendar event color IDs mapped to hex values */
@@ -20,6 +22,9 @@ const EVENT_COLORS: { id: string; label: string; hex: string }[] = [
   { id: '11', label: 'Tomato', hex: '#d50000' },
 ];
 
+const DOW_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const DOW_VALUES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
 function formatDateTimeLocal(iso: string): string {
   if (!iso) return '';
   const d = new Date(iso);
@@ -30,6 +35,67 @@ function formatDateTimeLocal(iso: string): string {
 function toISOString(dateTimeLocal: string): string {
   if (!dateTimeLocal) return new Date().toISOString();
   return new Date(dateTimeLocal).toISOString();
+}
+
+function buildRRule(
+  recurrenceFreq: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly',
+  recurrenceInterval: number,
+  recurrenceByDay: string[],
+  recurrenceEnd: 'never' | 'count' | 'until',
+  recurrenceCount: number,
+  recurrenceUntil: string,
+): string[] {
+  if (recurrenceFreq === 'none') return [];
+  let rule = `RRULE:FREQ=${recurrenceFreq.toUpperCase()}`;
+  if (recurrenceInterval > 1) rule += `;INTERVAL=${recurrenceInterval}`;
+  if (recurrenceFreq === 'weekly' && recurrenceByDay.length > 0) {
+    rule += `;BYDAY=${recurrenceByDay.join(',')}`;
+  }
+  if (recurrenceEnd === 'count') rule += `;COUNT=${recurrenceCount}`;
+  else if (recurrenceEnd === 'until' && recurrenceUntil)
+    rule += `;UNTIL=${recurrenceUntil.replace(/-/g, '')}T235959Z`;
+  return [rule];
+}
+
+function parseRRule(rule: string): {
+  freq: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number;
+  byDay: string[];
+  end: 'never' | 'count' | 'until';
+  count: number;
+  until: string;
+} {
+  const result = { freq: 'none' as const, interval: 1, byDay: [] as string[], end: 'never' as const, count: 10, until: '' };
+  const body = rule.replace('RRULE:', '');
+  const parts = body.split(';');
+  const get = (key: string) => parts.find((p) => p.startsWith(`${key}=`))?.split('=')[1] ?? '';
+
+  const freqRaw = get('FREQ').toLowerCase();
+  if (['daily', 'weekly', 'monthly', 'yearly'].includes(freqRaw)) {
+    (result as any).freq = freqRaw;
+  }
+  const interval = parseInt(get('INTERVAL'), 10);
+  if (!isNaN(interval) && interval > 0) result.interval = interval;
+
+  const byday = get('BYDAY');
+  if (byday) result.byDay = byday.split(',');
+
+  const count = parseInt(get('COUNT'), 10);
+  if (!isNaN(count)) {
+    (result as any).end = 'count';
+    result.count = count;
+  }
+  const until = get('UNTIL');
+  if (until) {
+    (result as any).end = 'until';
+    // Convert YYYYMMDDTHHMMSSZ → YYYY-MM-DD
+    const y = until.slice(0, 4);
+    const mo = until.slice(4, 6);
+    const d = until.slice(6, 8);
+    result.until = `${y}-${mo}-${d}`;
+  }
+
+  return result;
 }
 
 interface AttendeeChip {
@@ -303,6 +369,21 @@ export function EventModal() {
   const [timeError, setTimeError] = useState('');
   const [recurringPrompt, setRecurringPrompt] = useState<'save' | 'delete' | null>(null);
 
+  // Feature 1: Recurrence
+  const [recurrenceFreq, setRecurrenceFreq] = useState<'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'>('none');
+  const [recurrenceInterval, setRecurrenceInterval] = useState(1);
+  const [recurrenceByDay, setRecurrenceByDay] = useState<string[]>([]);
+  const [recurrenceEnd, setRecurrenceEnd] = useState<'never' | 'count' | 'until'>('never');
+  const [recurrenceCount, setRecurrenceCount] = useState(10);
+  const [recurrenceUntil, setRecurrenceUntil] = useState('');
+
+  // Feature 6: Free/busy transparency
+  const [transparency, setTransparency] = useState<'opaque' | 'transparent'>('opaque');
+
+  // Feature 7: Reminders
+  const [useDefaultReminders, setUseDefaultReminders] = useState(true);
+  const [reminderOverrides, setReminderOverrides] = useState<Array<{ method: string; minutes: number }>>([]);
+
   // Populate form on open — keyed on modal identity, NOT on calendars
   const modalKey = eventModal.open
     ? `${eventModal.mode}-${eventModal.event?.id ?? 'new'}-${eventModal.defaultStart}-${eventModal.defaultEnd}`
@@ -324,6 +405,44 @@ export function EventModal() {
         ev.attendees?.map((a) => ({ email: a.email, name: a.displayName })) || [],
       );
       setColorId(ev.colorId || null);
+      setTransparency(ev.transparency || 'opaque');
+
+      // Reminders
+      if (ev.reminders) {
+        setUseDefaultReminders(ev.reminders.useDefault);
+        setReminderOverrides(ev.reminders.overrides || []);
+      } else {
+        setUseDefaultReminders(true);
+        setReminderOverrides([]);
+      }
+
+      // Recurrence
+      if (ev.recurrence?.length) {
+        const ruleStr = ev.recurrence.find((r) => r.startsWith('RRULE:')) || '';
+        if (ruleStr) {
+          const parsed = parseRRule(ruleStr);
+          setRecurrenceFreq(parsed.freq);
+          setRecurrenceInterval(parsed.interval);
+          setRecurrenceByDay(parsed.byDay);
+          setRecurrenceEnd(parsed.end);
+          setRecurrenceCount(parsed.count);
+          setRecurrenceUntil(parsed.until);
+        } else {
+          setRecurrenceFreq('none');
+          setRecurrenceInterval(1);
+          setRecurrenceByDay([]);
+          setRecurrenceEnd('never');
+          setRecurrenceCount(10);
+          setRecurrenceUntil('');
+        }
+      } else {
+        setRecurrenceFreq('none');
+        setRecurrenceInterval(1);
+        setRecurrenceByDay([]);
+        setRecurrenceEnd('never');
+        setRecurrenceCount(10);
+        setRecurrenceUntil('');
+      }
     } else {
       // Create mode
       const now = new Date();
@@ -336,10 +455,26 @@ export function EventModal() {
       setLocation('');
       setStartTime(formatDateTimeLocal(defaultStart));
       setEndTime(formatDateTimeLocal(defaultEnd));
-      setIsAllDay(false);
+      setIsAllDay(eventModal.defaultIsAllDay ?? false);
       setCalendarId(''); // Will be filled by the calendar-loader effect below
       setAttendees([]);
       setColorId(null);
+      setTransparency('opaque');
+      setUseDefaultReminders(true);
+      setReminderOverrides([]);
+      setRecurrenceFreq('none');
+      setRecurrenceInterval(1);
+      setRecurrenceByDay([]);
+      setRecurrenceEnd('never');
+      setRecurrenceCount(10);
+      setRecurrenceUntil('');
+
+      // Prefill (Feature 4)
+      if (eventModal.prefill) {
+        setTitle(eventModal.prefill.summary || '');
+        setDescription(eventModal.prefill.description || '');
+        setAttendees(eventModal.prefill.attendees?.map((a) => ({ email: a.email, name: a.name })) || []);
+      }
     }
     setTimeError('');
     setSubmitError('');
@@ -361,7 +496,7 @@ export function EventModal() {
 
   const isRecurring = !!(eventModal.mode === 'edit' && eventModal.event?.recurringEventId);
 
-  const doSubmit = (scope?: 'single' | 'all') => {
+  const doSubmit = (scope?: RecurringEditScope) => {
     if (!title.trim()) return;
 
     const resolvedCalendarId = calendarId || calendars?.find((c) => c.isPrimary)?.id || calendars?.[0]?.id;
@@ -378,6 +513,12 @@ export function EventModal() {
     const attendeeList = attendees.map((a) => ({ email: a.email }));
     setSubmitError('');
 
+    const rrule = buildRRule(recurrenceFreq, recurrenceInterval, recurrenceByDay, recurrenceEnd, recurrenceCount, recurrenceUntil);
+    const remindersPayload = {
+      useDefault: useDefaultReminders,
+      overrides: useDefaultReminders ? undefined : reminderOverrides,
+    };
+
     if (eventModal.mode === 'create') {
       createEvent.mutate(
         {
@@ -390,6 +531,9 @@ export function EventModal() {
           isAllDay,
           attendees: attendeeList.length > 0 ? attendeeList : undefined,
           colorId: colorId || undefined,
+          recurrence: rrule.length > 0 ? rrule : undefined,
+          transparency,
+          reminders: remindersPayload,
         },
         {
           onSuccess: () => closeEventModal(),
@@ -409,6 +553,9 @@ export function EventModal() {
           attendees: attendeeList.length > 0 ? attendeeList : undefined,
           colorId: colorId !== undefined ? colorId : undefined,
           recurringEditScope: scope,
+          transparency,
+          reminders: remindersPayload,
+          ...(calendarId !== eventModal.event.calendarId && { calendarId }),
         },
         {
           onSuccess: () => closeEventModal(),
@@ -443,6 +590,18 @@ export function EventModal() {
     doDelete();
   };
 
+  // Feature 2: RSVP handler
+  const handleRSVP = (status: 'accepted' | 'tentative' | 'declined') => {
+    if (!eventModal.event) return;
+    updateEvent.mutate(
+      { eventId: eventModal.event.id, responseStatus: status },
+      {
+        onSuccess: () => closeEventModal(),
+        onError: (err: any) => setSubmitError(err?.response?.data?.error || err?.message || 'Failed to update response'),
+      },
+    );
+  };
+
   const isPending = createEvent.isPending || updateEvent.isPending || deleteEvent.isPending;
 
   const inputStyle: CSSProperties = {
@@ -467,6 +626,10 @@ export function EventModal() {
     color: 'var(--color-text-secondary)',
     marginBottom: 4,
   };
+
+  const currentResponseStatus = eventModal.event?.selfResponseStatus;
+  const isOrganizer = eventModal.event?.organizer?.self === true;
+  const showRSVP = eventModal.mode === 'edit' && currentResponseStatus && !isOrganizer;
 
   return (
     <>
@@ -539,6 +702,31 @@ export function EventModal() {
                 <Repeat size={10} />
                 Recurring
               </span>
+            )}
+            {/* Feature 5: Join meeting button in header */}
+            {eventModal.mode === 'edit' && eventModal.event?.hangoutLink && (
+              <a
+                href={eventModal.event.hangoutLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '2px 8px',
+                  background: '#1a73e8',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#fff',
+                  fontSize: 'var(--font-size-xs)',
+                  fontFamily: 'var(--font-family)',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                <Video size={11} />
+                Join
+              </a>
             )}
           </div>
           <button
@@ -639,6 +827,131 @@ export function EventModal() {
             </label>
           </div>
 
+          {/* Feature 1: Repeat / Recurrence rule builder */}
+          <div>
+            <label style={labelStyle}>
+              <Repeat size={14} />
+              Repeat
+            </label>
+            <select
+              value={recurrenceFreq}
+              onChange={(e) => setRecurrenceFreq(e.target.value as typeof recurrenceFreq)}
+              style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
+            >
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+
+            {recurrenceFreq !== 'none' && (
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Every N frequency */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                  <span>Every</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={recurrenceInterval}
+                    onChange={(e) => setRecurrenceInterval(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    style={{ ...inputStyle, width: 60, textAlign: 'center' }}
+                  />
+                  <span>{recurrenceFreq === 'daily' ? 'day(s)' : recurrenceFreq === 'weekly' ? 'week(s)' : recurrenceFreq === 'monthly' ? 'month(s)' : 'year(s)'}</span>
+                </div>
+
+                {/* Day-of-week toggles for weekly */}
+                {recurrenceFreq === 'weekly' && (
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {DOW_LABELS.map((label, i) => {
+                      const val = DOW_VALUES[i];
+                      const active = recurrenceByDay.includes(val);
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => {
+                            setRecurrenceByDay((prev) =>
+                              active ? prev.filter((d) => d !== val) : [...prev, val],
+                            );
+                          }}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: '50%',
+                            border: active ? 'none' : '1px solid var(--color-border-primary)',
+                            background: active ? 'var(--color-accent-primary)' : 'transparent',
+                            color: active ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)',
+                            fontSize: 11,
+                            fontFamily: 'var(--font-family)',
+                            fontWeight: active ? 600 : 400,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            transition: 'background 150ms, color 150ms',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* End condition */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>End</span>
+                  {(['never', 'count', 'until'] as const).map((endOption) => (
+                    <label
+                      key={endOption}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', cursor: 'pointer' }}
+                    >
+                      <input
+                        type="radio"
+                        name="recurrence-end"
+                        value={endOption}
+                        checked={recurrenceEnd === endOption}
+                        onChange={() => setRecurrenceEnd(endOption)}
+                        style={{ accentColor: 'var(--color-accent-primary)' }}
+                      />
+                      {endOption === 'never' && 'Never'}
+                      {endOption === 'count' && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          After
+                          <input
+                            type="number"
+                            min={1}
+                            max={999}
+                            value={recurrenceCount}
+                            onChange={(e) => setRecurrenceCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                            disabled={recurrenceEnd !== 'count'}
+                            style={{ ...inputStyle, width: 60, textAlign: 'center', opacity: recurrenceEnd !== 'count' ? 0.4 : 1 }}
+                          />
+                          occurrences
+                        </span>
+                      )}
+                      {endOption === 'until' && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          On
+                          <input
+                            type="date"
+                            value={recurrenceUntil}
+                            onChange={(e) => setRecurrenceUntil(e.target.value)}
+                            disabled={recurrenceEnd !== 'until'}
+                            style={{ ...inputStyle, width: 'auto', opacity: recurrenceEnd !== 'until' ? 0.4 : 1 }}
+                          />
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Calendar selector */}
           {calendars && calendars.length > 1 && (
             <div>
@@ -708,6 +1021,22 @@ export function EventModal() {
             </div>
           </div>
 
+          {/* Feature 6: Show as (free/busy) */}
+          <div>
+            <label style={labelStyle}>
+              <Eye size={14} />
+              Show as
+            </label>
+            <select
+              value={transparency}
+              onChange={(e) => setTransparency(e.target.value as 'opaque' | 'transparent')}
+              style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
+            >
+              <option value="opaque">Busy</option>
+              <option value="transparent">Free</option>
+            </select>
+          </div>
+
           {/* Location */}
           <div>
             <label style={labelStyle}>
@@ -754,6 +1083,134 @@ export function EventModal() {
               inputStyle={inputStyle}
             />
           </div>
+
+          {/* Scheduling assistant — visible when there are attendees */}
+          {attendees.length > 0 && (
+            <SchedulingAssistant
+              attendees={attendees}
+              startTime={toISOString(startTime)}
+              endTime={toISOString(endTime)}
+            />
+          )}
+
+          {/* Feature 2: RSVP buttons */}
+          {showRSVP && (
+            <div>
+              <label style={labelStyle}>
+                <Check size={14} />
+                Your response
+              </label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['accepted', 'tentative', 'declined'] as const).map((status) => {
+                  const isActive = currentResponseStatus === status;
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleRSVP(status)}
+                      disabled={isPending}
+                      style={{
+                        height: 30,
+                        padding: '0 12px',
+                        background: isActive ? 'var(--color-accent-primary)' : 'transparent',
+                        border: `1px solid ${isActive ? 'var(--color-accent-primary)' : 'var(--color-border-primary)'}`,
+                        borderRadius: 'var(--radius-sm)',
+                        color: isActive ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)',
+                        fontSize: 'var(--font-size-xs)',
+                        fontFamily: 'var(--font-family)',
+                        fontWeight: isActive ? 600 : 400,
+                        cursor: isPending ? 'not-allowed' : 'pointer',
+                        opacity: isPending ? 0.5 : 1,
+                        transition: 'background 150ms, color 150ms, border-color 150ms',
+                      }}
+                    >
+                      {status === 'accepted' ? 'Accept' : status === 'tentative' ? 'Maybe' : 'Decline'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Feature 7: Reminders */}
+          <div>
+            <label style={labelStyle}>
+              <Bell size={14} />
+              Reminders
+            </label>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-text-secondary)',
+                cursor: 'pointer',
+                marginBottom: 6,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={useDefaultReminders}
+                onChange={(e) => setUseDefaultReminders(e.target.checked)}
+                style={{ accentColor: 'var(--color-accent-primary)' }}
+              />
+              Use default reminders
+            </label>
+            {!useDefaultReminders && (
+              <>
+                {reminderOverrides.map((r, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={r.minutes}
+                      onChange={(e) => {
+                        const updated = [...reminderOverrides];
+                        updated[i] = { ...updated[i], minutes: Math.max(0, parseInt(e.target.value, 10) || 0) };
+                        setReminderOverrides(updated);
+                      }}
+                      style={{ ...inputStyle, width: 60, textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>minutes before</span>
+                    <button
+                      onClick={() => setReminderOverrides(reminderOverrides.filter((_, idx) => idx !== i))}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 22,
+                        height: 22,
+                        padding: 0,
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: 'var(--radius-sm)',
+                        color: 'var(--color-text-tertiary)',
+                        cursor: 'pointer',
+                        fontSize: 16,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setReminderOverrides([...reminderOverrides, { method: 'popup', minutes: 10 }])}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--color-accent-primary)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontFamily: 'var(--font-family)',
+                    cursor: 'pointer',
+                    padding: 0,
+                    textAlign: 'left',
+                  }}
+                >
+                  + Add reminder
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
@@ -773,28 +1230,59 @@ export function EventModal() {
           }}
         >
           {eventModal.mode === 'edit' && (
-            <button
-              onClick={handleDelete}
-              disabled={isPending}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                height: 34,
-                padding: '0 12px',
-                background: 'transparent',
-                border: '1px solid var(--color-error)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--color-error)',
-                fontSize: 'var(--font-size-sm)',
-                fontFamily: 'var(--font-family)',
-                cursor: isPending ? 'not-allowed' : 'pointer',
-                opacity: isPending ? 0.5 : 1,
-              }}
-            >
-              <Trash2 size={14} />
-              Delete
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={handleDelete}
+                disabled={isPending}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 34,
+                  padding: '0 12px',
+                  background: 'transparent',
+                  border: '1px solid var(--color-error)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-error)',
+                  fontSize: 'var(--font-size-sm)',
+                  fontFamily: 'var(--font-family)',
+                  cursor: isPending ? 'not-allowed' : 'pointer',
+                  opacity: isPending ? 0.5 : 1,
+                }}
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+              {eventModal.event?.attendees && eventModal.event.attendees.length > 0 && (
+                <button
+                  onClick={() => {
+                    const emails = eventModal.event!.attendees!
+                      .map((a) => a.email)
+                      .filter(Boolean)
+                      .join(',');
+                    const subject = encodeURIComponent(eventModal.event!.summary || '');
+                    window.open(`mailto:${emails}?subject=${subject}`, '_self');
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    height: 34,
+                    padding: '0 12px',
+                    background: 'transparent',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--color-text-secondary)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontFamily: 'var(--font-family)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Mail size={14} />
+                  Email attendees
+                </button>
+              )}
+            </div>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
             <button
@@ -883,6 +1371,18 @@ export function EventModal() {
               >
                 This event only
               </button>
+              {recurringPrompt !== 'delete' && (
+                <button
+                  onClick={() => {
+                    setRecurringPrompt(null);
+                    doSubmit('thisAndFollowing');
+                  }}
+                  disabled={isPending}
+                  style={scopeBtnStyle}
+                >
+                  This and following events
+                </button>
+              )}
               <button
                 onClick={() => {
                   setRecurringPrompt(null);

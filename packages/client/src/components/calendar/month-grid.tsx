@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { CalendarEvent } from '@atlasmail/shared';
 
 interface MonthGridProps {
@@ -59,6 +59,8 @@ export function MonthGrid({
   const todayStr = useMemo(() => toYMD(new Date()), []);
   const selectedMonth = new Date(selectedDate + 'T12:00:00').getMonth();
 
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
+
   const dayHeaders = weekStartsOnMonday ? DAY_HEADERS_MON : DAY_HEADERS_SUN;
 
   // Build the 6-week grid of dates
@@ -109,6 +111,7 @@ export function MonthGrid({
 
   return (
     <div
+      onClick={() => setExpandedDay(null)}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -177,11 +180,12 @@ export function MonthGrid({
                     borderRight: '1px solid var(--color-border-secondary)',
                     padding: '2px 3px',
                     cursor: 'pointer',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     display: 'flex',
                     flexDirection: 'column',
                     opacity: isCurrentMonth ? 1 : 0.4,
                     background: isToday ? 'color-mix(in srgb, var(--color-accent-primary) 5%, transparent)' : undefined,
+                    position: 'relative',
                   }}
                 >
                   {/* Date number */}
@@ -216,6 +220,7 @@ export function MonthGrid({
                       const bgColor = (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
                         || calendarColorMap.get(ev.calendarId)
                         || 'var(--color-accent-primary)';
+                      const isDeclined = ev.selfResponseStatus === 'declined';
 
                       if (ev.isAllDay) {
                         const textColor = isLightColor(bgColor) ? '#1a1a1a' : '#fff';
@@ -240,6 +245,8 @@ export function MonthGrid({
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
                               lineHeight: '15px',
+                              opacity: isDeclined ? 0.45 : 1,
+                              textDecoration: isDeclined ? 'line-through' : 'none',
                             }}
                           >
                             {ev.summary || '(No title)'}
@@ -267,6 +274,7 @@ export function MonthGrid({
                             whiteSpace: 'nowrap',
                             lineHeight: '15px',
                             color: 'var(--color-text-primary)',
+                            opacity: isDeclined ? 0.45 : 1,
                           }}
                         >
                           <span
@@ -285,6 +293,7 @@ export function MonthGrid({
                             style={{
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
+                              textDecoration: isDeclined ? 'line-through' : 'none',
                             }}
                           >
                             {ev.summary || '(No title)'}
@@ -294,16 +303,206 @@ export function MonthGrid({
                     })}
 
                     {moreCount > 0 && (
-                      <div
-                        style={{
-                          fontSize: 10,
-                          color: 'var(--color-text-tertiary)',
-                          padding: '0 4px',
-                          fontWeight: 500,
-                        }}
-                      >
-                        +{moreCount} more
-                      </div>
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedDay(expandedDay === dayStr ? null : dayStr);
+                          }}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            fontSize: 10,
+                            color: 'var(--color-text-tertiary)',
+                            padding: '0 4px',
+                            fontWeight: 500,
+                            background: 'transparent',
+                            border: 'none',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-family)',
+                            lineHeight: '15px',
+                            borderRadius: 3,
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-bg-hover, rgba(0,0,0,0.05))';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                          }}
+                        >
+                          +{moreCount} more
+                        </button>
+
+                        {expandedDay === dayStr && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              zIndex: 20,
+                              minWidth: 200,
+                              maxWidth: 280,
+                              background: 'var(--color-bg-elevated, #fff)',
+                              border: '1px solid var(--color-border-primary, #d0d5dd)',
+                              borderRadius: 'var(--radius-md, 6px)',
+                              boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.12))',
+                              padding: '6px 0',
+                              marginTop: 2,
+                            }}
+                          >
+                            {/* Popover header */}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '2px 8px 6px',
+                                borderBottom: '1px solid var(--color-border-secondary, #e4e7ec)',
+                                marginBottom: 4,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: 'var(--color-text-secondary)',
+                                }}
+                              >
+                                {new Date(dayStr + 'T12:00:00').toLocaleDateString(undefined, {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedDay(null);
+                                }}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: 'var(--color-text-tertiary)',
+                                  fontSize: 13,
+                                  lineHeight: 1,
+                                  padding: '2px 4px',
+                                  borderRadius: 3,
+                                  fontFamily: 'var(--font-family)',
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+
+                            {/* All events for this day */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: '0 4px' }}>
+                              {sorted.map((ev) => {
+                                const bgColor = (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
+                                  || calendarColorMap.get(ev.calendarId)
+                                  || 'var(--color-accent-primary)';
+                                const isDeclined = ev.selfResponseStatus === 'declined';
+
+                                if (ev.isAllDay) {
+                                  const textColor = isLightColor(bgColor) ? '#1a1a1a' : '#fff';
+                                  return (
+                                    <button
+                                      key={ev.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedDay(null);
+                                        onEventClick(ev);
+                                      }}
+                                      style={{
+                                        display: 'block',
+                                        width: '100%',
+                                        padding: '2px 6px',
+                                        background: bgColor,
+                                        color: textColor,
+                                        border: 'none',
+                                        borderRadius: 3,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        fontFamily: 'var(--font-family)',
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        lineHeight: '18px',
+                                        opacity: isDeclined ? 0.45 : 1,
+                                        textDecoration: isDeclined ? 'line-through' : 'none',
+                                      }}
+                                    >
+                                      {ev.summary || '(No title)'}
+                                    </button>
+                                  );
+                                }
+
+                                return (
+                                  <button
+                                    key={ev.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedDay(null);
+                                      onEventClick(ev);
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      width: '100%',
+                                      padding: '2px 6px',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      fontSize: 11,
+                                      fontFamily: 'var(--font-family)',
+                                      textAlign: 'left',
+                                      cursor: 'pointer',
+                                      overflow: 'hidden',
+                                      whiteSpace: 'nowrap',
+                                      lineHeight: '18px',
+                                      color: 'var(--color-text-primary)',
+                                      opacity: isDeclined ? 0.45 : 1,
+                                      borderRadius: 3,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-bg-hover, rgba(0,0,0,0.05))';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        width: 7,
+                                        height: 7,
+                                        borderRadius: '50%',
+                                        background: bgColor,
+                                        flexShrink: 0,
+                                      }}
+                                    />
+                                    <span style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
+                                      {formatTime(new Date(ev.startTime))}
+                                    </span>
+                                    <span
+                                      style={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        textDecoration: isDeclined ? 'line-through' : 'none',
+                                      }}
+                                    >
+                                      {ev.summary || '(No title)'}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

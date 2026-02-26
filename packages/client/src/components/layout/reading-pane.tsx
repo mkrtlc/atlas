@@ -258,7 +258,7 @@ export function ReadingPane() {
       {/* Thread subject header */}
       <div
         style={{
-          padding: 'var(--spacing-lg) var(--spacing-xl)',
+          padding: 'var(--spacing-sm) var(--spacing-xl)',
           borderBottom: '1px solid var(--color-border-primary)',
           background: 'var(--color-bg-secondary)',
           flexShrink: 0,

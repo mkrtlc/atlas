@@ -7,6 +7,7 @@ import { useMediaQuery } from '../../hooks/use-media-query';
 import { Sidebar } from './sidebar';
 import { ResizeHandle } from '../ui/resize-handle';
 import { ConnectionBanner } from '../ui/connection-banner';
+import { ContentToolbar } from './content-toolbar';
 
 // ---- Constants ---------------------------------------------------------------
 
@@ -269,7 +270,7 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
         style={{
           flex: 1,
           display: 'flex',
-          flexDirection: isBottom && !isMobile ? 'column' : 'row',
+          flexDirection: 'column',
           overflow: 'hidden',
           minWidth: 0,
         }}
@@ -278,11 +279,6 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
         {isTablet && (
           <div
             style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 44,
               display: 'flex',
               alignItems: 'center',
               padding: '0 var(--spacing-sm)',
@@ -290,6 +286,8 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
               borderBottom: '1px solid var(--color-border-primary)',
               zIndex: 10,
               gap: 'var(--spacing-sm)',
+              height: 44,
+              flexShrink: 0,
             }}
           >
             {HamburgerButton}
@@ -306,18 +304,18 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
           </div>
         )}
 
-        {/* Spacer to push content below the tablet top bar */}
-        {isTablet && <div style={{ height: 44, width: '100%', flexShrink: 0, position: 'absolute', pointerEvents: 'none' }} />}
+        {/* Shared toolbar spanning full width above both panes */}
+        {!isMobile && <ContentToolbar />}
 
-        {/* ---- Content wrapper below top bar ---- */}
+        {/* ---- Content wrapper: email list + reading pane ---- */}
         <div
           style={{
             display: 'flex',
             flex: 1,
             flexDirection: isBottom && !isMobile ? 'column' : 'row',
             overflow: 'hidden',
-            marginTop: isTablet ? 44 : 0,
             minWidth: 0,
+            minHeight: 0,
           }}
         >
           {/* Email list pane — hidden when a thread is open in 'hidden' pane mode (full-width thread view) */}
@@ -334,7 +332,6 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
                 flexDirection: 'column',
                 overflow: 'hidden',
                 background: 'var(--color-bg-primary)',
-                borderRight: !isTablet && isRight ? '1px solid var(--color-border-primary)' : undefined,
               }}
             >
               {emailList}
@@ -361,7 +358,6 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
                 display: 'flex',
                 flexDirection: 'column',
                 background: 'var(--color-bg-primary)',
-                borderTop: isBottom ? '1px solid var(--color-border-primary)' : undefined,
                 minWidth: isRight ? 320 : 0,
               }}
             >

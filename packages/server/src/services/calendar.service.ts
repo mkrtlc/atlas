@@ -3,7 +3,7 @@ import { createOAuth2Client } from '../config/google';
 import { decrypt, encrypt } from '../utils/crypto';
 import { db } from '../config/database';
 import { accounts, calendars, calendarEvents } from '../db/schema';
-import { eq, and, gte, lte, sql, inArray, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, inArray, desc, ne } from 'drizzle-orm';
 import { logger } from '../utils/logger';
 import type { CalendarEventCreateInput, CalendarEventUpdateInput } from '@atlasmail/shared';
 
@@ -245,6 +245,7 @@ async function upsertEvent(
       attendees: item.attendees || null,
       recurrence: item.recurrence || null,
       recurringEventId: item.recurringEventId || null,
+      transparency: item.transparency || null,
       colorId: item.colorId || null,
       reminders: item.reminders || null,
       createdAt: now,
@@ -268,6 +269,7 @@ async function upsertEvent(
         attendees: item.attendees || null,
         recurrence: item.recurrence || null,
         recurringEventId: item.recurringEventId || null,
+        transparency: item.transparency || null,
         colorId: item.colorId || null,
         reminders: item.reminders || null,
         updatedAt: now,
@@ -297,6 +299,14 @@ export async function listEvents(
   timeMax: string,
   calendarIds?: string[],
 ) {
+  // Exclude calendars with freeBusyReader access (they only have time blocks, no event details)
+  const freeBusyCalIds = (
+    await db
+      .select({ id: calendars.id })
+      .from(calendars)
+      .where(and(eq(calendars.accountId, accountId), eq(calendars.accessRole, 'freeBusyReader')))
+  ).map((c) => c.id);
+
   const conditions = [
     eq(calendarEvents.accountId, accountId),
     lte(calendarEvents.startTime, timeMax),
@@ -307,11 +317,19 @@ export async function listEvents(
     conditions.push(inArray(calendarEvents.calendarId, calendarIds));
   }
 
-  return db
+  const rows = await db
     .select()
     .from(calendarEvents)
     .where(and(...conditions))
     .orderBy(calendarEvents.startTime);
+
+  // Filter out freeBusyReader calendar events
+  if (freeBusyCalIds.length > 0) {
+    const freeBusySet = new Set(freeBusyCalIds);
+    return rows.filter((r) => !freeBusySet.has(r.calendarId));
+  }
+
+  return rows;
 }
 
 // ─── CRUD operations ─────────────────────────────────────────────────
@@ -350,6 +368,15 @@ export async function createEvent(accountId: string, input: CalendarEventCreateI
   }
   if (input.colorId) {
     eventResource.colorId = input.colorId;
+  }
+  if (input.recurrence?.length) {
+    eventResource.recurrence = input.recurrence;
+  }
+  if (input.transparency) {
+    eventResource.transparency = input.transparency;
+  }
+  if (input.reminders) {
+    eventResource.reminders = input.reminders;
   }
 
   const res = await cal.events.insert({
@@ -390,7 +417,7 @@ export async function updateEvent(
   if (!existing) throw new Error('Event not found');
 
   // Get the calendar
-  const [calRow] = await db
+  let [calRow] = await db
     .select()
     .from(calendars)
     .where(eq(calendars.id, existing.calendarId))
@@ -401,12 +428,43 @@ export async function updateEvent(
   const cal = await getCalendarClient(accountId);
   const now = new Date().toISOString();
 
+  // Handle calendar move
+  if (input.calendarId && input.calendarId !== existing.calendarId) {
+    const [targetCal] = await db.select().from(calendars)
+      .where(and(eq(calendars.id, input.calendarId), eq(calendars.accountId, accountId)))
+      .limit(1);
+    if (!targetCal) throw new Error('Target calendar not found');
+
+    await cal.events.move({
+      calendarId: calRow.googleCalendarId,
+      eventId: existing.googleEventId,
+      destination: targetCal.googleCalendarId,
+    });
+
+    // Update local DB: change calendarId
+    await db.update(calendarEvents).set({
+      calendarId: input.calendarId,
+      updatedAt: now,
+    }).where(eq(calendarEvents.id, eventId));
+
+    // If only the calendar was changed, return early
+    if (Object.keys(input).filter(k => k !== 'calendarId').length === 0) {
+      const [updated] = await db.select().from(calendarEvents)
+        .where(eq(calendarEvents.id, eventId)).limit(1);
+      return updated;
+    }
+    // Update calRow reference for subsequent patch
+    calRow = targetCal as typeof calRow;
+  }
+
   const patch: any = {};
   if (input.summary !== undefined) patch.summary = input.summary;
   if (input.description !== undefined) patch.description = input.description;
   if (input.location !== undefined) patch.location = input.location;
   if (input.attendees !== undefined) patch.attendees = input.attendees;
   if (input.colorId !== undefined) patch.colorId = input.colorId;
+  if (input.transparency !== undefined) patch.transparency = input.transparency;
+  if (input.reminders !== undefined) patch.reminders = input.reminders;
 
   if (input.startTime !== undefined || input.endTime !== undefined) {
     const isAllDay = input.isAllDay ?? existing.isAllDay;
@@ -432,24 +490,55 @@ export async function updateEvent(
     delete patch.end;
   }
 
+  // 'thisAndFollowing' patches the specific instance. Google Calendar API
+  // creates a new exception/sub-series for this instance and forward.
+  // The original series may still produce instances on the same dates until
+  // a re-sync reconciles the local DB. We trigger a re-sync below to clean up.
+
+  // Handle RSVP response status change
+  if (input.responseStatus) {
+    const [account] = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
+    if (account) {
+      const gEvent = await cal.events.get({
+        calendarId: calRow.googleCalendarId,
+        eventId: targetGoogleEventId,
+      });
+      const attendeesList = gEvent.data.attendees || [];
+      const selfAttendee = attendeesList.find(
+        (a: any) => a.email?.toLowerCase() === account.email.toLowerCase() || a.self === true,
+      );
+      if (selfAttendee) {
+        selfAttendee.responseStatus = input.responseStatus;
+        patch.attendees = attendeesList;
+      }
+    }
+  }
+
   const res = await cal.events.patch({
     calendarId: calRow.googleCalendarId,
     eventId: targetGoogleEventId,
     requestBody: patch,
-    sendUpdates: 'all',
+    sendUpdates: input.responseStatus ? 'all' : 'none',
   });
 
   await upsertEvent(accountId, calRow.id, res.data, now);
 
-  // For 'all' scope, re-sync to update all instances in our DB
-  if (scope === 'all' && existing.recurringEventId) {
-    // Sync events for this calendar to pull in updated instances
+  // Update selfResponseStatus in local DB if responseStatus was changed
+  if (input.responseStatus) {
+    await db.update(calendarEvents).set({
+      selfResponseStatus: input.responseStatus,
+      updatedAt: now,
+    }).where(eq(calendarEvents.id, eventId));
+  }
+
+  // Re-sync after edits that affect multiple instances so the local DB stays consistent
+  if ((scope === 'all' && existing.recurringEventId) || scope === 'thisAndFollowing') {
     const timeMin = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
     const timeMax = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
     try {
       await syncCalendarEvents(accountId, calRow.id, timeMin, timeMax);
     } catch (err) {
-      logger.warn({ err }, 'Failed to re-sync after updating all recurring instances');
+      logger.warn({ err }, 'Failed to re-sync after updating recurring instances');
     }
   }
 
@@ -532,6 +621,75 @@ export async function toggleCalendarSelected(
     .update(calendars)
     .set({ isSelected, updatedAt: new Date().toISOString() })
     .where(and(eq(calendars.id, calendarDbId), eq(calendars.accountId, accountId)));
+}
+
+// ─── Search events ──────────────────────────────────────────────────
+
+export async function searchEvents(accountId: string, query: string, limit = 50) {
+  // Exclude freeBusyReader calendars
+  const freeBusyCalIds = (
+    await db
+      .select({ id: calendars.id })
+      .from(calendars)
+      .where(and(eq(calendars.accountId, accountId), eq(calendars.accessRole, 'freeBusyReader')))
+  ).map((c) => c.id);
+
+  const pattern = `%${query}%`;
+  const rows = await db
+    .select()
+    .from(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.accountId, accountId),
+        sql`(${calendarEvents.summary} LIKE ${pattern} OR ${calendarEvents.description} LIKE ${pattern} OR ${calendarEvents.location} LIKE ${pattern})`,
+      ),
+    )
+    .orderBy(desc(calendarEvents.startTime))
+    .limit(limit);
+
+  if (freeBusyCalIds.length > 0) {
+    const freeBusySet = new Set(freeBusyCalIds);
+    return rows.filter((r) => !freeBusySet.has(r.calendarId));
+  }
+
+  return rows;
+}
+
+// ─── Free/Busy lookup ───────────────────────────────────────────────
+
+export async function getFreeBusy(
+  accountId: string,
+  emails: string[],
+  timeMin: string,
+  timeMax: string,
+) {
+  const cal = await getCalendarClient(accountId);
+
+  const res = await cal.freebusy.query({
+    requestBody: {
+      timeMin,
+      timeMax,
+      items: emails.map((email) => ({ id: email })),
+    },
+  });
+
+  // Transform response: { calendars: { [email]: { busy: [{ start, end }] } } }
+  const result: Record<string, Array<{ start: string; end: string }>> = {};
+  const calendarsData = res.data.calendars || {};
+
+  for (const email of emails) {
+    const calData = calendarsData[email];
+    if (calData?.busy) {
+      result[email] = calData.busy.map((b) => ({
+        start: b.start || '',
+        end: b.end || '',
+      }));
+    } else {
+      result[email] = [];
+    }
+  }
+
+  return result;
 }
 
 // ─── Create a new calendar ───────────────────────────────────────────

@@ -34,5 +34,14 @@ export const queryKeys = {
     all: ['calendar'] as const,
     calendars: ['calendar', 'calendars'] as const,
     events: (timeMin: string, timeMax: string) => ['calendar', 'events', timeMin, timeMax] as const,
+    freeBusy: (emails: string, timeMin: string, timeMax: string) =>
+      ['calendar', 'freebusy', emails, timeMin, timeMax] as const,
+    search: (query: string) => ['calendar', 'search', query] as const,
+  },
+  docs: {
+    all: ['docs'] as const,
+    list: ['docs', 'list'] as const,
+    tree: ['docs', 'tree'] as const,
+    detail: (id: string) => ['docs', 'detail', id] as const,
   },
 };

@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Reply, CornerUpLeft, Forward, Archive, Trash2, Star, MailOpen, Clock, AlertOctagon, Ban } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Reply, CornerUpLeft, Forward, Archive, Trash2, Star, MailOpen, Clock, AlertOctagon, Ban, CalendarPlus } from 'lucide-react';
 import { useEmailStore } from '../../stores/email-store';
 import { useArchiveWithUndo, useTrashWithUndo, useToggleStar, useSnoozeThread, useSpamWithUndo, useMarkReadUnread, useMailboxThreads, useBlockSender } from '../../hooks/use-threads';
 import { useAutoAdvance } from '../../hooks/use-auto-advance';
 import { useToastStore } from '../../stores/toast-store';
+import { useCalendarStore } from '../../stores/calendar-store';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { queryKeys } from '../../config/query-keys';
 import { Tooltip } from '../ui/tooltip';
@@ -30,7 +32,9 @@ interface ActionButton {
 
 export function EmailActions({ thread }: EmailActionsProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { openCompose, activeMailbox, activeCategory, cursorIndex } = useEmailStore();
+  const { openCreateModalWithPrefill } = useCalendarStore();
   const archiveWithUndo = useArchiveWithUndo();
   const trashWithUndo = useTrashWithUndo();
   const starMutation = useToggleStar();
@@ -114,12 +118,41 @@ export function EmailActions({ thread }: EmailActionsProps) {
     },
   ];
 
+  const handleCreateEvent = () => {
+    const emails = thread.emails ?? [];
+    const subject = thread.subject || '';
+    // Collect unique participant emails
+    const attendeeMap = new Map<string, string | undefined>();
+    for (const email of emails) {
+      if (email.fromAddress) attendeeMap.set(email.fromAddress, email.fromName || undefined);
+      for (const to of email.toAddresses || []) {
+        if (to.address) attendeeMap.set(to.address, to.name || undefined);
+      }
+    }
+    const attendees = Array.from(attendeeMap, ([email, name]) => ({ email, name }));
+
+    // Set default time to next hour, 1-hour duration
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    now.setHours(now.getHours() + 1);
+    const start = now.toISOString();
+    const end = new Date(now.getTime() + 60 * 60_000).toISOString();
+
+    openCreateModalWithPrefill({ summary: subject, attendees }, start, end);
+    navigate('/calendar');
+  };
+
   const afterSnoozeActions: ActionButton[] = [
     {
       icon: MailOpen,
       label: t('email.markUnread'),
       shortcut: 'Shift+U',
       action: () => markReadUnread.mutate({ threadId: thread.id, isUnread: true }),
+    },
+    {
+      icon: CalendarPlus,
+      label: 'Create event',
+      action: handleCreateEvent,
     },
   ];
 
@@ -211,7 +244,7 @@ export function EmailActions({ thread }: EmailActionsProps) {
           gap: 'var(--spacing-xs)',
           padding: 'var(--spacing-sm) var(--spacing-lg)',
           borderBottom: '1px solid var(--color-border-primary)',
-          background: 'var(--color-bg-secondary)',
+          background: 'var(--color-bg-primary)',
           flexShrink: 0,
         }}
       >

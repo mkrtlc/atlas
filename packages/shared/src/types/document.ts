@@ -1,0 +1,45 @@
+export interface Document {
+  id: string;
+  accountId: string;
+  parentId: string | null;
+  title: string;
+  content: Record<string, unknown> | null;
+  icon: string | null;
+  coverImage: string | null;
+  sortOrder: number;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Minimal node used to render the sidebar document tree. */
+export interface DocumentTreeNode {
+  id: string;
+  parentId: string | null;
+  title: string;
+  icon: string | null;
+  sortOrder: number;
+  isArchived: boolean;
+  children: DocumentTreeNode[];
+}
+
+export interface CreateDocumentInput {
+  parentId?: string | null;
+  title?: string;
+  icon?: string | null;
+  content?: Record<string, unknown> | null;
+}
+
+export interface UpdateDocumentInput {
+  title?: string;
+  content?: Record<string, unknown> | null;
+  icon?: string | null;
+  coverImage?: string | null;
+  parentId?: string | null;
+  isArchived?: boolean;
+}
+
+export interface MoveDocumentInput {
+  parentId: string | null;
+  sortOrder: number;
+}

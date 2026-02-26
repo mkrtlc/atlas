@@ -101,6 +101,43 @@ try { sqlite.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_cal_events_account_g
 try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_cal_events_calendar ON calendar_events(calendar_id)`).run(); } catch { /* */ }
 try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_cal_events_time_range ON calendar_events(account_id, start_time, end_time)`).run(); } catch { /* */ }
 
+// ---- Documents table --------------------------------------------------------
+
+sqlite.prepare(`
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    parent_id TEXT REFERENCES documents(id) ON DELETE SET NULL,
+    title TEXT NOT NULL DEFAULT 'Untitled',
+    content TEXT,
+    icon TEXT,
+    cover_image TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_archived INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  )
+`).run();
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_account ON documents(account_id, is_archived)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_parent ON documents(parent_id, sort_order)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_account_parent ON documents(account_id, parent_id, sort_order)`).run(); } catch { /* */ }
+
+// ---- Document versions table ------------------------------------------------
+
+sqlite.prepare(`
+  CREATE TABLE IF NOT EXISTS document_versions (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT,
+    createdAt TEXT NOT NULL
+  )
+`).run();
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_document_versions_doc ON document_versions(document_id, createdAt)`).run(); } catch { /* */ }
+
 // Create FTS5 virtual table for full-text search across emails.
 // content='' means we manage the index manually (external content table).
 sqlite.prepare(`

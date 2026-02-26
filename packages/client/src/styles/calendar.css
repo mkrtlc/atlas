@@ -4,3 +4,27 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+@media print {
+  /* Hide sidebar and toolbar */
+  [data-sidebar],
+  [data-calendar-toolbar] {
+    display: none !important;
+  }
+
+  /* Grid takes full width */
+  [data-calendar-grid] {
+    flex: 1 !important;
+  }
+
+  /* Clean white background, no shadows */
+  body,
+  html {
+    background: white !important;
+  }
+
+  /* Strip box shadows from all calendar elements */
+  [data-calendar-grid] * {
+    box-shadow: none !important;
+  }
+}

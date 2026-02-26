@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
-import { Copy, MapPin, Pencil, Trash2, Video, X } from 'lucide-react';
+import { Copy, Mail, MapPin, Pencil, Trash2, Users, Video, X } from 'lucide-react';
 import type { CalendarEvent } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
 
@@ -9,15 +9,28 @@ interface WeekGridProps {
   selectedCalendarIds: Set<string>;
   calendarColorMap: Map<string, string>;
   onEventClick: (event: CalendarEvent) => void;
-  onDragCreate: (start: Date, end: Date) => void;
+  onDragCreate: (start: Date, end: Date, isAllDay?: boolean) => void;
   onEventUpdate?: (eventId: string, startTime: string, endTime: string) => void;
   onQuickCreate?: (title: string, start: Date, end: Date) => void;
   onEventDelete?: (eventId: string) => void;
   onEventDuplicate?: (event: CalendarEvent) => void;
+  onRSVP?: (eventId: string, status: 'accepted' | 'declined' | 'tentative') => void;
   /** Number of days to display. Defaults to 7 (week view). Use 1 for day view. */
   dayCount?: number;
   /** Whether the week starts on Monday. Defaults to false (Sunday). */
   weekStartsOnMonday?: boolean;
+  /** Height in pixels for each hour row. Defaults to 56. */
+  hourHeight?: number;
+  /** First hour of the working day (0–23). Defaults to 9. */
+  workStartHour?: number;
+  /** Last hour of the working day (0–23). Defaults to 17. */
+  workEndHour?: number;
+  /** Optional secondary timezone identifier (e.g. "America/New_York"). */
+  secondaryTimezone?: string | null;
+  /** ISO datetime string — when set, the grid scrolls to bring this time into view. */
+  scrollToTime?: string | null;
+  /** Called when the user clicks on a day header date number. Use to switch to day view. */
+  onDayClick?: (date: Date) => void;
 }
 
 interface QuickCreateState {
@@ -33,12 +46,10 @@ interface EventPopoverState {
   topY: number;
 }
 
-const HOUR_HEIGHT = 56;
 const START_HOUR = 0;
 const END_HOUR = 24;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const SNAP_MINUTES = 15;
-const SNAP_PX = (SNAP_MINUTES / 60) * HOUR_HEIGHT;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MIN_EVENT_HEIGHT = 18;
 const RESIZE_HANDLE_HEIGHT = 6;
@@ -68,16 +79,16 @@ function toYMD(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function getEventTop(date: Date): number {
+function getEventTop(date: Date, hourH: number): number {
   const hours = date.getHours() + date.getMinutes() / 60;
-  return (hours - START_HOUR) * HOUR_HEIGHT;
+  return (hours - START_HOUR) * hourH;
 }
 
-function getEventHeight(start: Date, end: Date): number {
+function getEventHeight(start: Date, end: Date, hourH: number): number {
   const startMin = start.getHours() * 60 + start.getMinutes();
   const endMin = end.getHours() * 60 + end.getMinutes();
   const diff = Math.max(endMin - startMin, 15);
-  return (diff / 60) * HOUR_HEIGHT;
+  return (diff / 60) * hourH;
 }
 
 function formatTime(date: Date): string {
@@ -95,13 +106,13 @@ function formatTimeFromParts(hours: number, minutes: number): string {
 }
 
 /** Snap a pixel offset to the nearest 15-min interval */
-function snapY(y: number): number {
-  return Math.round(y / SNAP_PX) * SNAP_PX;
+function snapY(y: number, snapPx: number): number {
+  return Math.round(y / snapPx) * snapPx;
 }
 
 /** Convert a pixel Y offset to hours + minutes */
-function yToTime(y: number): { hours: number; minutes: number } {
-  const totalMinutes = Math.round((y / HOUR_HEIGHT) * 60);
+function yToTime(y: number, hourH: number): { hours: number; minutes: number } {
+  const totalMinutes = Math.round((y / hourH) * 60);
   const clamped = Math.max(0, Math.min(totalMinutes, 24 * 60));
   return { hours: Math.floor(clamped / 60), minutes: clamped % 60 };
 }
@@ -149,6 +160,21 @@ function layoutEvents(dayEvents: Array<{ event: CalendarEvent; start: Date; end:
   return result;
 }
 
+function getTimezoneOffsetHours(tz: string): number {
+  const now = new Date();
+  const local = new Date(now.toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
+  const remote = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+  return (remote.getTime() - local.getTime()) / (1000 * 60 * 60);
+}
+
+function getTzAbbr(tz: string): string {
+  try {
+    return new Date().toLocaleTimeString('en-US', { timeZone: tz, timeZoneName: 'short' }).split(' ').pop() || tz;
+  } catch {
+    return tz;
+  }
+}
+
 // ─── Drag types ───────────────────────────────────────────────────────
 
 type InteractionMode = 'create' | 'move' | 'resize';
@@ -192,6 +218,11 @@ interface ResizeDrag {
 
 type DragState = CreateDrag | MoveDrag | ResizeDrag;
 
+interface AllDayDragState {
+  startDayIndex: number;
+  currentDayIndex: number;
+}
+
 export function WeekGrid({
   weekStart,
   events,
@@ -203,9 +234,25 @@ export function WeekGrid({
   onQuickCreate,
   onEventDelete,
   onEventDuplicate,
+  onRSVP,
   dayCount = 7,
   weekStartsOnMonday = false,
+  hourHeight,
+  workStartHour = 9,
+  workEndHour = 17,
+  secondaryTimezone = null,
+  scrollToTime = null,
+  onDayClick,
 }: WeekGridProps) {
+  const HOUR_H = hourHeight ?? 56;
+  const SNAP_PX_VAL = (SNAP_MINUTES / 60) * HOUR_H;
+
+  // Keep latest HOUR_H / SNAP_PX_VAL in refs so callbacks never go stale
+  const hourHRef = useRef(HOUR_H);
+  const snapPxRef = useRef(SNAP_PX_VAL);
+  hourHRef.current = HOUR_H;
+  snapPxRef.current = SNAP_PX_VAL;
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const todayStr = useMemo(() => toYMD(new Date()), []);
@@ -215,6 +262,44 @@ export function WeekGrid({
   const [quickTitle, setQuickTitle] = useState('');
   const quickInputRef = useRef<HTMLInputElement>(null);
   const [eventPopover, setEventPopover] = useState<EventPopoverState | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ event: CalendarEvent; x: number; y: number } | null>(null);
+  const [allDayDrag, setAllDayDrag] = useState<AllDayDragState | null>(null);
+  const allDayDragRef = useRef<AllDayDragState | null>(null);
+
+  // Global mouseup to prevent stuck all-day drag state
+  useEffect(() => {
+    const handler = () => {
+      if (allDayDragRef.current) {
+        allDayDragRef.current = null;
+        setAllDayDrag(null);
+      }
+    };
+    window.addEventListener('mouseup', handler);
+    return () => window.removeEventListener('mouseup', handler);
+  }, []);
+
+  // Escape key to dismiss the event quick-view popover
+  useEffect(() => {
+    if (!eventPopover) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setEventPopover(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [eventPopover]);
+
+  // Close context menu on any click or Escape
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('click', close);
+    window.addEventListener('keydown', escHandler);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('keydown', escHandler);
+    };
+  }, [contextMenu]);
 
   const days = useMemo(() => {
     const result: Date[] = [];
@@ -266,7 +351,7 @@ export function WeekGrid({
 
           // Clamp start/end to this day's boundaries
           const segStart = start < dayStart ? dayStart : start;
-          const segEnd = end > dayEnd ? new Date(dayEnd.getTime() + 1) : end; // 24:00
+          const segEnd = end > dayEnd ? dayEnd : end;
           map.get(dayStr)?.push({ event: ev, start: segStart, end: segEnd });
         }
       }
@@ -285,9 +370,21 @@ export function WeekGrid({
   // Scroll to 8:30 AM on mount
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = 8.5 * HOUR_HEIGHT;
+      scrollRef.current.scrollTop = 8.5 * HOUR_H;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Scroll to a specific time when scrollToTime changes (e.g. after event creation)
+  useEffect(() => {
+    if (!scrollToTime || !scrollRef.current) return;
+    const d = new Date(scrollToTime);
+    if (isNaN(d.getTime())) return;
+    const targetY = (d.getHours() + d.getMinutes() / 60) * HOUR_H;
+    const containerH = scrollRef.current.clientHeight;
+    // Place the target time about 1/3 from the top
+    scrollRef.current.scrollTo({ top: Math.max(0, targetY - containerH / 3), behavior: 'smooth' });
+  }, [scrollToTime, HOUR_H]);
 
   // ─── Helpers ──────────────────────────────────────────────────────────
 
@@ -328,7 +425,7 @@ export function WeekGrid({
     setEventPopover(null);
 
     const colEl = e.currentTarget as HTMLElement;
-    const y = snapY(getYInGrid(e.clientY, colEl));
+    const y = snapY(getYInGrid(e.clientY, colEl), snapPxRef.current);
     const state: CreateDrag = { mode: 'create', dayIndex, startY: y, currentY: y, currentDayIndex: dayIndex };
     dragRef.current = state;
     setDrag(state);
@@ -345,7 +442,10 @@ export function WeekGrid({
     const colEl = (e.currentTarget as HTMLElement).closest('[data-day-col]') as HTMLElement;
     if (!colEl) return;
 
-    const eventTopPx = getEventTop(pe.start);
+    // Read the event element's actual rendered top from the DOM to avoid
+    // any mismatch between rendered position and calculated position
+    const eventEl = e.currentTarget as HTMLElement;
+    const eventTopPx = eventEl.offsetTop;
     const clickY = getYInGrid(e.clientY, colEl);
     const offsetY = clickY - eventTopPx;
 
@@ -356,7 +456,7 @@ export function WeekGrid({
       eventEnd: pe.end,
       dayIndex,
       offsetY,
-      currentTopY: snapY(eventTopPx),
+      currentTopY: snapY(eventTopPx, snapPxRef.current),
       currentDayIndex: dayIndex,
       hasMoved: false,
     };
@@ -371,8 +471,10 @@ export function WeekGrid({
   const handleResizeMouseDown = useCallback((e: React.MouseEvent, pe: PositionedEvent, dayIndex: number) => {
     if (e.button !== 0) return;
 
-    const topY = getEventTop(pe.start);
-    const bottomY = topY + getEventHeight(pe.start, pe.end);
+    // Read from DOM to stay in sync with rendered position
+    const eventEl = (e.target as HTMLElement).closest('[data-event]') as HTMLElement;
+    const topY = eventEl ? eventEl.offsetTop : getEventTop(pe.start, hourHRef.current);
+    const bottomY = topY + (eventEl ? eventEl.offsetHeight : getEventHeight(pe.start, pe.end, hourHRef.current));
 
     const state: ResizeDrag = {
       mode: 'resize',
@@ -380,7 +482,7 @@ export function WeekGrid({
       eventStart: pe.start,
       dayIndex,
       topY,
-      currentBottomY: snapY(bottomY),
+      currentBottomY: snapY(bottomY, snapPxRef.current),
     };
     dragRef.current = state;
     setDrag(state);
@@ -396,6 +498,8 @@ export function WeekGrid({
     const handleMouseMove = (e: MouseEvent) => {
       const d = dragRef.current;
       if (!d) return;
+      const hh = hourHRef.current;
+      const sp = snapPxRef.current;
 
       // Auto-scroll when near edges
       if (scrollRef.current) {
@@ -419,7 +523,7 @@ export function WeekGrid({
 
         const col = cols[targetDayIndex] || cols[d.dayIndex];
         if (!col) return;
-        const y = snapY(getYInGrid(e.clientY, col));
+        const y = snapY(getYInGrid(e.clientY, col), sp);
         const newState: CreateDrag = { ...d, currentY: y, currentDayIndex: targetDayIndex };
         dragRef.current = newState;
         setDrag(newState);
@@ -433,9 +537,9 @@ export function WeekGrid({
         if (!col) return;
 
         const rawY = getYInGrid(e.clientY, col) - d.offsetY;
-        const newTopY = snapY(rawY);
+        const newTopY = snapY(rawY, sp);
 
-        const moved = Math.abs(newTopY - snapY(getEventTop(d.eventStart))) > 2 || targetDayIndex !== d.dayIndex;
+        const moved = Math.abs(newTopY - snapY(getEventTop(d.eventStart, hh), sp)) > 2 || targetDayIndex !== d.dayIndex;
 
         const newState: MoveDrag = {
           ...d,
@@ -449,7 +553,7 @@ export function WeekGrid({
         const col = cols[d.dayIndex];
         if (!col) return;
         const rawY = getYInGrid(e.clientY, col);
-        const newBottomY = Math.max(snapY(rawY), d.topY + SNAP_PX);
+        const newBottomY = Math.max(snapY(rawY, sp), d.topY + sp);
 
         const newState: ResizeDrag = { ...d, currentBottomY: newBottomY };
         dragRef.current = newState;
@@ -460,19 +564,21 @@ export function WeekGrid({
     const handleMouseUp = () => {
       const d = dragRef.current;
       if (!d) return;
+      const hh = hourHRef.current;
+      const sp = snapPxRef.current;
 
       dragRef.current = null;
       setDrag(null);
 
       if (d.mode === 'create') {
         const crossDay = d.currentDayIndex !== d.dayIndex;
-        const wasClick = !crossDay && Math.abs(d.currentY - d.startY) < SNAP_PX;
+        const wasClick = !crossDay && Math.abs(d.currentY - d.startY) < sp;
 
         if (wasClick) {
           // Single click → show quick-create popover
           const topY = Math.min(d.startY, d.currentY);
-          const startTime = yToTime(topY);
-          const endTimeParts = yToTime(topY + 2 * SNAP_PX); // 30 min default
+          const startTime = yToTime(topY, hh);
+          const endTimeParts = yToTime(topY + 2 * sp, hh); // 30 min default
           const day = days[d.dayIndex];
           const startDate = timeToDate(day, startTime);
           const endDate = timeToDate(day, endTimeParts);
@@ -491,8 +597,8 @@ export function WeekGrid({
           const startY = isForward ? d.startY : d.currentY;
           const endY = isForward ? d.currentY : d.startY;
 
-          const startTime = yToTime(startY);
-          const endTime = yToTime(Math.max(endY, startY + SNAP_PX));
+          const startTime = yToTime(startY, hh);
+          const endTime = yToTime(Math.max(endY, startY + sp), hh);
 
           const startDate = timeToDate(days[startDayIdx], startTime);
           const endDate = timeToDate(days[endDayIdx], endTime);
@@ -502,8 +608,8 @@ export function WeekGrid({
           // Same day drag → open full modal
           const topY = Math.min(d.startY, d.currentY);
           const bottomY = Math.max(d.startY, d.currentY);
-          const startTime = yToTime(topY);
-          const endTime = yToTime(bottomY);
+          const startTime = yToTime(topY, hh);
+          const endTime = yToTime(bottomY, hh);
 
           const day = days[d.dayIndex];
           const startDate = timeToDate(day, startTime);
@@ -514,7 +620,7 @@ export function WeekGrid({
       } else if (d.mode === 'move') {
         if (!d.hasMoved) {
           // It was just a click, not a drag — show event popover
-          const eventTopPx = getEventTop(d.eventStart);
+          const eventTopPx = getEventTop(d.eventStart, hourHRef.current);
           setEventPopover({ event: d.event, dayIndex: d.dayIndex, topY: eventTopPx });
           setQuickCreate(null);
           return;
@@ -522,7 +628,7 @@ export function WeekGrid({
         if (!onEventUpdate) return;
 
         const durationMs = d.eventEnd.getTime() - d.eventStart.getTime();
-        const newStartTime = yToTime(d.currentTopY);
+        const newStartTime = yToTime(d.currentTopY, hourHRef.current);
         const newDay = days[d.currentDayIndex];
         const newStart = timeToDate(newDay, newStartTime);
         const newEnd = new Date(newStart.getTime() + durationMs);
@@ -531,7 +637,7 @@ export function WeekGrid({
       } else if (d.mode === 'resize') {
         if (!onEventUpdate) return;
 
-        const newEndTime = yToTime(d.currentBottomY);
+        const newEndTime = yToTime(d.currentBottomY, hourHRef.current);
         const newDay = days[d.dayIndex];
         const newEnd = timeToDate(newDay, newEndTime);
 
@@ -563,9 +669,9 @@ export function WeekGrid({
       // Same-day preview
       const topY = Math.min(drag.startY, drag.currentY);
       const bottomY = Math.max(drag.startY, drag.currentY);
-      const height = Math.max(bottomY - topY, SNAP_PX);
-      const startTime = yToTime(topY);
-      const endTime = yToTime(topY + height);
+      const height = Math.max(bottomY - topY, SNAP_PX_VAL);
+      const startTime = yToTime(topY, HOUR_H);
+      const endTime = yToTime(topY + height, HOUR_H);
       return [{
         dayIndex: drag.dayIndex,
         top: topY,
@@ -580,15 +686,15 @@ export function WeekGrid({
     const endDayIdx = Math.max(drag.dayIndex, drag.currentDayIndex);
     const startY = isForward ? drag.startY : drag.currentY;
     const endY = isForward ? drag.currentY : drag.startY;
-    const maxY = TOTAL_HOURS * HOUR_HEIGHT;
+    const maxY = TOTAL_HOURS * HOUR_H;
 
     const previews: Array<{ dayIndex: number; top: number; height: number; label: string }> = [];
     for (let di = startDayIdx; di <= endDayIdx; di++) {
       const top = di === startDayIdx ? startY : 0;
-      const bottom = di === endDayIdx ? Math.max(endY, startY + SNAP_PX) : maxY;
-      const height = Math.max(bottom - top, SNAP_PX);
-      const st = yToTime(top);
-      const et = yToTime(top + height);
+      const bottom = di === endDayIdx ? Math.max(endY, startY + SNAP_PX_VAL) : maxY;
+      const height = Math.max(bottom - top, SNAP_PX_VAL);
+      const st = yToTime(top, HOUR_H);
+      const et = yToTime(top + height, HOUR_H);
       previews.push({
         dayIndex: di,
         top,
@@ -602,9 +708,9 @@ export function WeekGrid({
   const movePreview = useMemo(() => {
     if (!drag || drag.mode !== 'move' || !drag.hasMoved) return null;
     const durationMs = drag.eventEnd.getTime() - drag.eventStart.getTime();
-    const durationPx = (durationMs / (60 * 60 * 1000)) * HOUR_HEIGHT;
-    const startTime = yToTime(drag.currentTopY);
-    const endTime = yToTime(drag.currentTopY + durationPx);
+    const durationPx = (durationMs / (60 * 60 * 1000)) * HOUR_H;
+    const startTime = yToTime(drag.currentTopY, HOUR_H);
+    const endTime = yToTime(drag.currentTopY + durationPx, HOUR_H);
     return {
       dayIndex: drag.currentDayIndex,
       top: drag.currentTopY,
@@ -617,9 +723,9 @@ export function WeekGrid({
 
   const resizePreview = useMemo(() => {
     if (!drag || drag.mode !== 'resize') return null;
-    const height = Math.max(drag.currentBottomY - drag.topY, SNAP_PX);
-    const startTime = yToTime(drag.topY);
-    const endTime = yToTime(drag.topY + height);
+    const height = Math.max(drag.currentBottomY - drag.topY, SNAP_PX_VAL);
+    const startTime = yToTime(drag.topY, HOUR_H);
+    const endTime = yToTime(drag.topY + height, HOUR_H);
     return {
       dayIndex: drag.dayIndex,
       top: drag.topY,
@@ -634,7 +740,7 @@ export function WeekGrid({
   const movingEventId = drag?.mode === 'move' && drag.hasMoved ? drag.event.id : null;
   const resizingEventId = drag?.mode === 'resize' ? drag.event.id : null;
 
-  const timeAxisWidth = 56;
+  const timeAxisWidth = secondaryTimezone ? 108 : 56;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', userSelect: isAnyDrag ? 'none' : 'auto' }}>
@@ -672,6 +778,7 @@ export function WeekGrid({
                 {DAY_NAMES[day.getDay()]}
               </div>
               <div
+                onClick={() => onDayClick?.(day)}
                 style={{
                   fontSize: 'var(--font-size-xl)',
                   fontWeight: isToday
@@ -686,6 +793,7 @@ export function WeekGrid({
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginTop: 2,
+                  cursor: onDayClick ? 'pointer' : 'default',
                 }}
               >
                 {day.getDate()}
@@ -695,117 +803,294 @@ export function WeekGrid({
         })}
       </div>
 
-      {/* All-day event row */}
-      {hasAllDay && (
+      {/* All-day event row — always rendered so drag-to-create is available */}
+      <div
+        style={{
+          display: 'flex',
+          borderBottom: '1px solid var(--color-border-primary)',
+          flexShrink: 0,
+          minHeight: hasAllDay ? 28 : 20,
+        }}
+      >
         <div
           style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--color-border-primary)',
+            width: timeAxisWidth,
             flexShrink: 0,
-            minHeight: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            paddingRight: 8,
+            fontSize: 10,
+            color: 'var(--color-text-tertiary)',
           }}
         >
+          {hasAllDay ? 'all-day' : ''}
+        </div>
+        {days.map((day, dayIndex) => {
+          const dayStr = toYMD(day);
+          const allDayEvs = eventsByDay.allDay.get(dayStr) || [];
+
+          // All-day drag highlight
+          const isDragHighlighted = allDayDrag !== null && (() => {
+            const lo = Math.min(allDayDrag.startDayIndex, allDayDrag.currentDayIndex);
+            const hi = Math.max(allDayDrag.startDayIndex, allDayDrag.currentDayIndex);
+            return dayIndex >= lo && dayIndex <= hi;
+          })();
+
+          return (
+            <div
+              key={dayStr}
+              data-allday-col
+              style={{
+                flex: 1,
+                borderLeft: '1px solid var(--color-border-secondary)',
+                padding: '2px 2px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                position: 'relative',
+                background: isDragHighlighted
+                  ? 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)'
+                  : 'transparent',
+                cursor: 'crosshair',
+                userSelect: 'none',
+              }}
+              onMouseDown={(e) => {
+                if ((e.target as HTMLElement).closest('[data-event]')) return;
+                e.preventDefault();
+                const state: AllDayDragState = { startDayIndex: dayIndex, currentDayIndex: dayIndex };
+                allDayDragRef.current = state;
+                setAllDayDrag(state);
+              }}
+              onMouseEnter={() => {
+                if (!allDayDragRef.current) return;
+                const next = { ...allDayDragRef.current, currentDayIndex: dayIndex };
+                allDayDragRef.current = next;
+                setAllDayDrag(next);
+              }}
+              onMouseUp={() => {
+                const d = allDayDragRef.current;
+                if (!d) return;
+                allDayDragRef.current = null;
+                setAllDayDrag(null);
+                const lo = Math.min(d.startDayIndex, d.currentDayIndex);
+                const hi = Math.max(d.startDayIndex, d.currentDayIndex);
+                const startDay = new Date(days[lo]);
+                startDay.setHours(0, 0, 0, 0);
+                const endDay = new Date(days[hi]);
+                endDay.setHours(23, 59, 59, 999);
+                onDragCreate(startDay, endDay, true);
+              }}
+            >
+              {allDayEvs.map((ev) => {
+                const pillBg = (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
+                  || calendarColorMap.get(ev.calendarId)
+                  || 'var(--color-accent-primary)';
+                const pillText = isLightColor(pillBg) ? '#1a1a1a' : '#fff';
+                return (
+                  <button
+                    key={ev.id}
+                    data-event
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEventClick(ev);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      width: '100%',
+                      padding: '2px 6px',
+                      background: pillBg,
+                      color: pillText,
+                      border: 'none',
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-family)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      lineHeight: '16px',
+                      transition: 'box-shadow var(--transition-fast)',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    {ev.hangoutLink && <Video size={9} style={{ flexShrink: 0, opacity: 0.8 }} />}
+                    {ev.summary || '(No title)'}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Right-click context menu */}
+      {contextMenu && (() => {
+        const MENU_W = 160;
+        const MENU_H = (1 + (onEventDuplicate ? 1 : 0) + (onEventDelete ? 1 : 0)) * 32 + 8;
+        const x = contextMenu.x + MENU_W > window.innerWidth ? contextMenu.x - MENU_W : contextMenu.x;
+        const y = contextMenu.y + MENU_H > window.innerHeight ? contextMenu.y - MENU_H : contextMenu.y;
+        const menuItemBase: React.CSSProperties = {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          height: 32,
+          padding: '0 12px',
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 4,
+          fontSize: 13,
+          fontFamily: 'var(--font-family)',
+          cursor: 'pointer',
+          textAlign: 'left',
+          boxSizing: 'border-box',
+          color: 'var(--color-text-primary)',
+        };
+        return (
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
-              width: timeAxisWidth,
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              paddingRight: 8,
-              fontSize: 10,
-              color: 'var(--color-text-tertiary)',
+              position: 'fixed',
+              top: y,
+              left: x,
+              zIndex: 9999,
+              width: MENU_W,
+              background: 'var(--color-bg-elevated)',
+              border: '1px solid #d0d5dd',
+              borderRadius: 4,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              padding: '4px 0',
+              fontFamily: 'var(--font-family)',
             }}
           >
-            all-day
-          </div>
-          {days.map((day) => {
-            const dayStr = toYMD(day);
-            const allDayEvs = eventsByDay.allDay.get(dayStr) || [];
-            return (
-              <div
-                key={dayStr}
-                style={{
-                  flex: 1,
-                  borderLeft: '1px solid var(--color-border-secondary)',
-                  padding: '2px 2px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1,
+            <button
+              style={menuItemBase}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-secondary)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              onClick={() => {
+                const ev = contextMenu.event;
+                setContextMenu(null);
+                onEventClick(ev);
+              }}
+            >
+              <Pencil size={13} style={{ flexShrink: 0, color: 'var(--color-text-secondary)' }} />
+              Edit
+            </button>
+            {onEventDuplicate && (
+              <button
+                style={menuItemBase}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-secondary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                onClick={() => {
+                  const ev = contextMenu.event;
+                  setContextMenu(null);
+                  onEventDuplicate(ev);
                 }}
               >
-                {allDayEvs.map((ev) => {
-                  const pillBg = (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
-                    || calendarColorMap.get(ev.calendarId)
-                    || 'var(--color-accent-primary)';
-                  const pillText = isLightColor(pillBg) ? '#1a1a1a' : '#fff';
-                  return (
-                    <button
-                      key={ev.id}
-                      data-event
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEventClick(ev);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        width: '100%',
-                        padding: '2px 6px',
-                        background: pillBg,
-                        color: pillText,
-                        border: 'none',
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        fontFamily: 'var(--font-family)',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        lineHeight: '16px',
-                        transition: 'box-shadow var(--transition-fast)',
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
-                    >
-                      {ev.hangoutLink && <Video size={9} style={{ flexShrink: 0, opacity: 0.8 }} />}
-                      {ev.summary || '(No title)'}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                <Copy size={13} style={{ flexShrink: 0, color: 'var(--color-text-secondary)' }} />
+                Duplicate
+              </button>
+            )}
+            {onEventDelete && (
+              <button
+                style={{ ...menuItemBase, color: 'var(--color-error)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-secondary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                onClick={() => {
+                  const ev = contextMenu.event;
+                  setContextMenu(null);
+                  onEventDelete(ev.id);
+                }}
+              >
+                <Trash2 size={13} style={{ flexShrink: 0 }} />
+                Delete
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Scrollable time grid */}
       <div ref={scrollRef} style={{ flex: 1, overflow: 'auto' }}>
-        <div ref={gridRef} style={{ display: 'flex', position: 'relative', minHeight: TOTAL_HOURS * HOUR_HEIGHT }}>
+        <div ref={gridRef} style={{ display: 'flex', position: 'relative', minHeight: TOTAL_HOURS * HOUR_H }}>
           {/* Time axis */}
           <div style={{ width: timeAxisWidth, flexShrink: 0, position: 'relative' }}>
+            {/* Secondary timezone abbreviation header */}
+            {secondaryTimezone && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  left: 4,
+                  fontSize: 9,
+                  color: 'var(--color-text-tertiary)',
+                  lineHeight: 1,
+                  fontFamily: 'var(--font-family)',
+                  opacity: 0.7,
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {getTzAbbr(secondaryTimezone)}
+              </div>
+            )}
             {Array.from({ length: TOTAL_HOURS }, (_, i) => {
               const hour = START_HOUR + i;
               if (hour === 0) return null;
               const h12 = hour % 12 || 12;
               const ampm = hour >= 12 ? 'PM' : 'AM';
+
+              const secondaryOffsetHours = secondaryTimezone ? getTimezoneOffsetHours(secondaryTimezone) : 0;
+              const secondaryTotalMinutes = (hour * 60 + Math.round(secondaryOffsetHours * 60) % 1440 + 1440) % 1440;
+              const secondaryHour = Math.floor(secondaryTotalMinutes / 60);
+              const secondaryMin = secondaryTotalMinutes % 60;
+              const sh12 = secondaryHour % 12 || 12;
+              const sampm = secondaryHour >= 12 ? 'PM' : 'AM';
+
               return (
                 <div
                   key={hour}
                   style={{
                     position: 'absolute',
-                    top: i * HOUR_HEIGHT - 7,
-                    right: 8,
-                    fontSize: 10,
-                    color: 'var(--color-text-tertiary)',
-                    lineHeight: 1,
-                    fontFamily: 'var(--font-family)',
+                    top: i * HOUR_H - 7,
+                    left: 0,
+                    right: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingRight: 8,
+                    paddingLeft: secondaryTimezone ? 4 : 0,
                   }}
                 >
-                  {h12} {ampm}
+                  {secondaryTimezone && (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: 'var(--color-text-tertiary)',
+                        lineHeight: 1,
+                        fontFamily: 'var(--font-family)',
+                        opacity: 0.65,
+                      }}
+                    >
+                      {secondaryMin ? `${sh12}:${String(secondaryMin).padStart(2, '0')}` : sh12} {sampm}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--color-text-tertiary)',
+                      lineHeight: 1,
+                      fontFamily: 'var(--font-family)',
+                      marginLeft: secondaryTimezone ? 0 : 'auto',
+                    }}
+                  >
+                    {h12} {ampm}
+                  </span>
                 </div>
               );
             })}
@@ -829,24 +1114,24 @@ export function WeekGrid({
                 }}
                 onMouseDown={(e) => handleGridMouseDown(e, dayIndex)}
               >
-                {/* Non-working hours shade (before 9am) */}
+                {/* Non-working hours shade (before work start) */}
                 <div
                   style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: 9 * HOUR_HEIGHT,
+                    height: workStartHour * HOUR_H,
                     background: 'var(--color-bg-secondary)',
                     opacity: 0.4,
                     pointerEvents: 'none',
                   }}
                 />
-                {/* Non-working hours shade (after 5pm) */}
+                {/* Non-working hours shade (after work end) */}
                 <div
                   style={{
                     position: 'absolute',
-                    top: 17 * HOUR_HEIGHT,
+                    top: workEndHour * HOUR_H,
                     left: 0,
                     right: 0,
                     bottom: 0,
@@ -862,7 +1147,7 @@ export function WeekGrid({
                     key={i}
                     style={{
                       position: 'absolute',
-                      top: i * HOUR_HEIGHT,
+                      top: i * HOUR_H,
                       left: 0,
                       right: 0,
                       height: 1,
@@ -878,7 +1163,7 @@ export function WeekGrid({
                     key={`half-${i}`}
                     style={{
                       position: 'absolute',
-                      top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2,
+                      top: i * HOUR_H + HOUR_H / 2,
                       left: 0,
                       right: 0,
                       height: 1,
@@ -890,7 +1175,7 @@ export function WeekGrid({
                 ))}
 
                 {/* Current time indicator */}
-                {dayStr === todayStr && <NowLine />}
+                {dayStr === todayStr && <NowLine hourH={HOUR_H} />}
 
                 {/* Create drag preview */}
                 {createPreviews?.filter((p) => p.dayIndex === dayIndex).map((p, idx) => (
@@ -949,10 +1234,12 @@ export function WeekGrid({
                 {positioned.map((pe) => {
                   const isMoving = pe.event.id === movingEventId;
                   const isResizing = pe.event.id === resizingEventId;
+                  const isFree = pe.event.transparency === 'transparent';
+                  const isDeclined = pe.event.selfResponseStatus === 'declined';
 
                   // During resize, use the preview height
-                  const eventTop = getEventTop(pe.start);
-                  let eventHeight = getEventHeight(pe.start, pe.end);
+                  const eventTop = getEventTop(pe.start, HOUR_H);
+                  let eventHeight = getEventHeight(pe.start, pe.end, HOUR_H);
                   if (isResizing && resizePreview) {
                     eventHeight = resizePreview.height;
                   }
@@ -969,14 +1256,21 @@ export function WeekGrid({
                       key={pe.event.id}
                       data-event
                       onMouseDown={(e) => handleEventMouseDown(e, pe, dayIndex)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setContextMenu({ event: pe.event, x: e.clientX, y: e.clientY });
+                        setEventPopover(null);
+                        setQuickCreate(null);
+                      }}
                       style={{
                         position: 'absolute',
                         top: eventTop,
                         left: `calc(${left}% + 2px)`,
                         width: `calc(${colWidth}% - 4px)`,
                         height: Math.max(eventHeight, MIN_EVENT_HEIGHT),
-                        background: `color-mix(in srgb, ${bgColor} 18%, var(--color-bg-primary))`,
-                        borderLeft: `3px solid ${bgColor}`,
+                        background: `color-mix(in srgb, ${bgColor} ${isFree ? '10' : '18'}%, var(--color-bg-primary))`,
+                        borderLeft: `3px ${isFree || isDeclined ? 'dashed' : 'solid'} ${bgColor}`,
                         borderRadius: 'var(--radius-sm)',
                         padding: '2px 4px',
                         overflow: 'hidden',
@@ -986,9 +1280,9 @@ export function WeekGrid({
                         zIndex: isMoving || isResizing ? 5 : 1,
                         transition: isMoving || isResizing ? 'none' : 'box-shadow var(--transition-fast)',
                         boxSizing: 'border-box',
-                        opacity: isMoving ? 0.4 : 1,
+                        opacity: isMoving ? 0.4 : isDeclined ? 0.45 : isFree ? 0.75 : 1,
                         border: 'none',
-                        borderLeftStyle: 'solid',
+                        borderLeftStyle: isFree || isDeclined ? 'dashed' : 'solid',
                         borderLeftWidth: 3,
                         borderLeftColor: bgColor,
                       }}
@@ -1014,7 +1308,9 @@ export function WeekGrid({
                         }}
                       >
                         {pe.event.hangoutLink && <Video size={10} style={{ flexShrink: 0, opacity: 0.7 }} />}
-                        {pe.event.summary || '(No title)'}
+                        <span style={isDeclined ? { textDecoration: 'line-through' } : undefined}>
+                          {pe.event.summary || '(No title)'}
+                        </span>
                         {pe.event.selfResponseStatus && pe.event.selfResponseStatus !== 'accepted' && (
                           <span
                             title={pe.event.selfResponseStatus}
@@ -1098,7 +1394,7 @@ export function WeekGrid({
                     {/* 30-min slot indicator */}
                     <div
                       style={{
-                        height: 2 * SNAP_PX,
+                        height: 2 * SNAP_PX_VAL,
                         background: 'color-mix(in srgb, var(--color-accent-primary) 20%, transparent)',
                         borderLeft: '3px solid var(--color-accent-primary)',
                         borderRadius: 'var(--radius-sm)',
@@ -1299,19 +1595,34 @@ export function WeekGrid({
                         </div>
                       )}
 
-                      {/* Meet link */}
+                      {/* Feature 5: Prominent join meeting button */}
                       {eventPopover.event.hangoutLink && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--font-size-sm)', marginBottom: 6 }}>
-                          <Video size={12} style={{ flexShrink: 0, color: 'var(--color-accent-primary)' }} />
-                          <a
-                            href={eventPopover.event.hangoutLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: 'var(--color-accent-primary)', textDecoration: 'none' }}
-                          >
-                            Join meeting
-                          </a>
-                        </div>
+                        <a
+                          href={eventPopover.event.hangoutLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            width: '100%',
+                            height: 32,
+                            background: '#1a73e8',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            color: '#fff',
+                            fontSize: 'var(--font-size-sm)',
+                            fontFamily: 'var(--font-family)',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            marginBottom: 8,
+                            boxSizing: 'border-box',
+                          }}
+                        >
+                          <Video size={14} />
+                          Join meeting
+                        </a>
                       )}
 
                       {/* Description preview */}
@@ -1332,8 +1643,105 @@ export function WeekGrid({
                         </div>
                       )}
 
+                      {/* Attendee response summary */}
+                      {eventPopover.event.attendees && eventPopover.event.attendees.length > 0 && (() => {
+                        const attendees = eventPopover.event.attendees!;
+                        const counts = { accepted: 0, tentative: 0, declined: 0, pending: 0 };
+                        for (const a of attendees) {
+                          const s = (a as any).responseStatus as string | undefined;
+                          if (s === 'accepted') counts.accepted++;
+                          else if (s === 'tentative') counts.tentative++;
+                          else if (s === 'declined') counts.declined++;
+                          else counts.pending++;
+                        }
+                        const summaryParts: string[] = [];
+                        if (counts.accepted > 0) summaryParts.push(`${counts.accepted} attending`);
+                        if (counts.tentative > 0) summaryParts.push(`${counts.tentative} maybe`);
+                        if (counts.declined > 0) summaryParts.push(`${counts.declined} declined`);
+                        if (counts.pending > 0) summaryParts.push(`${counts.pending} pending`);
+                        const shown = attendees.slice(0, 5);
+                        const overflow = attendees.length - shown.length;
+                        const dotColor = (s?: string) => {
+                          if (s === 'accepted') return '#22c55e';
+                          if (s === 'tentative') return '#f0ad4e';
+                          if (s === 'declined') return '#ef4444';
+                          return 'var(--color-border-primary)';
+                        };
+                        return (
+                          <div style={{ marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                              <Users size={11} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
+                              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+                                {summaryParts.join(', ')}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                              {shown.map((a: any, i: number) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <div style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    background: dotColor(a.responseStatus),
+                                    flexShrink: 0,
+                                  }} />
+                                  <span style={{
+                                    fontSize: 'var(--font-size-xs)',
+                                    color: 'var(--color-text-tertiary)',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    {a.displayName || a.email}
+                                  </span>
+                                </div>
+                              ))}
+                              {overflow > 0 && (
+                                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', paddingLeft: 12 }}>
+                                  +{overflow} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* RSVP buttons in popover */}
+                      {eventPopover.event.selfResponseStatus && onRSVP && (
+                        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                          {(['accepted', 'tentative', 'declined'] as const).map((status) => {
+                            const isCurrent = eventPopover.event.selfResponseStatus === status;
+                            return (
+                              <button
+                                key={status}
+                                onClick={() => {
+                                  onRSVP(eventPopover.event.id, status);
+                                  setEventPopover(null);
+                                }}
+                                style={{
+                                  flex: 1,
+                                  height: 26,
+                                  border: isCurrent ? 'none' : '1px solid var(--color-border-primary)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  background: isCurrent
+                                    ? status === 'accepted' ? '#22c55e' : status === 'tentative' ? '#f0ad4e' : '#ef4444'
+                                    : 'transparent',
+                                  color: isCurrent ? '#fff' : 'var(--color-text-secondary)',
+                                  fontSize: 10,
+                                  fontFamily: 'var(--font-family)',
+                                  fontWeight: 500,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {status === 'accepted' ? 'Accept' : status === 'tentative' ? 'Maybe' : 'Decline'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Actions */}
-                      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
                         <button
                           onClick={() => {
                             const ev = eventPopover.event;
@@ -1408,6 +1816,36 @@ export function WeekGrid({
                             Delete
                           </button>
                         )}
+                        {eventPopover.event.attendees && eventPopover.event.attendees.length > 0 && (
+                          <button
+                            onClick={() => {
+                              const emails = eventPopover.event.attendees!
+                                .map((a: any) => a.email)
+                                .filter(Boolean)
+                                .join(',');
+                              const subject = encodeURIComponent(eventPopover.event.summary || '');
+                              window.open(`mailto:${emails}?subject=${subject}`, '_self');
+                              setEventPopover(null);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              height: 28,
+                              padding: '0 10px',
+                              background: 'transparent',
+                              border: '1px solid var(--color-border-primary)',
+                              borderRadius: 'var(--radius-sm)',
+                              color: 'var(--color-text-secondary)',
+                              fontSize: 'var(--font-size-xs)',
+                              fontFamily: 'var(--font-family)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Mail size={11} />
+                            Email
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1421,14 +1859,14 @@ export function WeekGrid({
   );
 }
 
-function NowLine() {
-  const [top, setTop] = useState(getEventTop(new Date()));
+function NowLine({ hourH }: { hourH: number }) {
+  const [top, setTop] = useState(getEventTop(new Date(), hourH));
 
   useEffect(() => {
-    const update = () => setTop(getEventTop(new Date()));
+    const update = () => setTop(getEventTop(new Date(), hourH));
     const id = setInterval(update, 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [hourH]);
 
   return (
     <div

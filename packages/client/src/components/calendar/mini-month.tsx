@@ -6,8 +6,17 @@ interface MiniMonthProps {
   selectedDate: string; // YYYY-MM-DD
   onSelectDate: (date: string) => void;
   weekStartsOnMonday?: boolean;
+  showWeekNumbers?: boolean;
   /** Set of YYYY-MM-DD strings for days that have events (shows a dot indicator) */
   eventDays?: Set<string>;
+}
+
+function getISOWeekNumber(date: Date): number {
+  const t = new Date(date);
+  t.setHours(0, 0, 0, 0);
+  t.setDate(t.getDate() + 3 - (t.getDay() + 6) % 7);
+  const w1 = new Date(t.getFullYear(), 0, 4);
+  return 1 + Math.round((t.getTime() - w1.getTime()) / 86400000 / 7);
 }
 
 function toYMD(date: Date): string {
@@ -20,7 +29,7 @@ function toYMD(date: Date): string {
 const DAY_NAMES_SUN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const DAY_NAMES_MON = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
-export function MiniMonth({ selectedDate, onSelectDate, weekStartsOnMonday = false, eventDays }: MiniMonthProps) {
+export function MiniMonth({ selectedDate, onSelectDate, weekStartsOnMonday = false, showWeekNumbers = false, eventDays }: MiniMonthProps) {
   const selectedDateObj = new Date(selectedDate + 'T12:00:00');
   const [viewYear, setViewYear] = useState(selectedDateObj.getFullYear());
   const [viewMonth, setViewMonth] = useState(selectedDateObj.getMonth());
@@ -108,7 +117,28 @@ export function MiniMonth({ selectedDate, onSelectDate, weekStartsOnMonday = fal
       </div>
 
       {/* Day name headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(7, ${cellSize}px)`, justifyContent: 'center' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: showWeekNumbers ? `24px repeat(7, ${cellSize}px)` : `repeat(7, ${cellSize}px)`,
+          justifyContent: 'center',
+        }}
+      >
+        {showWeekNumbers && (
+          <div
+            style={{
+              height: cellSize,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 10,
+              color: 'var(--color-text-tertiary)',
+              fontWeight: 500,
+            }}
+          >
+            Wk
+          </div>
+        )}
         {dayNames.map((d) => (
           <div
             key={d}
@@ -129,7 +159,30 @@ export function MiniMonth({ selectedDate, onSelectDate, weekStartsOnMonday = fal
 
       {/* Date grid */}
       {weeks.map((week, wi) => (
-        <div key={wi} style={{ display: 'grid', gridTemplateColumns: `repeat(7, ${cellSize}px)`, justifyContent: 'center' }}>
+        <div
+          key={wi}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: showWeekNumbers ? `24px repeat(7, ${cellSize}px)` : `repeat(7, ${cellSize}px)`,
+            justifyContent: 'center',
+          }}
+        >
+          {showWeekNumbers && (
+            <div
+              style={{
+                height: cellSize,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 10,
+                color: 'var(--color-text-tertiary)',
+                fontWeight: 400,
+                userSelect: 'none',
+              }}
+            >
+              {getISOWeekNumber(week[0])}
+            </div>
+          )}
           {week.map((day) => {
             const dateStr = toYMD(day);
             const isCurrentMonth = day.getMonth() === viewMonth;

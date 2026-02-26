@@ -55,7 +55,63 @@ export function useCreateCalendarEvent() {
       const { data } = await api.post('/calendar/events', input);
       return data.data as CalendarEvent;
     },
-    onSuccess: () => {
+    onMutate: async (input) => {
+      // Cancel ongoing fetches so they don't overwrite the optimistic entry
+      await queryClient.cancelQueries({ queryKey: queryKeys.calendar.all });
+
+      // Snapshot all event caches for rollback
+      const previousQueries = queryClient.getQueriesData<CalendarEvent[]>({
+        queryKey: ['calendar', 'events'],
+      });
+
+      // Build a temporary event from the input data
+      const now = new Date().toISOString();
+      const tempEvent: CalendarEvent = {
+        id: `temp-${Date.now()}`,
+        accountId: '',
+        calendarId: input.calendarId,
+        googleEventId: '',
+        summary: input.summary,
+        description: input.description ?? null,
+        location: input.location ?? null,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        isAllDay: input.isAllDay ?? false,
+        status: 'confirmed',
+        selfResponseStatus: 'accepted',
+        htmlLink: null,
+        hangoutLink: null,
+        organizer: null,
+        attendees: input.attendees ?? null,
+        recurrence: input.recurrence ?? null,
+        recurringEventId: null,
+        transparency: input.transparency ?? null,
+        colorId: input.colorId ?? null,
+        reminders: input.reminders ?? null,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      // Optimistically insert into all event caches that cover this event's time range
+      queryClient.setQueriesData<CalendarEvent[]>(
+        { queryKey: ['calendar', 'events'] },
+        (old) => {
+          if (!old) return old;
+          return [...old, tempEvent];
+        },
+      );
+
+      return { previousQueries };
+    },
+    onError: (_err, _vars, context) => {
+      // Roll back to the previous state on failure
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
     },
   });
@@ -94,6 +150,7 @@ export function useUpdateCalendarEvent() {
                   ...(input.location !== undefined && { location: input.location }),
                   ...(input.isAllDay !== undefined && { isAllDay: input.isAllDay }),
                   ...(input.colorId !== undefined && { colorId: input.colorId }),
+                  ...(input.calendarId !== undefined && { calendarId: input.calendarId }),
                 }
               : ev,
           );
@@ -160,6 +217,30 @@ export function useDeleteCalendarEvent() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
     },
+  });
+}
+
+export function useFreeBusy(emails: string[], timeMin: string, timeMax: string) {
+  return useQuery({
+    queryKey: queryKeys.calendar.freeBusy(emails.join(','), timeMin, timeMax),
+    queryFn: async () => {
+      const { data } = await api.post('/calendar/freebusy', { emails, timeMin, timeMax });
+      return data.data as Record<string, Array<{ start: string; end: string }>>;
+    },
+    enabled: emails.length > 0 && !!timeMin && !!timeMax,
+    staleTime: 2 * 60_000,
+  });
+}
+
+export function useSearchCalendarEvents(query: string) {
+  return useQuery({
+    queryKey: queryKeys.calendar.search(query),
+    queryFn: async () => {
+      const { data } = await api.get('/calendar/events/search', { params: { q: query } });
+      return data.data as CalendarEvent[];
+    },
+    enabled: query.trim().length >= 2,
+    staleTime: 30_000,
   });
 }
 
