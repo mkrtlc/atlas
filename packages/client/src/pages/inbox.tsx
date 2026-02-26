@@ -73,8 +73,14 @@ export function InboxPage() {
   }, [cursorIndex, displayThreads, setActiveThread]);
 
   // Navigation shortcuts
-  const handleMoveDown = useCallback(() => moveCursor(1, maxCursorIndex), [moveCursor, maxCursorIndex]);
-  const handleMoveUp = useCallback(() => moveCursor(-1, maxCursorIndex), [moveCursor, maxCursorIndex]);
+  const handleMoveDown = useCallback(() => {
+    document.dispatchEvent(new CustomEvent('atlasmail:keyboard-cursor-move'));
+    moveCursor(1, maxCursorIndex);
+  }, [moveCursor, maxCursorIndex]);
+  const handleMoveUp = useCallback(() => {
+    document.dispatchEvent(new CustomEvent('atlasmail:keyboard-cursor-move'));
+    moveCursor(-1, maxCursorIndex);
+  }, [moveCursor, maxCursorIndex]);
   const handleOpenThread = useCallback(() => {
     const thread = displayThreads[cursorIndex];
     if (thread) {
@@ -182,6 +188,7 @@ export function InboxPage() {
     document.dispatchEvent(
       new CustomEvent('atlasmail:add_to_selection', { detail: { cursorIndex } }),
     );
+    document.dispatchEvent(new CustomEvent('atlasmail:keyboard-cursor-move'));
     moveCursor(1, maxCursorIndex);
   }, [cursorIndex, moveCursor, maxCursorIndex]);
 
@@ -189,6 +196,7 @@ export function InboxPage() {
     document.dispatchEvent(
       new CustomEvent('atlasmail:add_to_selection', { detail: { cursorIndex } }),
     );
+    document.dispatchEvent(new CustomEvent('atlasmail:keyboard-cursor-move'));
     moveCursor(-1, maxCursorIndex);
   }, [cursorIndex, moveCursor, maxCursorIndex]);
 

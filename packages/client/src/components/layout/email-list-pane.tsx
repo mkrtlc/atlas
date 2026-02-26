@@ -388,11 +388,19 @@ export function EmailListPane() {
 
   const advanceAfterRemoval = useAutoAdvance(displayThreads);
 
-  // Auto-scroll Virtuoso to keep the keyboard cursor visible
+  // Auto-scroll Virtuoso to keep the keyboard cursor visible.
+  // Only scroll when the cursor moved via keyboard (not mouse click).
+  const scrollOnCursorChangeRef = useRef(false);
   useEffect(() => {
-    if (cursorIndex >= 0 && virtuosoRef.current) {
+    const handler = () => { scrollOnCursorChangeRef.current = true; };
+    document.addEventListener('atlasmail:keyboard-cursor-move', handler);
+    return () => document.removeEventListener('atlasmail:keyboard-cursor-move', handler);
+  }, []);
+  useEffect(() => {
+    if (scrollOnCursorChangeRef.current && cursorIndex >= 0 && virtuosoRef.current) {
       virtuosoRef.current.scrollToIndex({ index: cursorIndex, align: 'center', behavior: 'smooth' });
     }
+    scrollOnCursorChangeRef.current = false;
   }, [cursorIndex]);
 
   // Auto-select first thread when switching categories, mailboxes, or label filters

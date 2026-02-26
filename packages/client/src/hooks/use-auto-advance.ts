@@ -61,6 +61,7 @@ export function useAutoAdvance(displayThreads: Thread[]) {
 
         const nextThread = threads[nextIndex];
         if (nextThread) {
+          document.dispatchEvent(new CustomEvent('atlasmail:keyboard-cursor-move'));
           setCursorIndex(nextIndex);
           setActiveThread(nextThread.id);
         }
