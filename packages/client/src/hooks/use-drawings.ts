@@ -95,6 +95,25 @@ export function useRestoreDrawing() {
   });
 }
 
+export function useDuplicateDrawing() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data: original } = await api.get(`/drawings/${id}`);
+      const drawing = original.data as Drawing;
+      const { data: created } = await api.post('/drawings', {
+        title: `${drawing.title} (copy)`,
+        content: drawing.content,
+      });
+      return created.data as Drawing;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drawings.all });
+    },
+  });
+}
+
 // ─── Auto-save hook ──────────────────────────────────────────────────
 
 /**
@@ -103,6 +122,8 @@ export function useRestoreDrawing() {
  */
 export function useAutoSaveDrawing(delay = 2000) {
   const updateMutation = useUpdateDrawing();
+  const mutateRef = useRef(updateMutation.mutate);
+  mutateRef.current = updateMutation.mutate;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const save = useCallback(
@@ -111,10 +132,10 @@ export function useAutoSaveDrawing(delay = 2000) {
         clearTimeout(timerRef.current);
       }
       timerRef.current = setTimeout(() => {
-        updateMutation.mutate({ id, ...input });
+        mutateRef.current({ id, ...input });
       }, delay);
     },
-    [delay, updateMutation],
+    [delay],
   );
 
   const flush = useCallback(() => {

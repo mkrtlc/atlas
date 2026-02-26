@@ -4,7 +4,7 @@ import { config } from '../../config/env';
 import type { CSSProperties } from 'react';
 
 // Google's OAuth authorization URL — the server exchanges the code for tokens.
-function buildGoogleOAuthUrl(): string {
+export function buildGoogleOAuthUrl(): string {
   const baseUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
   const params = new URLSearchParams({
     client_id: config.googleClientId,
@@ -26,6 +26,7 @@ function buildGoogleOAuthUrl(): string {
 
 export function LoginPage() {
   const { t } = useTranslation();
+  const isDesktop = !!('atlasDesktop' in window);
 
   function handleGoogleSignIn() {
     window.location.href = buildGoogleOAuthUrl();
@@ -41,8 +42,24 @@ export function LoginPage() {
         width: '100vw',
         background: 'var(--color-bg-primary)',
         fontFamily: 'var(--font-family)',
+        position: 'relative',
       }}
     >
+      {/* Desktop: invisible drag strip for window movement */}
+      {isDesktop && (
+        <div
+          className="desktop-drag-region"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 38,
+            zIndex: 60,
+          }}
+        />
+      )}
+
       {/* Card */}
       <div
         style={{

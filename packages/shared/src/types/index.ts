@@ -8,3 +8,5 @@ export * from './tracking';
 export * from './calendar';
 export * from './api';
 export * from './document';
+export * from './drawing';
+export * from './task';

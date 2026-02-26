@@ -184,7 +184,10 @@ function TaskItem({
 
   const handleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (task.status === 'completed') return;
+    if (task.status === 'completed') {
+      onComplete(); // uncomplete immediately
+      return;
+    }
     setCompleting(true);
     setTimeout(() => onComplete(), 800);
   };
@@ -1068,8 +1071,10 @@ export function TasksPage() {
   }, [allTasks]);
 
   const handleComplete = useCallback((taskId: string) => {
-    updateTask.mutate({ id: taskId, status: 'completed' });
-  }, [updateTask]);
+    const task = allTasks.find(t => t.id === taskId) ?? completedTasks.find(t => t.id === taskId);
+    const newStatus = task?.status === 'completed' ? 'todo' : 'completed';
+    updateTask.mutate({ id: taskId, status: newStatus });
+  }, [updateTask, allTasks, completedTasks]);
 
   // ─── Drag-and-drop handlers (feature 8) ────────────────────────
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {

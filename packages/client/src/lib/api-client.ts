@@ -57,10 +57,17 @@ api.interceptors.response.use(
           return api(originalRequest);
         });
       }
+      // If there's no refresh token at all, skip the refresh attempt and just
+      // propagate the 401. This avoids a hard redirect when the page loads
+      // before authentication is fully initialised (e.g. DEV_MODE race).
+      const refreshToken = localStorage.getItem('atlasmail_refresh_token');
+      if (!refreshToken) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
       isRefreshing = true;
       try {
-        const refreshToken = localStorage.getItem('atlasmail_refresh_token');
         const { data } = await axios.post(`${config.apiUrl}/auth/refresh`, { refreshToken });
         const newToken = data.data.accessToken;
         localStorage.setItem('atlasmail_token', newToken);
@@ -90,7 +97,7 @@ api.interceptors.response.use(
         }
         localStorage.removeItem('atlasmail_token');
         localStorage.removeItem('atlasmail_refresh_token');
-        window.location.href = '/login';
+        window.location.href = '/';
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

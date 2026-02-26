@@ -24,6 +24,7 @@ import {
   useMoveDocument,
 } from '../../hooks/use-documents';
 import { ROUTES } from '../../config/routes';
+import { useDocSettingsStore } from '../../stores/docs-settings-store';
 import type { DocumentTreeNode } from '@atlasmail/shared';
 
 // ─── localStorage helpers for favorites & recently viewed ───────────────
@@ -94,7 +95,7 @@ export function DocSidebar({ selectedId, onSelect, onNewFromTemplate }: DocSideb
   const moveDoc = useMoveDocument();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
-  const [view, setView] = useState<SidebarView>('tree');
+  const [view, setView] = useState<SidebarView>(useDocSettingsStore.getState().sidebarDefault);
   const [favorites, setFavoritesState] = useState<string[]>(getFavorites());
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(getSavedSidebarWidth);
@@ -254,8 +255,8 @@ export function DocSidebar({ selectedId, onSelect, onNewFromTemplate }: DocSideb
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <SidebarButton
             icon={<ArrowLeft size={14} />}
-            onClick={() => navigate(ROUTES.INBOX)}
-            tooltip="Back to inbox"
+            onClick={() => navigate(ROUTES.HOME)}
+            tooltip="Home screen"
           />
           <span
             style={{
@@ -265,7 +266,7 @@ export function DocSidebar({ selectedId, onSelect, onNewFromTemplate }: DocSideb
               letterSpacing: '-0.01em',
             }}
           >
-            Documents
+            Write
           </span>
         </div>
 
@@ -846,6 +847,7 @@ function TreeNode({
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const justDroppedRef = useRef(false);
   const isSelected = node.id === selectedId;
   const hasChildren = node.children.length > 0;
   const isDragOver = dragOverId === node.id;
@@ -889,10 +891,20 @@ function TreeNode({
             onMoveDocument(draggedId, node.id);
             setExpanded(true);
           }
+          // Suppress stale click events that fire after a drop
+          justDroppedRef.current = true;
+          setTimeout(() => { justDroppedRef.current = false; }, 100);
         }}
-        onMouseEnter={() => setHovered(true)}
+        onDragEnd={() => {
+          setHovered(false);
+          setMenuOpen(false);
+          onDragOverChange(null);
+          justDroppedRef.current = true;
+          setTimeout(() => { justDroppedRef.current = false; }, 100);
+        }}
+        onMouseEnter={() => { if (!justDroppedRef.current) setHovered(true); }}
         onMouseLeave={() => { setHovered(false); if (!menuOpen) setMenuOpen(false); }}
-        onClick={() => onSelect(node.id)}
+        onClick={() => { if (!justDroppedRef.current) onSelect(node.id); }}
         style={{
           display: 'flex',
           alignItems: 'center',

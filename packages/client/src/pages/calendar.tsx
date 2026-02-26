@@ -600,14 +600,25 @@ export function CalendarPage() {
           flexShrink: 0,
         }}
       >
-        {/* Back to inbox */}
+        {/* Back to home */}
         <button
           onClick={() => navigate('/')}
-          title="Back to inbox"
+          title="Home screen"
           style={iconBtnStyle}
         >
           <ArrowLeft size={16} />
         </button>
+
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--color-text-primary)',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          Calendar
+        </span>
 
         {/* Sidebar toggle */}
         {!isNarrow && (

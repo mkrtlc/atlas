@@ -20,7 +20,7 @@ interface EmailListItemProps {
   isMultiSelected: boolean;
   /** When true, plays slide-in entrance animation (for newly arrived emails) */
   isNew?: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
   onStarClick?: (e: React.MouseEvent) => void;
   onCheckboxClick?: (e: React.MouseEvent) => void;
   onReplyClick?: () => void;

@@ -299,7 +299,7 @@ export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
                 letterSpacing: '-0.01em',
               }}
             >
-              AtlasMail
+              Atlas
             </span>
           </div>
         )}

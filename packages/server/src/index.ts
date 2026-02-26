@@ -3,6 +3,10 @@ import { env } from './config/env';
 import { logger } from './utils/logger';
 import { startSyncWorker, stopSyncWorker } from './jobs/sync-worker';
 import { startSyncScheduler, stopSyncScheduler } from './jobs/sync-scheduler';
+import { purgeOldArchivedDrawings } from './services/drawing.service';
+
+const PURGE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+let purgeTimer: ReturnType<typeof setInterval> | null = null;
 
 const app = createApp();
 
@@ -15,12 +19,23 @@ app.listen(env.PORT, () => {
     startSyncScheduler();
     logger.info('Email sync worker and scheduler started');
   }
+
+  // Auto-purge archived drawings older than 30 days (runs every hour)
+  purgeTimer = setInterval(async () => {
+    try { await purgeOldArchivedDrawings(); } catch (err) {
+      logger.error({ err }, 'Drawing auto-purge failed');
+    }
+  }, PURGE_INTERVAL_MS);
+
+  // Run once on startup after a short delay
+  setTimeout(() => purgeOldArchivedDrawings().catch(() => {}), 5000);
 });
 
 // Graceful shutdown
 function handleShutdown(signal: string) {
   logger.info({ signal }, 'Received shutdown signal, cleaning up');
 
+  if (purgeTimer) { clearInterval(purgeTimer); purgeTimer = null; }
   stopSyncScheduler();
 
   stopSyncWorker()

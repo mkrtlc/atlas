@@ -1,0 +1,16 @@
+import { Router } from 'express';
+import * as drawingController from '../controllers/drawing.controller';
+import { authMiddleware } from '../middleware/auth';
+
+const router = Router();
+router.use(authMiddleware);
+
+router.get('/', drawingController.listDrawings);
+router.post('/', drawingController.createDrawing);
+router.get('/search', drawingController.searchDrawings);
+router.get('/:id', drawingController.getDrawing);
+router.patch('/:id', drawingController.updateDrawing);
+router.delete('/:id', drawingController.deleteDrawing);
+router.patch('/:id/restore', drawingController.restoreDrawing);
+
+export default router;

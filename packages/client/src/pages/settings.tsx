@@ -170,7 +170,7 @@ export function SettingsPage() {
           size="sm"
           icon={<ArrowLeft size={16} />}
           onClick={() => navigate('/')}
-          aria-label="Back to inbox"
+          aria-label="Home screen"
         >
           Back
         </Button>

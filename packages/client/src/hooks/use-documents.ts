@@ -234,6 +234,8 @@ export function useRestoreVersion() {
  */
 export function useAutoSaveDocument(delay = 1000) {
   const updateMutation = useUpdateDocument();
+  const mutateRef = useRef(updateMutation.mutate);
+  mutateRef.current = updateMutation.mutate;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const save = useCallback(
@@ -242,10 +244,10 @@ export function useAutoSaveDocument(delay = 1000) {
         clearTimeout(timerRef.current);
       }
       timerRef.current = setTimeout(() => {
-        updateMutation.mutate({ id, ...input });
+        mutateRef.current({ id, ...input });
       }, delay);
     },
-    [delay, updateMutation],
+    [delay],
   );
 
   const flush = useCallback(() => {

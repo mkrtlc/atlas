@@ -2,14 +2,16 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Mail, Calendar, FileText, Pencil, CloudSun, Cloud, CloudRain, Sun,
+  Mail, Calendar, FileText, Pencil, CheckSquare, CloudSun, Cloud, CloudRain, Sun,
   Snowflake, CloudLightning, CloudDrizzle, CloudFog,
   ChevronDown, Bell, Users, BellOff, Check,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
 import { useThreadCounts } from '../hooks/use-threads';
 import { useCalendarEvents } from '../hooks/use-calendar';
+import { useTaskCounts } from '../hooks/use-tasks';
 import { ROUTES } from '../config/routes';
+import { buildGoogleOAuthUrl } from '../components/auth/login-page';
 import '../styles/home.css';
 
 // ---------------------------------------------------------------------------
@@ -487,7 +489,10 @@ export function HomePage() {
   const now = useCurrentTime();
   const weather = useWeather();
   const account = useAuthStore((s) => s.account);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isDesktop = !!('atlasDesktop' in window);
   const { data: counts } = useThreadCounts();
+  const { data: taskCounts } = useTaskCounts();
   const parallax = useMouseParallax(15);
   const [previewFilter, setPreviewFilter] = useState<PreviewFilter>(() => {
     return (localStorage.getItem('atlasmail_home_preview') as PreviewFilter) || 'all';
@@ -535,11 +540,14 @@ export function HomePage() {
   }, []);
   const { data: todayEvents } = useCalendarEvents(todayStart, todayEnd);
 
-  const firstName = account?.name?.split(' ')[0] || '';
+  const rawName = account?.name || '';
+  const cleanedName = rawName.replace(/^Dr\.?\s+/i, '');
+  const firstName = cleanedName.split(' ')[0] || '';
   const hour = now.getHours();
   const greetingKey = getGreetingKey(hour);
   const inboxUnread = counts?.categories?.all?.unread ?? 0;
   const eventCount = todayEvents?.length ?? 0;
+  const pendingTaskCount = taskCounts?.total ?? 0;
   const timeTint = getTimeTint(hour);
 
   const WeatherIcon = weather ? getWeatherIcon(weather.icon) : null;
@@ -555,8 +563,25 @@ export function HomePage() {
         justifyContent: 'center',
         overflow: 'hidden',
         fontFamily: 'var(--font-family)',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       }}
     >
+      {/* Desktop: invisible drag strip for window movement */}
+      {isDesktop && (
+        <div
+          className="desktop-drag-region"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 38,
+            zIndex: 60,
+          }}
+        />
+      )}
+
       {/* Background images with ken burns + parallax + crossfade */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         {/* Previous image (fading out) */}
@@ -622,38 +647,10 @@ export function HomePage() {
           zIndex: 10,
           display: 'flex',
           alignItems: 'flex-start',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           padding: '28px 36px',
         }}
       >
-        {/* Left: Date + Time + Weather */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, fontWeight: 500 }}>
-            {formatDate(now)}
-          </span>
-          <span
-            style={{
-              color: '#fff',
-              fontSize: 40,
-              fontWeight: 300,
-              lineHeight: 1.1,
-              letterSpacing: '-0.5px',
-            }}
-          >
-            {formatTime(now)}
-          </span>
-          {weather && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-              {WeatherIcon && <WeatherIcon size={15} color="rgba(255,255,255,0.75)" strokeWidth={1.8} />}
-              <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13 }}>
-                {weather.temp}°C · {weather.description}
-                {weather.city ? `, ${weather.city}` : ''}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Preview dropdown */}
         <PreviewDropdown value={previewFilter} onChange={setPreviewFilter} />
       </div>
 
@@ -669,32 +666,67 @@ export function HomePage() {
           textAlign: 'center',
         }}
       >
+        {/* Clock */}
+        <span
+          style={{
+            color: '#fff',
+            fontSize: 72,
+            fontWeight: 300,
+            lineHeight: 1,
+            letterSpacing: '-1.5px',
+            textShadow: '0 2px 20px rgba(0,0,0,0.2)',
+          }}
+        >
+          {formatTime(now)}
+        </span>
+
+        {/* Date + Weather */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+          <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, fontWeight: 500 }}>
+            {formatDate(now)}
+          </span>
+          {weather && (
+            <>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 15 }}>·</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {WeatherIcon && <WeatherIcon size={14} color="rgba(255,255,255,0.7)" strokeWidth={1.8} />}
+                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>
+                  {weather.temp}°C{weather.description ? `, ${weather.description}` : ''}
+                  {weather.city ? ` · ${weather.city}` : ''}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
         {/* Greeting */}
         <h1
           style={{
             color: '#fff',
-            fontSize: 64,
-            fontWeight: 700,
-            margin: 0,
+            fontSize: 48,
+            fontWeight: 600,
+            margin: '32px 0 0',
             textShadow: '0 2px 30px rgba(0,0,0,0.25)',
             lineHeight: 1.15,
-            letterSpacing: '-1px',
+            letterSpacing: '-0.5px',
           }}
         >
-          {t(greetingKey)}
+          {firstName ? `${t(greetingKey)}, ${firstName}` : t(greetingKey)}
         </h1>
 
-        <p
-          style={{
-            color: 'rgba(255,255,255,0.75)',
-            fontSize: 19,
-            margin: '8px 0 0',
-            fontWeight: 400,
-            textShadow: '0 1px 8px rgba(0,0,0,0.2)',
-          }}
-        >
-          {firstName ? t('home.welcomeBack', { name: firstName }) : t('home.whatToDo')}
-        </p>
+        {!firstName && (
+          <p
+            style={{
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: 18,
+              margin: '6px 0 0',
+              fontWeight: 400,
+              textShadow: '0 1px 8px rgba(0,0,0,0.2)',
+            }}
+          >
+            {t('home.whatToDo')}
+          </p>
+        )}
 
         {/* 3 App cards */}
         <div style={{ display: 'flex', gap: 20, marginTop: 40 }}>
@@ -703,14 +735,30 @@ export function HomePage() {
             label={t('nav.mail')}
             color="#4a9e8f"
             badge={inboxUnread > 0 ? t('home.unread', { count: inboxUnread }) : undefined}
-            onClick={() => navigate(ROUTES.INBOX)}
+            onClick={() => {
+              if (isAuthenticated) { navigate(ROUTES.INBOX); }
+              else { window.location.href = buildGoogleOAuthUrl(); }
+            }}
           />
           <AppCard
             icon={Calendar}
             label={t('nav.calendar')}
             color="#7c6fbd"
             badge={eventCount > 0 ? t('home.eventsToday', { count: eventCount }) : undefined}
-            onClick={() => navigate(ROUTES.CALENDAR)}
+            onClick={() => {
+              if (isAuthenticated) { navigate(ROUTES.CALENDAR); }
+              else { window.location.href = buildGoogleOAuthUrl(); }
+            }}
+          />
+          <AppCard
+            icon={CheckSquare}
+            label={t('nav.tasks')}
+            color="#6366f1"
+            badge={pendingTaskCount > 0 ? t('home.pendingTasks', { count: pendingTaskCount }) : undefined}
+            onClick={() => {
+              if (isAuthenticated) { navigate(ROUTES.TASKS); }
+              else { window.location.href = buildGoogleOAuthUrl(); }
+            }}
           />
           <AppCard
             icon={FileText}
@@ -721,7 +769,7 @@ export function HomePage() {
           <AppCard
             icon={Pencil}
             label={t('nav.draw')}
-            color="#d4845f"
+            color="#e06c9f"
             onClick={() => navigate(ROUTES.DRAW)}
           />
         </div>

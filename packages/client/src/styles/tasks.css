@@ -1448,3 +1448,30 @@
   -webkit-appearance: none;
   appearance: none;
 }
+
+/* ─── Remove all borders/outlines from every text input in tasks ── */
+
+.tasks-page input,
+.tasks-page input:focus,
+.tasks-page input:active,
+.tasks-page input:focus-visible,
+.tasks-page textarea,
+.tasks-page textarea:focus,
+.tasks-page textarea:active,
+.tasks-page textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.task-new-persistent-input,
+.task-new-persistent-input:focus,
+.task-new-heading-input,
+.task-new-heading-input:focus,
+.task-detail-title,
+.task-detail-title:focus,
+.task-project-desc-input,
+.task-project-desc-input:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}

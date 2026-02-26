@@ -426,8 +426,8 @@ export function EmailListPane() {
     }
 
     // On initial load (or after clearing active thread), select the first thread.
-    // Skip in 'hidden' pane mode — the user navigates list → thread → back explicitly.
-    if (!activeThreadId && displayThreads.length > 0 && !categoryChanged && !mailboxChanged && !labelChanged && readingPanePosition !== 'hidden') {
+    // Skip in 'hidden' and 'bottom' pane modes — the user navigates explicitly.
+    if (!activeThreadId && displayThreads.length > 0 && !categoryChanged && !mailboxChanged && !labelChanged && readingPanePosition === 'right') {
       setActiveThread(displayThreads[0].id);
       setCursorIndex(0);
     }
@@ -455,8 +455,24 @@ export function EmailListPane() {
     return () => document.removeEventListener('atlasmail:add_to_selection', handleAddToSelection);
   }, [addToSelection]);
 
+  // Track last clicked index for shift-click range selection
+  const lastClickedIndexRef = useRef<number | null>(null);
+
   const handleThreadClick = useCallback(
-    (thread: Thread, index: number) => {
+    (thread: Thread, index: number, e?: React.MouseEvent) => {
+      // Shift-click: select range between last click and current click
+      if (e?.shiftKey && lastClickedIndexRef.current !== null) {
+        const start = Math.min(lastClickedIndexRef.current, index);
+        const end = Math.max(lastClickedIndexRef.current, index);
+        const rangeIds = displayThreadsRef.current
+          .slice(start, end + 1)
+          .map((t) => t.id);
+        selectThreads(rangeIds);
+        setCursorIndex(index);
+        return;
+      }
+
+      lastClickedIndexRef.current = index;
       setCursorIndex(index);
 
       // If we're in the drafts mailbox, open compose to resume editing
@@ -474,7 +490,7 @@ export function EmailListPane() {
         markReadUnread.mutate({ threadId: thread.id, isUnread: false });
       }
     },
-    [setCursorIndex, setActiveThread, markReadUnread, activeMailbox, openCompose],
+    [setCursorIndex, setActiveThread, markReadUnread, activeMailbox, openCompose, selectThreads],
   );
 
   const handleStarClick = useCallback(
@@ -778,7 +794,7 @@ export function EmailListPane() {
                   isCursor={index === cursorIndex}
                   isMultiSelected={selectedThreadIds.has(thread.id)}
                   isNew={newThreadIds.has(thread.id)}
-                  onClick={() => handleThreadClick(thread, index)}
+                  onClick={(e) => handleThreadClick(thread, index, e)}
                   onStarClick={() => handleStarClick(thread.id)}
                   onCheckboxClick={() => handleCheckboxClick(thread.id)}
                   onReplyClick={() => handleReplyClick(thread.id)}

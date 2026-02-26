@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Extension } from '@tiptap/core';
@@ -25,6 +25,8 @@ import { PageMention } from './extensions/page-mention';
 import { ResizableImage } from './extensions/resizable-image';
 import { SearchReplace } from './extensions/search-replace';
 import type { SearchReplaceState } from './extensions/search-replace';
+import { DrawingEmbed } from './extensions/drawing-embed';
+import { useDocSettingsStore, type DocFontStyle } from '../../stores/docs-settings-store';
 import {
   Bold,
   Italic,
@@ -96,6 +98,8 @@ interface DocEditorProps {
   documents?: Array<{ id: string; title: string; icon: string | null }>;
   /** Navigate to a document (used when clicking a page mention) */
   onNavigate?: (docId: string) => void;
+  /** Available drawings for embedding via slash command */
+  drawings?: Array<{ id: string; title: string }>;
 }
 
 // ─── Slash command items ────────────────────────────────────────────────
@@ -302,7 +306,18 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
 
 // ─── DocEditor ──────────────────────────────────────────────────────────
 
-export function DocEditor({ value, onChange, readOnly = false, documents: docList, onNavigate }: DocEditorProps) {
+const DOC_FONT_FAMILIES: Record<DocFontStyle, string> = {
+  default: 'var(--font-family)',
+  serif: "Georgia, 'Times New Roman', serif",
+  mono: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
+};
+
+export function DocEditor({ value, onChange, readOnly = false, documents: docList, onNavigate, drawings: drawingList }: DocEditorProps) {
+  const fontStyle = useDocSettingsStore((s) => s.fontStyle);
+  const smallText = useDocSettingsStore((s) => s.smallText);
+  const fullWidth = useDocSettingsStore((s) => s.fullWidth);
+  const spellCheck = useDocSettingsStore((s) => s.spellCheck);
+
   const [slashMenuOpen, setSlashMenuOpen] = useState(false);
   const [slashMenuPos, setSlashMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [slashQuery, setSlashQuery] = useState('');
@@ -341,6 +356,11 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
 
   // Keyboard shortcuts help modal
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+
+  // Drawing embed picker state
+  const [drawingPickerOpen, setDrawingPickerOpen] = useState(false);
+  const [drawingPickerQuery, setDrawingPickerQuery] = useState('');
+  const [drawingPickerIdx, setDrawingPickerIdx] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -386,7 +406,7 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
       ResizableImage,
       // ── Unique ID per block (for future comments/anchoring) ──
       UniqueID.configure({
-        types: ['heading', 'paragraph', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote', 'table', 'resizableImage', 'callout', 'toggleBlock'],
+        types: ['heading', 'paragraph', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote', 'table', 'resizableImage', 'callout', 'toggleBlock', 'drawingEmbed'],
       }),
       // ── Search & Replace (Cmd+F) ──
       SearchReplace,
@@ -394,6 +414,7 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
       ToggleSummary,
       ToggleBlock,
       PageMention,
+      DrawingEmbed,
     ],
     editorProps: {
       attributes: {
@@ -401,12 +422,13 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
         style: [
           'outline: none',
           'color: var(--color-text-primary)',
-          'font-size: 15px',
+          `font-size: ${smallText ? '14px' : '15px'}`,
           'line-height: 1.7',
-          'font-family: var(--font-family)',
+          `font-family: ${DOC_FONT_FAMILIES[fontStyle]}`,
           'min-height: 300px',
           'padding: 0',
         ].join('; '),
+        spellcheck: spellCheck ? 'true' : 'false',
       },
       handleKeyDown: (_view, event) => {
         // Slash command menu keyboard navigation
@@ -644,10 +666,29 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
     closeMentionMenu();
   }
 
+  // Dynamic slash commands (includes Drawing if drawings prop is provided)
+  const allSlashCommands = useMemo(() => {
+    const cmds = [...SLASH_COMMANDS];
+    if (drawingList && drawingList.length > 0) {
+      cmds.push({
+        title: 'Drawing',
+        description: 'Embed an Excalidraw drawing',
+        icon: '\u270F',
+        command: (_editor) => {
+          // This will open the drawing picker
+          setDrawingPickerOpen(true);
+          setDrawingPickerQuery('');
+          setDrawingPickerIdx(0);
+        },
+      });
+    }
+    return cmds;
+  }, [drawingList]);
+
   function getFilteredCommands(query: string): SlashCommandItem[] {
-    if (!query) return SLASH_COMMANDS;
+    if (!query) return allSlashCommands;
     const q = query.toLowerCase();
-    return SLASH_COMMANDS.filter(
+    return allSlashCommands.filter(
       (item) =>
         item.title.toLowerCase().includes(q) ||
         item.description.toLowerCase().includes(q),
@@ -669,12 +710,48 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
     closeSlashMenu();
   }
 
+  // Drawing picker: insert the selected drawing embed
+  function insertDrawingEmbed(drawing: { id: string; title: string }) {
+    if (!editor) return;
+    editor.chain().focus().insertDrawingEmbed({ drawingId: drawing.id, title: drawing.title }).run();
+    setDrawingPickerOpen(false);
+  }
+
+  const filteredDrawings = useMemo((): Array<{ id: string; title: string }> => {
+    if (!drawingList) return [];
+    if (!drawingPickerQuery.trim()) return drawingList;
+    const q = drawingPickerQuery.toLowerCase();
+    return drawingList.filter((d: { id: string; title: string }) => d.title.toLowerCase().includes(q));
+  }, [drawingList, drawingPickerQuery]);
+
   // Sync readOnly
   useEffect(() => {
     if (editor) {
       editor.setEditable(!readOnly);
     }
   }, [editor, readOnly]);
+
+  // Sync doc settings (font, text size, spell check) to the editor after mount
+  useEffect(() => {
+    if (!editor) return;
+    editor.setOptions({
+      editorProps: {
+        attributes: {
+          class: 'doc-editor-content',
+          style: [
+            'outline: none',
+            'color: var(--color-text-primary)',
+            `font-size: ${smallText ? '14px' : '15px'}`,
+            'line-height: 1.7',
+            `font-family: ${DOC_FONT_FAMILIES[fontStyle]}`,
+            'min-height: 300px',
+            'padding: 0',
+          ].join('; '),
+          spellcheck: spellCheck ? 'true' : 'false',
+        },
+      },
+    });
+  }, [editor, fontStyle, smallText, spellCheck]);
 
   // Store editor reference on the ProseMirror view for the Office paste handler
   useEffect(() => {
@@ -856,11 +933,12 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
     >
       <div
         style={{
-          maxWidth: 800,
+          maxWidth: fullWidth ? '100%' : 800,
           margin: '0 auto',
           width: '100%',
           padding: '32px 24px',
-          fontFamily: 'var(--font-family)',
+          fontFamily: DOC_FONT_FAMILIES[fontStyle],
+          transition: 'max-width 0.2s ease',
         }}
       >
         {/* Bubble menu (floating toolbar on selection) */}
@@ -947,6 +1025,106 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
             onSelect={executeMentionInsert}
             position={mentionMenuPos}
           />
+        )}
+
+        {/* Drawing embed picker */}
+        {drawingPickerOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99,
+            }}
+            onClick={() => setDrawingPickerOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 380,
+                maxHeight: 400,
+                background: 'var(--color-bg-elevated)',
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-elevated)',
+                overflow: 'hidden',
+                fontFamily: 'var(--font-family)',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <div style={{ padding: '12px 12px 8px', borderBottom: '1px solid var(--color-border-primary)' }}>
+                <input
+                  autoFocus
+                  value={drawingPickerQuery}
+                  onChange={(e) => { setDrawingPickerQuery(e.target.value); setDrawingPickerIdx(0); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setDrawingPickerIdx((i) => Math.min(i + 1, filteredDrawings.length - 1));
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setDrawingPickerIdx((i) => Math.max(i - 1, 0));
+                    } else if (e.key === 'Enter' && filteredDrawings[drawingPickerIdx]) {
+                      e.preventDefault();
+                      insertDrawingEmbed(filteredDrawings[drawingPickerIdx]);
+                    } else if (e.key === 'Escape') {
+                      setDrawingPickerOpen(false);
+                    }
+                  }}
+                  placeholder="Search drawings..."
+                  style={{
+                    width: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: 13,
+                    fontFamily: 'var(--font-family)',
+                    color: 'var(--color-text-primary)',
+                    padding: 0,
+                  }}
+                />
+              </div>
+              <div style={{ overflowY: 'auto', maxHeight: 300, padding: 4 }}>
+                {filteredDrawings.length === 0 ? (
+                  <div style={{ padding: '16px 12px', textAlign: 'center', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+                    No drawings found
+                  </div>
+                ) : (
+                  filteredDrawings.map((d, i) => (
+                    <button
+                      key={d.id}
+                      onClick={() => insertDrawingEmbed(d)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        width: '100%',
+                        padding: '6px 8px',
+                        background: i === drawingPickerIdx ? 'var(--color-surface-selected)' : 'transparent',
+                        border: 'none',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-family)',
+                        fontSize: 13,
+                        color: 'var(--color-text-primary)',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={() => setDrawingPickerIdx(i)}
+                    >
+                      <span style={{ color: 'var(--color-text-tertiary)', fontSize: 14 }}>{'\u270F'}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {d.title || 'Untitled drawing'}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Table toolbar */}

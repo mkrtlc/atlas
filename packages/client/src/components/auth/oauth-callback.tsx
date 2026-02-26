@@ -65,7 +65,7 @@ export function OAuthCallback() {
         // it merges into the accounts list and makes this account active.
         addAccount(account, accessToken, refreshToken);
 
-        navigate(ROUTES.INBOX, { replace: true });
+        navigate(ROUTES.HOME, { replace: true });
       } catch (err) {
         console.error('OAuth callback failed:', err);
         sessionStorage.removeItem('atlasmail_adding_account');

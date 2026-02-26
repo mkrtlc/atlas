@@ -13,4 +13,5 @@ export const ROUTES = {
   DOC_DETAIL: '/docs/:id',
   DRAW: '/draw',
   DRAW_DETAIL: '/draw/:id',
+  TASKS: '/tasks',
 } as const;

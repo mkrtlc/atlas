@@ -13,6 +13,7 @@ import { SettingsPage } from './pages/settings';
 import { CalendarPage } from './pages/calendar';
 import { DocsPage } from './pages/docs';
 import { DrawPage } from './pages/draw';
+import { TasksPage } from './pages/tasks';
 import { HomePage } from './pages/home';
 import { CommandPalette } from './components/ui/command-palette';
 import { ErrorBoundary } from './components/ui/error-boundary';
@@ -68,7 +69,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated && !DEV_MODE) {
-    return <Navigate to={ROUTES.LOGIN} replace />;
+    return <Navigate to={ROUTES.HOME} replace />;
   }
 
   return <>{children}</>;
@@ -88,11 +89,7 @@ export function App() {
                 <Route path={ROUTES.AUTH_CALLBACK} element={<OAuthCallback />} />
                 <Route
                   path={ROUTES.HOME}
-                  element={
-                    <ProtectedRoute>
-                      <HomePage />
-                    </ProtectedRoute>
-                  }
+                  element={<HomePage />}
                 />
                 <Route
                   path={ROUTES.INBOX}
@@ -147,6 +144,14 @@ export function App() {
                   element={
                     <ProtectedRoute>
                       <DrawPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path={ROUTES.TASKS}
+                  element={
+                    <ProtectedRoute>
+                      <TasksPage />
                     </ProtectedRoute>
                   }
                 />

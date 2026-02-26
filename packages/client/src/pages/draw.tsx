@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Excalidraw } from '@excalidraw/excalidraw';
+import { Excalidraw, exportToBlob, exportToSvg, exportToClipboard, useHandleLibrary } from '@excalidraw/excalidraw';
+import { convertToExcalidrawElements } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types';
 import {
@@ -10,16 +11,32 @@ import {
   Trash2,
   RotateCcw,
   Pencil,
+  Copy,
+  Download,
+  Image,
+  FileImage,
+  Clipboard,
+  Settings,
+  ChevronDown,
+  LayoutTemplate,
+  ArrowDownAZ,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   useDrawingList,
   useDrawing,
   useCreateDrawing,
+  useUpdateDrawing,
   useDeleteDrawing,
   useRestoreDrawing,
+  useDuplicateDrawing,
   useAutoSaveDrawing,
 } from '../hooks/use-drawings';
 import { useSettingsStore } from '../stores/settings-store';
+import { useDrawSettingsStore, type DrawSortOrder } from '../stores/draw-settings-store';
+import { DrawSettingsModal } from '../components/draw/draw-settings-modal';
+import { DRAWING_TEMPLATES } from '../config/drawing-templates';
+import { DEFAULT_LIBRARY_ITEMS } from '../config/drawing-libraries';
 import { ROUTES } from '../config/routes';
 import type { Drawing } from '@atlasmail/shared';
 
@@ -36,6 +53,25 @@ function getSavedSidebarWidth(): number {
     if (w >= MIN_SIDEBAR_WIDTH && w <= MAX_SIDEBAR_WIDTH) return w;
   } catch { /* ignore */ }
   return DEFAULT_SIDEBAR_WIDTH;
+}
+
+// ─── Sort helper ────────────────────────────────────────────────────
+
+function sortDrawings(drawings: Drawing[], order: DrawSortOrder): Drawing[] {
+  const sorted = [...drawings];
+  switch (order) {
+    case 'name':
+      sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      break;
+    case 'created':
+      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      break;
+    case 'modified':
+    default:
+      sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      break;
+  }
+  return sorted;
 }
 
 // ─── Sidebar button ──────────────────────────────────────────────────
@@ -90,6 +126,7 @@ function DrawingListItem({
   onClick,
   onDelete,
   onRestore,
+  onDuplicate,
   isTrash,
 }: {
   drawing: Drawing;
@@ -97,8 +134,10 @@ function DrawingListItem({
   onClick: () => void;
   onDelete?: () => void;
   onRestore?: () => void;
+  onDuplicate?: () => void;
   isTrash?: boolean;
 }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
 
   const bg = isSelected
@@ -111,6 +150,8 @@ function DrawingListItem({
     month: 'short',
     day: 'numeric',
   });
+
+  const actionCount = (onDelete ? 1 : 0) + (onRestore ? 1 : 0) + (onDuplicate ? 1 : 0);
 
   return (
     <div
@@ -126,7 +167,7 @@ function DrawingListItem({
           gap: 8,
           width: '100%',
           padding: '7px 8px',
-          paddingRight: hovered && (onDelete || onRestore) ? 56 : 8,
+          paddingRight: hovered && actionCount > 0 ? 8 + actionCount * 28 : 8,
           background: bg,
           border: 'none',
           borderRadius: 'var(--radius-sm)',
@@ -136,13 +177,28 @@ function DrawingListItem({
           fontFamily: 'var(--font-family)',
         }}
       >
-        <Pencil
-          size={14}
-          style={{
-            flexShrink: 0,
-            color: isSelected ? 'var(--color-accent-primary)' : 'var(--color-text-tertiary)',
-          }}
-        />
+        {drawing.thumbnailUrl ? (
+          <img
+            src={drawing.thumbnailUrl}
+            alt=""
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 'var(--radius-sm)',
+              objectFit: 'cover',
+              flexShrink: 0,
+              border: '1px solid var(--color-border-secondary)',
+            }}
+          />
+        ) : (
+          <Pencil
+            size={14}
+            style={{
+              flexShrink: 0,
+              color: isSelected ? 'var(--color-accent-primary)' : 'var(--color-text-tertiary)',
+            }}
+          />
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -154,7 +210,7 @@ function DrawingListItem({
               whiteSpace: 'nowrap',
             }}
           >
-            {drawing.title || 'Untitled'}
+            {drawing.title || t('draw.untitled')}
           </div>
           <div
             style={{
@@ -180,23 +236,280 @@ function DrawingListItem({
             gap: 2,
           }}
         >
+          {!isTrash && onDuplicate && (
+            <SidebarButton
+              icon={<Copy size={12} />}
+              onClick={onDuplicate}
+              tooltip={t('draw.duplicate')}
+            />
+          )}
           {isTrash && onRestore && (
             <SidebarButton
               icon={<RotateCcw size={12} />}
               onClick={onRestore}
-              tooltip="Restore"
+              tooltip={t('draw.restore')}
             />
           )}
           {onDelete && (
             <SidebarButton
               icon={<Trash2 size={12} />}
               onClick={onDelete}
-              tooltip={isTrash ? 'Delete permanently' : 'Move to trash'}
+              tooltip={isTrash ? t('draw.delete') : t('draw.trash')}
             />
           )}
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Sort dropdown ──────────────────────────────────────────────────
+
+function SortDropdown({
+  value,
+  onChange,
+}: {
+  value: DrawSortOrder;
+  onChange: (v: DrawSortOrder) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const options: Array<{ value: DrawSortOrder; label: string }> = [
+    { value: 'modified', label: t('draw.sortByModified') },
+    { value: 'created', label: t('draw.sortByCreated') },
+    { value: 'name', label: t('draw.sortByName') },
+  ];
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <SidebarButton
+        icon={<ArrowDownAZ size={13} />}
+        onClick={() => setOpen(!open)}
+        tooltip={options.find((o) => o.value === value)?.label}
+      />
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: 4,
+            minWidth: 160,
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-md)',
+            zIndex: 20,
+            padding: 4,
+            overflow: 'hidden',
+          }}
+        >
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                padding: '5px 8px',
+                background: opt.value === value ? 'var(--color-surface-selected)' : 'transparent',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                color: opt.value === value ? 'var(--color-accent-primary)' : 'var(--color-text-primary)',
+                fontSize: 12,
+                fontFamily: 'var(--font-family)',
+                fontWeight: opt.value === value ? 600 : 400,
+                cursor: 'pointer',
+                transition: 'background 0.12s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (opt.value !== value) e.currentTarget.style.background = 'var(--color-surface-hover)';
+              }}
+              onMouseLeave={(e) => {
+                if (opt.value !== value) e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Template picker ────────────────────────────────────────────────
+
+function TemplatePicker({
+  open,
+  onClose,
+  onCreate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreate: (title: string, elements?: unknown[]) => void;
+}) {
+  const { t } = useTranslation();
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  if (!open) return null;
+
+  const templates = [
+    { id: 'blank', name: t('draw.templateBlank'), description: t('draw.templateBlankDesc') },
+    { id: 'flowchart', name: t('draw.templateFlowchart'), description: t('draw.templateFlowchartDesc') },
+    { id: 'wireframe', name: t('draw.templateWireframe'), description: t('draw.templateWireframeDesc') },
+    { id: 'mindMap', name: t('draw.templateMindMap'), description: t('draw.templateMindMapDesc') },
+    { id: 'kanban', name: t('draw.templateKanban'), description: t('draw.templateKanbanDesc') },
+    { id: 'swot', name: t('draw.templateSwot'), description: t('draw.templateSwotDesc') },
+  ];
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'var(--color-bg-overlay)',
+          zIndex: 200,
+        }}
+      />
+      {/* Modal */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 560,
+          maxWidth: 'calc(100vw - 48px)',
+          maxHeight: 'calc(100vh - 96px)',
+          background: 'var(--color-bg-elevated)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: 'var(--shadow-elevated)',
+          zIndex: 201,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          fontFamily: 'var(--font-family)',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '20px 24px 12px',
+            borderBottom: '1px solid var(--color-border-primary)',
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 16,
+              fontWeight: 600,
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            {t('draw.newDrawing')}
+          </h2>
+          <p
+            style={{
+              margin: '4px 0 0',
+              fontSize: 13,
+              color: 'var(--color-text-tertiary)',
+            }}
+          >
+            {t('draw.fromTemplate')}
+          </p>
+        </div>
+
+        {/* Template grid */}
+        <div
+          style={{
+            padding: 16,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 10,
+            overflowY: 'auto',
+          }}
+        >
+          {templates.map((tmpl) => (
+            <button
+              key={tmpl.id}
+              onClick={() => {
+                if (tmpl.id === 'blank') {
+                  onCreate(t('draw.untitled'));
+                } else {
+                  const found = DRAWING_TEMPLATES.find((dt) => dt.id === tmpl.id);
+                  onCreate(tmpl.name, found?.elements);
+                }
+                onClose();
+              }}
+              onMouseEnter={() => setHoveredId(tmpl.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '16px 12px',
+                background: hoveredId === tmpl.id
+                  ? 'var(--color-surface-hover)'
+                  : 'var(--color-bg-tertiary)',
+                border: '1px solid var(--color-border-secondary)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                fontFamily: 'var(--font-family)',
+                minHeight: 100,
+              }}
+            >
+              <LayoutTemplate
+                size={24}
+                style={{
+                  color: hoveredId === tmpl.id
+                    ? 'var(--color-accent-primary)'
+                    : 'var(--color-text-tertiary)',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--color-text-primary)',
+                  textAlign: 'center',
+                }}
+              >
+                {tmpl.name}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: 'var(--color-text-tertiary)',
+                  textAlign: 'center',
+                  lineHeight: 1.3,
+                }}
+              >
+                {tmpl.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -207,17 +520,25 @@ type SidebarView = 'list' | 'trash';
 function DrawSidebar({
   selectedId,
   onSelect,
+  onNewFromTemplate,
+  onOpenSettings,
+  isCreating,
 }: {
   selectedId: string | undefined;
   onSelect: (id: string) => void;
+  onNewFromTemplate: () => void;
+  onOpenSettings: () => void;
+  isCreating?: boolean;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isDesktop = !!('atlasDesktop' in window);
   const { data, isLoading } = useDrawingList();
   const { data: archivedData } = useDrawingList(true);
-  const createDrawing = useCreateDrawing();
   const deleteDrawing = useDeleteDrawing();
   const restoreDrawing = useRestoreDrawing();
+  const duplicateDrawing = useDuplicateDrawing();
+  const { sortOrder, setSortOrder } = useDrawSettingsStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [view, setView] = useState<SidebarView>('list');
@@ -252,14 +573,6 @@ function DrawSidebar({
     document.addEventListener('mouseup', onMouseUp);
   }, [sidebarWidth]);
 
-  const handleNewDrawing = useCallback(() => {
-    createDrawing.mutate({ title: 'Untitled' }, {
-      onSuccess: (drawing) => {
-        onSelect(drawing.id);
-      },
-    });
-  }, [createDrawing, onSelect]);
-
   const handleDelete = useCallback(
     (id: string) => {
       deleteDrawing.mutate(id);
@@ -274,16 +587,30 @@ function DrawSidebar({
     [restoreDrawing],
   );
 
+  const handleDuplicate = useCallback(
+    (id: string) => {
+      duplicateDrawing.mutate(id, {
+        onSuccess: (drawing) => {
+          onSelect(drawing.id);
+        },
+      });
+    },
+    [duplicateDrawing, onSelect],
+  );
+
   const allDrawings = data?.drawings ?? [];
   const archivedDrawings = (archivedData?.drawings ?? []).filter((d) => d.isArchived);
 
   const filteredDrawings = useMemo(() => {
-    if (!searchQuery.trim()) return allDrawings;
-    const q = searchQuery.toLowerCase();
-    return allDrawings.filter((d) =>
-      (d.title || 'Untitled').toLowerCase().includes(q),
-    );
-  }, [allDrawings, searchQuery]);
+    let list = allDrawings;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((d) =>
+        (d.title || 'Untitled').toLowerCase().includes(q),
+      );
+    }
+    return sortDrawings(list, sortOrder);
+  }, [allDrawings, searchQuery, sortOrder]);
 
   return (
     <div
@@ -335,7 +662,7 @@ function DrawSidebar({
           <SidebarButton
             icon={<ArrowLeft size={14} />}
             onClick={() => navigate(ROUTES.HOME)}
-            tooltip="Home screen"
+            tooltip={t('nav.homeScreen')}
           />
           <span
             style={{
@@ -345,14 +672,19 @@ function DrawSidebar({
               letterSpacing: '-0.01em',
             }}
           >
-            Draw
+            {t('draw.title')}
           </span>
           <div style={{ flex: 1 }} />
           <SidebarButton
+            icon={<Settings size={13} />}
+            onClick={onOpenSettings}
+            tooltip={t('draw.settings')}
+          />
+          <SidebarButton
             icon={<Plus size={14} />}
-            onClick={handleNewDrawing}
-            tooltip="New drawing"
-            disabled={createDrawing.isPending}
+            onClick={onNewFromTemplate}
+            tooltip={t('draw.newDrawing')}
+            disabled={isCreating}
           />
         </div>
 
@@ -375,7 +707,7 @@ function DrawSidebar({
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => { setSearchFocused(true); setView('list'); }}
             onBlur={() => setSearchFocused(false)}
-            placeholder="Search"
+            placeholder={t('draw.search')}
             style={{
               flex: 1,
               border: 'none',
@@ -394,7 +726,7 @@ function DrawSidebar({
       <div style={{ padding: '8px 8px 0 8px' }}>
         <QuickLink
           icon={<Trash2 size={14} />}
-          label="Trash"
+          label={t('draw.trash')}
           active={view === 'trash'}
           onClick={() => setView(view === 'trash' ? 'list' : 'trash')}
           badge={archivedDrawings.length > 0 ? archivedDrawings.length : undefined}
@@ -411,7 +743,7 @@ function DrawSidebar({
         }}
       />
 
-      {/* Section header */}
+      {/* Section header with sort */}
       <div
         style={{
           display: 'flex',
@@ -430,8 +762,11 @@ function DrawSidebar({
             letterSpacing: '0.04em',
           }}
         >
-          {view === 'trash' ? 'Trash' : 'Drawings'}
+          {view === 'trash' ? t('draw.trash') : t('draw.drawings')}
         </span>
+        {view === 'list' && (
+          <SortDropdown value={sortOrder} onChange={setSortOrder} />
+        )}
       </div>
 
       {/* Content area */}
@@ -451,7 +786,7 @@ function DrawSidebar({
               fontSize: 12,
             }}
           >
-            Loading...
+            {t('common.loading')}
           </div>
         ) : view === 'list' ? (
           filteredDrawings.length === 0 ? (
@@ -464,7 +799,7 @@ function DrawSidebar({
                   fontSize: 12,
                 }}
               >
-                No results for "{searchQuery}"
+                {t('docs.noResults', { query: searchQuery })}
               </div>
             ) : (
               <div
@@ -475,7 +810,7 @@ function DrawSidebar({
                   fontSize: 12,
                 }}
               >
-                No drawings yet
+                {t('draw.noDrawings')}
               </div>
             )
           ) : (
@@ -486,6 +821,7 @@ function DrawSidebar({
                 isSelected={drawing.id === selectedId}
                 onClick={() => onSelect(drawing.id)}
                 onDelete={() => handleDelete(drawing.id)}
+                onDuplicate={() => handleDuplicate(drawing.id)}
               />
             ))
           )
@@ -500,7 +836,7 @@ function DrawSidebar({
                 fontSize: 12,
               }}
             >
-              Trash is empty
+              {t('draw.trashEmpty')}
             </div>
           ) : (
             archivedDrawings.map((drawing) => (
@@ -584,6 +920,7 @@ function QuickLink({
 // ─── Empty state ─────────────────────────────────────────────────────
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -601,10 +938,10 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
     >
       <Pencil size={48} strokeWidth={1} style={{ opacity: 0.3 }} />
       <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
-        No drawing selected
+        {t('draw.createFirst')}
       </div>
       <div style={{ fontSize: 13, maxWidth: 280, textAlign: 'center', lineHeight: 1.5 }}>
-        Select a drawing from the sidebar or create a new one to start sketching.
+        {t('draw.createFirstDesc')}
       </div>
       <button
         onClick={onCreate}
@@ -627,8 +964,171 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         }}
       >
         <Plus size={15} />
-        Create your first drawing
+        {t('draw.newDrawing')}
       </button>
+    </div>
+  );
+}
+
+// ─── Export menu ─────────────────────────────────────────────────────
+
+function ExportMenu({
+  excalidrawApi,
+}: {
+  excalidrawApi: ExcalidrawImperativeAPI | null;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const { exportQuality, exportWithBackground } = useDrawSettingsStore();
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const handleExportPng = useCallback(async () => {
+    if (!excalidrawApi) return;
+    const elements = excalidrawApi.getSceneElements();
+    const appState = excalidrawApi.getAppState();
+    const files = excalidrawApi.getFiles();
+    try {
+      const blob = await exportToBlob({
+        elements,
+        appState: { ...appState, exportWithDarkMode: appState.theme === 'dark', exportBackground: exportWithBackground },
+        files,
+        getDimensions: () => ({ width: 1920 * exportQuality, height: 1080 * exportQuality, scale: exportQuality }),
+      } as any);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'drawing.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    setOpen(false);
+  }, [excalidrawApi, exportQuality, exportWithBackground]);
+
+  const handleExportSvg = useCallback(async () => {
+    if (!excalidrawApi) return;
+    const elements = excalidrawApi.getSceneElements();
+    const appState = excalidrawApi.getAppState();
+    const files = excalidrawApi.getFiles();
+    try {
+      const svg = await exportToSvg({
+        elements,
+        appState: { ...appState, exportWithDarkMode: appState.theme === 'dark', exportBackground: exportWithBackground },
+        files,
+      } as any);
+      const svgStr = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'drawing.svg';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    setOpen(false);
+  }, [excalidrawApi, exportWithBackground]);
+
+  const handleCopyClipboard = useCallback(async () => {
+    if (!excalidrawApi) return;
+    const elements = excalidrawApi.getSceneElements();
+    const appState = excalidrawApi.getAppState();
+    const files = excalidrawApi.getFiles();
+    try {
+      await exportToClipboard({
+        elements,
+        appState: { ...appState, exportBackground: exportWithBackground },
+        files,
+        type: 'png',
+      } as any);
+    } catch { /* ignore */ }
+    setOpen(false);
+  }, [excalidrawApi, exportWithBackground]);
+
+  const menuItems = [
+    { label: t('draw.exportPng'), icon: <Image size={14} />, onClick: handleExportPng },
+    { label: t('draw.exportSvg'), icon: <FileImage size={14} />, onClick: handleExportSvg },
+    { label: t('draw.copyClipboard'), icon: <Clipboard size={14} />, onClick: handleCopyClipboard },
+  ];
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        title={t('draw.export')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '4px 8px',
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 'var(--radius-sm)',
+          color: 'var(--color-text-secondary)',
+          fontSize: 12,
+          fontFamily: 'var(--font-family)',
+          cursor: 'pointer',
+          transition: 'background 0.15s ease',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <Download size={13} />
+        <span>{t('draw.export')}</span>
+        <ChevronDown size={11} />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: 4,
+            minWidth: 180,
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-md)',
+            zIndex: 20,
+            padding: 4,
+          }}
+        >
+          {menuItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={item.onClick}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                width: '100%',
+                padding: '6px 8px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--color-text-primary)',
+                fontSize: 12,
+                fontFamily: 'var(--font-family)',
+                cursor: 'pointer',
+                transition: 'background 0.12s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <span style={{ color: 'var(--color-text-tertiary)' }}>{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -639,11 +1139,14 @@ function EditableTitle({
   title,
   onChange,
   isSaving,
+  excalidrawApi,
 }: {
   title: string;
   onChange: (title: string) => void;
   isSaving: boolean;
+  excalidrawApi: ExcalidrawImperativeAPI | null;
 }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -718,7 +1221,7 @@ function EditableTitle({
             whiteSpace: 'nowrap',
           }}
         >
-          {title || 'Untitled'}
+          {title || t('draw.untitled')}
         </span>
       )}
       {isSaving && (
@@ -729,9 +1232,10 @@ function EditableTitle({
             flexShrink: 0,
           }}
         >
-          Saving...
+          {`${t('common.save')}...`}
         </span>
       )}
+      <ExportMenu excalidrawApi={excalidrawApi} />
     </div>
   );
 }
@@ -754,6 +1258,7 @@ const PERSISTED_APP_STATE_KEYS = [
   'gridSize',
   'gridStep',
   'gridModeEnabled',
+  'objectsSnapModeEnabled',
 ] as const;
 
 function pickAppState(appState: Record<string, unknown>): Record<string, unknown> {
@@ -766,20 +1271,89 @@ function pickAppState(appState: Record<string, unknown>): Record<string, unknown
   return picked;
 }
 
+// ─── Library persistence (localStorage) ──────────────────────────────
+
+const LIBRARY_STORAGE_KEY = 'atlasmail_excalidraw_library';
+
+const libraryAdapter = {
+  async load() {
+    try {
+      const stored = localStorage.getItem(LIBRARY_STORAGE_KEY);
+      const userItems = stored ? JSON.parse(stored).libraryItems || [] : [];
+      return { libraryItems: [...userItems, ...DEFAULT_LIBRARY_ITEMS] as any[] };
+    } catch {
+      return { libraryItems: DEFAULT_LIBRARY_ITEMS as any[] };
+    }
+  },
+  async save(libraryData: { libraryItems: readonly unknown[] }) {
+    // Only persist user-added items (filter out bundled defaults)
+    const userItems = libraryData.libraryItems.filter(
+      (item: any) => !item.id?.startsWith('lib-'),
+    );
+    localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify({ libraryItems: userItems }));
+  },
+};
+
+// ─── Thumbnail generation ────────────────────────────────────────────
+
+const THUMBNAIL_DEBOUNCE_MS = 10_000;
+
+async function generateThumbnailDataUrl(
+  elements: readonly unknown[],
+  appState: Record<string, unknown>,
+  files: unknown,
+): Promise<string | null> {
+  try {
+    const visible = (elements as any[]).filter((el) => !el.isDeleted);
+    if (visible.length === 0) return null;
+
+    const blob = await exportToBlob({
+      elements: visible,
+      appState: {
+        ...appState,
+        exportBackground: true,
+        exportWithDarkMode: false,
+      },
+      files: files as any,
+      maxWidthOrHeight: 200,
+    } as any);
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ─── Excalidraw canvas ───────────────────────────────────────────────
+
 function ExcalidrawCanvas({
   drawing,
   onAutoSave,
+  onThumbnailGenerated,
   isSaving,
   onTitleChange,
 }: {
   drawing: Drawing;
   onAutoSave: (content: Record<string, unknown>) => void;
+  onThumbnailGenerated: (thumbnailUrl: string) => void;
   isSaving: boolean;
   onTitleChange: (title: string) => void;
 }) {
-  const excalidrawApiRef = useRef<ExcalidrawImperativeAPI | null>(null);
+  const [excalidrawApi, setExcalidrawApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const theme = useSettingsStore((s) => s.theme);
+  const { gridMode, snapToGrid, defaultBackground } = useDrawSettingsStore();
   const isInitialLoadRef = useRef(true);
+  const thumbnailTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onThumbnailRef = useRef(onThumbnailGenerated);
+  onThumbnailRef.current = onThumbnailGenerated;
+
+  // Library persistence
+  useHandleLibrary({ excalidrawAPI: excalidrawApi, adapter: libraryAdapter } as any);
 
   // Determine effective theme for Excalidraw
   const effectiveTheme = useMemo(() => {
@@ -789,19 +1363,43 @@ function ExcalidrawCanvas({
     return theme;
   }, [theme]);
 
+  // Map setting value to Excalidraw viewBackgroundColor
+  const BG_COLOR_MAP: Record<string, string> = { white: '#ffffff', light: '#f5f5f5', dark: '#1e1e1e' };
+  const defaultBgColor = BG_COLOR_MAP[defaultBackground] || '#ffffff';
+
   // Parse initial data from drawing content
   const initialData = useMemo(() => {
     const content = drawing.content as Record<string, unknown> | null;
-    if (!content) return undefined;
+    if (!content) {
+      return {
+        appState: {
+          theme: effectiveTheme,
+          gridModeEnabled: gridMode,
+          objectsSnapModeEnabled: snapToGrid,
+          viewBackgroundColor: defaultBgColor,
+        },
+      };
+    }
+    const savedAppState = (content.appState as Record<string, unknown>) || {};
     return {
       elements: (content.elements as unknown[]) || [],
       appState: {
-        ...((content.appState as Record<string, unknown>) || {}),
+        ...savedAppState,
         theme: effectiveTheme,
+        gridModeEnabled: savedAppState.gridModeEnabled ?? gridMode,
+        objectsSnapModeEnabled: savedAppState.objectsSnapModeEnabled ?? snapToGrid,
+        viewBackgroundColor: savedAppState.viewBackgroundColor ?? defaultBgColor,
       },
       files: (content.files as Record<string, unknown>) || undefined,
     };
   }, [drawing.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup thumbnail timer on unmount
+  useEffect(() => {
+    return () => {
+      if (thumbnailTimerRef.current) clearTimeout(thumbnailTimerRef.current);
+    };
+  }, []);
 
   const handleChange = useCallback(
     (elements: readonly unknown[], appState: Record<string, unknown>, files: unknown) => {
@@ -817,6 +1415,13 @@ function ExcalidrawCanvas({
         appState: persistedAppState,
         files: files || {},
       });
+
+      // Debounced thumbnail generation (less frequent than auto-save)
+      if (thumbnailTimerRef.current) clearTimeout(thumbnailTimerRef.current);
+      thumbnailTimerRef.current = setTimeout(async () => {
+        const dataUrl = await generateThumbnailDataUrl(elements, appState, files);
+        if (dataUrl) onThumbnailRef.current(dataUrl);
+      }, THUMBNAIL_DEBOUNCE_MS);
     },
     [onAutoSave],
   );
@@ -827,11 +1432,12 @@ function ExcalidrawCanvas({
         title={drawing.title}
         onChange={onTitleChange}
         isSaving={isSaving}
+        excalidrawApi={excalidrawApi}
       />
       <div style={{ flex: 1, position: 'relative' }}>
         <Excalidraw
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => {
-            excalidrawApiRef.current = api;
+            setExcalidrawApi(api);
           }}
           initialData={initialData as any}
           theme={effectiveTheme}
@@ -850,13 +1456,25 @@ function ExcalidrawCanvas({
 // ─── Draw page ───────────────────────────────────────────────────────
 
 export function DrawPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [selectedId, setSelectedId] = useState<string | undefined>(id);
   const { data: drawing, isLoading } = useDrawing(selectedId);
   const { data: listData } = useDrawingList();
-  const { save, isSaving } = useAutoSaveDrawing();
+  const { autoSaveInterval } = useDrawSettingsStore();
+  const { save, isSaving } = useAutoSaveDrawing(autoSaveInterval);
   const createDrawing = useCreateDrawing();
+  const updateDrawing = useUpdateDrawing();
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Sync selectedId with URL param when it changes (browser back/forward)
+  useEffect(() => {
+    if (id && id !== selectedId) {
+      setSelectedId(id);
+    }
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-select first drawing when none is selected
   useEffect(() => {
@@ -893,13 +1511,41 @@ export function DrawPage() {
     [selectedId, save],
   );
 
+  const handleThumbnailGenerated = useCallback(
+    (thumbnailUrl: string) => {
+      if (selectedId) {
+        updateDrawing.mutate({ id: selectedId, thumbnailUrl });
+      }
+    },
+    [selectedId, updateDrawing],
+  );
+
+  const handleCreateFromTemplate = useCallback(
+    (title: string, templateElements?: unknown[]) => {
+      let content: Record<string, unknown> | undefined;
+      if (templateElements) {
+        try {
+          const elements = convertToExcalidrawElements(templateElements as any);
+          content = { elements, appState: {}, files: {} };
+        } catch {
+          content = undefined;
+        }
+      }
+      createDrawing.mutate(
+        { title, content: content as any },
+        {
+          onSuccess: (d) => {
+            handleSelect(d.id);
+          },
+        },
+      );
+    },
+    [createDrawing, handleSelect],
+  );
+
   const handleCreateNew = useCallback(() => {
-    createDrawing.mutate({ title: 'Untitled' }, {
-      onSuccess: (d) => {
-        handleSelect(d.id);
-      },
-    });
-  }, [createDrawing, handleSelect]);
+    setShowTemplates(true);
+  }, []);
 
   return (
     <div
@@ -914,6 +1560,9 @@ export function DrawPage() {
       <DrawSidebar
         selectedId={selectedId}
         onSelect={handleSelect}
+        onNewFromTemplate={() => setShowTemplates(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        isCreating={createDrawing.isPending}
       />
 
       <div
@@ -938,13 +1587,14 @@ export function DrawPage() {
               fontSize: 14,
             }}
           >
-            Loading...
+            {t('common.loading')}
           </div>
         ) : drawing ? (
           <ExcalidrawCanvas
             key={drawing.id}
             drawing={drawing}
             onAutoSave={handleAutoSave}
+            onThumbnailGenerated={handleThumbnailGenerated}
             isSaving={isSaving}
             onTitleChange={handleTitleChange}
           />
@@ -960,10 +1610,23 @@ export function DrawPage() {
               fontSize: 14,
             }}
           >
-            Drawing not found
+            {t('draw.noDrawings')}
           </div>
         )}
       </div>
+
+      {/* Template picker modal */}
+      <TemplatePicker
+        open={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onCreate={handleCreateFromTemplate}
+      />
+
+      {/* Settings modal */}
+      <DrawSettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </div>
   );
 }

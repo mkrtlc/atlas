@@ -1,0 +1,93 @@
+/* ── Home page background effects ── */
+
+/* Ken Burns: slow drift zoom + pan across 60s */
+@keyframes kenBurns {
+  0% {
+    transform: scale(1.15) translate(0%, 0%);
+  }
+  25% {
+    transform: scale(1.2) translate(-1.5%, -1%);
+  }
+  50% {
+    transform: scale(1.18) translate(1%, -0.5%);
+  }
+  75% {
+    transform: scale(1.22) translate(-0.5%, 1%);
+  }
+  100% {
+    transform: scale(1.15) translate(0%, 0%);
+  }
+}
+
+/* Blur-to-sharp entrance */
+@keyframes blurEntrance {
+  0% {
+    filter: blur(12px) saturate(0.8);
+    opacity: 0;
+  }
+  60% {
+    filter: blur(2px) saturate(1);
+    opacity: 1;
+  }
+  100% {
+    filter: blur(0px) saturate(1.05);
+    opacity: 1;
+  }
+}
+
+/* Content fade-up entrance */
+@keyframes contentFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Crossfade for image transitions */
+@keyframes crossfadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes crossfadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.home-bg-image {
+  position: absolute;
+  inset: -40px; /* extra space for ken burns panning */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: kenBurns 60s ease-in-out infinite, blurEntrance 1.8s ease-out forwards;
+  will-change: transform, filter, opacity;
+}
+
+.home-bg-image--entering {
+  animation: kenBurns 60s ease-in-out infinite, crossfadeIn 2s ease-out forwards;
+}
+
+.home-bg-image--exiting {
+  animation: kenBurns 60s ease-in-out infinite, crossfadeOut 2s ease-out forwards;
+}
+
+.home-content-entrance {
+  animation: contentFadeUp 0.8s ease-out 0.4s both;
+}
+
+.home-topbar-entrance {
+  animation: contentFadeUp 0.6s ease-out 0.2s both;
+}
