@@ -699,7 +699,7 @@ function QuickLink({
         border: 'none',
         borderRadius: 'var(--radius-sm)',
         color: active ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
-        fontSize: 12,
+        fontSize: 13,
         fontFamily: 'var(--font-family)',
         cursor: 'pointer',
         transition: 'background 0.1s ease',
