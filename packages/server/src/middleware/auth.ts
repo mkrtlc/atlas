@@ -1,8 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { eq } from 'drizzle-orm';
 import { env } from '../config/env';
 
 export interface AuthPayload {
+  userId: string;
   accountId: string;
   email: string;
 }
@@ -13,6 +15,19 @@ declare global {
       auth?: AuthPayload;
     }
   }
+}
+
+// Lazy import to avoid circular dependency at module load time
+let _db: any;
+let _accounts: any;
+async function getDb() {
+  if (!_db) {
+    const mod = await import('../config/database');
+    _db = mod.db;
+    const schema = await import('../db/schema');
+    _accounts = schema.accounts;
+  }
+  return { db: _db, accounts: _accounts };
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -34,6 +49,21 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
   try {
     const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
+
+    // Backwards compatibility: tokens issued before multi-account won't have userId.
+    // Look it up from the database on-the-fly.
+    if (!payload.userId) {
+      getDb().then(async ({ db, accounts }) => {
+        const [acct] = await db.select({ userId: accounts.userId }).from(accounts).where(eq(accounts.id, payload.accountId)).limit(1);
+        payload.userId = acct?.userId ?? '';
+        req.auth = payload;
+        next();
+      }).catch(() => {
+        res.status(401).json({ success: false, error: 'Failed to resolve user identity' });
+      });
+      return;
+    }
+
     req.auth = payload;
     next();
   } catch {

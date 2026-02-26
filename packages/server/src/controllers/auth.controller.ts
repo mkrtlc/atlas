@@ -22,12 +22,24 @@ export async function getAuthUrl(req: Request, res: Response) {
 
 export async function handleCallback(req: Request, res: Response) {
   try {
-    const { code, redirectUri } = req.body;
-    logger.info({ hasCode: !!code, redirectUri }, 'Auth callback received');
+    const { code, redirectUri, existingToken } = req.body;
+    logger.info({ hasCode: !!code, redirectUri, hasExistingToken: !!existingToken }, 'Auth callback received');
 
     if (!code) {
       res.status(400).json({ success: false, error: 'Missing authorization code' });
       return;
+    }
+
+    // If the client sent an existing JWT, extract the userId so the new account
+    // is linked under the same user (multi-account "add account" flow).
+    let existingUserId: string | undefined;
+    if (existingToken) {
+      try {
+        const payload = authService.verifyRefreshToken(existingToken);
+        existingUserId = payload.userId;
+      } catch {
+        // Token invalid/expired — ignore and create a new user
+      }
     }
 
     logger.info('Exchanging code for tokens...');
@@ -37,7 +49,7 @@ export async function handleCallback(req: Request, res: Response) {
     const userInfo = await authService.getGoogleUserInfo(tokens.access_token!);
     logger.info({ email: userInfo.email }, 'User info fetched');
 
-    const { account, isNew } = await authService.findOrCreateAccount(userInfo, tokens);
+    const { account, isNew } = await authService.findOrCreateAccount(userInfo, tokens, existingUserId);
     logger.info({ accountId: account.id, isNew }, 'Account ready');
 
     const jwtTokens = authService.generateTokens(account);
@@ -57,6 +69,7 @@ export async function handleCallback(req: Request, res: Response) {
         refreshToken: jwtTokens.refreshToken,
         account: {
           id: account.id,
+          userId: account.userId,
           email: account.email,
           name: account.name,
           pictureUrl: account.pictureUrl,
@@ -88,7 +101,11 @@ export async function refreshToken(req: Request, res: Response) {
     }
 
     const payload = authService.verifyRefreshToken(refreshToken);
-    const newTokens = authService.generateTokens({ id: payload.accountId, email: payload.email });
+    const newTokens = authService.generateTokens({
+      id: payload.accountId,
+      email: payload.email,
+      userId: payload.userId,
+    });
 
     res.json({
       success: true,
@@ -122,5 +139,17 @@ export async function getMe(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to fetch account');
     res.status(500).json({ success: false, error: 'Failed to fetch account' });
+  }
+}
+
+// GET /api/auth/accounts — list all accounts for the current user
+export async function listAccounts(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const userAccounts = await authService.listUserAccounts(userId);
+    res.json({ success: true, data: userAccounts });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list user accounts');
+    res.status(500).json({ success: false, error: 'Failed to list accounts' });
   }
 }

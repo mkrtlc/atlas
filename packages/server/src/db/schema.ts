@@ -7,8 +7,16 @@ const uuid = () => text().$defaultFn(() => crypto.randomUUID());
 const timestamp = () => text();
 const timestampNow = () => text().$defaultFn(() => new Date().toISOString());
 
+// ─── Users (groups multiple accounts under one person) ──────────────
+export const users = sqliteTable('users', {
+  id: uuid().primaryKey(),
+  createdAt: timestampNow().notNull(),
+  updatedAt: timestampNow().notNull(),
+});
+
 export const accounts = sqliteTable('accounts', {
   id: uuid().primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   email: text('email').notNull().unique(),
   name: text('name'),
   pictureUrl: text('picture_url'),
@@ -27,6 +35,7 @@ export const accounts = sqliteTable('accounts', {
   updatedAt: timestampNow().notNull(),
 }, (table) => ({
   providerIdx: index('idx_accounts_provider').on(table.provider, table.providerId),
+  userIdx: index('idx_accounts_user').on(table.userId),
 }));
 
 export const threads = sqliteTable('threads', {
@@ -247,6 +256,7 @@ export const calendarEvents = sqliteTable('calendar_events', {
 export const documents = sqliteTable('documents', {
   id: uuid().primaryKey(),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   parentId: text('parent_id').references((): AnySQLiteColumn => documents.id, { onDelete: 'set null' }),
   title: text('title').notNull().default('Untitled'),
   content: text('content', { mode: 'json' }).$type<Record<string, unknown> | null>().default(null),
@@ -258,14 +268,17 @@ export const documents = sqliteTable('documents', {
   updatedAt: timestampNow().notNull(),
 }, (table) => ({
   accountIdx: index('idx_documents_account').on(table.accountId, table.isArchived),
+  userIdx: index('idx_documents_user').on(table.userId, table.isArchived),
   parentIdx: index('idx_documents_parent').on(table.parentId, table.sortOrder),
   accountParentIdx: index('idx_documents_account_parent').on(table.accountId, table.parentId, table.sortOrder),
+  userParentIdx: index('idx_documents_user_parent').on(table.userId, table.parentId, table.sortOrder),
 }));
 
 export const documentVersions = sqliteTable('document_versions', {
   id: uuid().primaryKey(),
   documentId: text('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   content: text('content', { mode: 'json' }).$type<Record<string, unknown> | null>().default(null),
   createdAt: timestampNow().notNull(),

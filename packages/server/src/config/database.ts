@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database, { type Database as DatabaseType } from 'better-sqlite3';
+import crypto from 'node:crypto';
 import { env } from './env';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -14,6 +15,60 @@ const sqlite = new Database(dbPath);
 sqlite.pragma('journal_mode = WAL');
 // Enforce foreign key constraints (off by default in SQLite)
 sqlite.pragma('foreign_keys = ON');
+
+// ---- Users table (multi-account grouping) -----------------------------------
+
+sqlite.prepare(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  )
+`).run();
+
+// Add user_id column to accounts. For existing rows, create a user per account.
+try {
+  sqlite.prepare(`ALTER TABLE accounts ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE`).run();
+
+  // Backfill: create a user for each existing account that doesn't have one
+  const orphanAccounts = sqlite.prepare(`SELECT id FROM accounts WHERE user_id IS NULL`).all() as { id: string }[];
+  const insertUser = sqlite.prepare(`INSERT INTO users (id, createdAt, updatedAt) VALUES (?, ?, ?)`);
+  const updateAccount = sqlite.prepare(`UPDATE accounts SET user_id = ? WHERE id = ?`);
+  const now = new Date().toISOString();
+  for (const acct of orphanAccounts) {
+    const userId = crypto.randomUUID();
+    insertUser.run(userId, now, now);
+    updateAccount.run(userId, acct.id);
+  }
+} catch { /* column already exists */ }
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_accounts_user ON accounts(user_id)`).run(); } catch { /* */ }
+
+// Add user_id to documents. Backfill from the account's user_id.
+try {
+  sqlite.prepare(`ALTER TABLE documents ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE`).run();
+
+  // Backfill user_id from the owning account
+  sqlite.prepare(`
+    UPDATE documents SET user_id = (
+      SELECT a.user_id FROM accounts a WHERE a.id = documents.account_id
+    ) WHERE user_id IS NULL
+  `).run();
+} catch { /* column already exists */ }
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id, is_archived)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_documents_user_parent ON documents(user_id, parent_id, sort_order)`).run(); } catch { /* */ }
+
+// Add user_id to document_versions. Backfill from the owning account.
+try {
+  sqlite.prepare(`ALTER TABLE document_versions ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE`).run();
+
+  sqlite.prepare(`
+    UPDATE document_versions SET user_id = (
+      SELECT a.user_id FROM accounts a WHERE a.id = document_versions.account_id
+    ) WHERE user_id IS NULL
+  `).run();
+} catch { /* column already exists */ }
 
 // ---- Auto-migration for new columns & FTS5 --------------------------------
 

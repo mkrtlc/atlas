@@ -24,6 +24,7 @@ function DevAuthInit() {
     if (DEV_MODE) {
       setAccount({
         id: 'dev-account',
+        userId: 'dev-user',
         email: 'demo@atlasmail.dev',
         name: 'Demo User',
         pictureUrl: null,

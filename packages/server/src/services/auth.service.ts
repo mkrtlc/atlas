@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
 import { db } from '../config/database';
-import { accounts, userSettings } from '../db/schema';
+import { accounts, users, userSettings } from '../db/schema';
 import { createOAuth2Client } from '../config/google';
 import { env } from '../config/env';
 import { encrypt } from '../utils/crypto';
@@ -24,6 +24,7 @@ export async function getGoogleUserInfo(accessToken: string) {
 export async function findOrCreateAccount(
   userInfo: { id: string; email: string; name: string; picture: string },
   tokens: any,
+  existingUserId?: string,
 ): Promise<{ account: typeof accounts.$inferSelect; isNew: boolean }> {
   const existing = await db.select().from(accounts).where(eq(accounts.email, userInfo.email)).limit(1);
 
@@ -40,6 +41,10 @@ export async function findOrCreateAccount(
     if (tokens.refresh_token) {
       updates.refreshToken = encrypt(tokens.refresh_token);
     }
+    // If this account is being added under a different user, re-link it
+    if (existingUserId && existing[0].userId !== existingUserId) {
+      (updates as any).userId = existingUserId;
+    }
     const [account] = await db.update(accounts)
       .set(updates)
       .where(eq(accounts.id, existing[0].id))
@@ -51,7 +56,20 @@ export async function findOrCreateAccount(
     throw new Error('No refresh token received from Google. Please re-authenticate with full consent.');
   }
 
+  // Determine which user this account belongs to
+  let userId = existingUserId;
+  if (!userId) {
+    // Create a new user for this account
+    const now = new Date().toISOString();
+    const [user] = await db.insert(users).values({
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
+    userId = user.id;
+  }
+
   const [account] = await db.insert(accounts).values({
+    userId,
     email: userInfo.email,
     name: userInfo.name,
     pictureUrl: userInfo.picture,
@@ -67,8 +85,8 @@ export async function findOrCreateAccount(
   return { account, isNew: true };
 }
 
-export function generateTokens(account: { id: string; email: string }) {
-  const payload: AuthPayload = { accountId: account.id, email: account.email };
+export function generateTokens(account: { id: string; email: string; userId: string }) {
+  const payload: AuthPayload = { userId: account.userId, accountId: account.id, email: account.email };
   const accessToken = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '1h' });
   const refreshToken = jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: '30d' });
   return { accessToken, refreshToken };
@@ -76,4 +94,23 @@ export function generateTokens(account: { id: string; email: string }) {
 
 export function verifyRefreshToken(token: string): AuthPayload {
   return jwt.verify(token, env.JWT_REFRESH_SECRET) as AuthPayload;
+}
+
+export async function listUserAccounts(userId: string) {
+  return db
+    .select({
+      id: accounts.id,
+      email: accounts.email,
+      name: accounts.name,
+      pictureUrl: accounts.pictureUrl,
+      provider: accounts.provider,
+      providerId: accounts.providerId,
+      syncStatus: accounts.syncStatus,
+      historyId: accounts.historyId,
+      lastSync: accounts.lastSync,
+      createdAt: accounts.createdAt,
+      updatedAt: accounts.updatedAt,
+    })
+    .from(accounts)
+    .where(eq(accounts.userId, userId));
 }

@@ -11,8 +11,8 @@ import type {
 
 // ─── List all documents (flat) for building the tree ─────────────────
 
-export async function listDocuments(accountId: string, includeArchived = false) {
-  const conditions = [eq(documents.accountId, accountId)];
+export async function listDocuments(userId: string, includeArchived = false) {
+  const conditions = [eq(documents.userId, userId)];
 
   if (!includeArchived) {
     conditions.push(eq(documents.isArchived, false));
@@ -76,14 +76,14 @@ export function buildDocumentTree(
 
 // ─── Seed sample documents if the account has none ───────────────────
 
-export async function seedSampleDocuments(accountId: string) {
+export async function seedSampleDocuments(userId: string, accountId: string) {
   // Check if user has any meaningful docs (non-archived, with a title other than "Untitled")
   const meaningful = await db
     .select({ id: documents.id })
     .from(documents)
     .where(
       and(
-        eq(documents.accountId, accountId),
+        eq(documents.userId, userId),
         eq(documents.isArchived, false),
         sql`${documents.title} != 'Untitled'`,
       ),
@@ -93,7 +93,7 @@ export async function seedSampleDocuments(accountId: string) {
   if (meaningful.length > 0) return; // Already has real documents
 
   // Delete any leftover empty "Untitled" docs so we can start fresh
-  await db.delete(documents).where(eq(documents.accountId, accountId));
+  await db.delete(documents).where(eq(documents.userId, userId));
 
   const now = new Date().toISOString();
   const c = (html: string) => ({ _html: html });
@@ -117,93 +117,93 @@ export async function seedSampleDocuments(accountId: string) {
 
   // Root docs
   const [gettingStarted] = await db.insert(documents).values({
-    accountId, title: 'Getting started', icon: '🚀', sortOrder: 0, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Getting started', icon: '🚀', sortOrder: 0, createdAt: now, updatedAt: now,
     coverImage: covers.gettingStarted,
     content: c('<h1>Getting started</h1><p>Welcome to your document workspace! This is where you can organize your notes, projects, and ideas.</p><p>Use the <strong>sidebar</strong> to navigate between pages. Click the <strong>+</strong> button to create new pages or sub-pages.</p><h2>Tips</h2><ul><li>Use the toolbar to format text — bold, italic, headings, lists, and more</li><li>Changes are <em>auto-saved</em> as you type</li><li>Pages can be nested as deep as you like</li></ul>'),
   }).returning();
 
   const [projects] = await db.insert(documents).values({
-    accountId, title: 'Projects', icon: '📁', sortOrder: 1, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Projects', icon: '📁', sortOrder: 1, createdAt: now, updatedAt: now,
     coverImage: covers.projects,
     content: c('<h1>Projects</h1><p>Organize your projects here. Each project can have its own sub-pages for documentation, meeting notes, and task tracking.</p>'),
   }).returning();
 
   const [personal] = await db.insert(documents).values({
-    accountId, title: 'Personal', icon: '🏠', sortOrder: 2, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Personal', icon: '🏠', sortOrder: 2, createdAt: now, updatedAt: now,
     coverImage: covers.personal,
     content: c('<h1>Personal</h1><p>Your personal space for notes, journals, and reading lists.</p>'),
   }).returning();
 
   await db.insert(documents).values({
-    accountId, title: 'Design system', icon: '🎨', sortOrder: 3, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Design system', icon: '🎨', sortOrder: 3, createdAt: now, updatedAt: now,
     coverImage: covers.designSystem,
     content: c('<h1>Design system</h1><p>Document your design system here — colors, typography, spacing, components.</p><h2>Colors</h2><ul><li><strong>Primary:</strong> #13715B</li><li><strong>Text:</strong> #1a1a1a</li><li><strong>Border:</strong> #d0d5dd</li></ul><h2>Typography</h2><p>Font: Inter, 14px base, 1.5 line-height</p><h2>Spacing</h2><p>4px grid, 8px base unit</p>'),
   });
 
   await db.insert(documents).values({
-    accountId, title: 'API reference', icon: '⚡', sortOrder: 4, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'API reference', icon: '⚡', sortOrder: 4, createdAt: now, updatedAt: now,
     coverImage: covers.apiReference,
     content: c('<h1>API reference</h1><p>Document your API endpoints here.</p><h2>Documents</h2><ul><li><code>GET /api/docs</code> — List all documents</li><li><code>POST /api/docs</code> — Create a new document</li><li><code>GET /api/docs/:id</code> — Get a document by ID</li><li><code>PATCH /api/docs/:id</code> — Update a document</li><li><code>DELETE /api/docs/:id</code> — Delete a document</li></ul>'),
   });
 
   // Children of "Getting started"
   await db.insert(documents).values({
-    accountId, title: 'Quick start guide', icon: '📖', sortOrder: 0, parentId: gettingStarted.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Quick start guide', icon: '📖', sortOrder: 0, parentId: gettingStarted.id, createdAt: now, updatedAt: now,
     coverImage: covers.quickStart,
     content: c('<h1>Quick start guide</h1><ol><li>Create a new page by clicking <strong>New page</strong> at the bottom of the sidebar</li><li>Use the toolbar to format text — headings, bold, italic, lists</li><li>Use keyboard shortcuts: <code>⌘B</code> bold, <code>⌘I</code> italic, <code>⌘U</code> underline</li><li>Changes are auto-saved as you type</li></ol>'),
   });
   await db.insert(documents).values({
-    accountId, title: 'Keyboard shortcuts', icon: '⌨️', sortOrder: 1, parentId: gettingStarted.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Keyboard shortcuts', icon: '⌨️', sortOrder: 1, parentId: gettingStarted.id, createdAt: now, updatedAt: now,
     coverImage: covers.shortcuts,
     content: c('<h1>Keyboard shortcuts</h1><h2>Text formatting</h2><ul><li><code>⌘ + B</code> — Bold</li><li><code>⌘ + I</code> — Italic</li><li><code>⌘ + U</code> — Underline</li><li><code>⌘ + Shift + S</code> — Strikethrough</li><li><code>⌘ + E</code> — Code</li></ul><h2>Blocks</h2><ul><li><code>⌘ + Shift + 7</code> — Numbered list</li><li><code>⌘ + Shift + 8</code> — Bullet list</li><li><code>⌘ + Shift + B</code> — Blockquote</li></ul><h2>General</h2><ul><li><code>⌘ + Z</code> — Undo</li><li><code>⌘ + Shift + Z</code> — Redo</li></ul>'),
   });
 
   // Children of "Projects"
   await db.insert(documents).values({
-    accountId, title: 'Product roadmap', icon: '🗺️', sortOrder: 0, parentId: projects.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Product roadmap', icon: '🗺️', sortOrder: 0, parentId: projects.id, createdAt: now, updatedAt: now,
     coverImage: covers.roadmap,
     content: c('<h1>Product roadmap</h1><h2>Q1</h2><p>Launch beta version with core features</p><h2>Q2</h2><p>Add collaboration and sharing</p><h2>Q3</h2><p>Implement templates and import/export</p><h2>Q4</h2><p>Performance optimizations and mobile support</p>'),
   });
   const [meetingNotes] = await db.insert(documents).values({
-    accountId, title: 'Meeting notes', icon: '📝', sortOrder: 1, parentId: projects.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Meeting notes', icon: '📝', sortOrder: 1, parentId: projects.id, createdAt: now, updatedAt: now,
     coverImage: covers.meetingNotes,
     content: c('<h1>Meeting notes</h1><p>Keep all your meeting notes organized under this page. Create a sub-page for each meeting.</p>'),
   }).returning();
 
   // Children of "Meeting notes"
   await db.insert(documents).values({
-    accountId, title: 'Weekly standup', sortOrder: 0, parentId: meetingNotes.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Weekly standup', sortOrder: 0, parentId: meetingNotes.id, createdAt: now, updatedAt: now,
     coverImage: covers.standup,
     content: c('<h1>Weekly standup</h1><h2>What was done last week</h2><ul><li>Completed user authentication flow</li><li>Fixed 12 reported bugs</li></ul><h2>What\'s planned this week</h2><ul><li>Start working on document editor</li><li>Design sidebar navigation</li></ul>'),
   });
   await db.insert(documents).values({
-    accountId, title: 'Sprint retrospective', sortOrder: 1, parentId: meetingNotes.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Sprint retrospective', sortOrder: 1, parentId: meetingNotes.id, createdAt: now, updatedAt: now,
     coverImage: covers.retro,
     content: c('<h1>Sprint retrospective</h1><h2>What went well</h2><p>Great collaboration on the calendar feature.</p><h2>What could improve</h2><p>Need better test coverage.</p><h2>Action items</h2><ul><li>Set up CI pipeline for automated tests</li><li>Add integration tests for API endpoints</li></ul>'),
   });
 
   // Children of "Personal"
   await db.insert(documents).values({
-    accountId, title: 'Reading list', icon: '📚', sortOrder: 0, parentId: personal.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Reading list', icon: '📚', sortOrder: 0, parentId: personal.id, createdAt: now, updatedAt: now,
     coverImage: covers.readingList,
     content: c('<h1>Reading list</h1><ul><li><strong>Designing Data-Intensive Applications</strong> — Martin Kleppmann</li><li><strong>Staff Engineer</strong> — Will Larson</li><li><strong>The Pragmatic Programmer</strong> — Andy Hunt &amp; Dave Thomas</li><li><strong>Building Microservices</strong> — Sam Newman</li></ul>'),
   });
   await db.insert(documents).values({
-    accountId, title: 'Daily journal', icon: '✏️', sortOrder: 1, parentId: personal.id, createdAt: now, updatedAt: now,
+    accountId, userId, title: 'Daily journal', icon: '✏️', sortOrder: 1, parentId: personal.id, createdAt: now, updatedAt: now,
     coverImage: covers.journal,
     content: c('<h1>Daily journal</h1><p>Use this space to reflect on your day.</p><blockquote><p>What went well today?</p><p>What could be improved?</p><p>What am I grateful for?</p></blockquote>'),
   });
 
-  logger.info({ accountId }, 'Seeded sample documents');
+  logger.info({ userId, accountId }, 'Seeded sample documents');
 }
 
 // ─── Get a single document with full content ─────────────────────────
 
-export async function getDocument(accountId: string, documentId: string) {
+export async function getDocument(userId: string, documentId: string) {
   const [doc] = await db
     .select()
     .from(documents)
-    .where(and(eq(documents.id, documentId), eq(documents.accountId, accountId)))
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
     .limit(1);
 
   return doc || null;
@@ -211,7 +211,7 @@ export async function getDocument(accountId: string, documentId: string) {
 
 // ─── Create a new document ───────────────────────────────────────────
 
-export async function createDocument(accountId: string, input: CreateDocumentInput) {
+export async function createDocument(userId: string, accountId: string, input: CreateDocumentInput) {
   const now = new Date().toISOString();
 
   // Determine the next sort order within the target parent
@@ -220,7 +220,7 @@ export async function createDocument(accountId: string, input: CreateDocumentInp
     .from(documents)
     .where(
       and(
-        eq(documents.accountId, accountId),
+        eq(documents.userId, userId),
         input.parentId
           ? eq(documents.parentId, input.parentId)
           : isNull(documents.parentId),
@@ -233,6 +233,7 @@ export async function createDocument(accountId: string, input: CreateDocumentInp
     .insert(documents)
     .values({
       accountId,
+      userId,
       parentId: input.parentId ?? null,
       title: input.title || 'Untitled',
       content: input.content ?? null,
@@ -243,14 +244,14 @@ export async function createDocument(accountId: string, input: CreateDocumentInp
     })
     .returning();
 
-  logger.info({ accountId, documentId: created.id }, 'Document created');
+  logger.info({ userId, documentId: created.id }, 'Document created');
   return created;
 }
 
 // ─── Update a document ───────────────────────────────────────────────
 
 export async function updateDocument(
-  accountId: string,
+  userId: string,
   documentId: string,
   input: UpdateDocumentInput,
 ) {
@@ -268,42 +269,42 @@ export async function updateDocument(
   await db
     .update(documents)
     .set(updates)
-    .where(and(eq(documents.id, documentId), eq(documents.accountId, accountId)));
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
 
   // If archiving, also archive all descendants recursively
   if (input.isArchived === true) {
-    await archiveDescendants(accountId, documentId, true);
+    await archiveDescendants(userId, documentId, true);
   }
 
   const [updated] = await db
     .select()
     .from(documents)
-    .where(and(eq(documents.id, documentId), eq(documents.accountId, accountId)))
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
     .limit(1);
 
   return updated || null;
 }
 
 /** Recursively archive or unarchive all descendant documents. */
-async function archiveDescendants(accountId: string, parentId: string, isArchived: boolean) {
+async function archiveDescendants(userId: string, parentId: string, isArchived: boolean) {
   const children = await db
     .select({ id: documents.id })
     .from(documents)
-    .where(and(eq(documents.accountId, accountId), eq(documents.parentId, parentId)));
+    .where(and(eq(documents.userId, userId), eq(documents.parentId, parentId)));
 
   for (const child of children) {
     await db
       .update(documents)
       .set({ isArchived, updatedAt: new Date().toISOString() })
       .where(eq(documents.id, child.id));
-    await archiveDescendants(accountId, child.id, isArchived);
+    await archiveDescendants(userId, child.id, isArchived);
   }
 }
 
 // ─── Move / reorder a document ───────────────────────────────────────
 
 export async function moveDocument(
-  accountId: string,
+  userId: string,
   documentId: string,
   input: MoveDocumentInput,
 ) {
@@ -311,7 +312,7 @@ export async function moveDocument(
 
   // Prevent a document from being moved under itself (circular reference)
   if (input.parentId) {
-    const isDescendant = await checkIsDescendant(accountId, documentId, input.parentId);
+    const isDescendant = await checkIsDescendant(userId, documentId, input.parentId);
     if (isDescendant) {
       throw new Error('Cannot move a document under one of its own descendants');
     }
@@ -324,12 +325,12 @@ export async function moveDocument(
       sortOrder: input.sortOrder,
       updatedAt: now,
     })
-    .where(and(eq(documents.id, documentId), eq(documents.accountId, accountId)));
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
 
   const [updated] = await db
     .select()
     .from(documents)
-    .where(and(eq(documents.id, documentId), eq(documents.accountId, accountId)))
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
     .limit(1);
 
   return updated || null;
@@ -340,7 +341,7 @@ export async function moveDocument(
  * Used to prevent circular parent references.
  */
 async function checkIsDescendant(
-  accountId: string,
+  userId: string,
   documentId: string,
   candidateParentId: string,
 ): Promise<boolean> {
@@ -353,7 +354,7 @@ async function checkIsDescendant(
     const [parent] = await db
       .select({ parentId: documents.parentId })
       .from(documents)
-      .where(and(eq(documents.id, currentId), eq(documents.accountId, accountId)))
+      .where(and(eq(documents.id, currentId), eq(documents.userId, userId)))
       .limit(1);
 
     currentId = parent?.parentId ?? null;
@@ -364,28 +365,28 @@ async function checkIsDescendant(
 
 // ─── Delete (hard delete) a document and all descendants ─────────────
 
-export async function deleteDocument(accountId: string, documentId: string) {
+export async function deleteDocument(userId: string, documentId: string) {
   // Soft delete: just archive
-  await updateDocument(accountId, documentId, { isArchived: true });
+  await updateDocument(userId, documentId, { isArchived: true });
 }
 
 // ─── Restore an archived document ────────────────────────────────────
 
-export async function restoreDocument(accountId: string, documentId: string) {
+export async function restoreDocument(userId: string, documentId: string) {
   const now = new Date().toISOString();
 
   await db
     .update(documents)
     .set({ isArchived: false, updatedAt: now })
-    .where(and(eq(documents.id, documentId), eq(documents.accountId, accountId)));
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
 
   // Also restore descendants
-  await archiveDescendants(accountId, documentId, false);
+  await archiveDescendants(userId, documentId, false);
 
   const [restored] = await db
     .select()
     .from(documents)
-    .where(and(eq(documents.id, documentId), eq(documents.accountId, accountId)))
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
     .limit(1);
 
   return restored || null;
@@ -393,7 +394,7 @@ export async function restoreDocument(accountId: string, documentId: string) {
 
 // ─── Full-text search across document content ─────────────────────────
 
-export async function searchDocuments(accountId: string, query: string) {
+export async function searchDocuments(userId: string, query: string) {
   const searchTerm = `%${query}%`;
   return db
     .select({
@@ -409,7 +410,7 @@ export async function searchDocuments(accountId: string, query: string) {
     .from(documents)
     .where(
       and(
-        eq(documents.accountId, accountId),
+        eq(documents.userId, userId),
         eq(documents.isArchived, false),
         sql`(${documents.title} LIKE ${searchTerm} OR CAST(${documents.content} AS TEXT) LIKE ${searchTerm})`,
       ),
@@ -420,15 +421,16 @@ export async function searchDocuments(accountId: string, query: string) {
 
 // ─── Document version history (snapshots) ─────────────────────────────
 
-export async function createVersion(accountId: string, documentId: string) {
-  const doc = await getDocument(accountId, documentId);
+export async function createVersion(userId: string, documentId: string) {
+  const doc = await getDocument(userId, documentId);
   if (!doc) return null;
 
   const [version] = await db
     .insert(documentVersions)
     .values({
       documentId,
-      accountId,
+      accountId: doc.accountId,
+      userId,
       title: doc.title,
       content: doc.content,
       createdAt: new Date().toISOString(),
@@ -451,28 +453,28 @@ export async function createVersion(accountId: string, documentId: string) {
   return version;
 }
 
-export async function listVersions(accountId: string, documentId: string) {
+export async function listVersions(userId: string, documentId: string) {
   return db
     .select()
     .from(documentVersions)
     .where(
       and(
         eq(documentVersions.documentId, documentId),
-        eq(documentVersions.accountId, accountId),
+        eq(documentVersions.userId, userId),
       ),
     )
     .orderBy(sql`${documentVersions.createdAt} DESC`)
     .limit(50);
 }
 
-export async function getVersion(accountId: string, versionId: string) {
+export async function getVersion(userId: string, versionId: string) {
   const [version] = await db
     .select()
     .from(documentVersions)
     .where(
       and(
         eq(documentVersions.id, versionId),
-        eq(documentVersions.accountId, accountId),
+        eq(documentVersions.userId, userId),
       ),
     )
     .limit(1);
@@ -480,15 +482,15 @@ export async function getVersion(accountId: string, versionId: string) {
   return version || null;
 }
 
-export async function restoreVersion(accountId: string, documentId: string, versionId: string) {
-  const version = await getVersion(accountId, versionId);
+export async function restoreVersion(userId: string, documentId: string, versionId: string) {
+  const version = await getVersion(userId, versionId);
   if (!version) return null;
 
   // Save current state as a version before restoring
-  await createVersion(accountId, documentId);
+  await createVersion(userId, documentId);
 
   // Restore the old version's content
-  return updateDocument(accountId, documentId, {
+  return updateDocument(userId, documentId, {
     title: version.title,
     content: version.content,
   });

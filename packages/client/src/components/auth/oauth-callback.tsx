@@ -41,7 +41,18 @@ export function OAuthCallback() {
     async function exchangeCode() {
       try {
         const redirectUri = `${window.location.origin}/auth/callback`;
-        const { data } = await api.post('/auth/callback', { code, redirectUri });
+
+        // When adding an account, send the current refresh token so the server
+        // can link the new account under the same user.
+        const body: Record<string, string> = { code: code!, redirectUri };
+        if (isAddingAccount) {
+          const existingRefresh = localStorage.getItem('atlasmail_refresh_token');
+          if (existingRefresh) {
+            body.existingToken = existingRefresh;
+          }
+        }
+
+        const { data } = await api.post('/auth/callback', body);
         const { accessToken, refreshToken, account } = data.data as {
           accessToken: string;
           refreshToken: string;

@@ -1,6 +1,7 @@
 export interface Document {
   id: string;
   accountId: string;
+  userId: string;
   parentId: string | null;
   title: string;
   content: Record<string, unknown> | null;

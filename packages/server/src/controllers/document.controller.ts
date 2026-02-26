@@ -5,13 +5,14 @@ import { logger } from '../utils/logger';
 // GET /api/docs
 export async function listDocuments(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
     const includeArchived = req.query.includeArchived === 'true';
 
     // Auto-seed sample documents on first visit
-    await documentService.seedSampleDocuments(accountId);
+    await documentService.seedSampleDocuments(userId, accountId);
 
-    const docs = await documentService.listDocuments(accountId, includeArchived);
+    const docs = await documentService.listDocuments(userId, includeArchived);
     const tree = documentService.buildDocumentTree(docs);
 
     res.json({ success: true, data: { documents: docs, tree } });
@@ -24,10 +25,11 @@ export async function listDocuments(req: Request, res: Response) {
 // POST /api/docs
 export async function createDocument(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
     const { parentId, title, icon, content } = req.body;
 
-    const doc = await documentService.createDocument(accountId, {
+    const doc = await documentService.createDocument(userId, accountId, {
       parentId,
       title,
       icon,
@@ -44,10 +46,10 @@ export async function createDocument(req: Request, res: Response) {
 // GET /api/docs/:id
 export async function getDocument(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
 
-    const doc = await documentService.getDocument(accountId, documentId);
+    const doc = await documentService.getDocument(userId, documentId);
 
     if (!doc) {
       res.status(404).json({ success: false, error: 'Document not found' });
@@ -64,11 +66,11 @@ export async function getDocument(req: Request, res: Response) {
 // PATCH /api/docs/:id
 export async function updateDocument(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
     const { title, content, icon, coverImage, parentId, isArchived } = req.body;
 
-    const doc = await documentService.updateDocument(accountId, documentId, {
+    const doc = await documentService.updateDocument(userId, documentId, {
       title,
       content,
       icon,
@@ -92,10 +94,10 @@ export async function updateDocument(req: Request, res: Response) {
 // DELETE /api/docs/:id (soft delete)
 export async function deleteDocument(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
 
-    await documentService.deleteDocument(accountId, documentId);
+    await documentService.deleteDocument(userId, documentId);
 
     res.json({ success: true, data: null });
   } catch (error) {
@@ -107,7 +109,7 @@ export async function deleteDocument(req: Request, res: Response) {
 // PATCH /api/docs/:id/move
 export async function moveDocument(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
     const { parentId, sortOrder } = req.body;
 
@@ -116,7 +118,7 @@ export async function moveDocument(req: Request, res: Response) {
       return;
     }
 
-    const doc = await documentService.moveDocument(accountId, documentId, {
+    const doc = await documentService.moveDocument(userId, documentId, {
       parentId: parentId ?? null,
       sortOrder,
     });
@@ -140,10 +142,10 @@ export async function moveDocument(req: Request, res: Response) {
 // PATCH /api/docs/:id/restore
 export async function restoreDocument(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
 
-    const doc = await documentService.restoreDocument(accountId, documentId);
+    const doc = await documentService.restoreDocument(userId, documentId);
 
     if (!doc) {
       res.status(404).json({ success: false, error: 'Document not found' });
@@ -160,7 +162,7 @@ export async function restoreDocument(req: Request, res: Response) {
 // GET /api/docs/search?q=...
 export async function searchDocuments(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const query = (req.query.q as string) || '';
 
     if (!query.trim()) {
@@ -168,7 +170,7 @@ export async function searchDocuments(req: Request, res: Response) {
       return;
     }
 
-    const results = await documentService.searchDocuments(accountId, query.trim());
+    const results = await documentService.searchDocuments(userId, query.trim());
     res.json({ success: true, data: results });
   } catch (error) {
     logger.error({ error }, 'Failed to search documents');
@@ -179,10 +181,10 @@ export async function searchDocuments(req: Request, res: Response) {
 // GET /api/docs/:id/versions
 export async function listVersions(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
 
-    const versions = await documentService.listVersions(accountId, documentId);
+    const versions = await documentService.listVersions(userId, documentId);
     res.json({ success: true, data: versions });
   } catch (error) {
     logger.error({ error }, 'Failed to list versions');
@@ -193,10 +195,10 @@ export async function listVersions(req: Request, res: Response) {
 // POST /api/docs/:id/versions (create a snapshot)
 export async function createVersion(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
 
-    const version = await documentService.createVersion(accountId, documentId);
+    const version = await documentService.createVersion(userId, documentId);
     if (!version) {
       res.status(404).json({ success: false, error: 'Document not found' });
       return;
@@ -212,11 +214,11 @@ export async function createVersion(req: Request, res: Response) {
 // POST /api/docs/:id/versions/:versionId/restore
 export async function restoreVersion(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
     const versionId = req.params.versionId as string;
 
-    const doc = await documentService.restoreVersion(accountId, documentId, versionId);
+    const doc = await documentService.restoreVersion(userId, documentId, versionId);
     if (!doc) {
       res.status(404).json({ success: false, error: 'Version not found' });
       return;
