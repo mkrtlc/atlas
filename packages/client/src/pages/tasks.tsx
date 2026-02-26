@@ -4,7 +4,7 @@ import {
   ArrowLeft, Plus, Search, Inbox, Star, Calendar, Coffee,
   Archive, BookOpen, Check, Trash2, X, ChevronRight, ChevronDown,
   Hash, CircleDot, MoreHorizontal, Moon, Sun, GripVertical,
-  Video, Clock, FileText, Filter, Tag, CheckCircle2,
+  Video, Clock, FileText, Filter, Tag, CheckCircle2, Settings2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,8 @@ import { api } from '../lib/api-client';
 import { ROUTES } from '../config/routes';
 import type { Task, TaskProject, TaskWhen } from '@atlasmail/shared';
 import { EmojiPicker } from '../components/shared/emoji-picker';
+import { TasksSettingsModal } from '../components/tasks/tasks-settings-modal';
+import { useTasksSettingsStore } from '../stores/tasks-settings-store';
 import '../styles/tasks.css';
 
 // ─── Constants ───────────────────────────────────────────────────────
@@ -151,6 +153,8 @@ function TaskItem({
   onDragOver,
   onDrop,
   onDragEnd,
+  isDragging,
+  isDropTarget,
 }: {
   task: Task;
   isSelected: boolean;
@@ -165,7 +169,10 @@ function TaskItem({
   onDragOver?: (e: React.DragEvent, taskId: string) => void;
   onDrop?: (e: React.DragEvent, taskId: string) => void;
   onDragEnd?: () => void;
+  isDragging?: boolean;
+  isDropTarget?: boolean;
 }) {
+  const tasksSettings = useTasksSettingsStore();
   const [completing, setCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
@@ -222,7 +229,8 @@ function TaskItem({
 
   return (
     <div
-      className={`task-item${isSelected ? ' selected' : ''}${completing ? ' completing' : ''}`}
+      className={`task-item${isSelected ? ' selected' : ''}${completing ? ' completing' : ''}${isDragging ? ' dragging' : ''}${isDropTarget ? ' drop-target' : ''}`}
+      data-task-id={task.id}
       onClick={onClick}
       onDragOver={e => onDragOver?.(e, task.id)}
       onDrop={e => onDrop?.(e, task.id)}
@@ -300,8 +308,8 @@ function TaskItem({
         )}
       </div>
 
-      {/* Notes indicator */}
-      {(task.description || task.notes) && (
+      {/* Notes indicator (respects settings) */}
+      {tasksSettings.showNotesIndicator && (task.description || task.notes) && (
         <FileText size={13} className="task-notes-indicator" />
       )}
 
@@ -808,10 +816,14 @@ export function TasksPage() {
   const navigate = useNavigate();
   const isDesktop = !!('atlasDesktop' in window);
 
+  // Settings
+  const [showSettings, setShowSettings] = useState(false);
+  const tasksSettings = useTasksSettingsStore();
+
   // Sidebar
   const [sidebarWidth, setSidebarWidth] = useState(getSavedSidebarWidth);
   const [isResizing, setIsResizing] = useState(false);
-  const [activeSection, setActiveSection] = useState<NavSection>('inbox');
+  const [activeSection, setActiveSection] = useState<NavSection>(tasksSettings.defaultView);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -887,10 +899,15 @@ export function TasksPage() {
   // Split today view into daytime + evening (feature 2)
   const todayTasks = useMemo(() => {
     if (activeSection !== 'today') return null;
+    if (!tasksSettings.showEveningSection) {
+      // If evening section is disabled, show all as one flat list
+      const all = displayTasks.filter(t => t.type !== 'heading');
+      return { daytime: all, evening: [] };
+    }
     const daytime = displayTasks.filter(t => t.when === 'today' && t.type !== 'heading');
     const evening = displayTasks.filter(t => t.when === 'evening' && t.type !== 'heading');
     return { daytime, evening };
-  }, [activeSection, displayTasks]);
+  }, [activeSection, displayTasks, tasksSettings.showEveningSection]);
 
   // Group project tasks by headings (feature 4)
   const projectTaskGroups = useMemo(() => {
@@ -954,8 +971,9 @@ export function TasksPage() {
 
   // Determine if we should show "when" badges
   const showWhenBadges = useMemo(() => {
+    if (!tasksSettings.showWhenBadges) return false;
     return activeSection.startsWith('project:') || activeSection.startsWith('tag:') || activeSection === 'upcoming' || activeSection === 'logbook';
-  }, [activeSection]);
+  }, [activeSection, tasksSettings.showWhenBadges]);
 
   // Show project name only in project views, tags, upcoming, logbook (not in inbox/today/anytime/someday)
   const showProjectInList = useMemo(() => {
@@ -1081,11 +1099,25 @@ export function TasksPage() {
     setDraggedTaskId(taskId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', taskId);
-    // Add dragging class after a tick to not affect the ghost image
-    requestAnimationFrame(() => {
-      const el = document.querySelector(`[data-task-id="${taskId}"]`);
-      el?.classList.add('dragging');
-    });
+
+    // Create a custom drag ghost from the task row
+    const taskEl = document.querySelector(`[data-task-id="${taskId}"]`) as HTMLElement | null;
+    if (taskEl) {
+      const ghost = taskEl.cloneNode(true) as HTMLElement;
+      ghost.style.position = 'absolute';
+      ghost.style.top = '-9999px';
+      ghost.style.left = '-9999px';
+      ghost.style.width = `${taskEl.offsetWidth}px`;
+      ghost.style.background = 'var(--color-bg-elevated)';
+      ghost.style.borderRadius = '8px';
+      ghost.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+      ghost.style.opacity = '0.92';
+      ghost.style.padding = '10px 16px';
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, taskEl.offsetWidth / 2, 20);
+      // Clean up ghost after drag starts
+      requestAnimationFrame(() => document.body.removeChild(ghost));
+    }
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
@@ -1120,7 +1152,6 @@ export function TasksPage() {
   const handleDragEnd = useCallback(() => {
     setDraggedTaskId(null);
     setDropTargetId(null);
-    document.querySelectorAll('.task-item.dragging').forEach(el => el.classList.remove('dragging'));
   }, []);
 
   const handleDeleteHeading = useCallback((headingId: string) => {
@@ -1188,6 +1219,8 @@ export function TasksPage() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onDragEnd={handleDragEnd}
+      isDragging={draggedTaskId === task.id}
+      isDropTarget={dropTargetId === task.id && draggedTaskId !== task.id}
     />
   );
 
@@ -1297,6 +1330,17 @@ export function TasksPage() {
         )}
 
         <div style={{ flex: 1 }} />
+
+        {/* Settings button at bottom of sidebar */}
+        <div style={{ padding: '0 var(--spacing-sm) var(--spacing-md)' }}>
+          <button
+            className="task-nav-item"
+            onClick={() => setShowSettings(true)}
+          >
+            <Settings2 size={16} color="var(--color-text-tertiary)" strokeWidth={1.8} />
+            <span style={{ flex: 1 }}>Settings</span>
+          </button>
+        </div>
       </div>
 
       {/* Resize handle */}
@@ -1343,12 +1387,12 @@ export function TasksPage() {
 
         {/* Task list + detail */}
         <div className="tasks-content">
-          <div className="tasks-list-container task-list-scroll">
+          <div className={`tasks-list-container task-list-scroll${tasksSettings.compactMode ? ' compact' : ''}`}>
             {/* Project header (features 9 + 10) */}
             {activeProject && <ProjectHeader project={activeProject} />}
 
             {/* Calendar events in Today view (feature 6) */}
-            {activeSection === 'today' && <TodayCalendarEvents />}
+            {activeSection === 'today' && tasksSettings.showCalendarInToday && <TodayCalendarEvents />}
 
             {/* ─── Today view with evening split (feature 2) ─── */}
             {todayTasks ? (
@@ -1473,6 +1517,9 @@ export function TasksPage() {
           )}
         </div>
       </div>
+
+      {/* Settings modal */}
+      <TasksSettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
