@@ -2,9 +2,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Mail, Calendar, FileText, Pencil, CheckSquare, CloudSun, Cloud, CloudRain, Sun,
-  Snowflake, CloudLightning, CloudDrizzle, CloudFog,
-  ChevronDown, Bell, Users, BellOff, Check,
+  Mail, Calendar, FileText, Pencil, CheckSquare,
+  Clock, ArrowRight,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
 import { useThreadCounts } from '../hooks/use-threads';
@@ -115,26 +114,6 @@ function useMouseParallax(strength: number = 15) {
 }
 
 // ---------------------------------------------------------------------------
-// Email preview filter
-// ---------------------------------------------------------------------------
-
-type PreviewFilter = 'all' | 'people' | 'priority' | 'none';
-
-const PREVIEW_OPTIONS: { id: PreviewFilter; labelKey: string; icon: typeof Bell; color: string }[] = [
-  { id: 'all', labelKey: 'home.allEmails', icon: Bell, color: '#4ade80' },
-  { id: 'people', labelKey: 'home.emailsFromPeople', icon: Users, color: '#60a5fa' },
-  { id: 'priority', labelKey: 'home.priorityEmails', icon: Bell, color: '#fbbf24' },
-  { id: 'none', labelKey: 'home.noEmails', icon: BellOff, color: '#f87171' },
-];
-
-const PREVIEW_LABEL_KEYS: Record<PreviewFilter, string> = {
-  all: 'home.showAllEmails',
-  people: 'home.emailsFromPeople',
-  priority: 'home.priorityEmails',
-  none: 'home.noEmailPreview',
-};
-
-// ---------------------------------------------------------------------------
 // Weather helpers
 // ---------------------------------------------------------------------------
 
@@ -145,21 +124,139 @@ interface WeatherData {
   city: string;
 }
 
-const WEATHER_ICON_MAP: Record<string, typeof Sun> = {
-  '01': Sun,
-  '02': CloudSun,
-  '03': Cloud,
-  '04': Cloud,
-  '09': CloudDrizzle,
-  '10': CloudRain,
-  '11': CloudLightning,
-  '13': Snowflake,
-  '50': CloudFog,
-};
+// Beautiful inline SVG weather icons
+function WeatherIconSVG({ code, size = 28 }: { code: string; size?: number }) {
+  const prefix = code.slice(0, 2);
+  const isNight = code.endsWith('n');
+  const s = size;
 
-function getWeatherIcon(iconCode: string) {
-  const prefix = iconCode.slice(0, 2);
-  return WEATHER_ICON_MAP[prefix] ?? CloudSun;
+  // Clear sky — sun or moon
+  if (prefix === '01') {
+    if (isNight) {
+      return (
+        <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+          <path d="M42 16a22 22 0 1 0-4 42 18 18 0 0 1 4-42z" fill="#CBD5E1" opacity="0.9" />
+          <circle cx="38" cy="20" r="2" fill="#94A3B8" opacity="0.5" />
+          <circle cx="32" cy="30" r="3" fill="#94A3B8" opacity="0.3" />
+          <circle cx="28" cy="42" r="1.5" fill="#94A3B8" opacity="0.4" />
+        </svg>
+      );
+    }
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="12" fill="#FBBF24" />
+        <circle cx="32" cy="32" r="15" stroke="#FCD34D" strokeWidth="1" opacity="0.4" />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
+          const rad = (angle * Math.PI) / 180;
+          const x1 = 32 + Math.cos(rad) * 19;
+          const y1 = 32 + Math.sin(rad) * 19;
+          const x2 = 32 + Math.cos(rad) * 24;
+          const y2 = 32 + Math.sin(rad) * 24;
+          return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#FBBF24" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />;
+        })}
+      </svg>
+    );
+  }
+
+  // Partly cloudy
+  if (prefix === '02') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <circle cx="24" cy="22" r="9" fill="#FBBF24" />
+        {[0, 60, 120, 180, 240, 300].map((angle) => {
+          const rad = (angle * Math.PI) / 180;
+          const x1 = 24 + Math.cos(rad) * 13;
+          const y1 = 22 + Math.sin(rad) * 13;
+          const x2 = 24 + Math.cos(rad) * 16;
+          const y2 = 22 + Math.sin(rad) * 16;
+          return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" opacity="0.6" />;
+        })}
+        <path d="M18 44 h30 a10 10 0 0 0 0-20 h-1 a14 14 0 0 0-27 6 a8 8 0 0 0-2 14z" fill="white" opacity="0.9" />
+      </svg>
+    );
+  }
+
+  // Cloudy / overcast
+  if (prefix === '03' || prefix === '04') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <path d="M14 44 h36 a10 10 0 0 0 0-20 h-1 a14 14 0 0 0-27 6 a8 8 0 0 0-8 14z" fill="white" opacity="0.85" />
+        <path d="M22 38 h28 a8 8 0 0 0 0-16 h-1 a11 11 0 0 0-21 5 a6 6 0 0 0-6 11z" fill="white" opacity="0.6" />
+      </svg>
+    );
+  }
+
+  // Drizzle
+  if (prefix === '09') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <path d="M14 36 h36 a10 10 0 0 0 0-20 h-1 a14 14 0 0 0-27 6 a8 8 0 0 0-8 14z" fill="white" opacity="0.8" />
+        <line x1="24" y1="42" x2="22" y2="48" stroke="#93C5FD" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+        <line x1="34" y1="42" x2="32" y2="48" stroke="#93C5FD" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+        <line x1="44" y1="42" x2="42" y2="48" stroke="#93C5FD" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+      </svg>
+    );
+  }
+
+  // Rain
+  if (prefix === '10') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <path d="M14 34 h36 a10 10 0 0 0 0-20 h-1 a14 14 0 0 0-27 6 a8 8 0 0 0-8 14z" fill="white" opacity="0.8" />
+        <line x1="20" y1="40" x2="17" y2="50" stroke="#60A5FA" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+        <line x1="30" y1="40" x2="27" y2="50" stroke="#60A5FA" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+        <line x1="40" y1="40" x2="37" y2="50" stroke="#60A5FA" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+        <line x1="25" y1="50" x2="22" y2="58" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+        <line x1="35" y1="50" x2="32" y2="58" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+      </svg>
+    );
+  }
+
+  // Thunderstorm
+  if (prefix === '11') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <path d="M14 32 h36 a10 10 0 0 0 0-20 h-1 a14 14 0 0 0-27 6 a8 8 0 0 0-8 14z" fill="#94A3B8" opacity="0.8" />
+        <polygon points="33,34 28,46 33,46 29,58 40,42 34,42 38,34" fill="#FBBF24" opacity="0.9" />
+        <line x1="20" y1="38" x2="17" y2="48" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+        <line x1="46" y1="38" x2="43" y2="48" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+      </svg>
+    );
+  }
+
+  // Snow
+  if (prefix === '13') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <path d="M14 34 h36 a10 10 0 0 0 0-20 h-1 a14 14 0 0 0-27 6 a8 8 0 0 0-8 14z" fill="white" opacity="0.85" />
+        <circle cx="22" cy="44" r="2.5" fill="white" opacity="0.8" />
+        <circle cx="32" cy="48" r="2.5" fill="white" opacity="0.8" />
+        <circle cx="42" cy="44" r="2.5" fill="white" opacity="0.8" />
+        <circle cx="27" cy="54" r="2" fill="white" opacity="0.5" />
+        <circle cx="37" cy="56" r="2" fill="white" opacity="0.5" />
+      </svg>
+    );
+  }
+
+  // Fog / mist
+  if (prefix === '50') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+        <line x1="10" y1="24" x2="54" y2="24" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.4" />
+        <line x1="14" y1="32" x2="50" y2="32" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.5" />
+        <line x1="10" y1="40" x2="54" y2="40" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.4" />
+        <line x1="16" y1="48" x2="48" y2="48" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.3" />
+      </svg>
+    );
+  }
+
+  // Default: partly cloudy
+  return (
+    <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
+      <circle cx="24" cy="22" r="9" fill="#FBBF24" />
+      <path d="M18 44 h30 a10 10 0 0 0 0-20 h-1 a14 14 0 0 0-27 6 a8 8 0 0 0-2 14z" fill="white" opacity="0.9" />
+    </svg>
+  );
 }
 
 function useWeather() {
@@ -256,122 +353,6 @@ function formatTime(date: Date): string {
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
-}
-
-// ---------------------------------------------------------------------------
-// Preview dropdown
-// ---------------------------------------------------------------------------
-
-function PreviewDropdown({
-  value,
-  onChange,
-}: {
-  value: PreviewFilter;
-  onChange: (v: PreviewFilter) => void;
-}) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '6px 12px',
-          background: 'rgba(255,255,255,0.12)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255,255,255,0.18)',
-          borderRadius: 8,
-          color: 'rgba(255,255,255,0.85)',
-          fontSize: 13,
-          fontFamily: 'var(--font-family)',
-          fontWeight: 400,
-          cursor: 'pointer',
-          transition: 'background 0.15s',
-          outline: 'none',
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
-      >
-        {t(PREVIEW_LABEL_KEYS[value])}
-        <ChevronDown size={14} style={{ opacity: 0.7 }} />
-      </button>
-
-      {open && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            right: 0,
-            width: 220,
-            background: 'var(--color-bg-elevated)',
-            borderRadius: 12,
-            boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
-            border: '1px solid var(--color-border-primary)',
-            overflow: 'hidden',
-            zIndex: 100,
-            padding: '6px',
-          }}
-        >
-          <div
-            style={{
-              padding: '8px 12px 6px',
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'var(--color-text-tertiary)',
-              fontFamily: 'var(--font-family)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {t('home.previewEmails')}
-          </div>
-          {PREVIEW_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => { onChange(opt.id); setOpen(false); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                width: '100%',
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-family)',
-                fontSize: 13,
-                color: 'var(--color-text-primary)',
-                transition: 'background 0.12s',
-                outline: 'none',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <opt.icon size={16} color={opt.color} strokeWidth={1.8} />
-              <span style={{ flex: 1, textAlign: 'left' }}>{t(opt.labelKey)}</span>
-              {value === opt.id && <Check size={14} color="var(--color-accent-primary)" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -494,13 +475,6 @@ export function HomePage() {
   const { data: counts } = useThreadCounts();
   const { data: taskCounts } = useTaskCounts();
   const parallax = useMouseParallax(15);
-  const [previewFilter, setPreviewFilter] = useState<PreviewFilter>(() => {
-    return (localStorage.getItem('atlasmail_home_preview') as PreviewFilter) || 'all';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('atlasmail_home_preview', previewFilter);
-  }, [previewFilter]);
 
   // Image rotation — changes daily, crossfade on manual cycle
   const [imageIndex, setImageIndex] = useState(getDailyImageIndex);
@@ -550,7 +524,17 @@ export function HomePage() {
   const pendingTaskCount = taskCounts?.total ?? 0;
   const timeTint = getTimeTint(hour);
 
-  const WeatherIcon = weather ? getWeatherIcon(weather.icon) : null;
+  // Upcoming events (next 3 that haven't ended yet)
+  const upcomingEvents = useMemo(() => {
+    if (!todayEvents?.length) return [];
+    const nowMs = now.getTime();
+    return todayEvents
+      .filter((ev) => {
+        const end = ev.endTime ? new Date(ev.endTime).getTime() : Infinity;
+        return end > nowMs;
+      })
+      .slice(0, 3);
+  }, [todayEvents, now]);
 
   return (
     <div
@@ -636,24 +620,6 @@ export function HomePage() {
         }}
       />
 
-      {/* Top bar */}
-      <div
-        className="home-topbar-entrance"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'flex-end',
-          padding: '28px 36px',
-        }}
-      >
-        <PreviewDropdown value={previewFilter} onChange={setPreviewFilter} />
-      </div>
-
       {/* Center content */}
       <div
         className="home-content-entrance"
@@ -681,16 +647,16 @@ export function HomePage() {
         </span>
 
         {/* Date + Weather */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-          <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, fontWeight: 500 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+          <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 20, fontWeight: 500, letterSpacing: '0.01em' }}>
             {formatDate(now)}
           </span>
           {weather && (
             <>
-              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 15 }}>·</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                {WeatherIcon && <WeatherIcon size={14} color="rgba(255,255,255,0.7)" strokeWidth={1.8} />}
-                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 20 }}>·</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <WeatherIconSVG code={weather.icon} size={28} />
+                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 19, fontWeight: 400 }}>
                   {weather.temp}°C{weather.description ? `, ${weather.description}` : ''}
                   {weather.city ? ` · ${weather.city}` : ''}
                 </span>
@@ -728,8 +694,122 @@ export function HomePage() {
           </p>
         )}
 
-        {/* 3 App cards */}
-        <div style={{ display: 'flex', gap: 20, marginTop: 40 }}>
+        {/* Today at a glance */}
+        {(upcomingEvents.length > 0 || pendingTaskCount > 0) && (
+          <div
+            style={{
+              marginTop: 28,
+              display: 'flex',
+              gap: 12,
+              alignItems: 'stretch',
+            }}
+          >
+            {/* Upcoming events */}
+            {upcomingEvents.length > 0 && (
+              <button
+                onClick={() => navigate(ROUTES.CALENDAR)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  padding: '14px 20px',
+                  background: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 14,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: 'var(--font-family)',
+                  outline: 'none',
+                  transition: 'background 0.2s',
+                  minWidth: 200,
+                  maxWidth: 280,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <Clock size={12} color="rgba(255,255,255,0.5)" />
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Coming up
+                  </span>
+                </div>
+                {upcomingEvents.map((ev) => (
+                  <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500, minWidth: 44 }}>
+                      {ev.startTime && !ev.isAllDay
+                        ? new Date(ev.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'All day'}
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500 }}>
+                      {ev.summary || 'Event'}
+                    </span>
+                  </div>
+                ))}
+              </button>
+            )}
+
+            {/* Quick stats */}
+            {(inboxUnread > 0 || pendingTaskCount > 0) && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  padding: '14px 20px',
+                  background: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 14,
+                  textAlign: 'left',
+                  fontFamily: 'var(--font-family)',
+                  minWidth: 160,
+                }}
+              >
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                  Today
+                </span>
+                {inboxUnread > 0 && (
+                  <button
+                    onClick={() => navigate(ROUTES.INBOX)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      fontFamily: 'var(--font-family)', outline: 'none',
+                    }}
+                  >
+                    <Mail size={13} color="rgba(255,255,255,0.6)" />
+                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 500 }}>
+                      {inboxUnread} unread email{inboxUnread !== 1 ? 's' : ''}
+                    </span>
+                    <ArrowRight size={11} color="rgba(255,255,255,0.3)" />
+                  </button>
+                )}
+                {pendingTaskCount > 0 && (
+                  <button
+                    onClick={() => navigate(ROUTES.TASKS)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      fontFamily: 'var(--font-family)', outline: 'none',
+                    }}
+                  >
+                    <CheckSquare size={13} color="rgba(255,255,255,0.6)" />
+                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 500 }}>
+                      {pendingTaskCount} pending task{pendingTaskCount !== 1 ? 's' : ''}
+                    </span>
+                    <ArrowRight size={11} color="rgba(255,255,255,0.3)" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* App cards */}
+        <div style={{ display: 'flex', gap: 20, marginTop: 36 }}>
           <AppCard
             icon={Mail}
             label={t('nav.mail')}
