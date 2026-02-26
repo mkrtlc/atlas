@@ -37,6 +37,14 @@ export async function handleCallback(req: Request, res: Response) {
       try {
         const payload = authService.verifyRefreshToken(existingToken);
         existingUserId = payload.userId;
+        // Backwards compat: old refresh tokens lack userId — look it up
+        if (!existingUserId) {
+          const [acct] = await db.select({ userId: accounts.userId })
+            .from(accounts)
+            .where(eq(accounts.id, payload.accountId))
+            .limit(1);
+          existingUserId = acct?.userId;
+        }
       } catch {
         // Token invalid/expired — ignore and create a new user
       }
@@ -101,10 +109,26 @@ export async function refreshToken(req: Request, res: Response) {
     }
 
     const payload = authService.verifyRefreshToken(refreshToken);
+
+    // Backwards compatibility: old refresh tokens won't have userId.
+    // Look it up from the database so the new token pair includes it.
+    let userId = payload.userId;
+    if (!userId) {
+      const [acct] = await db.select({ userId: accounts.userId })
+        .from(accounts)
+        .where(eq(accounts.id, payload.accountId))
+        .limit(1);
+      userId = acct?.userId;
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Account not found' });
+        return;
+      }
+    }
+
     const newTokens = authService.generateTokens({
       id: payload.accountId,
       email: payload.email,
-      userId: payload.userId,
+      userId,
     });
 
     res.json({

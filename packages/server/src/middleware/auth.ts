@@ -55,7 +55,11 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     if (!payload.userId) {
       getDb().then(async ({ db, accounts }) => {
         const [acct] = await db.select({ userId: accounts.userId }).from(accounts).where(eq(accounts.id, payload.accountId)).limit(1);
-        payload.userId = acct?.userId ?? '';
+        if (!acct?.userId) {
+          res.status(401).json({ success: false, error: 'Account not found or missing user link' });
+          return;
+        }
+        payload.userId = acct.userId;
         req.auth = payload;
         next();
       }).catch(() => {

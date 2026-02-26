@@ -100,6 +100,7 @@ export async function listUserAccounts(userId: string) {
   return db
     .select({
       id: accounts.id,
+      userId: accounts.userId,
       email: accounts.email,
       name: accounts.name,
       pictureUrl: accounts.pictureUrl,
