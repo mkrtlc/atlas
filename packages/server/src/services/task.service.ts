@@ -1,0 +1,310 @@
+import { db } from '../config/database';
+import { tasks, taskProjects } from '../db/schema';
+import { eq, and, asc, desc, sql, isNull } from 'drizzle-orm';
+import { logger } from '../utils/logger';
+import type {
+  CreateTaskInput, UpdateTaskInput,
+  CreateProjectInput, UpdateProjectInput,
+} from '@atlasmail/shared';
+
+// ─── Tasks ──────────────────────────────────────────────────────────
+
+export async function listTasks(userId: string, filters?: {
+  status?: string;
+  when?: string;
+  projectId?: string | null;
+  includeArchived?: boolean;
+}) {
+  const conditions = [eq(tasks.userId, userId)];
+
+  if (!filters?.includeArchived) {
+    conditions.push(eq(tasks.isArchived, false));
+  }
+  if (filters?.status) {
+    conditions.push(eq(tasks.status, filters.status));
+  }
+  if (filters?.when) {
+    if (filters.when === 'today') {
+      // Include both 'today' and 'evening' tasks in the Today view
+      conditions.push(sql`${tasks.when} IN ('today', 'evening')`);
+    } else {
+      conditions.push(eq(tasks.when, filters.when));
+    }
+  }
+  if (filters?.projectId !== undefined) {
+    if (filters.projectId === null) {
+      conditions.push(isNull(tasks.projectId));
+    } else {
+      conditions.push(eq(tasks.projectId, filters.projectId));
+    }
+  }
+
+  return db
+    .select()
+    .from(tasks)
+    .where(and(...conditions))
+    .orderBy(asc(tasks.sortOrder), asc(tasks.createdAt));
+}
+
+export async function getTask(userId: string, taskId: string) {
+  const [task] = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+    .limit(1);
+
+  return task || null;
+}
+
+export async function createTask(userId: string, accountId: string, input: CreateTaskInput) {
+  const now = new Date().toISOString();
+
+  const [maxSort] = await db
+    .select({ max: sql<number>`COALESCE(MAX(${tasks.sortOrder}), -1)` })
+    .from(tasks)
+    .where(eq(tasks.userId, userId));
+
+  const sortOrder = (maxSort?.max ?? -1) + 1;
+
+  const [created] = await db
+    .insert(tasks)
+    .values({
+      accountId,
+      userId,
+      title: input.title || '',
+      notes: input.notes ?? null,
+      description: input.description ?? null,
+      type: input.type ?? 'task',
+      headingId: input.headingId ?? null,
+      projectId: input.projectId ?? null,
+      when: input.when ?? 'inbox',
+      priority: input.priority ?? 'none',
+      dueDate: input.dueDate ?? null,
+      tags: input.tags ?? [],
+      sortOrder,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  logger.info({ userId, taskId: created.id }, 'Task created');
+  return created;
+}
+
+export async function updateTask(userId: string, taskId: string, input: UpdateTaskInput) {
+  const now = new Date().toISOString();
+  const updates: Record<string, unknown> = { updatedAt: now };
+
+  if (input.title !== undefined) updates.title = input.title;
+  if (input.notes !== undefined) updates.notes = input.notes;
+  if (input.description !== undefined) updates.description = input.description;
+  if (input.type !== undefined) updates.type = input.type;
+  if (input.headingId !== undefined) updates.headingId = input.headingId;
+  if (input.projectId !== undefined) updates.projectId = input.projectId;
+  if (input.status !== undefined) {
+    updates.status = input.status;
+    if (input.status === 'completed' || input.status === 'cancelled') {
+      updates.completedAt = now;
+    } else {
+      updates.completedAt = null;
+    }
+  }
+  if (input.when !== undefined) updates.when = input.when;
+  if (input.priority !== undefined) updates.priority = input.priority;
+  if (input.dueDate !== undefined) updates.dueDate = input.dueDate;
+  if (input.tags !== undefined) updates.tags = input.tags;
+  if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder;
+  if (input.isArchived !== undefined) updates.isArchived = input.isArchived;
+
+  await db
+    .update(tasks)
+    .set(updates)
+    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
+
+  const [updated] = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+    .limit(1);
+
+  return updated || null;
+}
+
+export async function deleteTask(userId: string, taskId: string) {
+  await updateTask(userId, taskId, { isArchived: true });
+}
+
+export async function restoreTask(userId: string, taskId: string) {
+  const now = new Date().toISOString();
+  await db
+    .update(tasks)
+    .set({ isArchived: false, updatedAt: now })
+    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
+
+  const [restored] = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+    .limit(1);
+
+  return restored || null;
+}
+
+export async function searchTasks(userId: string, query: string) {
+  const searchTerm = `%${query}%`;
+  return db
+    .select()
+    .from(tasks)
+    .where(
+      and(
+        eq(tasks.userId, userId),
+        eq(tasks.isArchived, false),
+        sql`${tasks.title} LIKE ${searchTerm}`,
+      ),
+    )
+    .orderBy(desc(tasks.updatedAt))
+    .limit(30);
+}
+
+export async function reorderTasks(userId: string, taskIds: string[]) {
+  const now = new Date().toISOString();
+  for (let i = 0; i < taskIds.length; i++) {
+    await db
+      .update(tasks)
+      .set({ sortOrder: i, updatedAt: now })
+      .where(and(eq(tasks.id, taskIds[i]), eq(tasks.userId, userId)));
+  }
+}
+
+// ─── Projects ───────────────────────────────────────────────────────
+
+export async function listProjects(userId: string, includeArchived = false) {
+  const conditions = [eq(taskProjects.userId, userId)];
+  if (!includeArchived) {
+    conditions.push(eq(taskProjects.isArchived, false));
+  }
+
+  return db
+    .select()
+    .from(taskProjects)
+    .where(and(...conditions))
+    .orderBy(asc(taskProjects.sortOrder), asc(taskProjects.createdAt));
+}
+
+export async function getProject(userId: string, projectId: string) {
+  const [project] = await db
+    .select()
+    .from(taskProjects)
+    .where(and(eq(taskProjects.id, projectId), eq(taskProjects.userId, userId)))
+    .limit(1);
+
+  return project || null;
+}
+
+export async function createProject(userId: string, accountId: string, input: CreateProjectInput) {
+  const now = new Date().toISOString();
+
+  const [maxSort] = await db
+    .select({ max: sql<number>`COALESCE(MAX(${taskProjects.sortOrder}), -1)` })
+    .from(taskProjects)
+    .where(eq(taskProjects.userId, userId));
+
+  const sortOrder = (maxSort?.max ?? -1) + 1;
+
+  const [created] = await db
+    .insert(taskProjects)
+    .values({
+      accountId,
+      userId,
+      title: input.title || 'Untitled project',
+      description: input.description ?? null,
+      icon: input.icon ?? null,
+      color: input.color ?? '#5a7fa0',
+      sortOrder,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  logger.info({ userId, projectId: created.id }, 'Task project created');
+  return created;
+}
+
+export async function updateProject(userId: string, projectId: string, input: UpdateProjectInput) {
+  const now = new Date().toISOString();
+  const updates: Record<string, unknown> = { updatedAt: now };
+
+  if (input.title !== undefined) updates.title = input.title;
+  if (input.color !== undefined) updates.color = input.color;
+  if (input.description !== undefined) updates.description = input.description;
+  if (input.icon !== undefined) updates.icon = input.icon;
+  if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder;
+  if (input.isArchived !== undefined) updates.isArchived = input.isArchived;
+
+  await db
+    .update(taskProjects)
+    .set(updates)
+    .where(and(eq(taskProjects.id, projectId), eq(taskProjects.userId, userId)));
+
+  const [updated] = await db
+    .select()
+    .from(taskProjects)
+    .where(and(eq(taskProjects.id, projectId), eq(taskProjects.userId, userId)))
+    .limit(1);
+
+  return updated || null;
+}
+
+export async function deleteProject(userId: string, projectId: string) {
+  await updateProject(userId, projectId, { isArchived: true });
+}
+
+// ─── Stats ──────────────────────────────────────────────────────────
+
+export async function getTaskCounts(userId: string) {
+  const allTasks = await db
+    .select({
+      status: tasks.status,
+      when: tasks.when,
+    })
+    .from(tasks)
+    .where(and(eq(tasks.userId, userId), eq(tasks.isArchived, false)));
+
+  const counts = {
+    inbox: 0,
+    today: 0,
+    upcoming: 0,
+    anytime: 0,
+    someday: 0,
+    logbook: 0,
+    total: 0,
+  };
+
+  for (const t of allTasks) {
+    if (t.status === 'completed' || t.status === 'cancelled') {
+      counts.logbook++;
+    } else {
+      counts.total++;
+      if (t.when === 'inbox') counts.inbox++;
+      else if (t.when === 'today' || t.when === 'evening') counts.today++;
+      else if (t.when === 'anytime') counts.anytime++;
+      else if (t.when === 'someday') counts.someday++;
+    }
+  }
+
+  // Upcoming = tasks with a due date that aren't today
+  const tasksWithDueDate = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(
+      and(
+        eq(tasks.userId, userId),
+        eq(tasks.isArchived, false),
+        eq(tasks.status, 'todo'),
+        sql`${tasks.dueDate} IS NOT NULL`,
+      ),
+    );
+  counts.upcoming = tasksWithDueDate.length;
+
+  return counts;
+}

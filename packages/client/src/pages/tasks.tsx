@@ -1,0 +1,1294 @@
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft, Plus, Search, Inbox, Star, Calendar, Coffee,
+  Archive, BookOpen, Check, Trash2, X, ChevronRight,
+  Hash, CircleDot, MoreHorizontal, Moon, Sun, GripVertical,
+  Video, Clock,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useTaskList, useCreateTask, useUpdateTask, useDeleteTask,
+  useProjectList, useCreateProject, useUpdateProject, useDeleteProject, useTaskCounts,
+  useReorderTasks,
+} from '../hooks/use-tasks';
+import { useCalendarEvents } from '../hooks/use-calendar';
+import { TaskNotesEditor } from '../components/tasks/task-notes-editor';
+import { queryKeys } from '../config/query-keys';
+import { api } from '../lib/api-client';
+import { ROUTES } from '../config/routes';
+import type { Task, TaskProject, TaskWhen } from '@atlasmail/shared';
+import '../styles/tasks.css';
+
+// ─── Constants ───────────────────────────────────────────────────────
+
+const SIDEBAR_WIDTH_KEY = 'atlasmail_tasks_sidebar_width';
+const DEFAULT_SIDEBAR_WIDTH = 240;
+const MIN_SIDEBAR_WIDTH = 200;
+const MAX_SIDEBAR_WIDTH = 360;
+
+function getSavedSidebarWidth(): number {
+  try {
+    const w = parseInt(localStorage.getItem(SIDEBAR_WIDTH_KEY) || '', 10);
+    if (w >= MIN_SIDEBAR_WIDTH && w <= MAX_SIDEBAR_WIDTH) return w;
+  } catch { /* ignore */ }
+  return DEFAULT_SIDEBAR_WIDTH;
+}
+
+// ─── Navigation sections (Things 3 inspired) ────────────────────────
+
+type NavSection = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | `project:${string}`;
+
+interface NavItem {
+  id: NavSection;
+  labelKey: string;
+  icon: typeof Inbox;
+  color: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'inbox', labelKey: 'tasks.inbox', icon: Inbox, color: '#3b82f6' },
+  { id: 'today', labelKey: 'tasks.today', icon: Star, color: '#f59e0b' },
+  { id: 'upcoming', labelKey: 'tasks.upcoming', icon: Calendar, color: '#ef4444' },
+  { id: 'anytime', labelKey: 'tasks.anytime', icon: CircleDot, color: '#06b6d4' },
+  { id: 'someday', labelKey: 'tasks.someday', icon: Coffee, color: '#a78bfa' },
+  { id: 'logbook', labelKey: 'tasks.logbook', icon: BookOpen, color: '#6b7280' },
+];
+
+// ─── Emoji picker data ──────────────────────────────────────────────
+
+const COMMON_EMOJIS = [
+  '📋', '📌', '🎯', '🚀', '💼', '🏠', '❤️', '⭐',
+  '🔥', '💡', '📚', '🎨', '🎵', '🏋️', '🌱', '🛒',
+  '✈️', '💻', '📱', '🎮', '🍳', '🧘', '📸', '🔧',
+  '🎓', '💰', '🏗️', '🧪', '📦', '🌍', '🎉', '🔒',
+];
+
+// ─── Helpers ────────────────────────────────────────────────────────
+
+function isToday(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
+function isOverdue(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return d < now;
+}
+
+function formatDueDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  if (diff < -1) return `${Math.abs(diff)}d overdue`;
+  if (diff <= 7) return d.toLocaleDateString([], { weekday: 'short' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function getDueBadgeClass(dateStr: string): string {
+  if (isOverdue(dateStr)) return 'task-due-badge overdue';
+  if (isToday(dateStr)) return 'task-due-badge today';
+  return 'task-due-badge upcoming';
+}
+
+function formatEventTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+// ─── Priority selector ──────────────────────────────────────────────
+
+const PRIORITY_OPTIONS = [
+  { value: 'high', label: 'High', color: '#ef4444' },
+  { value: 'medium', label: 'Medium', color: '#f59e0b' },
+  { value: 'low', label: 'Low', color: '#3b82f6' },
+  { value: 'none', label: 'None', color: 'transparent' },
+] as const;
+
+const WHEN_OPTIONS: { value: TaskWhen; label: string; icon: typeof Inbox }[] = [
+  { value: 'inbox', label: 'Inbox', icon: Inbox },
+  { value: 'today', label: 'Today', icon: Star },
+  { value: 'evening', label: 'This evening', icon: Moon },
+  { value: 'anytime', label: 'Anytime', icon: CircleDot },
+  { value: 'someday', label: 'Someday', icon: Coffee },
+];
+
+// ─── When Badge Component (feature 7) ──────────────────────────────
+
+function WhenBadge({ when, dueDate, showBadge }: { when: TaskWhen; dueDate: string | null; showBadge: boolean }) {
+  if (!showBadge) return null;
+
+  if (when === 'today') {
+    return <span className="task-when-badge today" title="Today"><Star size={12} /></span>;
+  }
+  if (when === 'evening') {
+    return <span className="task-when-badge evening" title="This evening"><Moon size={12} /></span>;
+  }
+  if (dueDate) {
+    return <span className="task-when-badge upcoming" title={formatDueDate(dueDate)}><Calendar size={12} /></span>;
+  }
+  return null;
+}
+
+// ─── TaskItem Component ─────────────────────────────────────────────
+
+function TaskItem({
+  task,
+  isSelected,
+  onClick,
+  onComplete,
+  projects,
+  showWhenBadge,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+}: {
+  task: Task;
+  isSelected: boolean;
+  onClick: () => void;
+  onComplete: () => void;
+  projects: TaskProject[];
+  showWhenBadge: boolean;
+  onDragStart?: (e: React.DragEvent, taskId: string) => void;
+  onDragOver?: (e: React.DragEvent, taskId: string) => void;
+  onDrop?: (e: React.DragEvent, taskId: string) => void;
+  onDragEnd?: () => void;
+}) {
+  const [completing, setCompleting] = useState(false);
+
+  const handleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (task.status === 'completed') return;
+    setCompleting(true);
+    setTimeout(() => onComplete(), 800);
+  };
+
+  const project = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+
+  return (
+    <div
+      className={`task-item${isSelected ? ' selected' : ''}${completing ? ' completing' : ''}`}
+      onClick={onClick}
+      onDragOver={e => onDragOver?.(e, task.id)}
+      onDrop={e => onDrop?.(e, task.id)}
+    >
+      <div
+        className="task-drag-handle"
+        draggable
+        onDragStart={e => onDragStart?.(e, task.id)}
+        onDragEnd={onDragEnd}
+      >
+        <GripVertical size={14} />
+      </div>
+
+      <button
+        className={`task-checkbox${task.status === 'completed' || completing ? ' completed' : ''}`}
+        onClick={handleComplete}
+      >
+        {(task.status === 'completed' || completing) && (
+          <Check size={12} color="#fff" strokeWidth={3} className="task-check-icon" />
+        )}
+      </button>
+
+      <div className="task-item-content">
+        <div className="task-item-title-row">
+          {task.priority !== 'none' && (
+            <div className={`task-priority-dot ${task.priority}`} />
+          )}
+          <span className={`task-title-text${task.status === 'completed' ? ' completed' : ''}`}>
+            {task.title || 'Untitled'}
+          </span>
+          <WhenBadge when={task.when} dueDate={task.dueDate} showBadge={showWhenBadge} />
+        </div>
+
+        {(task.dueDate || project || task.tags.length > 0) && (
+          <div className="task-meta-row">
+            {task.dueDate && (
+              <span className={getDueBadgeClass(task.dueDate)}>
+                {formatDueDate(task.dueDate)}
+              </span>
+            )}
+            {project && (
+              <span className="task-meta-project">
+                {project.icon ? (
+                  <span className="task-meta-project-emoji">{project.icon}</span>
+                ) : (
+                  <div className="task-project-dot" style={{ background: project.color }} />
+                )}
+                {project.title}
+              </span>
+            )}
+            {task.tags.length > 0 && (
+              <span className="task-meta-tags">
+                <Hash size={10} />
+                {task.tags[0]}
+                {task.tags.length > 1 && ` +${task.tags.length - 1}`}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {isSelected && (
+        <ChevronRight size={14} color="var(--color-text-tertiary)" style={{ flexShrink: 0, marginTop: 3 }} />
+      )}
+    </div>
+  );
+}
+
+// ─── Heading Row Component (feature 4 — sections within projects) ───
+
+function HeadingRow({
+  task,
+  onDelete,
+}: {
+  task: Task;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="task-heading-row">
+      <span className="task-heading-title">{task.title}</span>
+      <button className="tasks-icon-btn task-heading-delete" onClick={onDelete} title="Delete section">
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
+
+// ─── Calendar Events Section (feature 6) ────────────────────────────
+
+function TodayCalendarEvents() {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+
+  const { data: events } = useCalendarEvents(todayStart, todayEnd);
+
+  if (!events || events.length === 0) return null;
+
+  return (
+    <div className="task-calendar-events">
+      <div className="task-calendar-events-header">
+        <Clock size={13} />
+        <span>Schedule</span>
+      </div>
+      {events.map((event: any) => (
+        <div key={event.id} className="task-calendar-event-row">
+          <span className="task-calendar-event-time">
+            {event.isAllDay ? 'All day' : `${formatEventTime(event.startTime)} – ${formatEventTime(event.endTime)}`}
+          </span>
+          <span className="task-calendar-event-title">{event.summary || 'Untitled event'}</span>
+          {event.hangoutLink && (
+            <a href={event.hangoutLink} target="_blank" rel="noreferrer" className="task-calendar-event-video" title="Join video call">
+              <Video size={12} />
+            </a>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Emoji Picker (feature 10) ──────────────────────────────────────
+
+function EmojiPicker({ onSelect, onClose }: { onSelect: (emoji: string) => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    window.addEventListener('mousedown', handler);
+    return () => window.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  return (
+    <div className="task-emoji-picker" ref={ref}>
+      {COMMON_EMOJIS.map(emoji => (
+        <button key={emoji} className="task-emoji-option" onClick={() => { onSelect(emoji); onClose(); }}>
+          {emoji}
+        </button>
+      ))}
+      <button className="task-emoji-option task-emoji-clear" onClick={() => { onSelect(''); onClose(); }} title="Remove icon">
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
+// ─── New Task Inline Creator ────────────────────────────────────────
+
+function NewTaskCreator({
+  defaultWhen,
+  projectId,
+  headingId,
+  onCreated,
+}: {
+  defaultWhen: TaskWhen;
+  projectId?: string | null;
+  headingId?: string | null;
+  onCreated?: () => void;
+}) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const createTask = useCreateTask();
+
+  useEffect(() => {
+    if (isCreating && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isCreating]);
+
+  const handleSubmit = () => {
+    const trimmed = title.trim();
+    if (!trimmed) {
+      setIsCreating(false);
+      setTitle('');
+      return;
+    }
+    createTask.mutate(
+      {
+        title: trimmed,
+        when: defaultWhen,
+        projectId: projectId ?? undefined,
+        headingId: headingId ?? undefined,
+      },
+      {
+        onSuccess: () => {
+          setTitle('');
+          onCreated?.();
+          inputRef.current?.focus();
+        },
+      },
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+    if (e.key === 'Escape') {
+      setIsCreating(false);
+      setTitle('');
+    }
+  };
+
+  if (!isCreating) {
+    return (
+      <button className="task-new-btn" onClick={() => setIsCreating(true)}>
+        <Plus size={16} />
+        New task
+      </button>
+    );
+  }
+
+  return (
+    <div className="task-new-inline">
+      <div className="task-new-circle" />
+      <input
+        ref={inputRef}
+        className="task-new-input"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSubmit}
+        placeholder="New task..."
+      />
+    </div>
+  );
+}
+
+// ─── New Heading Creator (feature 4) ────────────────────────────────
+
+function NewHeadingCreator({
+  projectId,
+}: {
+  projectId: string;
+}) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const createTask = useCreateTask();
+
+  useEffect(() => {
+    if (isCreating && inputRef.current) inputRef.current.focus();
+  }, [isCreating]);
+
+  const handleSubmit = () => {
+    const trimmed = title.trim();
+    if (!trimmed) {
+      setIsCreating(false);
+      setTitle('');
+      return;
+    }
+    createTask.mutate(
+      { title: trimmed, type: 'heading', projectId },
+      { onSuccess: () => { setTitle(''); setIsCreating(false); } },
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+    if (e.key === 'Escape') { setIsCreating(false); setTitle(''); }
+  };
+
+  if (!isCreating) {
+    return (
+      <button className="task-new-heading-btn" onClick={() => setIsCreating(true)}>
+        <Plus size={14} />
+        Add section
+      </button>
+    );
+  }
+
+  return (
+    <div className="task-new-heading-inline">
+      <input
+        ref={inputRef}
+        className="task-new-heading-input"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSubmit}
+        placeholder="Section name..."
+      />
+    </div>
+  );
+}
+
+// ─── Task Detail Panel ──────────────────────────────────────────────
+
+function TaskDetailPanel({
+  task,
+  projects,
+  onClose,
+}: {
+  task: Task;
+  projects: TaskProject[];
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState(task.title);
+  const [when, setWhen] = useState(task.when);
+  const [priority, setPriority] = useState(task.priority);
+  const [dueDate, setDueDate] = useState(task.dueDate || '');
+  const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
+  const titleRef = useRef<HTMLInputElement>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    setTitle(task.title);
+    setWhen(task.when);
+    setPriority(task.priority);
+    setDueDate(task.dueDate || '');
+  }, [task.id, task.title, task.when, task.priority, task.dueDate]);
+
+  const autoSave = useCallback((updates: Record<string, unknown>) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      updateTask.mutate({ id: task.id, ...updates } as any);
+    }, 500);
+  }, [task.id, updateTask]);
+
+  const handleDelete = () => {
+    deleteTask.mutate(task.id);
+    onClose();
+  };
+
+  const project = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+
+  return (
+    <div className="task-detail-panel">
+      {/* Header */}
+      <div className="task-detail-header">
+        <span className="task-detail-header-label">Task detail</span>
+        <div className="task-detail-header-actions">
+          <button className="tasks-icon-btn danger" onClick={handleDelete} title="Delete task">
+            <Trash2 size={14} />
+          </button>
+          <button className="tasks-icon-btn" onClick={onClose} title="Close">
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="task-detail-body task-list-scroll">
+        <input
+          ref={titleRef}
+          className="task-detail-title"
+          value={title}
+          onChange={e => {
+            setTitle(e.target.value);
+            autoSave({ title: e.target.value });
+          }}
+          placeholder="Task title..."
+        />
+
+        {/* Rich notes editor (feature 1 + 5: subtasks via checklists) */}
+        <TaskNotesEditor
+          content={task.description || task.notes || ''}
+          onChange={(html) => {
+            autoSave({ description: html || null });
+          }}
+          placeholder="Add notes..."
+        />
+
+        {/* Metadata fields */}
+        <div className="task-detail-fields">
+          {/* When */}
+          <div className="task-detail-field">
+            <span className="task-detail-label">When</span>
+            <div className="task-detail-pills">
+              {WHEN_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  className={`task-pill${when === opt.value ? ' active' : ''}`}
+                  onClick={() => {
+                    setWhen(opt.value);
+                    updateTask.mutate({ id: task.id, when: opt.value });
+                  }}
+                >
+                  <opt.icon size={11} />
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Priority */}
+          <div className="task-detail-field">
+            <span className="task-detail-label">Priority</span>
+            <div className="task-detail-pills">
+              {PRIORITY_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  className={`task-pill${priority === opt.value ? ' active' : ''}`}
+                  onClick={() => {
+                    setPriority(opt.value);
+                    updateTask.mutate({ id: task.id, priority: opt.value });
+                  }}
+                >
+                  {opt.color !== 'transparent' && (
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: opt.color }} />
+                  )}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Due date */}
+          <div className="task-detail-field">
+            <span className="task-detail-label">Due</span>
+            <input
+              type="date"
+              className="task-date-input"
+              value={dueDate}
+              onChange={e => {
+                setDueDate(e.target.value);
+                updateTask.mutate({ id: task.id, dueDate: e.target.value || null });
+              }}
+            />
+            {dueDate && (
+              <button
+                className="tasks-icon-btn"
+                onClick={() => {
+                  setDueDate('');
+                  updateTask.mutate({ id: task.id, dueDate: null });
+                }}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Project */}
+          {project && (
+            <div className="task-detail-field">
+              <span className="task-detail-label">Project</span>
+              <span className="task-detail-project-info">
+                {project.icon ? (
+                  <span style={{ fontSize: 14 }}>{project.icon}</span>
+                ) : (
+                  <div className="task-detail-project-dot" style={{ background: project.color }} />
+                )}
+                {project.title}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Timestamps */}
+        <div className="task-detail-timestamps">
+          <div className="task-detail-timestamp-text">
+            Created {new Date(task.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+            {task.completedAt && (
+              <> · Completed {new Date(task.completedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Project Header (features 9 + 10: description + emoji) ─────────
+
+function ProjectHeader({
+  project,
+}: {
+  project: TaskProject;
+}) {
+  const updateProject = useUpdateProject();
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [desc, setDesc] = useState(project.description || '');
+  const descRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setDesc(project.description || '');
+  }, [project.id, project.description]);
+
+  useEffect(() => {
+    if (isEditingDesc && descRef.current) descRef.current.focus();
+  }, [isEditingDesc]);
+
+  const handleEmojiSelect = (emoji: string) => {
+    updateProject.mutate({ id: project.id, icon: emoji || null });
+  };
+
+  const handleDescSave = () => {
+    setIsEditingDesc(false);
+    updateProject.mutate({ id: project.id, description: desc || null });
+  };
+
+  return (
+    <div className="task-project-header">
+      <div className="task-project-header-top">
+        <div className="task-project-emoji-wrapper" style={{ position: 'relative' }}>
+          <button
+            className="task-project-emoji-btn"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            title="Change icon"
+          >
+            {project.icon || <div className="tasks-project-indicator large" style={{ background: project.color }} />}
+          </button>
+          {showEmojiPicker && (
+            <EmojiPicker
+              onSelect={handleEmojiSelect}
+              onClose={() => setShowEmojiPicker(false)}
+            />
+          )}
+        </div>
+        <h2 className="task-project-header-title">{project.title}</h2>
+      </div>
+
+      {isEditingDesc ? (
+        <input
+          ref={descRef}
+          className="task-project-desc-input"
+          value={desc}
+          onChange={e => setDesc(e.target.value)}
+          onBlur={handleDescSave}
+          onKeyDown={e => { if (e.key === 'Enter') handleDescSave(); if (e.key === 'Escape') setIsEditingDesc(false); }}
+          placeholder="Add a description..."
+        />
+      ) : (
+        <div
+          className="task-project-desc"
+          onClick={() => setIsEditingDesc(true)}
+        >
+          {project.description || <span className="task-project-desc-placeholder">Add a description...</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Tasks Page ────────────────────────────────────────────────
+
+export function TasksPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const isDesktop = !!('atlasDesktop' in window);
+
+  // Sidebar
+  const [sidebarWidth, setSidebarWidth] = useState(getSavedSidebarWidth);
+  const [isResizing, setIsResizing] = useState(false);
+  const [activeSection, setActiveSection] = useState<NavSection>('inbox');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Drag state
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+
+  // Data
+  const { data: counts } = useTaskCounts();
+  const { data: projectsData } = useProjectList();
+  const projects = projectsData?.projects ?? [];
+
+  // Determine filters based on active section
+  const taskFilters = useMemo(() => {
+    if (activeSection === 'inbox') return { when: 'inbox', status: 'todo' };
+    if (activeSection === 'today') return { when: 'today', status: 'todo' };
+    if (activeSection === 'anytime') return { when: 'anytime', status: 'todo' };
+    if (activeSection === 'someday') return { when: 'someday', status: 'todo' };
+    if (activeSection === 'logbook') return { status: 'completed' };
+    if (activeSection === 'upcoming') return { status: 'todo' };
+    if (activeSection.startsWith('project:')) {
+      return { projectId: activeSection.replace('project:', ''), status: 'todo' };
+    }
+    return {};
+  }, [activeSection]);
+
+  const { data: tasksData, isLoading } = useTaskList(taskFilters);
+  const allTasks = tasksData?.tasks ?? [];
+
+  // Client-side filter for upcoming (tasks with due dates)
+  const displayTasks = useMemo(() => {
+    if (activeSection === 'upcoming') {
+      return allTasks.filter(t => t.dueDate).sort((a, b) => (a.dueDate! > b.dueDate! ? 1 : -1));
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return allTasks.filter(t => t.title.toLowerCase().includes(q));
+    }
+    return allTasks;
+  }, [allTasks, activeSection, searchQuery]);
+
+  // Split today view into daytime + evening (feature 2)
+  const todayTasks = useMemo(() => {
+    if (activeSection !== 'today') return null;
+    const daytime = displayTasks.filter(t => t.when === 'today' && t.type !== 'heading');
+    const evening = displayTasks.filter(t => t.when === 'evening' && t.type !== 'heading');
+    return { daytime, evening };
+  }, [activeSection, displayTasks]);
+
+  // Group project tasks by headings (feature 4)
+  const projectTaskGroups = useMemo(() => {
+    if (!activeSection.startsWith('project:')) return null;
+
+    const headings = displayTasks.filter(t => t.type === 'heading');
+    const regularTasks = displayTasks.filter(t => t.type !== 'heading');
+
+    const ungrouped = regularTasks.filter(t => !t.headingId);
+    const groups: { heading: Task | null; tasks: Task[] }[] = [];
+
+    if (ungrouped.length > 0) {
+      groups.push({ heading: null, tasks: ungrouped });
+    }
+
+    for (const h of headings) {
+      const children = regularTasks.filter(t => t.headingId === h.id);
+      groups.push({ heading: h, tasks: children });
+    }
+
+    return groups;
+  }, [activeSection, displayTasks]);
+
+  // Determine if we should show "when" badges
+  const showWhenBadges = useMemo(() => {
+    return activeSection.startsWith('project:') || activeSection === 'upcoming' || activeSection === 'logbook';
+  }, [activeSection]);
+
+  const selectedTask = displayTasks.find(t => t.id === selectedTaskId) ?? null;
+  const updateTask = useUpdateTask();
+  const createProject = useCreateProject();
+  const deleteProject = useDeleteProject();
+  const reorderTasks = useReorderTasks();
+  const queryClient = useQueryClient();
+  const [seeding, setSeeding] = useState(false);
+  const [projectMenuId, setProjectMenuId] = useState<string | null>(null);
+  const projectMenuRef = useRef<HTMLDivElement>(null);
+
+  const handleSeedSampleData = useCallback(async () => {
+    setSeeding(true);
+    try {
+      await api.post('/tasks/seed');
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+    } catch { /* ignore */ }
+    setSeeding(false);
+  }, [queryClient]);
+
+  // Auto-seed on first visit when there are no tasks at all
+  const hasSeeded = useRef(false);
+  useEffect(() => {
+    if (!isLoading && allTasks.length === 0 && !seeding && !hasSeeded.current && counts !== undefined && counts.total === 0 && counts.logbook === 0) {
+      hasSeeded.current = true;
+      handleSeedSampleData();
+    }
+  }, [isLoading, allTasks.length, seeding, counts, handleSeedSampleData]);
+
+  // Default "when" for new tasks in current section
+  const defaultWhen: TaskWhen = useMemo(() => {
+    if (activeSection === 'today') return 'today';
+    if (activeSection === 'anytime') return 'anytime';
+    if (activeSection === 'someday') return 'someday';
+    return 'inbox';
+  }, [activeSection]);
+
+  const projectIdForNew = activeSection.startsWith('project:')
+    ? activeSection.replace('project:', '')
+    : null;
+
+  const activeProject = projectIdForNew ? projects.find(p => p.id === projectIdForNew) : null;
+
+  // Sidebar resize
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const newWidth = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, startWidth + (ev.clientX - startX)));
+      setSidebarWidth(newWidth);
+    };
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(Math.round(sidebarWidth)));
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [sidebarWidth]);
+
+  // Close project menu on click outside
+  useEffect(() => {
+    if (!projectMenuId) return;
+    const close = (e: MouseEvent) => {
+      if (projectMenuRef.current && !projectMenuRef.current.contains(e.target as Node)) {
+        setProjectMenuId(null);
+      }
+    };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [projectMenuId]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (projectMenuId) { setProjectMenuId(null); return; }
+        if (showSearch) { setShowSearch(false); setSearchQuery(''); }
+        else if (selectedTaskId) setSelectedTaskId(null);
+      }
+      if (e.key === '/' && !isInputFocused()) {
+        e.preventDefault();
+        setShowSearch(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedTaskId, showSearch, projectMenuId]);
+
+  const handleComplete = useCallback((taskId: string) => {
+    updateTask.mutate({ id: taskId, status: 'completed' });
+  }, [updateTask]);
+
+  // ─── Drag-and-drop handlers (feature 8) ────────────────────────
+  const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
+    setDraggedTaskId(taskId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', taskId);
+    // Add dragging class after a tick to not affect the ghost image
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-task-id="${taskId}"]`);
+      el?.classList.add('dragging');
+    });
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDropTargetId(targetId);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = draggedTaskId;
+    if (!sourceId || sourceId === targetId) {
+      setDraggedTaskId(null);
+      setDropTargetId(null);
+      return;
+    }
+
+    // Reorder locally then persist
+    const currentOrder = displayTasks.filter(t => t.type !== 'heading').map(t => t.id);
+    const sourceIdx = currentOrder.indexOf(sourceId);
+    const targetIdx = currentOrder.indexOf(targetId);
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    currentOrder.splice(sourceIdx, 1);
+    currentOrder.splice(targetIdx, 0, sourceId);
+
+    reorderTasks.mutate(currentOrder);
+    setDraggedTaskId(null);
+    setDropTargetId(null);
+  }, [draggedTaskId, displayTasks, reorderTasks]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedTaskId(null);
+    setDropTargetId(null);
+    document.querySelectorAll('.task-item.dragging').forEach(el => el.classList.remove('dragging'));
+  }, []);
+
+  const handleDeleteHeading = useCallback((headingId: string) => {
+    // Ungroup tasks under this heading, then delete the heading
+    const childTasks = allTasks.filter(t => t.headingId === headingId);
+    for (const child of childTasks) {
+      updateTask.mutate({ id: child.id, headingId: null });
+    }
+    updateTask.mutate({ id: headingId, isArchived: true });
+  }, [allTasks, updateTask]);
+
+  // Get section title
+  const sectionTitle = useMemo(() => {
+    if (activeSection.startsWith('project:')) {
+      return null; // We show the project header instead
+    }
+    const nav = NAV_ITEMS.find(n => n.id === activeSection);
+    return nav ? t(nav.labelKey) : '';
+  }, [activeSection, t]);
+
+  // Count for each nav item
+  const navCounts = useMemo(() => ({
+    inbox: counts?.inbox ?? 0,
+    today: counts?.today ?? 0,
+    upcoming: counts?.upcoming ?? 0,
+    anytime: counts?.anytime ?? 0,
+    someday: counts?.someday ?? 0,
+    logbook: counts?.logbook ?? 0,
+  }), [counts]);
+
+  const handleNewProject = () => {
+    createProject.mutate({ title: 'New project' }, {
+      onSuccess: (proj) => {
+        setActiveSection(`project:${proj.id}`);
+      },
+    });
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    if (activeSection === `project:${projectId}`) {
+      setActiveSection('inbox');
+      setSelectedTaskId(null);
+    }
+    deleteProject.mutate(projectId);
+    setProjectMenuId(null);
+  };
+
+  // Render task items helper
+  const renderTaskItem = (task: Task) => (
+    <TaskItem
+      key={task.id}
+      task={task}
+      isSelected={selectedTaskId === task.id}
+      onClick={() => setSelectedTaskId(task.id)}
+      onComplete={() => handleComplete(task.id)}
+      projects={projects}
+      showWhenBadge={showWhenBadges}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragEnd={handleDragEnd}
+    />
+  );
+
+  return (
+    <div className="tasks-page">
+      {/* Desktop drag region */}
+      {isDesktop && <div className="desktop-drag-region tasks-drag-region" />}
+
+      {/* ─── Sidebar ─── */}
+      <div className="tasks-sidebar" style={{ width: sidebarWidth }}>
+        <div className="tasks-sidebar-header" style={{ paddingTop: isDesktop ? 46 : 12 }}>
+          <button className="tasks-back-btn" onClick={() => navigate(ROUTES.HOME)} title="Home screen">
+            <ArrowLeft size={14} />
+          </button>
+          <span className="tasks-sidebar-title">Tasks</span>
+        </div>
+
+        {/* Nav items */}
+        <div className="tasks-nav-section">
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              className={`task-nav-item${activeSection === item.id ? ' active' : ''}`}
+              onClick={() => { setActiveSection(item.id); setSelectedTaskId(null); }}
+            >
+              <item.icon size={16} color={item.color} strokeWidth={1.8} />
+              <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
+              {navCounts[item.id as keyof typeof navCounts] > 0 && (
+                <span className="task-nav-count">
+                  {navCounts[item.id as keyof typeof navCounts]}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Projects section */}
+        <div style={{ marginTop: 16, padding: '0 8px' }}>
+          <div className="tasks-projects-header">
+            <span className="tasks-projects-label">Projects</span>
+            <button className="tasks-projects-add-btn" onClick={handleNewProject} title="New project">
+              <Plus size={14} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {projects.map(proj => (
+              <div key={proj.id} className="tasks-project-row" style={{ position: 'relative' }}>
+                <button
+                  className={`task-nav-item${activeSection === `project:${proj.id}` ? ' active' : ''}`}
+                  onClick={() => { setActiveSection(`project:${proj.id}`); setSelectedTaskId(null); }}
+                >
+                  {proj.icon ? (
+                    <span className="tasks-project-emoji">{proj.icon}</span>
+                  ) : (
+                    <div className="tasks-project-indicator" style={{ background: proj.color }} />
+                  )}
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {proj.title}
+                  </span>
+                </button>
+                <button
+                  className="tasks-project-more-btn"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setProjectMenuId(projectMenuId === proj.id ? null : proj.id);
+                  }}
+                  title="Project options"
+                >
+                  <MoreHorizontal size={14} />
+                </button>
+                {projectMenuId === proj.id && (
+                  <div className="tasks-project-popover" ref={projectMenuRef}>
+                    <button
+                      className="tasks-context-menu-item danger"
+                      onClick={() => handleDeleteProject(proj.id)}
+                    >
+                      <Trash2 size={13} />
+                      Delete project
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ flex: 1 }} />
+      </div>
+
+      {/* Resize handle */}
+      <div className="tasks-resize-handle" onMouseDown={handleResizeStart} />
+
+      {/* ─── Main content ─── */}
+      <div className="tasks-main">
+        {/* Toolbar */}
+        <div className="tasks-toolbar" style={{ paddingTop: isDesktop ? 46 : 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {sectionTitle && (
+              <>
+                <h2 className="tasks-toolbar-title">{sectionTitle}</h2>
+                {displayTasks.length > 0 && (
+                  <span className="tasks-toolbar-count">{displayTasks.length}</span>
+                )}
+              </>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {showSearch ? (
+              <div className="tasks-search-bar">
+                <Search size={13} color="var(--color-text-tertiary)" />
+                <input
+                  ref={searchInputRef}
+                  className="tasks-search-input"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); } }}
+                  placeholder="Search tasks..."
+                />
+                <button className="tasks-icon-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); }}>
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button className="tasks-icon-btn" onClick={() => { setShowSearch(true); setTimeout(() => searchInputRef.current?.focus(), 50); }} title="Search (press /)">
+                <Search size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Task list + detail */}
+        <div className="tasks-content">
+          <div className="tasks-list-container task-list-scroll">
+            {/* Project header (features 9 + 10) */}
+            {activeProject && <ProjectHeader project={activeProject} />}
+
+            {/* Calendar events in Today view (feature 6) */}
+            {activeSection === 'today' && <TodayCalendarEvents />}
+
+            {/* ─── Today view with evening split (feature 2) ─── */}
+            {todayTasks ? (
+              <>
+                {/* New task creator */}
+                <NewTaskCreator defaultWhen="today" projectId={projectIdForNew} />
+
+                {/* Daytime section */}
+                {todayTasks.daytime.length > 0 && (
+                  <>
+                    <div className="task-section-header task-section-today">
+                      <Sun size={13} />
+                      <span>Today</span>
+                    </div>
+                    {todayTasks.daytime.map(renderTaskItem)}
+                  </>
+                )}
+
+                {/* Evening section */}
+                {todayTasks.evening.length > 0 && (
+                  <>
+                    <div className="task-section-header task-section-evening">
+                      <Moon size={13} />
+                      <span>This evening</span>
+                    </div>
+                    {todayTasks.evening.map(renderTaskItem)}
+                  </>
+                )}
+
+                {todayTasks.daytime.length === 0 && todayTasks.evening.length === 0 && !isLoading && (
+                  <EmptyState section={activeSection} seeding={seeding} onSeed={handleSeedSampleData} />
+                )}
+              </>
+            ) : projectTaskGroups ? (
+              /* ─── Project view with headings (feature 3 + 4) ─── */
+              <>
+                {/* New task creator */}
+                <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} />
+
+                {projectTaskGroups.map((group, idx) => (
+                  <div key={group.heading?.id || `ungrouped-${idx}`}>
+                    {group.heading && (
+                      <HeadingRow
+                        task={group.heading}
+                        onDelete={() => handleDeleteHeading(group.heading!.id)}
+                      />
+                    )}
+                    {group.tasks.map(renderTaskItem)}
+                  </div>
+                ))}
+
+                {/* Add section button */}
+                {projectIdForNew && <NewHeadingCreator projectId={projectIdForNew} />}
+
+                {displayTasks.filter(t => t.type !== 'heading').length === 0 && !isLoading && (
+                  <EmptyState section={activeSection} seeding={seeding} onSeed={handleSeedSampleData} />
+                )}
+              </>
+            ) : (
+              /* ─── Standard list view ─── */
+              <>
+                {/* New task creator (not in logbook or upcoming) */}
+                {activeSection !== 'logbook' && activeSection !== 'upcoming' && (
+                  <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} />
+                )}
+
+                {/* Task items */}
+                {displayTasks.map(renderTaskItem)}
+
+                {/* Empty state */}
+                {displayTasks.length === 0 && !isLoading && (
+                  <EmptyState section={activeSection} seeding={seeding} onSeed={handleSeedSampleData} />
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Detail panel */}
+          {selectedTask && selectedTask.type !== 'heading' && (
+            <TaskDetailPanel
+              task={selectedTask}
+              projects={projects}
+              onClose={() => setSelectedTaskId(null)}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty State Component ──────────────────────────────────────────
+
+function EmptyState({
+  section,
+  seeding,
+  onSeed,
+}: {
+  section: NavSection;
+  seeding: boolean;
+  onSeed: () => void;
+}) {
+  const config: Record<string, { icon: typeof Inbox; title: string; desc: string }> = {
+    inbox: { icon: Inbox, title: 'Inbox is empty', desc: 'New tasks appear here by default' },
+    today: { icon: Star, title: 'Nothing planned for today', desc: 'Move tasks here to focus on what matters' },
+    upcoming: { icon: Calendar, title: 'No upcoming deadlines', desc: 'Tasks with due dates appear here' },
+    anytime: { icon: CircleDot, title: 'No tasks in anytime', desc: 'Flexible tasks you can do whenever' },
+    someday: { icon: Coffee, title: 'No tasks in someday', desc: 'Park ideas and tasks for later' },
+    logbook: { icon: BookOpen, title: 'Logbook is empty', desc: 'Completed tasks will appear here' },
+  };
+
+  const isProject = section.startsWith('project:');
+  const cfg = isProject
+    ? { icon: Archive, title: 'No tasks in this project', desc: 'Add tasks to get started' }
+    : config[section] ?? { icon: Inbox, title: 'No tasks', desc: '' };
+
+  const Icon = cfg.icon;
+
+  return (
+    <div className="task-empty-state">
+      <Icon size={32} color="var(--color-text-tertiary)" strokeWidth={1.2} />
+      <span className="task-empty-title">{cfg.title}</span>
+      <span className="task-empty-desc">{cfg.desc}</span>
+      {section === 'inbox' && (
+        <button
+          className="task-empty-seed-btn"
+          onClick={onSeed}
+          disabled={seeding}
+        >
+          {seeding ? 'Loading...' : 'Load sample tasks'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Utility ────────────────────────────────────────────────────────
+
+function isInputFocused(): boolean {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || (el as HTMLElement).isContentEditable;
+}

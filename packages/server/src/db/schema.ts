@@ -285,3 +285,70 @@ export const documentVersions = sqliteTable('document_versions', {
 }, (table) => ({
   docIdx: index('idx_document_versions_doc').on(table.documentId, table.createdAt),
 }));
+
+// ─── Drawings (Excalidraw whiteboards) ──────────────────────────────
+
+// ─── Task Projects ──────────────────────────────────────────────────
+
+export const taskProjects = sqliteTable('task_projects', {
+  id: uuid().primaryKey(),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull().default('Untitled project'),
+  description: text('description'),
+  icon: text('icon'),
+  color: text('color').notNull().default('#5a7fa0'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+  createdAt: timestampNow().notNull(),
+  updatedAt: timestampNow().notNull(),
+}, (table) => ({
+  userIdx: index('idx_task_projects_user').on(table.userId, table.isArchived),
+}));
+
+// ─── Tasks ──────────────────────────────────────────────────────────
+
+export const tasks = sqliteTable('tasks', {
+  id: uuid().primaryKey(),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').references(() => taskProjects.id, { onDelete: 'set null' }),
+  title: text('title').notNull().default(''),
+  notes: text('notes'),
+  description: text('description'),                        // HTML from Tiptap rich editor
+  type: text('type').notNull().default('task'),            // task | heading
+  headingId: text('heading_id'),                           // FK to tasks(id) for section grouping
+  status: text('status').notNull().default('todo'),        // todo | completed | cancelled
+  when: text('when').notNull().default('inbox'),           // inbox | today | evening | anytime | someday
+  priority: text('priority').notNull().default('none'),    // none | low | medium | high
+  dueDate: text('due_date'),
+  completedAt: text('completed_at'),
+  tags: text('tags', { mode: 'json' }).notNull().$type<string[]>().default([]),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+  createdAt: timestampNow().notNull(),
+  updatedAt: timestampNow().notNull(),
+}, (table) => ({
+  userStatusIdx: index('idx_tasks_user_status').on(table.userId, table.status, table.isArchived),
+  userWhenIdx: index('idx_tasks_user_when').on(table.userId, table.when, table.status),
+  projectIdx: index('idx_tasks_project').on(table.projectId, table.sortOrder),
+  dueDateIdx: index('idx_tasks_due_date').on(table.userId, table.dueDate),
+}));
+
+// ─── Drawings (Excalidraw whiteboards) ──────────────────────────────
+
+export const drawings = sqliteTable('drawings', {
+  id: uuid().primaryKey(),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull().default('Untitled drawing'),
+  content: text('content', { mode: 'json' }).$type<Record<string, unknown> | null>().default(null),
+  thumbnailUrl: text('thumbnail_url'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+  createdAt: timestampNow().notNull(),
+  updatedAt: timestampNow().notNull(),
+}, (table) => ({
+  accountIdx: index('idx_drawings_account').on(table.accountId, table.isArchived),
+  userIdx: index('idx_drawings_user').on(table.userId, table.isArchived),
+}));

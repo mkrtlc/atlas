@@ -193,6 +193,83 @@ sqlite.prepare(`
 
 try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_document_versions_doc ON document_versions(document_id, createdAt)`).run(); } catch { /* */ }
 
+// ---- Drawings table (Excalidraw whiteboards) --------------------------------
+
+sqlite.prepare(`
+  CREATE TABLE IF NOT EXISTS drawings (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL DEFAULT 'Untitled drawing',
+    content TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_archived INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  )
+`).run();
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_drawings_account ON drawings(account_id, is_archived)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_drawings_user ON drawings(user_id, is_archived)`).run(); } catch { /* */ }
+
+// Add thumbnail_url column to drawings (no-op if already exists)
+try { sqlite.prepare(`ALTER TABLE drawings ADD COLUMN thumbnail_url TEXT`).run(); } catch { /* column already exists */ }
+
+// ---- Task Projects table ----------------------------------------------------
+
+sqlite.prepare(`
+  CREATE TABLE IF NOT EXISTS task_projects (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL DEFAULT 'Untitled project',
+    color TEXT NOT NULL DEFAULT '#5a7fa0',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_archived INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  )
+`).run();
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_task_projects_user ON task_projects(user_id, is_archived)`).run(); } catch { /* */ }
+
+// ---- Tasks table ------------------------------------------------------------
+
+sqlite.prepare(`
+  CREATE TABLE IF NOT EXISTS tasks (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    project_id TEXT REFERENCES task_projects(id) ON DELETE SET NULL,
+    title TEXT NOT NULL DEFAULT '',
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'todo',
+    "when" TEXT NOT NULL DEFAULT 'inbox',
+    priority TEXT NOT NULL DEFAULT 'none',
+    due_date TEXT,
+    completed_at TEXT,
+    tags TEXT NOT NULL DEFAULT '[]',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_archived INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  )
+`).run();
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_tasks_user_status ON tasks(user_id, status, is_archived)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_tasks_user_when ON tasks(user_id, "when", status)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id, sort_order)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(user_id, due_date)`).run(); } catch { /* */ }
+
+// Tasks feature expansion: type, heading_id, description
+try { sqlite.prepare(`ALTER TABLE tasks ADD COLUMN type TEXT NOT NULL DEFAULT 'task'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE tasks ADD COLUMN heading_id TEXT REFERENCES tasks(id) ON DELETE SET NULL`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE tasks ADD COLUMN description TEXT`).run(); } catch { /* column already exists */ }
+
+// Task projects feature expansion: description, icon
+try { sqlite.prepare(`ALTER TABLE task_projects ADD COLUMN description TEXT`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE task_projects ADD COLUMN icon TEXT`).run(); } catch { /* column already exists */ }
+
 // Create FTS5 virtual table for full-text search across emails.
 // content='' means we manage the index manually (external content table).
 sqlite.prepare(`
