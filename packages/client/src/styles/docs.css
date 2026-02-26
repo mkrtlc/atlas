@@ -1,0 +1,1198 @@
+/* ─── Document editor styles ─────────────────────────────────────────── */
+
+/* Placeholder for empty nodes */
+.doc-editor .tiptap .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+  height: 0;
+  font-style: normal;
+}
+
+/* Headings */
+.doc-editor .tiptap h1 {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 28px 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.doc-editor .tiptap h2 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 24px 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.doc-editor .tiptap h3 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 20px 0 4px;
+}
+
+.doc-editor .tiptap p {
+  margin: 2px 0;
+}
+
+/* Lists */
+.doc-editor .tiptap ul,
+.doc-editor .tiptap ol {
+  padding-left: 24px;
+  margin: 4px 0;
+}
+
+.doc-editor .tiptap li {
+  margin: 2px 0;
+}
+
+.doc-editor .tiptap li p {
+  margin: 0;
+}
+
+/* Task list */
+.doc-editor .tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+  margin: 4px 0;
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 0;
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--color-border-primary);
+  border-radius: 3px;
+  cursor: pointer;
+  background: var(--color-bg-primary);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  background: var(--color-accent-primary, #13715B);
+  border-color: var(--color-accent-primary, #13715B);
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 4px;
+  height: 7px;
+  border: solid white;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:hover {
+  border-color: var(--color-accent-primary, #13715B);
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-editor .tiptap ul[data-type="taskList"] li[data-checked="true"] > div p {
+  text-decoration: line-through;
+  color: var(--color-text-tertiary);
+}
+
+/* Nested task lists */
+.doc-editor .tiptap ul[data-type="taskList"] ul[data-type="taskList"] {
+  margin-left: 24px;
+}
+
+/* Blockquote */
+.doc-editor .tiptap blockquote {
+  border-left: 3px solid var(--color-border-primary);
+  padding-left: 16px;
+  margin: 12px 0;
+  color: var(--color-text-secondary);
+}
+
+/* Code block */
+.doc-editor .tiptap pre {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.doc-editor .tiptap pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Inline code */
+.doc-editor .tiptap code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  background: var(--color-bg-tertiary, rgba(0,0,0,0.04));
+  border-radius: 3px;
+  padding: 2px 5px;
+  color: #e11d48;
+}
+
+/* Horizontal rule */
+.doc-editor .tiptap hr {
+  border: none;
+  border-top: 1px solid var(--color-border-primary);
+  margin: 24px 0;
+}
+
+/* Links */
+.doc-editor .tiptap a {
+  color: var(--color-text-link, #2563eb);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Highlight */
+.doc-editor .tiptap mark {
+  background-color: #fef08a;
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+/* Images */
+.doc-editor .tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+
+.doc-editor .tiptap img.ProseMirror-selectednode {
+  outline: 2px solid var(--color-accent-primary, #13715B);
+  outline-offset: 2px;
+}
+
+/* Tables */
+.doc-editor .tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.doc-editor .tiptap table td,
+.doc-editor .tiptap table th {
+  border: 1px solid var(--color-border-primary);
+  padding: 8px 12px;
+  text-align: left;
+  min-width: 80px;
+  vertical-align: top;
+  position: relative;
+}
+
+.doc-editor .tiptap table th {
+  background: var(--color-bg-secondary);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.doc-editor .tiptap table td p,
+.doc-editor .tiptap table th p {
+  margin: 0;
+}
+
+.doc-editor .tiptap table .selectedCell {
+  background: color-mix(in srgb, var(--color-accent-primary, #13715B) 10%, transparent);
+}
+
+/* ─── Toggle block (details/summary) ────────────────────────────────── */
+
+.doc-editor .tiptap details.toggle-block {
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md, 6px);
+  margin: 8px 0;
+  background: var(--color-bg-primary);
+  overflow: hidden;
+}
+
+/* Summary row: chevron + text on one line */
+.doc-editor .tiptap details.toggle-block > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  user-select: none;
+  list-style: none;    /* hide native marker in Firefox */
+  border-radius: var(--radius-md, 6px);
+  transition: background var(--transition-fast, 100ms ease);
+}
+
+/* Hide the native WebKit disclosure triangle */
+.doc-editor .tiptap details.toggle-block > summary::-webkit-details-marker {
+  display: none;
+}
+
+.doc-editor .tiptap details.toggle-block > summary::marker {
+  display: none;
+}
+
+/* Custom chevron via a pseudo-element */
+.doc-editor .tiptap details.toggle-block > summary::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235f6b7a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  transform: rotate(-90deg);
+  transition: transform var(--transition-fast, 100ms ease);
+}
+
+/* Rotate chevron when expanded */
+.doc-editor .tiptap details.toggle-block[open] > summary::before {
+  transform: rotate(0deg);
+}
+
+.doc-editor .tiptap details.toggle-block > summary:hover {
+  background: var(--color-surface-hover);
+}
+
+/* Body content area */
+.doc-editor .tiptap details.toggle-block > *:not(summary) {
+  padding: 4px 12px 8px 32px;
+  border-top: 1px solid var(--color-border-secondary);
+}
+
+/* Remove top border from first body node */
+.doc-editor .tiptap details.toggle-block > *:nth-child(2) {
+  border-top: 1px solid var(--color-border-secondary);
+  margin-top: 0;
+}
+
+/* Collapse body nodes when details is closed (browser handles this natively,
+   but we also suppress the border-top flicker by hiding them immediately) */
+.doc-editor .tiptap details.toggle-block:not([open]) > *:not(summary) {
+  display: none;
+}
+
+/* ─── Slash command menu ─────────────────────────────────────────────── */
+
+.slash-command-menu {
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  padding: 4px;
+  min-width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-family: var(--font-family);
+  z-index: 999;
+}
+
+.slash-command-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s ease;
+}
+
+.slash-command-item:hover,
+.slash-command-item.is-selected {
+  background: var(--color-surface-hover);
+}
+
+.slash-command-item-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.slash-command-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.slash-command-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.slash-command-item-description {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Bubble menu ────────────────────────────────────────────────────── */
+
+.bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px;
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  font-family: var(--font-family);
+}
+
+.bubble-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.bubble-menu-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.bubble-menu-btn.is-active {
+  background: var(--color-surface-selected);
+  color: var(--color-accent-primary, #13715B);
+}
+
+.bubble-menu-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border-primary);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+/* ─── Cover image ────────────────────────────────────────────────────── */
+
+.doc-cover-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  position: relative;
+}
+
+.doc-cover-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doc-cover-image-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.doc-cover-image:hover .doc-cover-image-actions {
+  opacity: 1;
+}
+
+/* ─── Inline title ───────────────────────────────────────────────────── */
+
+.doc-inline-title {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 2px 0;
+  font-family: var(--font-family);
+  resize: none;
+  overflow: hidden;
+}
+
+.doc-inline-title::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 0.5;
+}
+
+/* ─── Icon button row ────────────────────────────────────────────────── */
+
+.doc-meta-actions {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.doc-header:hover .doc-meta-actions,
+.doc-meta-actions:focus-within {
+  opacity: 1;
+}
+
+.doc-meta-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.doc-meta-action-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+}
+
+/* ─── Emoji picker ───────────────────────────────────────────────────── */
+
+.emoji-picker-popover {
+  position: absolute;
+  z-index: 200;
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  padding: 8px;
+  width: 280px;
+}
+
+.emoji-picker-search {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  background: var(--color-bg-primary);
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  outline: none;
+  margin-bottom: 8px;
+}
+
+.emoji-picker-search:focus {
+  border-color: var(--color-accent-primary, #13715B);
+}
+
+.emoji-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-picker-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.1s ease;
+}
+
+.emoji-picker-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.emoji-picker-category {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6px 2px 4px;
+}
+
+/* ─── Callout blocks ─────────────────────────────────────────────────── */
+
+.doc-editor .tiptap .callout {
+  border-radius: 6px;
+  padding: 12px 14px 12px 42px;
+  margin: 12px 0;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.doc-editor .tiptap .callout::before {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.doc-editor .tiptap .callout p {
+  margin: 2px 0;
+}
+
+/* Info variant */
+.doc-editor .tiptap .callout-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.doc-editor .tiptap .callout-info::before {
+  content: 'ℹ️';
+}
+
+/* Warning variant */
+.doc-editor .tiptap .callout-warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.doc-editor .tiptap .callout-warning::before {
+  content: '⚠️';
+}
+
+/* Success variant */
+.doc-editor .tiptap .callout-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.doc-editor .tiptap .callout-success::before {
+  content: '✅';
+}
+
+/* Error variant */
+.doc-editor .tiptap .callout-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.doc-editor .tiptap .callout-error::before {
+  content: '🚫';
+}
+
+/* ─── Color picker popover ───────────────────────────────────────────── */
+
+.color-picker-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 8px;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+}
+
+.color-picker-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+  padding: 0;
+}
+
+.color-picker-swatch:hover {
+  transform: scale(1.15);
+  border-color: var(--color-border-primary);
+}
+
+.color-picker-swatch.is-active {
+  border-color: var(--color-text-primary);
+}
+
+/* ─── Page mention chip ──────────────────────────────────────────────── */
+/*
+ * Rendered by the PageMention Tiptap extension.
+ * Appears as a compact inline pill: [icon] title
+ * Selecting the chip as a node-selection adds the ProseMirror-selectednode
+ * class, which we use to show focus feedback.
+ */
+
+.doc-editor .tiptap span.page-mention {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px 1px 5px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-weight: 500;
+  color: var(--color-accent-primary, #13715B);
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+
+.doc-editor .tiptap span.page-mention:hover {
+  background: color-mix(in srgb, var(--color-accent-primary, #13715B) 8%, var(--color-bg-secondary));
+  border-color: var(--color-accent-primary, #13715B);
+}
+
+/* Node-selection focus ring (ProseMirror adds this class on click/keyboard nav) */
+.doc-editor .tiptap span.page-mention.ProseMirror-selectednode {
+  outline: 2px solid var(--color-accent-primary, #13715B);
+  outline-offset: 1px;
+  background: color-mix(in srgb, var(--color-accent-primary, #13715B) 12%, var(--color-bg-secondary));
+}
+
+/* ─── Table toolbar ──────────────────────────────────────────────────── */
+
+.table-toolbar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px;
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-family);
+  z-index: 50;
+  pointer-events: all;
+  white-space: nowrap;
+}
+
+.table-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 7px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+  line-height: 1;
+}
+
+.table-toolbar-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.table-toolbar-btn--danger:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.table-toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--color-border-primary, #d0d5dd);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* ─── Image drag-and-drop drop zone ─────────────────────────────────── */
+
+/*
+ * Applied to the .doc-editor container while an image file is being dragged
+ * over it. Shows a dashed blue border so the user knows the area is a valid
+ * drop target.
+ */
+.doc-editor.is-dragging-file {
+  outline: 2px dashed #2563eb;
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+/*
+ * Full-area overlay with a centered label. Rendered on top of the editor
+ * content while the drag is active so the drop target is unmistakable.
+ * pointer-events: none lets the dragover/drop events reach the ProseMirror
+ * view underneath.
+ */
+.doc-editor-drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.05);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.doc-editor-drop-label {
+  padding: 8px 20px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+/* ─── Sidebar resize handle ──────────────────────────────────────────── */
+
+.doc-sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.doc-sidebar-resize-handle:hover,
+.doc-sidebar-resize-handle.is-dragging {
+  background: var(--color-accent-primary, #13715B);
+  opacity: 0.3;
+}
+
+/* ─── Template gallery (full-page, Notion-style) ─────────────────────── */
+
+.tg-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg-primary);
+  font-family: var(--font-family);
+  overflow: hidden;
+}
+
+/* Sticky header */
+.tg-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--color-border-primary);
+  background: var(--color-bg-primary);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tg-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+  flex-shrink: 0;
+}
+
+.tg-back-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.tg-header-spacer {
+  flex: 1;
+}
+
+.tg-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+  width: 220px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.tg-search:focus-within {
+  border-color: var(--color-accent-primary, #13715B);
+  background: var(--color-bg-primary);
+}
+
+.tg-search input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  outline: none;
+  width: 100%;
+}
+
+.tg-search input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* Scrollable body */
+.tg-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 40px 48px;
+}
+
+/* Hero */
+.tg-hero {
+  margin-bottom: 28px;
+}
+
+.tg-hero-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+.tg-hero-sub {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+/* Category pills */
+.tg-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.tg-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border-primary);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+  white-space: nowrap;
+}
+
+.tg-pill:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.tg-pill.is-active {
+  background: var(--color-accent-primary, #13715B);
+  border-color: var(--color-accent-primary, #13715B);
+  color: #fff;
+}
+
+/* Category section header */
+.tg-category-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+  margin: 0 0 14px;
+  padding-top: 8px;
+}
+
+.tg-category-section {
+  margin-bottom: 36px;
+}
+
+/* Card grid */
+.tg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 1200px) {
+  .tg-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 840px) {
+  .tg-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tg-body {
+    padding: 24px 20px 48px;
+  }
+}
+
+/* Template card */
+.tg-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-bg-primary);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  padding: 0;
+}
+
+.tg-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Card colored header */
+.tg-card-header {
+  position: relative;
+  height: 80px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Mini document preview lines inside the header */
+.tg-card-preview {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px 12px;
+  gap: 4px;
+}
+
+.tg-card-preview-line {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.tg-card-preview-line.is-heading {
+  height: 6px;
+  width: 60%;
+  background: rgba(255, 255, 255, 0.55);
+  margin-bottom: 2px;
+}
+
+.tg-card-preview-line.w-40 { width: 40%; }
+.tg-card-preview-line.w-55 { width: 55%; }
+.tg-card-preview-line.w-70 { width: 70%; }
+.tg-card-preview-line.w-80 { width: 80%; }
+.tg-card-preview-line.w-90 { width: 90%; }
+.tg-card-preview-line.w-full { width: 100%; }
+
+/* "Use template" hover overlay */
+.tg-card-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.tg-card:hover .tg-card-overlay {
+  opacity: 1;
+}
+
+.tg-card-use-btn {
+  padding: 5px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+  cursor: pointer;
+  font-family: var(--font-family);
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+/* Card body */
+.tg-card-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.tg-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tg-card-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tg-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.tg-card-desc {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tg-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tg-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 10px;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family);
+}
+
+/* Blank page card (special styling) */
+.tg-card.is-blank {
+  border: 2px dashed var(--color-border-primary);
+  background: transparent;
+}
+
+.tg-card.is-blank:hover {
+  border-color: var(--color-accent-primary, #13715B);
+  box-shadow: none;
+}
+
+.tg-blank-header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+}
+
+.tg-blank-plus {
+  font-size: 28px;
+  color: var(--color-text-tertiary);
+  line-height: 1;
+}
+
+/* Empty / no results */
+.tg-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+  gap: 8px;
+  text-align: center;
+}
