@@ -379,7 +379,7 @@ export function MailGeneralPanel() {
           >
             <Avatar
               src={account?.pictureUrl}
-              name={account?.name}
+              name={account?.name ?? ''}
               email={account?.email ?? ''}
               size={56}
             />

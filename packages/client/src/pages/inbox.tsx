@@ -5,7 +5,6 @@ import { ReadingPane } from '../components/layout/reading-pane';
 import { ComposeModal } from '../components/compose/compose-modal';
 import { ToastContainer } from '../components/ui/toast';
 import { SendAnimation } from '../components/ui/send-animation';
-import { SettingsModal } from '../components/settings/settings-modal';
 import { useEmailStore } from '../stores/email-store';
 import { useUIStore } from '../stores/ui-store';
 import { useShortcut, useShortcutEngine } from '../providers/shortcut-provider';
@@ -35,7 +34,7 @@ export function InboxPage() {
     clearSelection,
     filterByLabel,
   } = useEmailStore();
-  const { toggleCommandPalette, toggleSidebar, toggleSettings } = useUIStore();
+  const { toggleCommandPalette, toggleSidebar, openSettings } = useUIStore();
   const archiveWithUndo = useArchiveWithUndo();
   const trashWithUndo = useTrashWithUndo();
   const bulkArchiveWithUndo = useBulkArchiveWithUndo();
@@ -152,12 +151,8 @@ export function InboxPage() {
   const handleCommandPalette = useCallback(() => toggleCommandPalette(), [toggleCommandPalette]);
   const handleToggleSidebar = useCallback(() => toggleSidebar(), [toggleSidebar]);
   const handleShortcutHelp = useCallback(() => {
-    toggleSettings();
-    // Navigate to shortcuts panel after settings opens
-    setTimeout(() => {
-      document.dispatchEvent(new CustomEvent('atlasmail:settings_navigate', { detail: { panel: 'shortcuts' } }));
-    }, 50);
-  }, [toggleSettings]);
+    openSettings('global', 'shortcuts');
+  }, [openSettings]);
 
   // Search shortcut — dispatches event so SearchBar can focus itself
   const handleSearchFocus = useCallback(() => {
@@ -261,7 +256,6 @@ export function InboxPage() {
         readingPane={<ReadingPane />}
       />
       <ComposeModal />
-      <SettingsModal />
       <ToastContainer />
       <SendAnimation />
     </>

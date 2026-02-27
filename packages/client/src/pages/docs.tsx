@@ -26,6 +26,7 @@ import {
   useRestoreVersion,
 } from '../hooks/use-documents';
 import { DocSettingsModal } from '../components/docs/doc-settings-modal';
+import { useUIStore } from '../stores/ui-store';
 import { useDocSettingsStore } from '../stores/docs-settings-store';
 import { useDrawingList } from '../hooks/use-drawings';
 import { EmojiPicker } from '../components/shared/emoji-picker';
@@ -927,6 +928,7 @@ export function DocsPage() {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showDocSettings, setShowDocSettings] = useState(false);
+  const { openSettings } = useUIStore();
 
   // Auto-select a document when none is selected.
   // If openLastVisited is on, prefer the most recently viewed doc.
@@ -1079,7 +1081,7 @@ export function DocsPage() {
             isSaving={isSaving}
             onNavigate={handleSelect}
             onShowVersionHistory={() => setShowVersionHistory(true)}
-            onOpenSettings={() => navigate('/settings?app=documents&panel=editor')}
+            onOpenSettings={() => openSettings('documents')}
           />
         )}
 

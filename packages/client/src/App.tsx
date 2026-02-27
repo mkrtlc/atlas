@@ -9,7 +9,7 @@ import { ROUTES } from './config/routes';
 import { InboxPage } from './pages/inbox';
 import { LoginPage } from './pages/login';
 import { OAuthCallback } from './components/auth/oauth-callback';
-import { SettingsPage } from './pages/settings';
+import { SettingsPage, SettingsModal } from './pages/settings';
 import { CalendarPage } from './pages/calendar';
 import { DocsPage } from './pages/docs';
 import { DrawPage } from './pages/draw';
@@ -158,6 +158,7 @@ export function App() {
                 <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
               </Routes>
               <CommandPalette />
+              <SettingsModal />
             </ErrorBoundary>
             </BrowserRouter>
           </ShortcutProvider>

@@ -22,6 +22,7 @@ import type { Task, TaskProject, TaskWhen } from '@atlasmail/shared';
 import { EmojiPicker } from '../components/shared/emoji-picker';
 import { TasksSettingsModal } from '../components/tasks/tasks-settings-modal';
 import { useTasksSettingsStore } from '../stores/tasks-settings-store';
+import { useUIStore } from '../stores/ui-store';
 import '../styles/tasks.css';
 
 // ─── Constants ───────────────────────────────────────────────────────
@@ -817,7 +818,7 @@ export function TasksPage() {
   const isDesktop = !!('atlasDesktop' in window);
 
   // Settings
-  const [showSettings, setShowSettings] = useState(false);
+  const { openSettings } = useUIStore();
   const tasksSettings = useTasksSettingsStore();
 
   // Sidebar
@@ -1339,7 +1340,7 @@ export function TasksPage() {
         <div style={{ padding: '0 var(--spacing-sm) var(--spacing-md)' }}>
           <button
             className="task-nav-item"
-            onClick={() => navigate('/settings?app=tasks&panel=general')}
+            onClick={() => openSettings('tasks')}
           >
             <Settings2 size={16} color="var(--color-text-tertiary)" strokeWidth={1.8} />
             <span style={{ flex: 1 }}>Settings</span>
@@ -1522,8 +1523,6 @@ export function TasksPage() {
         </div>
       </div>
 
-      {/* Settings modal */}
-      <TasksSettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }

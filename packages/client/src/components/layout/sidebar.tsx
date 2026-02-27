@@ -834,7 +834,7 @@ function LabelsPopover({
 export function Sidebar() {
   const { activeCategory, setActiveCategory, activeMailbox, setActiveMailbox, openCompose, filterByLabel, setFilterByLabel } =
     useEmailStore();
-  const { toggleSettings } = useUIStore();
+  const { openSettings } = useUIStore();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -1112,7 +1112,7 @@ export function Sidebar() {
         {/* Settings button */}
         <button
           className="sidebar-nav-btn"
-          onClick={() => navigate('/settings?app=global&panel=general')}
+          onClick={() => openSettings()}
           aria-label={t('settings.title')}
           onMouseEnter={() => setSettingsHovered(true)}
           onMouseLeave={() => setSettingsHovered(false)}

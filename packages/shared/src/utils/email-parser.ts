@@ -18,7 +18,7 @@ export function getInitials(name: string | null, email: string): string {
     if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     if (parts.length === 1) return parts[0][0].toUpperCase();
   }
-  return email[0].toUpperCase();
+  return email?.[0]?.toUpperCase() ?? '?';
 }
 
 export function getDomainFromEmail(email: string): string {

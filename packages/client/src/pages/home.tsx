@@ -10,6 +10,7 @@ import { useThreadCounts } from '../hooks/use-threads';
 import { useCalendarEvents } from '../hooks/use-calendar';
 import { useTaskCounts } from '../hooks/use-tasks';
 import { ROUTES } from '../config/routes';
+import { useUIStore } from '../stores/ui-store';
 import { buildGoogleOAuthUrl } from '../components/auth/login-page';
 import '../styles/home.css';
 
@@ -472,6 +473,7 @@ export function HomePage() {
   const account = useAuthStore((s) => s.account);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isDesktop = !!('atlasDesktop' in window);
+  const { openSettings } = useUIStore();
   const { data: counts } = useThreadCounts({ enabled: isAuthenticated });
   const { data: taskCounts } = useTaskCounts({ enabled: isAuthenticated });
   const parallax = useMouseParallax(15);
@@ -568,7 +570,7 @@ export function HomePage() {
 
       {/* Settings gear — top-right */}
       <button
-        onClick={() => navigate(ROUTES.SETTINGS)}
+        onClick={() => openSettings()}
         aria-label="Settings"
         style={{
           position: 'absolute',

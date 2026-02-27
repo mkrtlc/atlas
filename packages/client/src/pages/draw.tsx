@@ -35,6 +35,7 @@ import {
 import { useSettingsStore } from '../stores/settings-store';
 import { useDrawSettingsStore, type DrawSortOrder } from '../stores/draw-settings-store';
 import { DrawSettingsModal } from '../components/draw/draw-settings-modal';
+import { useUIStore } from '../stores/ui-store';
 import { DRAWING_TEMPLATES } from '../config/drawing-templates';
 import { DEFAULT_LIBRARY_ITEMS } from '../config/drawing-libraries';
 import { ROUTES } from '../config/routes';
@@ -1468,6 +1469,7 @@ export function DrawPage() {
   const updateDrawing = useUpdateDrawing();
   const [showTemplates, setShowTemplates] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const { openSettings } = useUIStore();
 
   // Sync selectedId with URL param when it changes (browser back/forward)
   useEffect(() => {
@@ -1561,7 +1563,7 @@ export function DrawPage() {
         selectedId={selectedId}
         onSelect={handleSelect}
         onNewFromTemplate={() => setShowTemplates(true)}
-        onOpenSettings={() => navigate('/settings?app=draw&panel=canvas')}
+        onOpenSettings={() => openSettings('draw')}
         isCreating={createDrawing.isPending}
       />
 
