@@ -12,6 +12,7 @@ import {
   type CellKeyDownEvent,
   type ColumnResizedEvent,
   type ColumnMovedEvent,
+  type SelectionChangedEvent,
 } from 'ag-grid-community';
 import {
   Plus,
@@ -45,6 +46,7 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
+  Copy,
 } from 'lucide-react';
 import {
   DndContext,
@@ -1354,6 +1356,7 @@ export function TablesPage() {
   const [columnMenu, setColumnMenu] = useState<{ columnId: string; x: number; y: number } | null>(null);
   const [rowMenu, setRowMenu] = useState<{ rowId: string; x: number; y: number } | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
 
   // Calendar view state
   const [calendarMonth, setCalendarMonth] = useState(() => {
@@ -1597,6 +1600,9 @@ export function TablesPage() {
     [localColumns],
   );
 
+  // AG Grid ref (needed early for keyboard shortcuts)
+  const gridRef = useRef<AgGridReact>(null);
+
   // Global keyboard shortcuts (undo, redo, search)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1619,15 +1625,20 @@ export function TablesPage() {
         e.preventDefault();
         setShowSearch(true);
       }
-      // Escape → close search
-      if (e.key === 'Escape' && showSearch) {
-        setShowSearch(false);
-        setSearchText('');
+      // Escape → close search or clear selection
+      if (e.key === 'Escape') {
+        if (showSearch) {
+          setShowSearch(false);
+          setSearchText('');
+        } else if (selectedRowIds.length > 0) {
+          gridRef.current?.api?.deselectAll();
+          setSelectedRowIds([]);
+        }
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [handleUndo, handleRedo, selectedId, showSearch]);
+  }, [handleUndo, handleRedo, selectedId, showSearch, selectedRowIds]);
 
   // ─── Handlers ──────────────────────────────────────────────────────
 
@@ -1862,6 +1873,51 @@ export function TablesPage() {
     [],
   );
 
+  // Track selected rows for bulk actions
+  const handleSelectionChanged = useCallback(
+    (event: SelectionChangedEvent) => {
+      const rows = event.api.getSelectedRows() as TableRow[];
+      setSelectedRowIds(rows.map((r) => r._id).filter((id) => id !== PLACEHOLDER_ROW_ID));
+    },
+    [],
+  );
+
+  // Bulk delete selected rows
+  const handleBulkDelete = useCallback(() => {
+    if (selectedRowIds.length === 0) return;
+    pushUndoState();
+    const idSet = new Set(selectedRowIds);
+    const updated = localRows.filter((r) => !idSet.has(r._id));
+    setLocalRows(updated);
+    triggerAutoSave({ rows: updated });
+    gridRef.current?.api?.deselectAll();
+    setSelectedRowIds([]);
+  }, [selectedRowIds, localRows, triggerAutoSave, pushUndoState]);
+
+  // Bulk duplicate selected rows
+  const handleBulkDuplicate = useCallback(() => {
+    if (selectedRowIds.length === 0) return;
+    pushUndoState();
+    const idSet = new Set(selectedRowIds);
+    const updated: TableRow[] = [];
+    for (const row of localRows) {
+      updated.push(row);
+      if (idSet.has(row._id)) {
+        updated.push({ ...row, _id: crypto.randomUUID(), _createdAt: new Date().toISOString() });
+      }
+    }
+    setLocalRows(updated);
+    triggerAutoSave({ rows: updated });
+    gridRef.current?.api?.deselectAll();
+    setSelectedRowIds([]);
+  }, [selectedRowIds, localRows, triggerAutoSave, pushUndoState]);
+
+  // Clear selection helper
+  const handleClearSelection = useCallback(() => {
+    gridRef.current?.api?.deselectAll();
+    setSelectedRowIds([]);
+  }, []);
+
   // Handle row field update (for expand modal)
   const handleUpdateRowField = useCallback(
     (rowId: string, colId: string, value: unknown) => {
@@ -1909,7 +1965,6 @@ export function TablesPage() {
   );
 
   // AG Grid cell keyboard handling
-  const gridRef = useRef<AgGridReact>(null);
   const handleCellKeyDown = useCallback(
     (event: CellKeyDownEvent) => {
       const kbEvent = event.event as KeyboardEvent | undefined;
@@ -2385,7 +2440,24 @@ export function TablesPage() {
           </div>
         ) : (
           <>
-            {/* Toolbar */}
+            {/* Selection bar (replaces toolbar when rows selected) */}
+            {selectedRowIds.length > 0 ? (
+              <div className="tables-selection-bar">
+                <span className="tables-selection-bar-count">
+                  {t('tables.rowsSelected', { count: selectedRowIds.length })}
+                </span>
+                <button className="tables-selection-bar-btn" onClick={handleBulkDuplicate}>
+                  <Copy size={14} /> {t('tables.duplicateSelected')}
+                </button>
+                <button className="tables-selection-bar-btn tables-selection-bar-btn-danger" onClick={handleBulkDelete}>
+                  <Trash2 size={14} /> {t('tables.deleteSelected')}
+                </button>
+                <button className="tables-selection-bar-close" onClick={handleClearSelection} title={t('tables.clearSelection')}>
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+            /* Toolbar */
             <div className="tables-toolbar">
               <input
                 className="tables-toolbar-title"
@@ -2555,6 +2627,7 @@ export function TablesPage() {
                 </span>
               )}
             </div>
+            )}
 
             {/* Search bar */}
             {showSearch && (
@@ -2595,6 +2668,7 @@ export function TablesPage() {
                       undoRedoCellEditing={false}
                       suppressMoveWhenRowDragging={true}
                       rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: true }}
+                      onSelectionChanged={handleSelectionChanged}
                       enterNavigatesVertically={true}
                       enterNavigatesVerticallyAfterEdit={true}
                       ensureDomOrder={true}

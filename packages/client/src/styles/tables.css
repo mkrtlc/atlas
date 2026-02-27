@@ -212,6 +212,70 @@
   flex-shrink: 0;
 }
 
+/* ─── Selection bar (bulk actions) ────────────────────────────────── */
+
+.tables-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #2563eb;
+  flex-shrink: 0;
+  min-height: 40px;
+  background: #2563eb;
+  color: #fff;
+}
+
+.tables-selection-bar-count {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.tables-selection-bar-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--radius-md, 4px);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 12px;
+  font-family: var(--font-family);
+  cursor: pointer;
+  height: 28px;
+  transition: background 100ms ease;
+}
+
+.tables-selection-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.tables-selection-bar-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.7);
+}
+
+.tables-selection-bar-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  border-radius: var(--radius-md, 4px);
+  margin-left: 4px;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.tables-selection-bar-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
 /* ─── View toggle ─────────────────────────────────────────────────── */
 
 .tables-view-toggle {

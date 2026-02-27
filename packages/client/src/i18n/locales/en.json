@@ -727,6 +727,11 @@
     "count": "Count",
     "noDateColumn": "Add a date column to use calendar view.",
     "today": "Today",
-    "calendarDateColumn": "Date column"
+    "calendarDateColumn": "Date column",
+    "rowsSelected_one": "{{count}} row selected",
+    "rowsSelected_other": "{{count}} rows selected",
+    "deleteSelected": "Delete",
+    "duplicateSelected": "Duplicate",
+    "clearSelection": "Clear selection"
   }
 }
