@@ -2967,14 +2967,58 @@ export function TablesPage() {
           <>
             {/* Purple topbar */}
             <div className="tables-topbar">
-              <input
-                className="tables-topbar-title"
-                value={localTitle}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                onBlur={() => triggerAutoSave({ title: localTitle })}
-              />
+              {/* Row 1: Title + actions */}
+              <div className="tables-topbar-row">
+                <input
+                  className="tables-topbar-title"
+                  value={localTitle}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  onBlur={() => triggerAutoSave({ title: localTitle })}
+                />
 
-              {/* View tabs in topbar */}
+                <div className="tables-topbar-spacer" />
+
+                <button
+                  className="tables-topbar-btn"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  title={t('tables.undo')}
+                >
+                  <Undo2 size={14} />
+                </button>
+                <button
+                  className="tables-topbar-btn"
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  title={t('tables.redo')}
+                >
+                  <Redo2 size={14} />
+                </button>
+
+                <button
+                  className="tables-topbar-btn"
+                  onClick={handleExportExcel}
+                  title="Export to Excel"
+                >
+                  <Download size={14} />
+                </button>
+
+                <button
+                  className={`tables-topbar-btn${showSearch ? ' active' : ''}`}
+                  onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchText(''); }}
+                  title={t('tables.search')}
+                >
+                  <Search size={14} />
+                </button>
+
+                {isSaving && (
+                  <span className="tables-topbar-saving">
+                    {t('tables.saving')}
+                  </span>
+                )}
+              </div>
+
+              {/* Row 2: View tabs */}
               <div className="tables-topbar-view-tabs">
                 {currentViews.map((v, idx) => {
                   const VIEW_ICONS: Record<string, typeof LayoutGrid> = {
@@ -3033,47 +3077,6 @@ export function TablesPage() {
                   )}
                 </div>
               </div>
-
-              <div className="tables-topbar-spacer" />
-
-              <button
-                className="tables-topbar-btn"
-                onClick={handleUndo}
-                disabled={!canUndo}
-                title={t('tables.undo')}
-              >
-                <Undo2 size={14} />
-              </button>
-              <button
-                className="tables-topbar-btn"
-                onClick={handleRedo}
-                disabled={!canRedo}
-                title={t('tables.redo')}
-              >
-                <Redo2 size={14} />
-              </button>
-
-              <button
-                className="tables-topbar-btn"
-                onClick={handleExportExcel}
-                title="Export to Excel"
-              >
-                <Download size={14} />
-              </button>
-
-              <button
-                className={`tables-topbar-btn${showSearch ? ' active' : ''}`}
-                onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchText(''); }}
-                title={t('tables.search')}
-              >
-                <Search size={14} />
-              </button>
-
-              {isSaving && (
-                <span className="tables-topbar-saving">
-                  {t('tables.saving')}
-                </span>
-              )}
             </div>
             {/* Tools row */}
             <div className="tables-toolbar">
