@@ -31,8 +31,9 @@ export interface TableRow {
 }
 
 export interface TableViewConfig {
-  activeView: 'grid' | 'kanban';
+  activeView: 'grid' | 'kanban' | 'calendar' | 'gallery';
   kanbanGroupByColumnId?: string;
+  calendarDateColumnId?: string;
   sorts?: Array<{ columnId: string; direction: 'asc' | 'desc' }>;
   filters?: Array<{ columnId: string; operator: string; value: unknown }>;
   hiddenColumns?: string[];

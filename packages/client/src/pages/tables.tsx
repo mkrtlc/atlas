@@ -41,6 +41,10 @@ import {
   Paperclip,
   Maximize2,
   LayoutTemplate,
+  GalleryHorizontalEnd,
+  Layers,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   DndContext,
@@ -116,12 +120,20 @@ const FIELD_TYPES: { value: TableFieldType; label: string }[] = [
 
 // ─── Tag color palette ──────────────────────────────────────────────
 
-const TAG_COLORS = [
-  '#d4edda', '#cce5ff', '#f8d7da', '#fff3cd', '#e2d5f1',
-  '#d1ecf1', '#ffeeba', '#d6d8db', '#c3dafe', '#fde2e2',
+const TAG_COLORS: { bg: string; text: string }[] = [
+  { bg: '#d4edda', text: '#155724' },
+  { bg: '#cce5ff', text: '#004085' },
+  { bg: '#f8d7da', text: '#721c24' },
+  { bg: '#fff3cd', text: '#856404' },
+  { bg: '#e2d5f1', text: '#4a1d96' },
+  { bg: '#d1ecf1', text: '#0c5460' },
+  { bg: '#ffeeba', text: '#7c5e10' },
+  { bg: '#fce4ec', text: '#880e4f' },
+  { bg: '#c3dafe', text: '#1e3a5f' },
+  { bg: '#e8f5e9', text: '#1b5e20' },
 ];
 
-function getTagColor(value: string): string {
+function getTagColor(value: string): { bg: string; text: string } {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
     hash = value.charCodeAt(i) + ((hash << 5) - hash);
@@ -924,8 +936,9 @@ function TableTemplateGallery({
 
 function TagRenderer(params: ICellRendererParams) {
   if (!params.value) return null;
+  const c = getTagColor(String(params.value));
   return (
-    <span className="tables-cell-tag" style={{ background: getTagColor(String(params.value)) }}>
+    <span className="tables-cell-tag" style={{ background: c.bg, color: c.text }}>
       {String(params.value)}
     </span>
   );
@@ -936,11 +949,14 @@ function MultiTagRenderer(params: ICellRendererParams) {
   if (values.length === 0) return null;
   return (
     <div className="tables-cell-multi-tags">
-      {values.map((v: string, i: number) => (
-        <span key={i} className="tables-cell-tag" style={{ background: getTagColor(v) }}>
-          {v}
-        </span>
-      ))}
+      {values.map((v: string, i: number) => {
+        const c = getTagColor(v);
+        return (
+          <span key={i} className="tables-cell-tag" style={{ background: c.bg, color: c.text }}>
+            {v}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -1164,11 +1180,22 @@ function KanbanCard({
       <div className="tables-kanban-card-title">{title || 'Untitled'}</div>
       {metaFields.length > 0 && (
         <div className="tables-kanban-card-meta">
-          {metaFields.map((col) => (
-            <span key={col.id} className="tables-kanban-card-meta-tag">
-              {String(row[col.id])}
-            </span>
-          ))}
+          {metaFields.map((col) => {
+            const val = String(row[col.id]);
+            if (col.type === 'singleSelect' || col.type === 'multiSelect') {
+              const c = getTagColor(val);
+              return (
+                <span key={col.id} className="tables-kanban-card-meta-tag" style={{ background: c.bg, color: c.text }}>
+                  {val}
+                </span>
+              );
+            }
+            return (
+              <span key={col.id} className="tables-kanban-card-meta-tag">
+                {val}
+              </span>
+            );
+          })}
         </div>
       )}
     </div>
@@ -1328,13 +1355,19 @@ export function TablesPage() {
   const [rowMenu, setRowMenu] = useState<{ rowId: string; x: number; y: number } | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
+  // Calendar view state
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
   // Undo/redo
   const undoPastRef = useRef<Array<{ columns: TableColumn[]; rows: TableRow[] }>>([]);
   const undoFutureRef = useRef<Array<{ columns: TableColumn[]; rows: TableRow[] }>>([]);
   const [undoCounter, setUndoCounter] = useState(0); // triggers re-render for canUndo/canRedo
 
   // Fetch selected spreadsheet
-  const { data: spreadsheet } = useTable(selectedId ?? undefined);
+  const { data: spreadsheet, error: tableError } = useTable(selectedId ?? undefined);
 
   // Sync remote → local when spreadsheet loads
   useEffect(() => {
@@ -1350,6 +1383,14 @@ export function TablesPage() {
   useEffect(() => {
     if (paramId) setSelectedId(paramId);
   }, [paramId]);
+
+  // If the selected table doesn't exist (404), clear selection and go back to list
+  useEffect(() => {
+    if (tableError && (tableError as any)?.response?.status === 404) {
+      setSelectedId(null);
+      navigate(ROUTES.TABLES, { replace: true });
+    }
+  }, [tableError, navigate]);
 
   // Theme detection for AG Grid
   const [isDark, setIsDark] = useState(
@@ -1431,7 +1472,7 @@ export function TablesPage() {
       const val = params.data[localViewConfig.rowColorColumnId];
       if (val != null && String(val) !== '') {
         const color = getTagColor(String(val));
-        return { borderLeft: `3px solid ${color}`, background: `${color}33` } as Record<string, string>;
+        return { borderLeft: `3px solid ${color.bg}`, background: `${color.bg}33` } as Record<string, string>;
       }
     }
     return undefined;
@@ -1504,6 +1545,57 @@ export function TablesPage() {
   }, [filteredRows, localViewConfig.sorts]);
 
   const rowData = sortedRows;
+
+  // Footer aggregation: sum/avg for first numeric column
+  const footerAgg = useMemo(() => {
+    const numCol = localColumns.find((c) =>
+      c.type === 'number' || c.type === 'currency' || c.type === 'percent',
+    );
+    if (!numCol) return null;
+    const values = sortedRows
+      .map((r) => Number(r[numCol.id]))
+      .filter((n) => !isNaN(n));
+    if (values.length === 0) return null;
+    const sum = values.reduce((a, b) => a + b, 0);
+    const avg = sum / values.length;
+    const isCurrency = numCol.type === 'currency';
+    const isPercent = numCol.type === 'percent';
+    return {
+      label: numCol.name,
+      sum: isCurrency ? `$${sum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : isPercent ? `${sum}%` : sum.toLocaleString(),
+      avg: isCurrency ? `$${avg.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : isPercent ? `${avg.toFixed(1)}%` : avg.toLocaleString(undefined, { maximumFractionDigits: 1 }),
+    };
+  }, [localColumns, sortedRows]);
+
+  // Calendar: effective date column + date→rows mapping
+  const effectiveCalendarDateCol = useMemo(() => {
+    if (localViewConfig.calendarDateColumnId) {
+      return localColumns.find((c) => c.id === localViewConfig.calendarDateColumnId) || null;
+    }
+    return localColumns.find((c) => c.type === 'date') || null;
+  }, [localColumns, localViewConfig.calendarDateColumnId]);
+
+  const calendarDateMap = useMemo(() => {
+    const map: Record<string, TableRow[]> = {};
+    if (!effectiveCalendarDateCol) return map;
+    for (const row of sortedRows) {
+      const val = row[effectiveCalendarDateCol.id];
+      if (!val) continue;
+      const dateStr = String(val);
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!map[key]) map[key] = [];
+      map[key].push(row);
+    }
+    return map;
+  }, [sortedRows, effectiveCalendarDateCol]);
+
+  // Gallery: title column (first text col)
+  const galleryTitleCol = useMemo(
+    () => localColumns.find((c) => c.type === 'text') || localColumns[0],
+    [localColumns],
+  );
 
   // Global keyboard shortcuts (undo, redo, search)
   useEffect(() => {
@@ -1979,7 +2071,7 @@ export function TablesPage() {
 
   // View toggle
   const handleViewToggle = useCallback(
-    (view: 'grid' | 'kanban') => {
+    (view: TableViewConfig['activeView']) => {
       const updated = { ...localViewConfig, activeView: view };
       setLocalViewConfig(updated);
       triggerAutoSave({ viewConfig: updated });
@@ -2318,6 +2410,20 @@ export function TablesPage() {
                 >
                   <Kanban size={14} />
                 </button>
+                <button
+                  className={localViewConfig.activeView === 'calendar' ? 'active' : ''}
+                  onClick={() => handleViewToggle('calendar')}
+                  title={t('tables.calendarView')}
+                >
+                  <Calendar size={14} />
+                </button>
+                <button
+                  className={localViewConfig.activeView === 'gallery' ? 'active' : ''}
+                  onClick={() => handleViewToggle('gallery')}
+                  title={t('tables.galleryView')}
+                >
+                  <GalleryHorizontalEnd size={14} />
+                </button>
               </div>
 
               <div className="tables-toolbar-divider" />
@@ -2362,6 +2468,10 @@ export function TablesPage() {
                   triggerAutoSave({ viewConfig: updated });
                 }}
               />
+
+              <button className="tables-toolbar-btn" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                <Layers size={14} /> {t('tables.group')}
+              </button>
 
               <RowHeightPopover
                 viewConfig={localViewConfig}
@@ -2484,10 +2594,9 @@ export function TablesPage() {
                       animateRows={true}
                       undoRedoCellEditing={false}
                       suppressMoveWhenRowDragging={true}
-                      rowSelection={{ mode: 'multiRow' }}
+                      rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: true }}
                       enterNavigatesVertically={true}
                       enterNavigatesVerticallyAfterEdit={true}
-                      enableCellTextSelection={true}
                       ensureDomOrder={true}
                       suppressContextMenu={true}
                       onCellContextMenu={handleCellContextMenu}
@@ -2507,6 +2616,11 @@ export function TablesPage() {
                       ? t('tables.filteredRowCount', { filtered: filteredRows.length, total: localRows.length })
                       : t('tables.rowCount', { count: localRows.length })}
                   </span>
+                  {footerAgg && (
+                    <span className="tables-footer-agg">
+                      {footerAgg.label}: {footerAgg.sum} {t('tables.sum')} · {footerAgg.avg} {t('tables.avg')}
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -2552,6 +2666,182 @@ export function TablesPage() {
                   </DndContext>
                 )}
               </>
+            )}
+
+            {/* Calendar view */}
+            {localViewConfig.activeView === 'calendar' && (
+              <div className="tables-calendar-view">
+                {!effectiveCalendarDateCol ? (
+                  <div className="tables-kanban-no-group">
+                    <Calendar size={36} style={{ opacity: 0.3 }} />
+                    <div>{t('tables.noDateColumn')}</div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Date column selector */}
+                    {localColumns.filter((c) => c.type === 'date').length > 1 && (
+                      <div className="tables-calendar-date-selector">
+                        <span>{t('tables.calendarDateColumn')}:</span>
+                        <select
+                          value={effectiveCalendarDateCol.id}
+                          onChange={(e) => {
+                            const updated = { ...localViewConfig, calendarDateColumnId: e.target.value };
+                            setLocalViewConfig(updated);
+                            triggerAutoSave({ viewConfig: updated });
+                          }}
+                          style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, border: '1px solid var(--color-border-primary)' }}
+                        >
+                          {localColumns.filter((c) => c.type === 'date').map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    {/* Month navigation */}
+                    <div className="tables-calendar-header">
+                      <button
+                        className="tables-toolbar-btn"
+                        onClick={() => setCalendarMonth((prev) => {
+                          const d = new Date(prev.year, prev.month - 1, 1);
+                          return { year: d.getFullYear(), month: d.getMonth() };
+                        })}
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="tables-calendar-month-label">
+                        {new Date(calendarMonth.year, calendarMonth.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </span>
+                      <button
+                        className="tables-toolbar-btn"
+                        onClick={() => setCalendarMonth((prev) => {
+                          const d = new Date(prev.year, prev.month + 1, 1);
+                          return { year: d.getFullYear(), month: d.getMonth() };
+                        })}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                      <button
+                        className="tables-toolbar-btn"
+                        onClick={() => {
+                          const now = new Date();
+                          setCalendarMonth({ year: now.getFullYear(), month: now.getMonth() });
+                        }}
+                        style={{ marginLeft: 8, fontSize: 12 }}
+                      >
+                        {t('tables.today')}
+                      </button>
+                    </div>
+                    {/* Weekday header */}
+                    <div className="tables-calendar-grid">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                        <div key={d} className="tables-calendar-weekday">{d}</div>
+                      ))}
+                      {/* Day cells */}
+                      {(() => {
+                        const firstDay = new Date(calendarMonth.year, calendarMonth.month, 1);
+                        const startOffset = firstDay.getDay();
+                        const daysInMonth = new Date(calendarMonth.year, calendarMonth.month + 1, 0).getDate();
+                        const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+                        const today = new Date();
+                        const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                        const cells: React.ReactNode[] = [];
+                        for (let i = 0; i < totalCells; i++) {
+                          const dayNum = i - startOffset + 1;
+                          const isCurrentMonth = dayNum >= 1 && dayNum <= daysInMonth;
+                          const dateKey = isCurrentMonth
+                            ? `${calendarMonth.year}-${String(calendarMonth.month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+                            : '';
+                          const dayRows = isCurrentMonth ? (calendarDateMap[dateKey] || []) : [];
+                          const isToday = dateKey === todayKey;
+                          cells.push(
+                            <div
+                              key={i}
+                              className={`tables-calendar-cell${isCurrentMonth ? '' : ' outside'}${isToday ? ' today' : ''}`}
+                            >
+                              {isCurrentMonth && (
+                                <>
+                                  <span className={`tables-calendar-day-number${isToday ? ' today' : ''}`}>{dayNum}</span>
+                                  <div className="tables-calendar-cell-pills">
+                                    {dayRows.slice(0, 3).map((row) => {
+                                      const titleCol = localColumns.find((c) => c.type === 'text');
+                                      const title = titleCol ? String(row[titleCol.id] || '') : row._id.slice(0, 8);
+                                      return (
+                                        <button
+                                          key={row._id}
+                                          className="tables-calendar-pill"
+                                          onClick={() => setExpandedRowId(row._id)}
+                                          title={title}
+                                        >
+                                          {title || 'Untitled'}
+                                        </button>
+                                      );
+                                    })}
+                                    {dayRows.length > 3 && (
+                                      <span className="tables-calendar-more">+{dayRows.length - 3}</span>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>,
+                          );
+                        }
+                        return cells;
+                      })()}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Gallery view */}
+            {localViewConfig.activeView === 'gallery' && (
+              <div className="tables-gallery-view">
+                {sortedRows.map((row) => {
+                  const title = galleryTitleCol ? String(row[galleryTitleCol.id] || '') : row._id.slice(0, 8);
+                  const displayCols = localColumns
+                    .filter((c) => c.id !== galleryTitleCol?.id && row[c.id] != null && row[c.id] !== '')
+                    .slice(0, 5);
+                  return (
+                    <button
+                      key={row._id}
+                      className="tables-gallery-card"
+                      onClick={() => setExpandedRowId(row._id)}
+                    >
+                      <div className="tables-gallery-card-title">{title || 'Untitled'}</div>
+                      <div className="tables-gallery-card-fields">
+                        {displayCols.map((col) => {
+                          const val = row[col.id];
+                          let rendered: React.ReactNode = String(val);
+                          if (col.type === 'singleSelect') {
+                            const c = getTagColor(String(val));
+                            rendered = <span className="tables-cell-tag" style={{ background: c.bg, color: c.text }}>{String(val)}</span>;
+                          } else if (col.type === 'currency') {
+                            const num = Number(val);
+                            rendered = !isNaN(num) ? `$${num.toFixed(2)}` : String(val);
+                          } else if (col.type === 'percent') {
+                            rendered = `${val}%`;
+                          } else if (col.type === 'multiSelect' && Array.isArray(val)) {
+                            rendered = (
+                              <div className="tables-cell-multi-tags">
+                                {(val as string[]).map((v, i) => {
+                                  const c = getTagColor(v);
+                                  return <span key={i} className="tables-cell-tag" style={{ background: c.bg, color: c.text }}>{v}</span>;
+                                })}
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={col.id} className="tables-gallery-card-field">
+                              <span className="tables-gallery-card-label">{col.name}</span>
+                              <span className="tables-gallery-card-value">{rendered}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </>
         )}

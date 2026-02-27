@@ -718,6 +718,15 @@
     "templateCRM": "CRM contacts",
     "templateContentCalendar": "Content calendar",
     "templateInventory": "Inventory",
-    "templateBugTracker": "Bug tracker"
+    "templateBugTracker": "Bug tracker",
+    "calendarView": "Calendar view",
+    "galleryView": "Gallery view",
+    "group": "Group",
+    "sum": "Sum",
+    "avg": "Avg",
+    "count": "Count",
+    "noDateColumn": "Add a date column to use calendar view.",
+    "today": "Today",
+    "calendarDateColumn": "Date column"
   }
 }
