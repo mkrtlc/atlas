@@ -86,7 +86,6 @@ export const settingsCategories: SettingsCategory[] = [
       { id: 'accounts', label: 'Accounts', icon: Users, component: MailAccountsPanel },
       { id: 'appearance', label: 'Appearance', icon: Palette, component: MailAppearancePanel },
       { id: 'notifications', label: 'Notifications', icon: Bell, component: MailNotificationsPanel },
-      { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard, component: MailShortcutsPanel },
       { id: 'about', label: 'About', icon: Info, component: MailAboutPanel },
     ],
   },
@@ -100,6 +99,7 @@ export const settingsCategories: SettingsCategory[] = [
       { id: 'inbox', label: 'Inbox', icon: Inbox, component: MailInboxPanel },
       { id: 'reading-pane', label: 'Reading pane', icon: PanelRight, component: MailReadingPanePanel },
       { id: 'labels', label: 'Labels', icon: Tag, component: MailLabelsPanel },
+      { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard, component: MailShortcutsPanel },
     ],
   },
   {

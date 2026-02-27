@@ -151,7 +151,7 @@ export function InboxPage() {
   const handleCommandPalette = useCallback(() => toggleCommandPalette(), [toggleCommandPalette]);
   const handleToggleSidebar = useCallback(() => toggleSidebar(), [toggleSidebar]);
   const handleShortcutHelp = useCallback(() => {
-    openSettings('global', 'shortcuts');
+    openSettings('mail', 'shortcuts');
   }, [openSettings]);
 
   // Search shortcut — dispatches event so SearchBar can focus itself
