@@ -179,9 +179,49 @@ export async function listAccounts(req: Request, res: Response) {
   }
 }
 
-// POST /api/auth/local — create a local (offline) identity for non-email features
+// POST /api/auth/local — find or create a local (offline) identity for non-email features
+// The client sends a persistent `clientId` stored in localStorage. If a local account
+// already exists for that clientId we return it; otherwise we create one.
 export async function createLocalUser(req: Request, res: Response) {
   try {
+    const clientId: string | undefined = req.body.clientId;
+
+    // If the client sent a clientId, look for an existing local account whose
+    // providerId matches. This prevents creating duplicate identities.
+    if (clientId) {
+      const [existing] = await db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.providerId, clientId))
+        .limit(1);
+
+      if (existing) {
+        const jwtTokens = authService.generateTokens(existing);
+        res.json({
+          success: true,
+          data: {
+            accessToken: jwtTokens.accessToken,
+            refreshToken: jwtTokens.refreshToken,
+            account: {
+              id: existing.id,
+              userId: existing.userId,
+              email: existing.email,
+              name: existing.name,
+              pictureUrl: existing.pictureUrl,
+              provider: existing.provider,
+              providerId: existing.providerId,
+              historyId: existing.historyId ?? null,
+              lastSync: existing.lastSync ?? null,
+              syncStatus: existing.syncStatus as 'idle' | 'syncing' | 'error',
+              createdAt: existing.createdAt,
+              updatedAt: existing.updatedAt,
+            },
+          },
+        });
+        return;
+      }
+    }
+
     const now = new Date().toISOString();
 
     // Create user
@@ -190,7 +230,9 @@ export async function createLocalUser(req: Request, res: Response) {
       updatedAt: now,
     }).returning();
 
-    const localEmail = `local-${user.id}@atlasmail.local`;
+    // Use clientId as the stable providerId so subsequent calls find this account
+    const stableId = clientId || user.id;
+    const localEmail = `local-${stableId}@atlasmail.local`;
 
     // Create account with placeholder tokens
     const [account] = await db.insert(accounts).values({
@@ -199,7 +241,7 @@ export async function createLocalUser(req: Request, res: Response) {
       name: null,
       pictureUrl: null,
       provider: 'local',
-      providerId: user.id,
+      providerId: stableId,
       accessToken: encrypt('local-placeholder'),
       refreshToken: encrypt('local-placeholder'),
       tokenExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),

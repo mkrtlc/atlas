@@ -46,6 +46,18 @@ function DevAuthInit() {
   return null;
 }
 
+// Stable client ID persisted in localStorage so the server can identify
+// returning local users and avoid creating duplicate accounts.
+function getOrCreateClientId(): string {
+  const key = 'atlasmail_client_id';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 function LocalIdentityInit() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const addAccount = useAuthStore((s) => s.addAccount);
@@ -55,7 +67,8 @@ function LocalIdentityInit() {
     if (DEV_MODE || isAuthenticated || called.current) return;
     called.current = true;
 
-    api.post('/auth/local').then(({ data }) => {
+    const clientId = getOrCreateClientId();
+    api.post('/auth/local', { clientId }).then(({ data }) => {
       const { accessToken, refreshToken, account } = data.data;
       addAccount(account, accessToken, refreshToken);
     }).catch(() => {
