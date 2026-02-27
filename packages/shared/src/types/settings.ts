@@ -11,6 +11,9 @@ export type ColorThemeId =
 export type Density = 'compact' | 'default' | 'comfortable';
 export type ReadingPanePosition = 'right' | 'bottom' | 'hidden';
 export type AutoAdvance = 'next' | 'previous' | 'list';
+export type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+export type TablesDefaultView = 'grid' | 'kanban' | 'calendar' | 'gallery';
+export type TablesDefaultSort = 'none' | 'createdDate' | 'alphabetical';
 
 export interface UserSettings {
   id: string;
@@ -25,4 +28,14 @@ export interface UserSettings {
   notificationSound: boolean;
   signatureHtml: string | null;
   trackingEnabled: boolean;
+  // Global settings (shared across all apps)
+  dateFormat: DateFormat;
+  currencySymbol: string;
+  timezone: string;
+  // Tables settings
+  tablesDefaultView: TablesDefaultView;
+  tablesDefaultSort: TablesDefaultSort;
+  tablesShowFieldTypeIcons: boolean;
+  tablesDefaultRowCount: number;
+  tablesIncludeRowIdsInExport: boolean;
 }

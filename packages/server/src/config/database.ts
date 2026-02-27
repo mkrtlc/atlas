@@ -288,6 +288,18 @@ try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tasks_completed_behav
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tasks_default_sort TEXT NOT NULL DEFAULT 'manual'`).run(); } catch { /* column already exists */ }
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tasks_view_mode TEXT NOT NULL DEFAULT 'list'`).run(); } catch { /* column already exists */ }
 
+// ---- Global settings columns on user_settings --------------------------------
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN date_format TEXT NOT NULL DEFAULT 'MM/DD/YYYY'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN currency_symbol TEXT NOT NULL DEFAULT '$'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN timezone TEXT NOT NULL DEFAULT ''`).run(); } catch { /* column already exists */ }
+
+// ---- Tables settings columns on user_settings --------------------------------
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tables_default_view TEXT NOT NULL DEFAULT 'grid'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tables_default_sort TEXT NOT NULL DEFAULT 'none'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tables_show_field_type_icons INTEGER NOT NULL DEFAULT 1`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tables_default_row_count INTEGER NOT NULL DEFAULT 3`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN tables_include_row_ids_in_export INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* column already exists */ }
+
 // ---- Spreadsheets table (Tables / Airtable-like) ----------------------------
 
 sqlite.prepare(`

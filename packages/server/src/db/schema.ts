@@ -151,6 +151,16 @@ export const userSettings = sqliteTable('user_settings', {
   tasksCompletedBehavior: text('tasks_completed_behavior').notNull().default('fade'),
   tasksDefaultSort: text('tasks_default_sort').notNull().default('manual'),
   tasksViewMode: text('tasks_view_mode').notNull().default('list'),
+  // Global settings
+  dateFormat: text('date_format').notNull().default('MM/DD/YYYY'),
+  currencySymbol: text('currency_symbol').notNull().default('$'),
+  timezone: text('timezone').notNull().default(''),
+  // Tables settings
+  tablesDefaultView: text('tables_default_view').notNull().default('grid'),
+  tablesDefaultSort: text('tables_default_sort').notNull().default('none'),
+  tablesShowFieldTypeIcons: integer('tables_show_field_type_icons', { mode: 'boolean' }).notNull().default(true),
+  tablesDefaultRowCount: integer('tables_default_row_count').notNull().default(3),
+  tablesIncludeRowIdsInExport: integer('tables_include_row_ids_in_export', { mode: 'boolean' }).notNull().default(false),
   createdAt: timestampNow().notNull(),
   updatedAt: timestampNow().notNull(),
 });

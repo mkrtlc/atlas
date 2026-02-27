@@ -23,6 +23,8 @@ import {
   Pencil,
   Download,
   Calendar,
+  Table2,
+  Languages,
 } from 'lucide-react';
 
 import {
@@ -54,6 +56,11 @@ import {
   DrawCanvasPanel,
   DrawExportPanel,
 } from '../components/draw/draw-settings-modal';
+
+import {
+  TablesGeneralPanel,
+  TablesRegionalPanel,
+} from '../components/tables/tables-settings-modal';
 
 import {
   CalendarGeneralPanel,
@@ -115,6 +122,15 @@ export const settingsCategories: SettingsCategory[] = [
     panels: [
       { id: 'general', label: 'General', icon: Settings, component: CalendarGeneralPanel },
       { id: 'appearance', label: 'Appearance', icon: Palette, component: CalendarAppearancePanel },
+    ],
+  },
+  {
+    id: 'tables',
+    label: 'Tables',
+    icon: Table2,
+    panels: [
+      { id: 'general', label: 'General', icon: Settings, component: TablesGeneralPanel },
+      { id: 'regional', label: 'Regional', icon: Languages, component: TablesRegionalPanel },
     ],
   },
   {

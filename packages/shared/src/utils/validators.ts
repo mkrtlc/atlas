@@ -47,4 +47,14 @@ export const settingsSchema = z.object({
   tasksCompactMode: z.boolean().optional(),
   tasksCompletedBehavior: z.enum(['fade', 'move', 'hide']).optional(),
   tasksDefaultSort: z.enum(['manual', 'priority', 'dueDate', 'title', 'created']).optional(),
+  // Global settings
+  dateFormat: z.enum(['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD']).optional(),
+  currencySymbol: z.string().max(5).optional(),
+  timezone: z.string().max(100).optional(),
+  // Tables settings
+  tablesDefaultView: z.enum(['grid', 'kanban', 'calendar', 'gallery']).optional(),
+  tablesDefaultSort: z.enum(['none', 'createdDate', 'alphabetical']).optional(),
+  tablesShowFieldTypeIcons: z.boolean().optional(),
+  tablesDefaultRowCount: z.number().int().min(0).max(100).optional(),
+  tablesIncludeRowIdsInExport: z.boolean().optional(),
 });

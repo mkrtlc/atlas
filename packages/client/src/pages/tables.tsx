@@ -78,6 +78,7 @@ import { RichSelectCellEditor } from '../components/tables/RichSelectCellEditor'
 import { RowHeightPopover } from '../components/tables/RowHeightPopover';
 import { HideFieldsPopover } from '../components/tables/HideFieldsPopover';
 import { RowColorPopover } from '../components/tables/RowColorPopover';
+import { useTablesSettingsStore } from '../stores/tables-settings-store';
 import { FindReplaceBar } from '../components/tables/FindReplaceBar';
 import { BatchEditOverlay } from '../components/tables/BatchEditOverlay';
 import { GroupHeaderRenderer } from '../components/tables/GroupHeaderRow';
@@ -970,7 +971,8 @@ function CurrencyRenderer(params: ICellRendererParams) {
   if (params.value == null || params.value === '') return null;
   const num = Number(params.value);
   if (isNaN(num)) return <span>{String(params.value)}</span>;
-  return <span>${num.toFixed(2)}</span>;
+  const symbol = (params.colDef as ColDef & { cellRendererParams?: { currencySymbol?: string } })?.cellRendererParams?.currencySymbol || '$';
+  return <span>{symbol}{num.toFixed(2)}</span>;
 }
 
 function StarRenderer(params: ICellRendererParams) {
@@ -1032,11 +1034,23 @@ function AttachmentCellRenderer(params: ICellRendererParams) {
   );
 }
 
+function formatDateByPattern(d: Date, pattern: string): string {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = String(d.getFullYear());
+  switch (pattern) {
+    case 'DD/MM/YYYY': return `${dd}/${mm}/${yyyy}`;
+    case 'YYYY-MM-DD': return `${yyyy}-${mm}-${dd}`;
+    default: return `${mm}/${dd}/${yyyy}`;
+  }
+}
+
 function DateRenderer(params: ICellRendererParams) {
   if (!params.value) return null;
   const d = new Date(String(params.value));
   if (isNaN(d.getTime())) return <span>{String(params.value)}</span>;
-  return <span>{d.toLocaleDateString()}</span>;
+  const fmt = (params.colDef as ColDef & { cellRendererParams?: { dateFormat?: string } })?.cellRendererParams?.dateFormat || 'MM/DD/YYYY';
+  return <span>{formatDateByPattern(d, fmt)}</span>;
 }
 
 // ─── Row number header (select-all checkbox) ───────────────────────
@@ -1073,6 +1087,12 @@ function AddColumnHeader(props: { setShowAddColumn: (v: boolean) => void }) {
 
 // ─── Build AG Grid column defs ──────────────────────────────────────
 
+interface BuildColDefsSettings {
+  dateFormat: string;
+  currencySymbol: string;
+  showFieldTypeIcons: boolean;
+}
+
 function buildColDefs(
   columns: TableColumn[],
   t: (key: string) => string,
@@ -1080,9 +1100,10 @@ function buildColDefs(
   hiddenColumns?: Set<string>,
   frozenColumnCount?: number,
   onHeaderClicked?: (colId: string) => void,
+  settings?: BuildColDefsSettings,
 ): ColDef[] {
   return columns.map((col, idx) => {
-    const TypeIcon = FIELD_TYPE_ICONS[col.type];
+    const TypeIcon = settings?.showFieldTypeIcons !== false ? FIELD_TYPE_ICONS[col.type] : undefined;
     const base: ColDef = {
       field: col.id,
       headerName: col.name,
@@ -1167,6 +1188,7 @@ function buildColDefs(
       case 'date':
         base.cellEditor = 'agDateCellEditor';
         base.cellRenderer = DateRenderer;
+        base.cellRendererParams = { dateFormat: settings?.dateFormat || 'MM/DD/YYYY' };
         break;
       case 'url':
         base.cellEditor = 'agTextCellEditor';
@@ -1184,6 +1206,7 @@ function buildColDefs(
         base.cellEditor = 'agNumberCellEditor';
         base.cellEditorParams = { precision: 2 };
         base.cellRenderer = CurrencyRenderer;
+        base.cellRendererParams = { currencySymbol: settings?.currencySymbol || '$' };
         base.cellStyle = { textAlign: 'right' };
         break;
       case 'rating':
@@ -1436,6 +1459,7 @@ export function TablesPage() {
   const deleteTable = useDeleteTable();
   const restoreTable = useRestoreTable();
   const { save: autoSave, isSaving } = useAutoSaveTable();
+  const tablesSettings = useTablesSettingsStore();
 
   const [selectedId, setSelectedId] = useState<string | null>(
     paramId ?? localStorage.getItem(LAST_TABLE_KEY) ?? null,
@@ -1913,10 +1937,10 @@ export function TablesPage() {
 
   const handleCreateTable = useCallback(async () => {
     const columns = createDefaultColumns();
-    const rows = createDefaultRows(3);
+    const rows = createDefaultRows(tablesSettings.defaultRowCount);
     const created = await createTable.mutateAsync({ columns, rows });
     handleSelectTable(created.id);
-  }, [createTable, handleSelectTable]);
+  }, [createTable, handleSelectTable, tablesSettings.defaultRowCount]);
 
   const handleCreateFromTemplate = useCallback(
     async (tplOrKey: TableTemplate | string) => {
@@ -2493,6 +2517,9 @@ export function TablesPage() {
 
     const exportData = sortedRows.map((row) => {
       const obj: Record<string, unknown> = {};
+      if (tablesSettings.includeRowIdsInExport) {
+        obj['_id'] = row._id;
+      }
       for (const col of visibleCols) {
         let val = row[col.id];
         // For formula cells, use computed value
@@ -2510,7 +2537,7 @@ export function TablesPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
     XLSX.writeFile(wb, `${localTitle || 'table'}.xlsx`);
-  }, [localColumns, sortedRows, localViewConfig.hiddenColumns, localTitle, getComputedValue]);
+  }, [localColumns, sortedRows, localViewConfig.hiddenColumns, localTitle, getComputedValue, tablesSettings.includeRowIdsInExport]);
 
   // ─── Row grouping handlers ────────────────────────────────────
   const handleGroupByColumn = useCallback(
@@ -2700,7 +2727,12 @@ export function TablesPage() {
   );
 
   const columnDefs = useMemo(() => {
-    const baseDefs = buildColDefs(localColumns, t, handleColumnMenuOpen, hiddenColumnsSet, localViewConfig.frozenColumnCount, handleRangeHeaderClicked);
+    const colSettings: BuildColDefsSettings = {
+      dateFormat: tablesSettings.dateFormat,
+      currencySymbol: tablesSettings.currencySymbol,
+      showFieldTypeIcons: tablesSettings.showFieldTypeIcons,
+    };
+    const baseDefs = buildColDefs(localColumns, t, handleColumnMenuOpen, hiddenColumnsSet, localViewConfig.frozenColumnCount, handleRangeHeaderClicked, colSettings);
     // Add formula valueGetter to each data column
     const formulaDefs: ColDef[] = baseDefs.map((def) => {
       if (!def.field) return def;
@@ -2719,7 +2751,7 @@ export function TablesPage() {
       } as ColDef;
     });
     return [ROW_NUMBER_COL, ...formulaDefs, ADD_COLUMN_COL];
-  }, [localColumns, t, ROW_NUMBER_COL, ADD_COLUMN_COL, handleColumnMenuOpen, hiddenColumnsSet, localViewConfig.frozenColumnCount, handleRangeHeaderClicked, getComputedValue]);
+  }, [localColumns, t, ROW_NUMBER_COL, ADD_COLUMN_COL, handleColumnMenuOpen, hiddenColumnsSet, localViewConfig.frozenColumnCount, handleRangeHeaderClicked, getComputedValue, tablesSettings.dateFormat, tablesSettings.currencySymbol, tablesSettings.showFieldTypeIcons]);
 
   // Kanban DnD
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
