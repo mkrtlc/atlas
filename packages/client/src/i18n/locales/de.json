@@ -642,6 +642,8 @@
     "newColumnName": "Neue Spalte",
     "confirmDeleteColumn": "Sind Sie sicher, dass Sie diese Spalte löschen möchten?",
     "confirmDeleteRow": "Sind Sie sicher, dass Sie diese Zeile löschen möchten?",
+    "confirmDeleteTitle": "In den Papierkorb verschieben?",
+    "confirmDeleteDescription": "Diese Tabelle wird in den Papierkorb verschoben. Sie können sie später wiederherstellen.",
     "rowHeight": "Zeilenhöhe",
     "short": "Niedrig",
     "medium": "Mittel",

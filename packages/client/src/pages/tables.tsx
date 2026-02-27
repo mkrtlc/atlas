@@ -83,6 +83,7 @@ import { HideFieldsPopover } from '../components/tables/HideFieldsPopover';
 import { RowColorPopover } from '../components/tables/RowColorPopover';
 import { useTablesSettingsStore } from '../stores/tables-settings-store';
 import { useUIStore } from '../stores/ui-store';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { useToastStore } from '../stores/toast-store';
 import { FindReplaceBar } from '../components/tables/FindReplaceBar';
 import { BatchEditOverlay } from '../components/tables/BatchEditOverlay';
@@ -1481,6 +1482,7 @@ export function TablesPage() {
   const [sidebarWidth, setSidebarWidth] = useState(getSavedSidebarWidth);
   const [showTrash, setShowTrash] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Local state for the active spreadsheet (optimistic)
   const [localColumns, setLocalColumns] = useState<TableColumn[]>([]);
@@ -1981,15 +1983,21 @@ export function TablesPage() {
 
   const handleDeleteTable = useCallback(
     (id: string) => {
-      deleteTable.mutate(id);
-      if (selectedId === id) {
-        setSelectedId(null);
-        localStorage.removeItem(LAST_TABLE_KEY);
-        navigate(ROUTES.TABLES, { replace: true });
-      }
+      setDeleteConfirmId(id);
     },
-    [deleteTable, selectedId, navigate],
+    [],
   );
+
+  const confirmDeleteTable = useCallback(() => {
+    if (!deleteConfirmId) return;
+    deleteTable.mutate(deleteConfirmId);
+    if (selectedId === deleteConfirmId) {
+      setSelectedId(null);
+      localStorage.removeItem(LAST_TABLE_KEY);
+      navigate(ROUTES.TABLES, { replace: true });
+    }
+    setDeleteConfirmId(null);
+  }, [deleteConfirmId, deleteTable, selectedId, navigate]);
 
   const handleRestoreTable = useCallback(
     (id: string) => {
@@ -3798,6 +3806,16 @@ export function TablesPage() {
           opacity: 1 !important;
         }
       `}</style>
+
+      {/* Delete table confirmation */}
+      <ConfirmDialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}
+        title={t('tables.confirmDeleteTitle', 'Move to trash?')}
+        description={t('tables.confirmDeleteDescription', 'This table will be moved to trash. You can restore it later.')}
+        confirmLabel={t('tables.moveToTrash', 'Move to trash')}
+        onConfirm={confirmDeleteTable}
+      />
     </div>
   );
 }

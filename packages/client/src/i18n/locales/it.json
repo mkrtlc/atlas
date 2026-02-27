@@ -642,6 +642,8 @@
     "newColumnName": "Nuova colonna",
     "confirmDeleteColumn": "Sei sicuro di voler eliminare questa colonna?",
     "confirmDeleteRow": "Sei sicuro di voler eliminare questa riga?",
+    "confirmDeleteTitle": "Spostare nel cestino?",
+    "confirmDeleteDescription": "Questa tabella verrà spostata nel cestino. Potrai ripristinarla in seguito.",
     "rowHeight": "Altezza riga",
     "short": "Bassa",
     "medium": "Media",

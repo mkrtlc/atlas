@@ -642,6 +642,8 @@
     "newColumnName": "Nouvelle colonne",
     "confirmDeleteColumn": "Êtes-vous sûr de vouloir supprimer cette colonne ?",
     "confirmDeleteRow": "Êtes-vous sûr de vouloir supprimer cette ligne ?",
+    "confirmDeleteTitle": "Déplacer vers la corbeille ?",
+    "confirmDeleteDescription": "Ce tableau sera déplacé vers la corbeille. Vous pourrez le restaurer ultérieurement.",
     "rowHeight": "Hauteur de ligne",
     "short": "Basse",
     "medium": "Moyenne",

@@ -642,6 +642,8 @@
     "newColumnName": "Yeni sütun",
     "confirmDeleteColumn": "Bu sütunu silmek istediğinizden emin misiniz?",
     "confirmDeleteRow": "Bu satırı silmek istediğinizden emin misiniz?",
+    "confirmDeleteTitle": "Çöpe taşınsın mı?",
+    "confirmDeleteDescription": "Bu tablo çöpe taşınacak. Daha sonra geri yükleyebilirsiniz.",
     "rowHeight": "Satır yüksekliği",
     "short": "Kısa",
     "medium": "Orta",
