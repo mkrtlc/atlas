@@ -472,8 +472,8 @@ export function HomePage() {
   const account = useAuthStore((s) => s.account);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isDesktop = !!('atlasDesktop' in window);
-  const { data: counts } = useThreadCounts();
-  const { data: taskCounts } = useTaskCounts();
+  const { data: counts } = useThreadCounts({ enabled: isAuthenticated });
+  const { data: taskCounts } = useTaskCounts({ enabled: isAuthenticated });
   const parallax = useMouseParallax(15);
 
   // Image rotation — changes daily, crossfade on manual cycle
@@ -512,7 +512,7 @@ export function HomePage() {
     d.setHours(23, 59, 59, 999);
     return d.toISOString();
   }, []);
-  const { data: todayEvents } = useCalendarEvents(todayStart, todayEnd);
+  const { data: todayEvents } = useCalendarEvents(todayStart, todayEnd, { enabled: isAuthenticated });
 
   const rawName = account?.name || '';
   const cleanedName = rawName.replace(/^Dr\.?\s+/i, '');

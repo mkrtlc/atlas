@@ -19,7 +19,7 @@ export function useCalendars() {
   });
 }
 
-export function useCalendarEvents(timeMin: string, timeMax: string) {
+export function useCalendarEvents(timeMin: string, timeMax: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.calendar.events(timeMin, timeMax),
     queryFn: async () => {
@@ -29,7 +29,7 @@ export function useCalendarEvents(timeMin: string, timeMax: string) {
       return data.data as CalendarEvent[];
     },
     staleTime: 2 * 60_000,
-    enabled: !!timeMin && !!timeMax,
+    enabled: (options?.enabled ?? true) && !!timeMin && !!timeMax,
   });
 }
 

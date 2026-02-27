@@ -48,7 +48,7 @@ export function useTask(id: string | undefined) {
   });
 }
 
-export function useTaskCounts() {
+export function useTaskCounts(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.tasks.counts,
     queryFn: async () => {
@@ -64,6 +64,7 @@ export function useTaskCounts() {
       };
     },
     staleTime: 15_000,
+    enabled: options?.enabled,
   });
 }
 

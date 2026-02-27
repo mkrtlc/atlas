@@ -17,7 +17,7 @@ interface ThreadCounts {
   mailboxes: Record<string, { total: number; unread: number }>;
 }
 
-export function useThreadCounts() {
+export function useThreadCounts(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.threads.counts,
     queryFn: async () => {
@@ -42,6 +42,7 @@ export function useThreadCounts() {
       return data.data as ThreadCounts;
     },
     refetchInterval: 60_000, // refresh counts every minute
+    enabled: options?.enabled,
   });
 }
 
