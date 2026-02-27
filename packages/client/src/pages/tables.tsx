@@ -5,14 +5,12 @@ import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry, type ColDef, type CellEditRequestEvent, type RowDragEndEvent, type ICellRendererParams } from 'ag-grid-community';
 import {
   Plus,
-  Search,
   ArrowLeft,
   Trash2,
   RotateCcw,
   Table2,
   LayoutGrid,
   Kanban,
-  X,
 } from 'lucide-react';
 import {
   DndContext,
@@ -34,7 +32,7 @@ import {
   useAutoSaveTable,
 } from '../hooks/use-tables';
 import { ROUTES } from '../config/routes';
-import type { Spreadsheet, TableColumn, TableRow, TableFieldType, TableViewConfig } from '@atlasmail/shared';
+import type { TableColumn, TableRow, TableFieldType, TableViewConfig } from '@atlasmail/shared';
 import '../styles/tables.css';
 
 // ─── AG Grid module registration ────────────────────────────────────
@@ -141,7 +139,7 @@ function EmailRenderer(params: ICellRendererParams) {
 function CurrencyRenderer(params: ICellRendererParams) {
   if (params.value == null || params.value === '') return null;
   const num = Number(params.value);
-  if (isNaN(num)) return String(params.value);
+  if (isNaN(num)) return <span>{String(params.value)}</span>;
   return <span>${num.toFixed(2)}</span>;
 }
 
@@ -171,11 +169,9 @@ function PercentRenderer(params: ICellRendererParams) {
 
 function DateRenderer(params: ICellRendererParams) {
   if (!params.value) return null;
-  try {
-    return <span>{new Date(String(params.value)).toLocaleDateString()}</span>;
-  } catch {
-    return <span>{String(params.value)}</span>;
-  }
+  const d = new Date(String(params.value));
+  if (isNaN(d.getTime())) return <span>{String(params.value)}</span>;
+  return <span>{d.toLocaleDateString()}</span>;
 }
 
 // ─── Build AG Grid column defs ──────────────────────────────────────
@@ -357,10 +353,22 @@ function AddColumnPopover({
   const [type, setType] = useState<TableFieldType>('text');
   const [options, setOptions] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     nameRef.current?.focus();
   }, []);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
 
   const needsOptions = type === 'singleSelect' || type === 'multiSelect';
 
@@ -374,7 +382,7 @@ function AddColumnPopover({
   };
 
   return (
-    <div className="tables-add-col-popover" onClick={(e) => e.stopPropagation()}>
+    <div ref={popoverRef} className="tables-add-col-popover" onClick={(e) => e.stopPropagation()}>
       <div>
         <label>{t('tables.columnName')}</label>
         <input
@@ -664,11 +672,13 @@ export function TablesPage() {
 
   // Sidebar resize
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const latestWidthRef = useRef(sidebarWidth);
+  latestWidthRef.current = sidebarWidth;
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      resizeRef.current = { startX: e.clientX, startWidth: sidebarWidth };
+      resizeRef.current = { startX: e.clientX, startWidth: latestWidthRef.current };
 
       const handleMove = (ev: MouseEvent) => {
         if (!resizeRef.current) return;
@@ -677,21 +687,20 @@ export function TablesPage() {
           Math.max(MIN_SIDEBAR_WIDTH, resizeRef.current.startWidth + (ev.clientX - resizeRef.current.startX)),
         );
         setSidebarWidth(newWidth);
+        latestWidthRef.current = newWidth;
       };
 
       const handleUp = () => {
         document.removeEventListener('mousemove', handleMove);
         document.removeEventListener('mouseup', handleUp);
-        if (resizeRef.current) {
-          localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
-        }
+        localStorage.setItem(SIDEBAR_WIDTH_KEY, String(latestWidthRef.current));
         resizeRef.current = null;
       };
 
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [sidebarWidth],
+    [],
   );
 
   // Row data for AG Grid (with getRowId)
@@ -905,7 +914,7 @@ export function TablesPage() {
                       animateRows={true}
                       undoRedoCellEditing={false}
                       suppressMoveWhenRowDragging={true}
-                      rowSelection="multiple"
+                      rowSelection={{ mode: 'multiRow' }}
                       context={{ deleteRow: handleDeleteRow }}
                     />
                   </div>
