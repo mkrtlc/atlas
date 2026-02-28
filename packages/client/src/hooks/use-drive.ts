@@ -29,7 +29,6 @@ export function useDriveItems(parentId?: string | null, sortBy?: string, sortOrd
       const { data } = await api.get(`/drive${qs ? `?${qs}` : ''}`);
       return data.data as ListItemsResponse;
     },
-    staleTime: 30_000,
   });
 }
 
@@ -230,7 +229,7 @@ export function useUploadFiles() {
       return data.data as { items: DriveItem[] };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all, refetchType: 'all' });
     },
   });
 }

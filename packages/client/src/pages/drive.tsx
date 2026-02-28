@@ -510,6 +510,7 @@ export function DrivePage() {
       },
       {
         onSuccess: (data) => {
+          setUploadProgress(null);
           addToast({ type: 'success', message: `${data.items.length} file${data.items.length > 1 ? 's' : ''} uploaded` });
         },
         onError: () => {
