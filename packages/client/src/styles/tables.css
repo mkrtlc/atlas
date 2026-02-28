@@ -1121,6 +1121,7 @@
   height: 100%;
   padding: 0 4px;
   cursor: default;
+  position: relative;
 }
 
 .tables-custom-header-icon {
@@ -1147,11 +1148,14 @@
   width: 20px;
   height: 20px;
   border: none;
-  background: none;
+  background: var(--color-bg-tertiary);
   color: var(--color-text-tertiary);
   cursor: pointer;
   border-radius: var(--radius-sm, 3px);
-  flex-shrink: 0;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   transition: opacity 100ms ease, background 100ms ease;
 }
 

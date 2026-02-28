@@ -32,6 +32,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api-client';
 import { queryKeys } from '../config/query-keys';
 import { useDrawingList } from '../hooks/use-drawings';
+import { useTableList } from '../hooks/use-tables';
 import { EmojiPicker } from '../components/shared/emoji-picker';
 import { CoverPicker, isCoverGradient } from '../components/shared/cover-picker';
 import '../styles/docs.css';
@@ -929,6 +930,7 @@ export function DocsPage() {
   const updateDoc = useUpdateDocument();
   const createDoc = useCreateDocument();
   const { data: drawingListData } = useDrawingList();
+  const { data: tableListData } = useTableList();
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showDocSettings, setShowDocSettings] = useState(false);
@@ -1119,6 +1121,7 @@ export function DocsPage() {
                 allDocuments={listData?.documents}
                 onNavigate={handleSelect}
                 allDrawings={drawingListData?.drawings?.map((d) => ({ id: d.id, title: d.title }))}
+                allTables={tableListData?.spreadsheets?.map((s) => ({ id: s.id, title: s.title }))}
               />
             </div>
           ) : (
@@ -1494,6 +1497,8 @@ interface DocumentViewProps {
   onNavigate?: (docId: string) => void;
   /** All drawings for embed picker */
   allDrawings?: Array<{ id: string; title: string }>;
+  /** All tables for embed picker */
+  allTables?: Array<{ id: string; title: string }>;
 }
 
 function DocumentView({
@@ -1506,6 +1511,7 @@ function DocumentView({
   allDocuments,
   onNavigate,
   allDrawings,
+  allTables,
 }: DocumentViewProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showCoverPicker, setShowCoverPicker] = useState(false);
@@ -1661,6 +1667,7 @@ function DocumentView({
         documents={allDocuments}
         onNavigate={onNavigate}
         drawings={allDrawings}
+        tables={allTables}
       />
 
       {showCoverPicker && (
