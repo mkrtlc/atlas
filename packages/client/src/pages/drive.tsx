@@ -6,7 +6,7 @@ import {
   Star, MoreHorizontal, Pencil, Download, FolderInput, ChevronRight,
   LayoutGrid, LayoutList, Home, Clock, Heart, HardDrive, Upload as UploadIcon,
   Copy, X, Check, ChevronDown, Tag, FileArchive, Share2, History,
-  FileImage, FileText, FileVideo, FileAudio, Link2, Trash, Music,
+  FileImage, FileText, FileVideo, FileAudio, Link2, Trash, Music, Settings,
 } from 'lucide-react';
 import {
   useDriveItems, useDriveBreadcrumbs, useDriveFavourites, useDriveRecent,
@@ -27,6 +27,7 @@ import { EmojiPicker } from '../components/shared/emoji-picker';
 import { getFileIcon, getFileIconColor, formatBytes, formatRelativeDate, isImageFile } from '../lib/drive-utils';
 import { ROUTES } from '../config/routes';
 import { useDriveSettingsStore, useDriveSettingsSync } from '../stores/drive-settings-store';
+import { useUIStore } from '../stores/ui-store';
 import type { DriveItem, DriveShareLink } from '@atlasmail/shared';
 import '../styles/drive.css';
 
@@ -41,6 +42,8 @@ const VIEW_MODE_KEY = 'atlasmail_drive_view_mode';
 type ViewMode = 'list' | 'grid';
 type SidebarView = 'files' | 'favourites' | 'recent' | 'trash' | 'images' | 'documents' | 'videos' | 'audio';
 type SortBy = 'default' | 'name' | 'size' | 'date' | 'type';
+type TypeFilter = 'all' | 'folders' | 'documents' | 'spreadsheets' | 'presentations' | 'photos' | 'pdfs' | 'videos' | 'archives' | 'audio' | 'drawings';
+type ModifiedFilter = 'any' | 'today' | '7days' | '30days' | 'thisYear' | 'lastYear';
 
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: 'default', label: 'Default' },
@@ -49,6 +52,90 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: 'date', label: 'Date modified' },
   { value: 'type', label: 'Type' },
 ];
+
+const TYPE_FILTER_OPTIONS: { value: TypeFilter; label: string }[] = [
+  { value: 'all', label: 'Any type' },
+  { value: 'folders', label: 'Folders' },
+  { value: 'documents', label: 'Documents' },
+  { value: 'spreadsheets', label: 'Spreadsheets' },
+  { value: 'presentations', label: 'Presentations' },
+  { value: 'photos', label: 'Photos & images' },
+  { value: 'pdfs', label: 'PDFs' },
+  { value: 'videos', label: 'Videos' },
+  { value: 'archives', label: 'Archives' },
+  { value: 'audio', label: 'Audio' },
+  { value: 'drawings', label: 'Drawings' },
+];
+
+function getModifiedFilterOptions(): { value: ModifiedFilter; label: string }[] {
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  return [
+    { value: 'any', label: 'Any time' },
+    { value: 'today', label: 'Today' },
+    { value: '7days', label: 'Last 7 days' },
+    { value: '30days', label: 'Last 30 days' },
+    { value: 'thisYear', label: `This year (${thisYear})` },
+    { value: 'lastYear', label: `Last year (${thisYear - 1})` },
+  ];
+}
+
+function matchesTypeFilter(item: DriveItem, filter: TypeFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'folders') return item.type === 'folder';
+  const mime = (item.mimeType || '').toLowerCase();
+  const name = (item.name || '').toLowerCase();
+  switch (filter) {
+    case 'documents':
+      return /word|document|\.docx?$|\.odt$|\.rtf$|text\/plain/.test(mime + name) && !mime.startsWith('application/pdf');
+    case 'spreadsheets':
+      return /spreadsheet|excel|\.xlsx?$|\.csv$|\.ods$/.test(mime + name);
+    case 'presentations':
+      return /presentation|powerpoint|\.pptx?$|\.odp$/.test(mime + name);
+    case 'photos':
+      return mime.startsWith('image/');
+    case 'pdfs':
+      return mime === 'application/pdf' || name.endsWith('.pdf');
+    case 'videos':
+      return mime.startsWith('video/');
+    case 'archives':
+      return /zip|rar|7z|tar|gz|bz2|archive|compressed/.test(mime + name);
+    case 'audio':
+      return mime.startsWith('audio/');
+    case 'drawings':
+      return /drawing|\.svg$|\.sketch$|\.fig$/.test(mime + name) || mime === 'image/svg+xml';
+    default:
+      return true;
+  }
+}
+
+function matchesModifiedFilter(item: DriveItem, filter: ModifiedFilter): boolean {
+  if (filter === 'any') return true;
+  const itemDate = new Date(item.updatedAt);
+  const now = new Date();
+  switch (filter) {
+    case 'today': {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return itemDate >= start;
+    }
+    case '7days': {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 7);
+      return itemDate >= start;
+    }
+    case '30days': {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 30);
+      return itemDate >= start;
+    }
+    case 'thisYear':
+      return itemDate.getFullYear() === now.getFullYear();
+    case 'lastYear':
+      return itemDate.getFullYear() === now.getFullYear() - 1;
+    default:
+      return true;
+  }
+}
 
 const TAG_COLORS = [
   { name: 'red', hex: '#ef4444' },
@@ -140,6 +227,7 @@ export function DrivePage() {
   const navigate = useNavigate();
   const { id: folderId } = useParams<{ id: string }>();
   const addToast = useToastStore((s) => s.addToast);
+  const openSettings = useUIStore((s) => s.openSettings);
 
   // Drive settings (persisted to server)
   useDriveSettingsSync();
@@ -165,6 +253,10 @@ export function DrivePage() {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>(() => driveSettings.defaultSort as SortBy || 'default');
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const [modifiedFilter, setModifiedFilter] = useState<ModifiedFilter>('any');
+  const [modifiedDropdownOpen, setModifiedDropdownOpen] = useState(false);
   const [previewItem, setPreviewItem] = useState<DriveItem | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ loaded: number; total: number } | null>(null);
   const [tagModalItem, setTagModalItem] = useState<DriveItem | null>(null);
@@ -184,6 +276,8 @@ export function DrivePage() {
   const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null);
   const resizingRef = useRef(false);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const modifiedDropdownRef = useRef<HTMLDivElement>(null);
 
   // Queries
   const currentParentId = folderId || null;
@@ -225,13 +319,23 @@ export function DrivePage() {
 
   // Determine which items to show
   const displayItems = useMemo(() => {
-    if (searchQuery.trim()) return searchData?.items ?? [];
-    if (sidebarView === 'favourites') return favouritesData?.items ?? [];
-    if (sidebarView === 'recent') return recentData?.items ?? [];
-    if (sidebarView === 'trash') return trashData?.items ?? [];
-    if (['images', 'documents', 'videos', 'audio'].includes(sidebarView)) return typeData?.items ?? [];
-    return itemsData?.items ?? [];
-  }, [sidebarView, searchQuery, itemsData, favouritesData, recentData, trashData, searchData, typeData]);
+    let items: DriveItem[];
+    if (searchQuery.trim()) items = searchData?.items ?? [];
+    else if (sidebarView === 'favourites') items = favouritesData?.items ?? [];
+    else if (sidebarView === 'recent') items = recentData?.items ?? [];
+    else if (sidebarView === 'trash') items = trashData?.items ?? [];
+    else if (['images', 'documents', 'videos', 'audio'].includes(sidebarView)) items = typeData?.items ?? [];
+    else items = itemsData?.items ?? [];
+
+    // Apply toolbar filters
+    if (typeFilter !== 'all') {
+      items = items.filter((item) => matchesTypeFilter(item, typeFilter));
+    }
+    if (modifiedFilter !== 'any') {
+      items = items.filter((item) => matchesModifiedFilter(item, modifiedFilter));
+    }
+    return items;
+  }, [sidebarView, searchQuery, itemsData, favouritesData, recentData, trashData, searchData, typeData, typeFilter, modifiedFilter]);
 
   const isLoading = sidebarView === 'files' && itemsLoading;
   const breadcrumbs = breadcrumbsData?.breadcrumbs ?? [];
@@ -242,17 +346,24 @@ export function DrivePage() {
     localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
-  // Close sort dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
-    if (!sortDropdownOpen) return;
+    if (!sortDropdownOpen && !typeDropdownOpen && !modifiedDropdownOpen) return;
     const handler = (e: MouseEvent) => {
-      if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (sortDropdownOpen && sortDropdownRef.current && !sortDropdownRef.current.contains(target)) {
         setSortDropdownOpen(false);
+      }
+      if (typeDropdownOpen && typeDropdownRef.current && !typeDropdownRef.current.contains(target)) {
+        setTypeDropdownOpen(false);
+      }
+      if (modifiedDropdownOpen && modifiedDropdownRef.current && !modifiedDropdownRef.current.contains(target)) {
+        setModifiedDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [sortDropdownOpen]);
+  }, [sortDropdownOpen, typeDropdownOpen, modifiedDropdownOpen]);
 
   // Close preview on Escape
   useEffect(() => {
@@ -1078,6 +1189,82 @@ export function DrivePage() {
           </div>
 
           <div className="drive-toolbar-right">
+            {/* Type filter dropdown */}
+            <div ref={typeDropdownRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  height: 32,
+                  padding: '0 10px',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  background: typeFilter !== 'all' ? 'color-mix(in srgb, var(--color-accent-primary) 8%, var(--color-bg-primary))' : 'var(--color-bg-primary)',
+                  color: typeFilter !== 'all' ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontFamily: 'var(--font-family)',
+                  cursor: 'pointer',
+                }}
+              >
+                {TYPE_FILTER_OPTIONS.find((o) => o.value === typeFilter)?.label || 'Type'}
+                <ChevronDown size={12} />
+              </button>
+              {typeDropdownOpen && (
+                <div className="drive-sort-dropdown" style={{ minWidth: 180 }}>
+                  {TYPE_FILTER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`drive-sort-option ${typeFilter === opt.value ? 'active' : ''}`}
+                      onClick={() => { setTypeFilter(opt.value); setTypeDropdownOpen(false); }}
+                    >
+                      {opt.label}
+                      {typeFilter === opt.value && <Check size={12} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modified filter dropdown */}
+            <div ref={modifiedDropdownRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setModifiedDropdownOpen(!modifiedDropdownOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  height: 32,
+                  padding: '0 10px',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  background: modifiedFilter !== 'any' ? 'color-mix(in srgb, var(--color-accent-primary) 8%, var(--color-bg-primary))' : 'var(--color-bg-primary)',
+                  color: modifiedFilter !== 'any' ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontFamily: 'var(--font-family)',
+                  cursor: 'pointer',
+                }}
+              >
+                {getModifiedFilterOptions().find((o) => o.value === modifiedFilter)?.label || 'Modified'}
+                <ChevronDown size={12} />
+              </button>
+              {modifiedDropdownOpen && (
+                <div className="drive-sort-dropdown" style={{ minWidth: 180 }}>
+                  {getModifiedFilterOptions().map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`drive-sort-option ${modifiedFilter === opt.value ? 'active' : ''}`}
+                      onClick={() => { setModifiedFilter(opt.value); setModifiedDropdownOpen(false); }}
+                    >
+                      {opt.label}
+                      {modifiedFilter === opt.value && <Check size={12} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Sort dropdown */}
             <div ref={sortDropdownRef} style={{ position: 'relative' }}>
               <button
@@ -1148,6 +1335,29 @@ export function DrivePage() {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-bg-primary)'; }}
             >
               {viewMode === 'list' ? <LayoutGrid size={16} /> : <LayoutList size={16} />}
+            </button>
+
+            {/* Settings */}
+            <button
+              onClick={() => openSettings('drive')}
+              title="Drive settings"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-bg-primary)',
+                color: 'var(--color-text-secondary)',
+                cursor: 'pointer',
+                transition: 'background var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-bg-primary)'; }}
+            >
+              <Settings size={16} />
             </button>
           </div>
         </div>
