@@ -1165,21 +1165,21 @@ export function DrivePage() {
             onDragOver={(e) => { if (dragItemId) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } }}
             onDrop={handleSidebarRootDrop}
           >
-            <HardDrive size={16} />
+            <HardDrive size={16} style={{ color: '#3b82f6' }} />
             My drive
           </button>
           <button
             className={`drive-nav-item ${sidebarView === 'favourites' ? 'active' : ''}`}
             onClick={() => { setSidebarView('favourites'); setSearchQuery(''); }}
           >
-            <Heart size={16} />
+            <Heart size={16} style={{ color: '#ef4444' }} />
             Favourites
           </button>
           <button
             className={`drive-nav-item ${sidebarView === 'recent' ? 'active' : ''}`}
             onClick={() => { setSidebarView('recent'); setSearchQuery(''); }}
           >
-            <Clock size={16} />
+            <Clock size={16} style={{ color: '#f59e0b' }} />
             Recent
           </button>
           <button
@@ -1188,7 +1188,7 @@ export function DrivePage() {
             onDragOver={(e) => { if (dragItemId) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } }}
             onDrop={handleSidebarTrashDrop}
           >
-            <Trash2 size={16} />
+            <Trash2 size={16} style={{ color: '#78716c' }} />
             Trash
           </button>
 
@@ -1198,28 +1198,28 @@ export function DrivePage() {
             className={`drive-nav-item ${sidebarView === 'images' ? 'active' : ''}`}
             onClick={() => { setSidebarView('images'); setSearchQuery(''); }}
           >
-            <FileImage size={16} />
+            <FileImage size={16} style={{ color: '#e06c9f' }} />
             Images
           </button>
           <button
             className={`drive-nav-item ${sidebarView === 'documents' ? 'active' : ''}`}
             onClick={() => { setSidebarView('documents'); setSearchQuery(''); }}
           >
-            <FileText size={16} />
+            <FileText size={16} style={{ color: '#3b82f6' }} />
             Documents
           </button>
           <button
             className={`drive-nav-item ${sidebarView === 'videos' ? 'active' : ''}`}
             onClick={() => { setSidebarView('videos'); setSearchQuery(''); }}
           >
-            <FileVideo size={16} />
+            <FileVideo size={16} style={{ color: '#8b5cf6' }} />
             Videos
           </button>
           <button
             className={`drive-nav-item ${sidebarView === 'audio' ? 'active' : ''}`}
             onClick={() => { setSidebarView('audio'); setSearchQuery(''); }}
           >
-            <FileAudio size={16} />
+            <Music size={16} style={{ color: '#f59e0b' }} />
             Audio
           </button>
         </nav>
