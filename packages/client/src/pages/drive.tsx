@@ -455,7 +455,7 @@ export function DrivePage() {
     } else {
       // Single click → select + show preview if applicable
       setSelectedIds(new Set([item.id]));
-      if (item.type === 'file' && driveSettings.showPreviewPanel) {
+      if (driveSettings.showPreviewPanel && (item.type === 'file' || item.linkedResourceType)) {
         setPreviewItem(item);
       }
       setLastClickedId(item.id);
@@ -1805,6 +1805,38 @@ export function DrivePage() {
             ) : previewFileId && previewLoading ? (
               <div className="drive-preview-icon">
                 <span style={{ color: 'var(--color-text-tertiary)', fontSize: 13 }}>Loading preview…</span>
+              </div>
+            ) : previewItem.linkedResourceType && previewItem.linkedResourceId ? (
+              <div className="drive-preview-icon" style={{ gap: 16 }}>
+                {(() => {
+                  const Icon = getFileTypeIcon(previewItem.mimeType, previewItem.type, previewItem.linkedResourceType);
+                  return <Icon size={64} />;
+                })()}
+                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+                  {previewItem.linkedResourceType === 'document' ? 'Write document' : previewItem.linkedResourceType === 'drawing' ? 'Draw canvas' : 'Table spreadsheet'}
+                </span>
+                <button
+                  onClick={() => {
+                    if (previewItem.linkedResourceType === 'document') navigate(`/docs/${previewItem.linkedResourceId}`);
+                    else if (previewItem.linkedResourceType === 'drawing') navigate(`/draw/${previewItem.linkedResourceId}`);
+                    else if (previewItem.linkedResourceType === 'spreadsheet') navigate(`/tables/${previewItem.linkedResourceId}`);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--color-surface-primary)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <ExternalLink size={14} />
+                  Open in editor
+                </button>
               </div>
             ) : (
               <div className="drive-preview-icon">

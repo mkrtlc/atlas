@@ -211,7 +211,7 @@
 }
 
 .drive-list-row.selected {
-  background: var(--color-surface-active);
+  background: color-mix(in srgb, var(--color-accent-primary) 8%, var(--color-bg-primary));
 }
 
 .drive-list-name {
