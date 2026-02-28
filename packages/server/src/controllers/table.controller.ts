@@ -6,7 +6,11 @@ import { logger } from '../utils/logger';
 export async function listSpreadsheets(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const includeArchived = req.query.includeArchived === 'true';
+
+    // Auto-seed sample spreadsheet on first visit
+    await tableService.seedSampleSpreadsheets(userId, accountId);
 
     const spreadsheets = await tableService.listSpreadsheets(userId, includeArchived);
 

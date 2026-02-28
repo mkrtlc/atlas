@@ -45,6 +45,50 @@ export async function getSpreadsheet(userId: string, spreadsheetId: string) {
   return spreadsheet || null;
 }
 
+// ─── Seed sample spreadsheets on first visit ─────────────────────────
+
+export async function seedSampleSpreadsheets(userId: string, accountId: string) {
+  const existing = await db
+    .select({ id: spreadsheets.id })
+    .from(spreadsheets)
+    .where(eq(spreadsheets.userId, userId))
+    .limit(1);
+
+  if (existing.length > 0) return; // User already has tables
+
+  const now = new Date().toISOString();
+
+  const columns = [
+    { id: 'col_task', name: 'Task', type: 'text' as const, width: 280 },
+    { id: 'col_status', name: 'Status', type: 'singleSelect' as const, width: 140, options: ['To do', 'In progress', 'Done'] },
+    { id: 'col_priority', name: 'Priority', type: 'singleSelect' as const, width: 120, options: ['Low', 'Medium', 'High'] },
+    { id: 'col_due', name: 'Due date', type: 'date' as const, width: 130 },
+    { id: 'col_notes', name: 'Notes', type: 'text' as const, width: 240 },
+  ];
+
+  const rows = [
+    { _id: 'row_1', _createdAt: now, col_task: 'Set up project repository', col_status: 'Done', col_priority: 'High', col_due: '', col_notes: 'Initialize repo and configure CI' },
+    { _id: 'row_2', _createdAt: now, col_task: 'Design database schema', col_status: 'In progress', col_priority: 'High', col_due: '', col_notes: 'Define tables for users, projects, and tasks' },
+    { _id: 'row_3', _createdAt: now, col_task: 'Build API endpoints', col_status: 'To do', col_priority: 'Medium', col_due: '', col_notes: 'REST endpoints for CRUD operations' },
+    { _id: 'row_4', _createdAt: now, col_task: 'Create UI components', col_status: 'To do', col_priority: 'Medium', col_due: '', col_notes: 'Reusable components for the dashboard' },
+    { _id: 'row_5', _createdAt: now, col_task: 'Write documentation', col_status: 'To do', col_priority: 'Low', col_due: '', col_notes: 'API docs and user guide' },
+  ];
+
+  await db.insert(spreadsheets).values({
+    accountId,
+    userId,
+    title: 'Project tracker',
+    columns,
+    rows,
+    viewConfig: { activeView: 'grid' },
+    sortOrder: 0,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  logger.info({ userId }, 'Seeded sample spreadsheet');
+}
+
 // ─── Create a new spreadsheet ────────────────────────────────────────
 
 export async function createSpreadsheet(userId: string, accountId: string, input: CreateSpreadsheetInput) {

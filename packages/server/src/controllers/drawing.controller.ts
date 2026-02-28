@@ -6,7 +6,11 @@ import { logger } from '../utils/logger';
 export async function listDrawings(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const includeArchived = req.query.includeArchived === 'true';
+
+    // Auto-seed sample drawing on first visit
+    await drawingService.seedSampleDrawings(userId, accountId);
 
     const drawings = await drawingService.listDrawings(userId, includeArchived);
 

@@ -42,6 +42,36 @@ export async function getDrawing(userId: string, drawingId: string) {
   return drawing || null;
 }
 
+// ─── Seed sample drawings on first visit ─────────────────────────────
+
+export async function seedSampleDrawings(userId: string, accountId: string) {
+  const existing = await db
+    .select({ id: drawings.id })
+    .from(drawings)
+    .where(eq(drawings.userId, userId))
+    .limit(1);
+
+  if (existing.length > 0) return; // User already has drawings
+
+  const now = new Date().toISOString();
+
+  await db.insert(drawings).values({
+    accountId,
+    userId,
+    title: 'Getting started',
+    content: {
+      elements: [],
+      appState: { viewBackgroundColor: '#ffffff' },
+      files: {},
+    },
+    sortOrder: 0,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  logger.info({ userId }, 'Seeded sample drawing');
+}
+
 // ─── Create a new drawing ────────────────────────────────────────────
 
 export async function createDrawing(userId: string, accountId: string, input: CreateDrawingInput) {
