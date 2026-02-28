@@ -35,12 +35,22 @@ function writeAccounts(accounts: Account[]) {
   localStorage.setItem('atlasmail_accounts', JSON.stringify(accounts));
 }
 
-function writeActiveTokens(access: string, refresh: string) {
+function readActiveAccountId(): string | null {
+  return localStorage.getItem('atlasmail_active_account_id');
+}
+
+function writeActiveTokens(accountId: string, access: string, refresh: string) {
+  // Atomic: write the token map entry + active keys + active account ID together
+  const tokenMap = readTokenMap();
+  tokenMap[accountId] = { access, refresh };
+  writeTokenMap(tokenMap);
+  localStorage.setItem('atlasmail_active_account_id', accountId);
   localStorage.setItem('atlasmail_token', access);
   localStorage.setItem('atlasmail_refresh_token', refresh);
 }
 
 function clearActiveTokens() {
+  localStorage.removeItem('atlasmail_active_account_id');
   localStorage.removeItem('atlasmail_token');
   localStorage.removeItem('atlasmail_refresh_token');
 }
@@ -73,37 +83,35 @@ function deriveInitialState(): { account: Account | null; accounts: Account[] } 
   const accounts = readAccounts();
   if (accounts.length === 0) return { account: null, accounts: [] };
 
-  const activeToken = localStorage.getItem('atlasmail_token');
-  if (!activeToken) {
-    // No active token — try to restore the first account that has tokens
-    const tokenMap = readTokenMap();
-    for (const acct of accounts) {
-      const tokens = tokenMap[acct.id];
-      if (tokens) {
-        writeActiveTokens(tokens.access, tokens.refresh);
-        return { account: acct, accounts };
-      }
-    }
-    // No tokens at all — clear stale accounts and go to login
-    localStorage.removeItem('atlasmail_accounts');
-    return { account: null, accounts: [] };
-  }
-
   const tokenMap = readTokenMap();
-  const activeAccountId = Object.keys(tokenMap).find(
-    (id) => tokenMap[id].access === activeToken,
-  );
-  const active = activeAccountId ? accounts.find((a) => a.id === activeAccountId) ?? null : null;
 
-  // If we can't match the active token to any account, clean up stale state
-  if (!active) {
-    clearActiveTokens();
-    localStorage.removeItem('atlasmail_accounts');
-    localStorage.removeItem('atlasmail_tokens');
-    return { account: null, accounts: [] };
+  // 1. Try the stored active account ID (reliable — not affected by token refresh races)
+  const storedActiveId = readActiveAccountId();
+  if (storedActiveId) {
+    const active = accounts.find((a) => a.id === storedActiveId);
+    const tokens = tokenMap[storedActiveId];
+    if (active && tokens) {
+      // Re-sync the active token keys in case they drifted
+      localStorage.setItem('atlasmail_token', tokens.access);
+      localStorage.setItem('atlasmail_refresh_token', tokens.refresh);
+      return { account: active, accounts };
+    }
   }
 
-  return { account: active, accounts };
+  // 2. Fallback: try to restore the first account that has tokens
+  for (const acct of accounts) {
+    const tokens = tokenMap[acct.id];
+    if (tokens) {
+      writeActiveTokens(acct.id, tokens.access, tokens.refresh);
+      return { account: acct, accounts };
+    }
+  }
+
+  // 3. No tokens at all — clear stale accounts and go to login
+  clearActiveTokens();
+  localStorage.removeItem('atlasmail_accounts');
+  localStorage.removeItem('atlasmail_tokens');
+  return { account: null, accounts: [] };
 }
 
 const initial = deriveInitialState();
@@ -131,12 +139,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       ? accounts.map((a) => (a.id === account.id ? account : a))
       : [...accounts, account];
 
-    const tokenMap = readTokenMap();
-    tokenMap[account.id] = { access: accessToken, refresh: refreshToken };
-
     writeAccounts(updated);
-    writeTokenMap(tokenMap);
-    writeActiveTokens(accessToken, refreshToken);
+    writeActiveTokens(account.id, accessToken, refreshToken);
 
     set({ accounts: updated, account, isAuthenticated: true, isLoading: false });
   },
@@ -153,8 +157,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const tokens = tokenMap[accountId];
     if (!tokens) return;
 
-    writeActiveTokens(tokens.access, tokens.refresh);
-    // isAuthenticated must be kept in sync whenever account changes
+    writeActiveTokens(accountId, tokens.access, tokens.refresh);
     set({ account: target, isAuthenticated: true });
 
     window.dispatchEvent(new CustomEvent('atlasmail:account-switch', { detail: { accountId } }));
@@ -177,7 +180,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const next = updated[0];
         const nextTokens = tokenMap[next.id];
         if (nextTokens) {
-          writeActiveTokens(nextTokens.access, nextTokens.refresh);
+          writeActiveTokens(next.id, nextTokens.access, nextTokens.refresh);
         } else {
           clearActiveTokens();
         }
