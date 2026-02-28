@@ -10,6 +10,7 @@ export interface DriveItem {
   storagePath: string | null;
   isFavourite: boolean;
   isArchived: boolean;
+  tags: string[];
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -29,4 +30,5 @@ export interface UpdateDriveItemInput {
   parentId?: string | null;
   isFavourite?: boolean;
   isArchived?: boolean;
+  tags?: string[];
 }

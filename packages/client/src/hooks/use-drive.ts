@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api-client';
 import { queryKeys } from '../config/query-keys';
-import type { DriveItem, CreateDriveItemInput, UpdateDriveItemInput } from '@atlasmail/shared';
+import type { DriveItem, UpdateDriveItemInput } from '@atlasmail/shared';
 
 // ─── Queries ─────────────────────────────────────────────────────────
 
@@ -17,12 +17,15 @@ interface FoldersResponse {
   folders: Array<{ id: string; name: string; parentId: string | null }>;
 }
 
-export function useDriveItems(parentId?: string | null) {
+export function useDriveItems(parentId?: string | null, sortBy?: string) {
   return useQuery({
-    queryKey: queryKeys.drive.items(parentId),
+    queryKey: [...queryKeys.drive.items(parentId), sortBy] as const,
     queryFn: async () => {
-      const params = parentId ? `?parentId=${parentId}` : '';
-      const { data } = await api.get(`/drive${params}`);
+      const params = new URLSearchParams();
+      if (parentId) params.set('parentId', parentId);
+      if (sortBy && sortBy !== 'default') params.set('sortBy', sortBy);
+      const qs = params.toString();
+      const { data } = await api.get(`/drive${qs ? `?${qs}` : ''}`);
       return data.data as ListItemsResponse;
     },
     staleTime: 30_000,
@@ -140,13 +143,26 @@ export function useUploadFiles() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ files, parentId }: { files: File[]; parentId?: string | null }) => {
+    mutationFn: async ({
+      files,
+      parentId,
+      onProgress,
+    }: {
+      files: File[];
+      parentId?: string | null;
+      onProgress?: (progress: { loaded: number; total: number }) => void;
+    }) => {
       const formData = new FormData();
       files.forEach((file) => formData.append('files', file));
       if (parentId) formData.append('parentId', parentId);
 
       const { data } = await api.post('/drive/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          if (onProgress && progressEvent.total) {
+            onProgress({ loaded: progressEvent.loaded, total: progressEvent.total });
+          }
+        },
       });
       return data.data as { items: DriveItem[] };
     },
@@ -203,6 +219,59 @@ export function usePermanentDeleteDriveItem() {
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/drive/${id}/permanent`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}
+
+export function useDuplicateDriveItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/drive/${id}/duplicate`);
+      return data.data as DriveItem;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}
+
+export function useBatchDeleteDriveItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (itemIds: string[]) => {
+      await api.post('/drive/batch/delete', { itemIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}
+
+export function useBatchMoveDriveItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemIds, parentId }: { itemIds: string[]; parentId: string | null }) => {
+      await api.post('/drive/batch/move', { itemIds, parentId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}
+
+export function useBatchFavouriteDriveItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemIds, isFavourite }: { itemIds: string[]; isFavourite: boolean }) => {
+      await api.post('/drive/batch/favourite', { itemIds, isFavourite });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });

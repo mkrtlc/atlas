@@ -3,6 +3,7 @@ import * as driveService from '../services/drive.service';
 import { logger } from '../utils/logger';
 import path from 'node:path';
 import { existsSync, createReadStream, statSync } from 'node:fs';
+import archiver from 'archiver';
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
@@ -12,11 +13,12 @@ export async function listItems(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
     const parentId = (req.query.parentId as string) || null;
+    const sortBy = (req.query.sortBy as string) || undefined;
 
     // Auto-seed on first visit
     await driveService.seedSampleFolder(userId, accountId);
 
-    const items = await driveService.listItems(userId, parentId);
+    const items = await driveService.listItems(userId, parentId, false, sortBy);
     res.json({ success: true, data: { items } });
   } catch (error) {
     logger.error({ error }, 'Failed to list drive items');
@@ -190,13 +192,14 @@ export async function updateItem(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const itemId = req.params.id as string;
-    const { name, parentId, isFavourite, isArchived } = req.body;
+    const { name, parentId, isFavourite, isArchived, tags } = req.body;
 
     const item = await driveService.updateItem(userId, itemId, {
       name,
       parentId,
       isFavourite,
       isArchived,
+      tags,
     });
 
     if (!item) {
@@ -255,6 +258,120 @@ export async function permanentDelete(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to permanently delete drive item');
     res.status(500).json({ success: false, error: 'Failed to permanently delete drive item' });
+  }
+}
+
+// POST /api/drive/:id/duplicate
+export async function duplicateItem(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const itemId = req.params.id as string;
+
+    const item = await driveService.duplicateItem(userId, itemId);
+    if (!item) {
+      res.status(404).json({ success: false, error: 'Item not found' });
+      return;
+    }
+
+    res.json({ success: true, data: item });
+  } catch (error) {
+    logger.error({ error }, 'Failed to duplicate drive item');
+    res.status(500).json({ success: false, error: 'Failed to duplicate drive item' });
+  }
+}
+
+// POST /api/drive/batch/delete
+export async function batchDelete(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const { itemIds } = req.body as { itemIds: string[] };
+
+    if (!Array.isArray(itemIds) || itemIds.length === 0) {
+      res.status(400).json({ success: false, error: 'itemIds required' });
+      return;
+    }
+
+    await driveService.batchDelete(userId, itemIds);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to batch delete');
+    res.status(500).json({ success: false, error: 'Failed to batch delete' });
+  }
+}
+
+// POST /api/drive/batch/move
+export async function batchMove(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const { itemIds, parentId } = req.body as { itemIds: string[]; parentId: string | null };
+
+    if (!Array.isArray(itemIds) || itemIds.length === 0) {
+      res.status(400).json({ success: false, error: 'itemIds required' });
+      return;
+    }
+
+    await driveService.batchMove(userId, itemIds, parentId ?? null);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to batch move');
+    res.status(500).json({ success: false, error: 'Failed to batch move' });
+  }
+}
+
+// POST /api/drive/batch/favourite
+export async function batchFavourite(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const { itemIds, isFavourite } = req.body as { itemIds: string[]; isFavourite: boolean };
+
+    if (!Array.isArray(itemIds) || itemIds.length === 0) {
+      res.status(400).json({ success: false, error: 'itemIds required' });
+      return;
+    }
+
+    await driveService.batchFavourite(userId, itemIds, isFavourite);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to batch favourite');
+    res.status(500).json({ success: false, error: 'Failed to batch favourite' });
+  }
+}
+
+// GET /api/drive/:id/download-zip
+export async function downloadZip(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const itemId = req.params.id as string;
+
+    const item = await driveService.getItem(userId, itemId);
+    if (!item || item.type !== 'folder') {
+      res.status(404).json({ success: false, error: 'Folder not found' });
+      return;
+    }
+
+    const contents = await driveService.getFolderContents(userId, itemId);
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(item.name)}.zip"`);
+
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.pipe(res);
+
+    for (const { item: fileItem, relativePath } of contents) {
+      if (fileItem.storagePath) {
+        const filePath = path.join(UPLOADS_DIR, fileItem.storagePath);
+        if (existsSync(filePath)) {
+          archive.file(filePath, { name: relativePath });
+        }
+      }
+    }
+
+    await archive.finalize();
+  } catch (error) {
+    logger.error({ error }, 'Failed to download ZIP');
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: 'Failed to download ZIP' });
+    }
   }
 }
 

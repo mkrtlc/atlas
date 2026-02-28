@@ -448,6 +448,7 @@ export const driveItems = sqliteTable('drive_items', {
   storagePath: text('storage_path'),
   isFavourite: integer('is_favourite', { mode: 'boolean' }).notNull().default(false),
   isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+  tags: text('tags', { mode: 'json' }).notNull().$type<string[]>().default([]),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestampNow().notNull(),
   updatedAt: timestampNow().notNull(),

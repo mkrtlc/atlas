@@ -1,16 +1,17 @@
 import { db } from '../config/database';
 import { driveItems } from '../db/schema';
-import { eq, and, asc, desc, sql, isNull } from 'drizzle-orm';
+import { eq, and, asc, desc, sql, isNull, inArray } from 'drizzle-orm';
 import { logger } from '../utils/logger';
-import { unlinkSync, existsSync } from 'node:fs';
+import { unlinkSync, existsSync, copyFileSync } from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import type { CreateDriveItemInput, UpdateDriveItemInput } from '@atlasmail/shared';
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
 // ─── List items in a folder ──────────────────────────────────────────
 
-export async function listItems(userId: string, parentId: string | null, includeArchived = false) {
+export async function listItems(userId: string, parentId: string | null, includeArchived = false, sortBy?: string) {
   const conditions = [eq(driveItems.userId, userId)];
 
   if (parentId) {
@@ -23,11 +24,31 @@ export async function listItems(userId: string, parentId: string | null, include
     conditions.push(eq(driveItems.isArchived, false));
   }
 
+  const foldersFirst = desc(sql`CASE WHEN ${driveItems.type} = 'folder' THEN 0 ELSE 1 END`);
+
+  let sortClauses;
+  switch (sortBy) {
+    case 'name':
+      sortClauses = [foldersFirst, asc(driveItems.name)];
+      break;
+    case 'size':
+      sortClauses = [foldersFirst, desc(driveItems.size)];
+      break;
+    case 'date':
+      sortClauses = [foldersFirst, desc(driveItems.updatedAt)];
+      break;
+    case 'type':
+      sortClauses = [foldersFirst, asc(driveItems.mimeType), asc(driveItems.name)];
+      break;
+    default:
+      sortClauses = [foldersFirst, asc(driveItems.sortOrder), asc(driveItems.name)];
+  }
+
   return db
     .select()
     .from(driveItems)
     .where(and(...conditions))
-    .orderBy(desc(sql`CASE WHEN ${driveItems.type} = 'folder' THEN 0 ELSE 1 END`), asc(driveItems.sortOrder), asc(driveItems.name));
+    .orderBy(...sortClauses);
 }
 
 // ─── Get a single item ──────────────────────────────────────────────
@@ -115,6 +136,7 @@ export async function updateItem(userId: string, itemId: string, input: UpdateDr
   if (input.parentId !== undefined) updates.parentId = input.parentId;
   if (input.isFavourite !== undefined) updates.isFavourite = input.isFavourite;
   if (input.isArchived !== undefined) updates.isArchived = input.isArchived;
+  if (input.tags !== undefined) updates.tags = JSON.stringify(input.tags);
 
   await db
     .update(driveItems)
@@ -300,4 +322,122 @@ export async function listFolders(userId: string) {
     .from(driveItems)
     .where(and(eq(driveItems.userId, userId), eq(driveItems.type, 'folder'), eq(driveItems.isArchived, false)))
     .orderBy(asc(driveItems.name));
+}
+
+// ─── Duplicate item ──────────────────────────────────────────────────
+
+export async function duplicateItem(userId: string, itemId: string) {
+  const item = await getItem(userId, itemId);
+  if (!item) return null;
+
+  const now = new Date().toISOString();
+  const [maxSort] = await db
+    .select({ max: sql<number>`COALESCE(MAX(${driveItems.sortOrder}), -1)` })
+    .from(driveItems)
+    .where(eq(driveItems.userId, userId));
+  const sortOrder = (maxSort?.max ?? -1) + 1;
+
+  let newStoragePath: string | null = null;
+  if (item.type === 'file' && item.storagePath) {
+    const srcPath = path.join(UPLOADS_DIR, item.storagePath);
+    if (existsSync(srcPath)) {
+      const ext = path.extname(item.storagePath);
+      const newFilename = `${userId}_${Date.now()}_copy_${crypto.randomUUID()}${ext}`;
+      newStoragePath = newFilename;
+      copyFileSync(srcPath, path.join(UPLOADS_DIR, newFilename));
+    }
+  }
+
+  // Add (copy) suffix before extension for files, or at end for folders
+  let copyName: string;
+  if (item.type === 'file') {
+    const extIdx = item.name.lastIndexOf('.');
+    if (extIdx > 0) {
+      copyName = `${item.name.slice(0, extIdx)} (copy)${item.name.slice(extIdx)}`;
+    } else {
+      copyName = `${item.name} (copy)`;
+    }
+  } else {
+    copyName = `${item.name} (copy)`;
+  }
+
+  const [created] = await db
+    .insert(driveItems)
+    .values({
+      accountId: item.accountId,
+      userId: item.userId,
+      name: copyName,
+      type: item.type,
+      mimeType: item.mimeType,
+      size: item.size,
+      parentId: item.parentId,
+      storagePath: newStoragePath,
+      isFavourite: false,
+      tags: item.tags as any,
+      sortOrder,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  logger.info({ userId, itemId: created.id }, 'Drive item duplicated');
+  return created;
+}
+
+// ─── Batch delete (soft) ─────────────────────────────────────────────
+
+export async function batchDelete(userId: string, itemIds: string[]) {
+  if (itemIds.length === 0) return;
+  const now = new Date().toISOString();
+  await db
+    .update(driveItems)
+    .set({ isArchived: true, updatedAt: now })
+    .where(and(eq(driveItems.userId, userId), inArray(driveItems.id, itemIds)));
+}
+
+// ─── Batch move ──────────────────────────────────────────────────────
+
+export async function batchMove(userId: string, itemIds: string[], parentId: string | null) {
+  if (itemIds.length === 0) return;
+  const now = new Date().toISOString();
+  await db
+    .update(driveItems)
+    .set({ parentId, updatedAt: now })
+    .where(and(eq(driveItems.userId, userId), inArray(driveItems.id, itemIds)));
+}
+
+// ─── Batch favourite ─────────────────────────────────────────────────
+
+export async function batchFavourite(userId: string, itemIds: string[], isFavourite: boolean) {
+  if (itemIds.length === 0) return;
+  const now = new Date().toISOString();
+  await db
+    .update(driveItems)
+    .set({ isFavourite, updatedAt: now })
+    .where(and(eq(driveItems.userId, userId), inArray(driveItems.id, itemIds)));
+}
+
+// ─── Get all items in a folder recursively (for ZIP) ─────────────────
+
+export async function getFolderContents(userId: string, folderId: string): Promise<Array<{ item: typeof driveItems.$inferSelect; relativePath: string }>> {
+  const results: Array<{ item: typeof driveItems.$inferSelect; relativePath: string }> = [];
+
+  async function walk(parentId: string, prefix: string) {
+    const children = await db
+      .select()
+      .from(driveItems)
+      .where(and(eq(driveItems.userId, userId), eq(driveItems.parentId, parentId), eq(driveItems.isArchived, false)));
+
+    for (const child of children) {
+      const childPath = prefix ? `${prefix}/${child.name}` : child.name;
+      if (child.type === 'file') {
+        results.push({ item: child, relativePath: childPath });
+      } else {
+        await walk(child.id, childPath);
+      }
+    }
+  }
+
+  await walk(folderId, '');
+  return results;
 }
