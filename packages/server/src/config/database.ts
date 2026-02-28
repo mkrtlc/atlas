@@ -368,6 +368,10 @@ try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_show_thumbnails
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_show_file_extensions INTEGER NOT NULL DEFAULT 1`).run(); } catch { /* column already exists */ }
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_sort_order TEXT NOT NULL DEFAULT 'asc'`).run(); } catch { /* column already exists */ }
 
+// ---- Drive linked resource columns -------------------------------------------
+try { sqlite.prepare(`ALTER TABLE drive_items ADD COLUMN linked_resource_type TEXT`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE drive_items ADD COLUMN linked_resource_id TEXT`).run(); } catch { /* column already exists */ }
+
 // ---- Search settings columns on user_settings --------------------------------
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN recent_searches TEXT NOT NULL DEFAULT '[]'`).run(); } catch { /* column already exists */ }
 

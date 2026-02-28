@@ -9,6 +9,8 @@ export interface DriveItem {
   parentId: string | null;
   storagePath: string | null;
   icon: string | null;
+  linkedResourceType: 'document' | 'drawing' | 'spreadsheet' | null;
+  linkedResourceId: string | null;
   isFavourite: boolean;
   isArchived: boolean;
   tags: string[];
