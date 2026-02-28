@@ -1897,13 +1897,104 @@ export function TablesPage() {
     };
   }, [gridRef, localRows]);
 
-  // Global keyboard shortcuts (undo, redo, search, find-replace)
+  // ── Clipboard paste handler ──────────────────────────────────────
+  const handlePaste = useCallback(async () => {
+    const api = gridRef.current?.api;
+    if (!api) return;
+
+    // Don't intercept paste while a cell is being edited
+    const isEditing = api.getEditingCells()?.length ?? 0;
+    if (isEditing > 0) return false;
+
+    let text: string;
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      return false;
+    }
+    if (!text) return false;
+
+    // Parse TSV (tab-separated columns, newline-separated rows)
+    const pastedRows = text.split('\n').map((line) => line.split('\t'));
+    if (pastedRows.length === 0 || (pastedRows.length === 1 && pastedRows[0].length === 1 && pastedRows[0][0] === '')) {
+      return false;
+    }
+
+    // Determine paste origin: top-left of selected range, or focused cell
+    let startRow: number;
+    let startColId: string;
+
+    const range = rangeContext.cellRangeRef.current;
+    if (range) {
+      startRow = Math.min(range.anchor.rowIndex, range.end.rowIndex);
+      const anchorColIdx = rangeContext.colIndexMapRef.current.get(range.anchor.colId) ?? 0;
+      const endColIdx = rangeContext.colIndexMapRef.current.get(range.end.colId) ?? 0;
+      const minColIdx = Math.min(anchorColIdx, endColIdx);
+      // Find the colId at minColIdx
+      const sortedEntries = Array.from(rangeContext.colIndexMapRef.current.entries()).sort((a, b) => a[1] - b[1]);
+      const found = sortedEntries.find(([, idx]) => idx === minColIdx);
+      startColId = found ? found[0] : range.anchor.colId;
+    } else {
+      const focused = api.getFocusedCell();
+      if (!focused || focused.rowPinned != null) return false;
+      startRow = focused.rowIndex;
+      startColId = focused.column.getColId();
+    }
+
+    // Get ordered data columns
+    const sortedCols = Array.from(rangeContext.colIndexMapRef.current.entries())
+      .sort((a, b) => a[1] - b[1])
+      .map(([id]) => id);
+    const startColIdx = sortedCols.indexOf(startColId);
+    if (startColIdx < 0) return false;
+
+    pushUndoState();
+
+    const updatedRows = [...localRows];
+
+    for (let r = 0; r < pastedRows.length; r++) {
+      const targetRowIdx = startRow + r;
+      const rowNode = api.getDisplayedRowAtIndex(targetRowIdx);
+      if (!rowNode || rowNode.rowPinned === 'bottom') continue;
+      const rowId = (rowNode.data as TableRow)?._id;
+      if (!rowId || rowId === PLACEHOLDER_ROW_ID) continue;
+
+      const localIdx = updatedRows.findIndex((lr) => lr._id === rowId);
+      if (localIdx < 0) continue;
+
+      const rowCopy = { ...updatedRows[localIdx] };
+      for (let c = 0; c < pastedRows[r].length; c++) {
+        const targetColId = sortedCols[startColIdx + c];
+        if (!targetColId) break;
+        rowCopy[targetColId] = pastedRows[r][c];
+      }
+      updatedRows[localIdx] = rowCopy;
+    }
+
+    setLocalRows(updatedRows);
+    triggerAutoSave({ rows: updatedRows });
+    api.refreshCells({ force: true });
+    return true;
+  }, [localRows, triggerAutoSave, pushUndoState, rangeContext]);
+
+  // Global keyboard shortcuts (undo, redo, search, find-replace, paste)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Cell range selection shortcuts (Ctrl+C, Escape to clear range)
       if (handleRangeGlobalKeyDown(e)) return;
 
       const mod = e.metaKey || e.ctrlKey;
+
+      // Ctrl/Cmd+V → paste from clipboard
+      if (mod && e.key === 'v') {
+        const api = gridRef.current?.api;
+        const isEditing = api?.getEditingCells()?.length ?? 0;
+        if (isEditing === 0) {
+          e.preventDefault();
+          handlePaste();
+          return;
+        }
+      }
 
       // Ctrl/Cmd+Z → undo
       if (mod && e.key === 'z' && !e.shiftKey) {
@@ -1946,7 +2037,7 @@ export function TablesPage() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [handleUndo, handleRedo, selectedId, showSearch, showBatchEdit, selectedRowIds, handleRangeGlobalKeyDown, findReplace]);
+  }, [handleUndo, handleRedo, handlePaste, selectedId, showSearch, showBatchEdit, selectedRowIds, handleRangeGlobalKeyDown, findReplace]);
 
   // ─── Handlers ──────────────────────────────────────────────────────
 

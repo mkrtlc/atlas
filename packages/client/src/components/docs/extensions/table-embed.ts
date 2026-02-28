@@ -1,10 +1,11 @@
 import { Node, mergeAttributes } from '@tiptap/core';
+import { api } from '../../../lib/api-client';
 
 /**
- * TableEmbed — an inline block that references a spreadsheet table by ID.
+ * TableEmbed — a block that references a spreadsheet table by ID.
  *
- * Renders a clickable card with the table title. On click, navigates to
- * /tables/:tableId. This is an "atom" node (not editable inline).
+ * Fetches table data and renders a live preview with column headers and
+ * the first few rows. Clicking "Open →" navigates to /tables/:tableId.
  */
 
 declare module '@tiptap/core' {
@@ -13,6 +14,14 @@ declare module '@tiptap/core' {
       insertTableEmbed: (options: { tableId: string; title: string }) => ReturnType;
     };
   }
+}
+
+const MAX_PREVIEW_ROWS = 5;
+const MAX_PREVIEW_COLS = 6;
+
+/** Safely remove all children from an element */
+function clearChildren(el: HTMLElement) {
+  while (el.firstChild) el.removeChild(el.firstChild);
 }
 
 export const TableEmbed = Node.create({
@@ -56,91 +65,15 @@ export const TableEmbed = Node.create({
         'data-title': title,
         class: 'table-embed-block',
         style: [
-          'display: flex',
-          'align-items: center',
-          'gap: 10px',
-          'padding: 12px 16px',
           'margin: 8px 0',
           'border: 1px solid var(--color-border-primary)',
           'border-radius: 8px',
-          'background: var(--color-bg-tertiary)',
-          'cursor: pointer',
-          'transition: background 0.15s ease',
+          'background: var(--color-bg-primary)',
+          'overflow: hidden',
           'font-family: var(--font-family)',
-          'text-decoration: none',
-          'color: inherit',
         ].join('; '),
       }),
-      // Icon placeholder
-      [
-        'span',
-        {
-          style: [
-            'display: inline-flex',
-            'align-items: center',
-            'justify-content: center',
-            'width: 32px',
-            'height: 32px',
-            'border-radius: 6px',
-            'background: color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
-            'color: var(--color-accent-primary)',
-            'flex-shrink: 0',
-            'font-size: 16px',
-          ].join('; '),
-        },
-        '\u2637', // trigram / grid icon
-      ],
-      // Text content
-      [
-        'span',
-        {
-          style: [
-            'flex: 1',
-            'min-width: 0',
-          ].join('; '),
-        },
-        // Title
-        [
-          'span',
-          {
-            style: [
-              'display: block',
-              'font-size: 13px',
-              'font-weight: 500',
-              'color: var(--color-text-primary)',
-              'overflow: hidden',
-              'text-overflow: ellipsis',
-              'white-space: nowrap',
-            ].join('; '),
-          },
-          title || 'Untitled table',
-        ],
-        // Subtitle
-        [
-          'span',
-          {
-            style: [
-              'display: block',
-              'font-size: 11px',
-              'color: var(--color-text-tertiary)',
-              'margin-top: 2px',
-            ].join('; '),
-          },
-          'Spreadsheet',
-        ],
-      ],
-      // Arrow
-      [
-        'span',
-        {
-          style: [
-            'color: var(--color-text-tertiary)',
-            'font-size: 14px',
-            'flex-shrink: 0',
-          ].join('; '),
-        },
-        '\u2192', // right arrow
-      ],
+      ['span', {}, title || 'Untitled table'],
     ];
   },
 
@@ -159,101 +92,270 @@ export const TableEmbed = Node.create({
 
   addNodeView() {
     return ({ node }) => {
+      const tableId = node.attrs.tableId;
+      const title = node.attrs.title || 'Untitled table';
+
+      // ── Outer wrapper ──────────────────────────────────────────────
       const dom = document.createElement('div');
       dom.setAttribute('data-type', 'table-embed');
-      dom.setAttribute('data-table-id', node.attrs.tableId || '');
-      dom.setAttribute('data-title', node.attrs.title || '');
+      dom.setAttribute('data-table-id', tableId || '');
+      dom.setAttribute('data-title', title);
       dom.className = 'table-embed-block';
       Object.assign(dom.style, {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '12px 16px',
         margin: '8px 0',
         border: '1px solid var(--color-border-primary)',
         borderRadius: '8px',
-        background: 'var(--color-bg-tertiary)',
-        cursor: 'pointer',
-        transition: 'background 0.15s ease',
+        background: 'var(--color-bg-primary)',
+        overflow: 'hidden',
         fontFamily: 'var(--font-family)',
       });
 
-      // Icon
-      const iconWrap = document.createElement('span');
-      Object.assign(iconWrap.style, {
-        display: 'inline-flex',
+      // ── Header bar ─────────────────────────────────────────────────
+      const header = document.createElement('div');
+      Object.assign(header.style, {
+        display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        width: '32px',
-        height: '32px',
-        borderRadius: '6px',
-        background: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
-        color: 'var(--color-accent-primary)',
-        flexShrink: '0',
-        fontSize: '16px',
+        gap: '8px',
+        padding: '8px 12px',
+        borderBottom: '1px solid var(--color-border-primary)',
+        background: 'var(--color-bg-tertiary)',
       });
-      iconWrap.textContent = '\u2637';
-      dom.appendChild(iconWrap);
 
-      // Text container
-      const textWrap = document.createElement('span');
-      Object.assign(textWrap.style, {
-        flex: '1',
-        minWidth: '0',
+      const icon = document.createElement('span');
+      Object.assign(icon.style, {
+        fontSize: '14px',
+        color: 'var(--color-text-tertiary)',
+        flexShrink: '0',
       });
+      icon.textContent = '\u2637';
+      header.appendChild(icon);
 
       const titleEl = document.createElement('span');
       Object.assign(titleEl.style, {
-        display: 'block',
+        flex: '1',
         fontSize: '13px',
-        fontWeight: '500',
+        fontWeight: '600',
         color: 'var(--color-text-primary)',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
       });
-      titleEl.textContent = node.attrs.title || 'Untitled table';
-      textWrap.appendChild(titleEl);
+      titleEl.textContent = title;
+      header.appendChild(titleEl);
 
-      const subtitle = document.createElement('span');
-      Object.assign(subtitle.style, {
-        display: 'block',
-        fontSize: '11px',
-        color: 'var(--color-text-tertiary)',
-        marginTop: '2px',
-      });
-      subtitle.textContent = 'Spreadsheet';
-      textWrap.appendChild(subtitle);
-
-      dom.appendChild(textWrap);
-
-      // Arrow
-      const arrow = document.createElement('span');
-      Object.assign(arrow.style, {
-        color: 'var(--color-text-tertiary)',
-        fontSize: '14px',
+      const openLink = document.createElement('a');
+      Object.assign(openLink.style, {
+        fontSize: '12px',
+        color: 'var(--color-accent-primary)',
+        textDecoration: 'none',
+        cursor: 'pointer',
         flexShrink: '0',
+        fontWeight: '500',
       });
-      arrow.textContent = '\u2192';
-      dom.appendChild(arrow);
+      openLink.textContent = 'Open \u2192';
+      openLink.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (tableId) window.location.href = `/tables/${tableId}`;
+      });
+      openLink.addEventListener('mouseenter', () => {
+        openLink.style.textDecoration = 'underline';
+      });
+      openLink.addEventListener('mouseleave', () => {
+        openLink.style.textDecoration = 'none';
+      });
+      header.appendChild(openLink);
 
-      // Click handler — navigate to the table
-      dom.addEventListener('click', () => {
-        const tableId = node.attrs.tableId;
-        if (tableId) {
-          window.location.href = `/tables/${tableId}`;
-        }
+      dom.appendChild(header);
+
+      // ── Table body (initially shows loading) ───────────────────────
+      const body = document.createElement('div');
+      Object.assign(body.style, {
+        overflowX: 'auto',
       });
 
-      // Hover effects
-      dom.addEventListener('mouseenter', () => {
-        dom.style.background = 'var(--color-surface-hover)';
+      const loadingEl = document.createElement('div');
+      Object.assign(loadingEl.style, {
+        padding: '20px 12px',
+        textAlign: 'center',
+        fontSize: '12px',
+        color: 'var(--color-text-tertiary)',
       });
-      dom.addEventListener('mouseleave', () => {
-        dom.style.background = 'var(--color-bg-tertiary)';
-      });
+      loadingEl.textContent = 'Loading table\u2026';
+      body.appendChild(loadingEl);
+
+      dom.appendChild(body);
+
+      // ── Fetch and render ───────────────────────────────────────────
+      if (tableId) {
+        api
+          .get(`/tables/${tableId}`)
+          .then(({ data: resp }) => {
+            const spreadsheet = resp.data as {
+              columns: Array<{ id: string; name: string; type: string }>;
+              rows: Array<Record<string, unknown>>;
+            };
+
+            clearChildren(body);
+
+            const cols = spreadsheet.columns.slice(0, MAX_PREVIEW_COLS);
+            const rows = spreadsheet.rows.slice(0, MAX_PREVIEW_ROWS);
+            const hasMoreCols = spreadsheet.columns.length > MAX_PREVIEW_COLS;
+            const hasMoreRows = spreadsheet.rows.length > MAX_PREVIEW_ROWS;
+
+            if (cols.length === 0) {
+              const empty = document.createElement('div');
+              Object.assign(empty.style, {
+                padding: '20px 12px',
+                textAlign: 'center',
+                fontSize: '12px',
+                color: 'var(--color-text-tertiary)',
+              });
+              empty.textContent = 'Empty table';
+              body.appendChild(empty);
+              return;
+            }
+
+            const table = document.createElement('table');
+            Object.assign(table.style, {
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '12px',
+            });
+
+            // Column headers
+            const thead = document.createElement('thead');
+            const headRow = document.createElement('tr');
+
+            for (const col of cols) {
+              const th = document.createElement('th');
+              Object.assign(th.style, {
+                padding: '6px 10px',
+                textAlign: 'left',
+                fontWeight: '600',
+                fontSize: '11px',
+                color: 'var(--color-text-secondary)',
+                borderBottom: '1px solid var(--color-border-primary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '180px',
+                background: 'var(--color-bg-tertiary)',
+              });
+              th.textContent = col.name;
+              headRow.appendChild(th);
+            }
+
+            if (hasMoreCols) {
+              const th = document.createElement('th');
+              Object.assign(th.style, {
+                padding: '6px 10px',
+                textAlign: 'center',
+                fontWeight: '400',
+                fontSize: '11px',
+                color: 'var(--color-text-tertiary)',
+                borderBottom: '1px solid var(--color-border-primary)',
+                background: 'var(--color-bg-tertiary)',
+              });
+              th.textContent = `+${spreadsheet.columns.length - MAX_PREVIEW_COLS}`;
+              headRow.appendChild(th);
+            }
+
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+
+            // Data rows
+            const tbody = document.createElement('tbody');
+
+            for (const row of rows) {
+              const tr = document.createElement('tr');
+
+              for (const col of cols) {
+                const td = document.createElement('td');
+                Object.assign(td.style, {
+                  padding: '5px 10px',
+                  borderBottom: '1px solid var(--color-border-secondary, var(--color-border-primary))',
+                  color: 'var(--color-text-primary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '180px',
+                });
+
+                const raw = row[col.id];
+                td.textContent = formatCellValue(raw, col.type);
+                tr.appendChild(td);
+              }
+
+              if (hasMoreCols) {
+                const td = document.createElement('td');
+                Object.assign(td.style, {
+                  padding: '5px 10px',
+                  borderBottom: '1px solid var(--color-border-secondary, var(--color-border-primary))',
+                  color: 'var(--color-text-tertiary)',
+                  textAlign: 'center',
+                });
+                td.textContent = '\u2026';
+                tr.appendChild(td);
+              }
+
+              tbody.appendChild(tr);
+            }
+
+            table.appendChild(tbody);
+            body.appendChild(table);
+
+            // Footer with row count
+            if (hasMoreRows || spreadsheet.rows.length > 0) {
+              const footer = document.createElement('div');
+              Object.assign(footer.style, {
+                padding: '6px 12px',
+                fontSize: '11px',
+                color: 'var(--color-text-tertiary)',
+                borderTop: hasMoreRows ? '1px solid var(--color-border-primary)' : 'none',
+                background: 'var(--color-bg-tertiary)',
+              });
+              const total = spreadsheet.rows.length;
+              footer.textContent = hasMoreRows
+                ? `Showing ${MAX_PREVIEW_ROWS} of ${total} rows`
+                : `${total} row${total !== 1 ? 's' : ''}`;
+              body.appendChild(footer);
+            }
+          })
+          .catch(() => {
+            clearChildren(body);
+            const err = document.createElement('div');
+            Object.assign(err.style, {
+              padding: '20px 12px',
+              textAlign: 'center',
+              fontSize: '12px',
+              color: 'var(--color-text-tertiary)',
+            });
+            err.textContent = 'Could not load table';
+            body.appendChild(err);
+          });
+      }
 
       return { dom };
     };
   },
 });
+
+// ── Helpers ────────────────────────────────────────────────────────────
+
+function formatCellValue(raw: unknown, type: string): string {
+  if (raw === null || raw === undefined || raw === '') return '';
+
+  switch (type) {
+    case 'checkbox':
+      return raw ? '\u2611' : '\u2610';
+    case 'multiSelect':
+      return Array.isArray(raw) ? raw.join(', ') : String(raw);
+    case 'attachment':
+      if (Array.isArray(raw)) return `${raw.length} file${raw.length !== 1 ? 's' : ''}`;
+      return '';
+    case 'rating':
+      return typeof raw === 'number' ? '\u2605'.repeat(raw) : String(raw);
+    default:
+      return String(raw);
+  }
+}

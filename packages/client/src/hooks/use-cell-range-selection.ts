@@ -349,12 +349,37 @@ export function useCellRangeSelection(
         return true;
       }
 
-      // Ctrl/Cmd+C → copy range to clipboard
+      // Ctrl/Cmd+C → copy range or focused cell to clipboard
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key === 'c' && range) {
-        e.preventDefault();
-        copyRangeToClipboard(api, range);
-        return true;
+      if (mod && e.key === 'c') {
+        // Don't intercept if a cell is being edited (let browser handle it)
+        const isEditing = api.getEditingCells()?.length ?? 0;
+        if (isEditing > 0) return false;
+
+        if (range) {
+          e.preventDefault();
+          copyRangeToClipboard(api, range);
+          return true;
+        }
+
+        // Single focused cell copy
+        const focused = api.getFocusedCell();
+        if (focused && focused.rowPinned == null) {
+          const rowNode = api.getDisplayedRowAtIndex(focused.rowIndex);
+          if (rowNode) {
+            const value = api.getCellValue({ rowNode, colKey: focused.column, useFormatter: true });
+            const text = value != null ? String(value) : '';
+            e.preventDefault();
+            navigator.clipboard.writeText(text).catch(() => {});
+            api.flashCells({
+              rowNodes: [rowNode],
+              columns: [focused.column.getColId()],
+              flashDuration: 300,
+              fadeDuration: 200,
+            });
+            return true;
+          }
+        }
       }
 
       return false;
