@@ -26,6 +26,7 @@ import { Chip } from '../components/ui/chip';
 import { EmojiPicker } from '../components/shared/emoji-picker';
 import { getFileIcon, getFileIconColor, formatBytes, formatRelativeDate, isImageFile } from '../lib/drive-utils';
 import { ROUTES } from '../config/routes';
+import { useDriveSettingsStore, useDriveSettingsSync } from '../stores/drive-settings-store';
 import type { DriveItem, DriveShareLink } from '@atlasmail/shared';
 import '../styles/drive.css';
 
@@ -126,6 +127,12 @@ function parseCsvToRows(content: string): string[][] {
   return rows;
 }
 
+function stripExtension(name: string, type: string): string {
+  if (type !== 'file') return name;
+  const lastDot = name.lastIndexOf('.');
+  return lastDot > 0 ? name.slice(0, lastDot) : name;
+}
+
 // ─── Drive page ──────────────────────────────────────────────────────
 
 export function DrivePage() {
@@ -134,10 +141,14 @@ export function DrivePage() {
   const { id: folderId } = useParams<{ id: string }>();
   const addToast = useToastStore((s) => s.addToast);
 
+  // Drive settings (persisted to server)
+  useDriveSettingsSync();
+  const driveSettings = useDriveSettingsStore();
+
   // State
   const [sidebarWidth, setSidebarWidth] = useState(getSavedSidebarWidth);
-  const [viewMode, setViewMode] = useState<ViewMode>(getSavedViewMode);
-  const [sidebarView, setSidebarView] = useState<SidebarView>('files');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => driveSettings.defaultView as ViewMode || getSavedViewMode());
+  const [sidebarView, setSidebarView] = useState<SidebarView>(() => driveSettings.sidebarDefault as SidebarView || 'files');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastClickedId, setLastClickedId] = useState<string | null>(null);
@@ -152,7 +163,7 @@ export function DrivePage() {
   const [moveItem, setMoveItem] = useState<DriveItem | null>(null);
   const [moveTargetId, setMoveTargetId] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>('default');
+  const [sortBy, setSortBy] = useState<SortBy>(() => driveSettings.defaultSort as SortBy || 'default');
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [previewItem, setPreviewItem] = useState<DriveItem | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ loaded: number; total: number } | null>(null);
@@ -165,7 +176,7 @@ export function DrivePage() {
   const [batchMoveOpen, setBatchMoveOpen] = useState(false);
   const [batchMoveTargetId, setBatchMoveTargetId] = useState<string | null>(null);
   const [shareModalItem, setShareModalItem] = useState<DriveItem | null>(null);
-  const [shareExpiry, setShareExpiry] = useState<string>('never');
+  const [shareExpiry, setShareExpiry] = useState<string>(() => driveSettings.shareDefaultExpiry || 'never');
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -176,7 +187,7 @@ export function DrivePage() {
 
   // Queries
   const currentParentId = folderId || null;
-  const { data: itemsData, isLoading: itemsLoading } = useDriveItems(sidebarView === 'files' ? currentParentId : undefined, sortBy);
+  const { data: itemsData, isLoading: itemsLoading } = useDriveItems(sidebarView === 'files' ? currentParentId : undefined, sortBy, driveSettings.sortOrder);
   const { data: breadcrumbsData } = useDriveBreadcrumbs(folderId);
   const { data: favouritesData } = useDriveFavourites();
   const { data: recentData } = useDriveRecent();
@@ -327,9 +338,9 @@ export function DrivePage() {
         });
       }
     } else {
-      // Single click on file → preview
+      // Single click on file → preview (if enabled in settings)
       if (item.type === 'file') {
-        setPreviewItem(item);
+        if (driveSettings.showPreviewPanel) setPreviewItem(item);
         setSelectedIds(new Set([item.id]));
       } else {
         setSelectedIds(new Set([item.id]));
@@ -417,9 +428,18 @@ export function DrivePage() {
   }, [updateItem, addToast]);
 
   const handleMoveToTrash = useCallback((item: DriveItem) => {
-    setConfirmDelete(item);
+    if (driveSettings.confirmDelete) {
+      setConfirmDelete(item);
+    } else {
+      deleteItem.mutate(item.id, {
+        onSuccess: () => {
+          addToast({ type: 'success', message: `"${item.name}" moved to trash` });
+          if (previewItem?.id === item.id) setPreviewItem(null);
+        },
+      });
+    }
     setContextMenu(null);
-  }, []);
+  }, [driveSettings.confirmDelete, deleteItem, addToast, previewItem]);
 
   const confirmMoveToTrash = useCallback(() => {
     if (!confirmDelete) return;
@@ -1225,7 +1245,7 @@ export function DrivePage() {
                 return (
                   <div
                     key={item.id}
-                    className={`drive-list-row ${isSelected ? 'selected' : ''} ${isDragTarget ? 'drive-drag-over' : ''}`}
+                    className={`drive-list-row ${isSelected ? 'selected' : ''} ${isDragTarget ? 'drive-drag-over' : ''} ${driveSettings.compactMode ? 'compact' : ''}`}
                     onClick={(e) => { e.stopPropagation(); handleItemClick(item, e); }}
                     onContextMenu={(e) => handleContextMenu(e, item)}
                     onDoubleClick={() => { if (item.type === 'folder') { navigate(`/drive/folder/${item.id}`); setSidebarView('files'); } }}
@@ -1271,7 +1291,7 @@ export function DrivePage() {
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
-                        <span>{item.name}</span>
+                        <span>{driveSettings.showFileExtensions ? item.name : stripExtension(item.name, item.type)}</span>
                       )}
                       {item.isFavourite && (
                         <Star size={12} fill="var(--color-star, #f59e0b)" color="var(--color-star, #f59e0b)" />
@@ -1296,7 +1316,7 @@ export function DrivePage() {
                 const iconColor = getFileIconColor(item.mimeType, item.type);
                 const isSelected = selectedIds.has(item.id);
                 const isRenaming = renameId === item.id;
-                const showThumb = isImageFile(item.mimeType) && item.storagePath;
+                const showThumb = driveSettings.showThumbnails && isImageFile(item.mimeType) && item.storagePath;
                 const isDragTarget = dragOverFolderId === item.id;
 
                 return (
@@ -1357,7 +1377,7 @@ export function DrivePage() {
                         style={{ textAlign: 'center' }}
                       />
                     ) : (
-                      <span className="drive-grid-card-name">{item.name}</span>
+                      <span className="drive-grid-card-name">{driveSettings.showFileExtensions ? item.name : stripExtension(item.name, item.type)}</span>
                     )}
                     <span className="drive-grid-card-meta">
                       {item.type === 'file' ? formatBytes(item.size) : `${formatRelativeDate(item.updatedAt)}`}

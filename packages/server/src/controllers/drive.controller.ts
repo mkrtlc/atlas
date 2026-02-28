@@ -14,11 +14,12 @@ export async function listItems(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
     const parentId = (req.query.parentId as string) || null;
     const sortBy = (req.query.sortBy as string) || undefined;
+    const sortOrder = (req.query.sortOrder as string) || undefined;
 
     // Auto-seed on first visit
     await driveService.seedSampleFolder(userId, accountId);
 
-    const items = await driveService.listItems(userId, parentId, false, sortBy);
+    const items = await driveService.listItems(userId, parentId, false, sortBy, sortOrder);
     res.json({ success: true, data: { items } });
   } catch (error) {
     logger.error({ error }, 'Failed to list drive items');

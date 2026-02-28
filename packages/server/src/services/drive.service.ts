@@ -24,7 +24,7 @@ function normalizeAll(items: any[]) {
 
 // ─── List items in a folder ──────────────────────────────────────────
 
-export async function listItems(userId: string, parentId: string | null, includeArchived = false, sortBy?: string) {
+export async function listItems(userId: string, parentId: string | null, includeArchived = false, sortBy?: string, sortOrder?: string) {
   const conditions = [eq(driveItems.userId, userId)];
 
   if (parentId) {
@@ -38,20 +38,21 @@ export async function listItems(userId: string, parentId: string | null, include
   }
 
   const foldersFirst = desc(sql`CASE WHEN ${driveItems.type} = 'folder' THEN 0 ELSE 1 END`);
+  const dir = sortOrder === 'desc' ? desc : asc;
 
   let sortClauses;
   switch (sortBy) {
     case 'name':
-      sortClauses = [foldersFirst, asc(driveItems.name)];
+      sortClauses = [foldersFirst, dir(driveItems.name)];
       break;
     case 'size':
-      sortClauses = [foldersFirst, desc(driveItems.size)];
+      sortClauses = [foldersFirst, dir(driveItems.size)];
       break;
     case 'date':
-      sortClauses = [foldersFirst, desc(driveItems.updatedAt)];
+      sortClauses = [foldersFirst, dir(driveItems.updatedAt)];
       break;
     case 'type':
-      sortClauses = [foldersFirst, asc(driveItems.mimeType), asc(driveItems.name)];
+      sortClauses = [foldersFirst, dir(driveItems.mimeType), dir(driveItems.name)];
       break;
     default:
       sortClauses = [foldersFirst, asc(driveItems.sortOrder), asc(driveItems.name)];

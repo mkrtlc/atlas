@@ -17,13 +17,14 @@ interface FoldersResponse {
   folders: Array<{ id: string; name: string; parentId: string | null }>;
 }
 
-export function useDriveItems(parentId?: string | null, sortBy?: string) {
+export function useDriveItems(parentId?: string | null, sortBy?: string, sortOrder?: string) {
   return useQuery({
-    queryKey: [...queryKeys.drive.items(parentId), sortBy] as const,
+    queryKey: [...queryKeys.drive.items(parentId), sortBy, sortOrder] as const,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (parentId) params.set('parentId', parentId);
       if (sortBy && sortBy !== 'default') params.set('sortBy', sortBy);
+      if (sortOrder) params.set('sortOrder', sortOrder);
       const qs = params.toString();
       const { data } = await api.get(`/drive${qs ? `?${qs}` : ''}`);
       return data.data as ListItemsResponse;

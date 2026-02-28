@@ -200,6 +200,12 @@
   align-items: center;
 }
 
+.drive-list-row.compact {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  font-size: var(--font-size-xs);
+}
+
 .drive-list-row:hover {
   background: var(--color-surface-hover);
 }

@@ -353,6 +353,21 @@ try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN draw_auto_save_interv
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN draw_sort_order TEXT NOT NULL DEFAULT 'modified'`).run(); } catch { /* column already exists */ }
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN draw_library TEXT NOT NULL DEFAULT '[]'`).run(); } catch { /* column already exists */ }
 
+// ---- Drive settings columns on user_settings ----------------------------------
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_default_view TEXT NOT NULL DEFAULT 'list'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_default_sort TEXT NOT NULL DEFAULT 'default'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_sidebar_default TEXT NOT NULL DEFAULT 'files'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_show_preview_panel INTEGER NOT NULL DEFAULT 1`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_compact_mode INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_confirm_delete INTEGER NOT NULL DEFAULT 1`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_auto_version_on_replace INTEGER NOT NULL DEFAULT 1`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_max_versions INTEGER NOT NULL DEFAULT 20`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_share_default_expiry TEXT NOT NULL DEFAULT 'never'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_duplicate_handling TEXT NOT NULL DEFAULT 'rename'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_show_thumbnails INTEGER NOT NULL DEFAULT 1`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_show_file_extensions INTEGER NOT NULL DEFAULT 1`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN drive_sort_order TEXT NOT NULL DEFAULT 'asc'`).run(); } catch { /* column already exists */ }
+
 // ---- Search settings columns on user_settings --------------------------------
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN recent_searches TEXT NOT NULL DEFAULT '[]'`).run(); } catch { /* column already exists */ }
 
