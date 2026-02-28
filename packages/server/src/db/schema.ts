@@ -434,6 +434,29 @@ export const spreadsheets = sqliteTable('spreadsheets', {
   accountIdx: index('idx_spreadsheets_account').on(table.accountId, table.isArchived),
 }));
 
+// ─── Drive (file storage) ────────────────────────────────────────────
+
+export const driveItems = sqliteTable('drive_items', {
+  id: uuid().primaryKey(),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  type: text('type').notNull().default('file'), // 'file' | 'folder'
+  mimeType: text('mime_type'),
+  size: integer('size'),
+  parentId: text('parent_id').references((): AnySQLiteColumn => driveItems.id, { onDelete: 'set null' }),
+  storagePath: text('storage_path'),
+  isFavourite: integer('is_favourite', { mode: 'boolean' }).notNull().default(false),
+  isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestampNow().notNull(),
+  updatedAt: timestampNow().notNull(),
+}, (table) => ({
+  userParentIdx: index('idx_drive_items_user_parent').on(table.userId, table.parentId, table.isArchived),
+  userArchivedIdx: index('idx_drive_items_user_archived').on(table.userId, table.isArchived),
+  userFavouriteIdx: index('idx_drive_items_user_favourite').on(table.userId, table.isFavourite),
+}));
+
 export const drawings = sqliteTable('drawings', {
   id: uuid().primaryKey(),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),

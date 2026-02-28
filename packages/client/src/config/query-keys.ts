@@ -62,4 +62,16 @@ export const queryKeys = {
     list: ['tables', 'list'] as const,
     detail: (id: string) => ['tables', 'detail', id] as const,
   },
+  drive: {
+    all: ['drive'] as const,
+    items: (parentId?: string | null) => ['drive', 'items', parentId ?? 'root'] as const,
+    detail: (id: string) => ['drive', 'detail', id] as const,
+    breadcrumbs: (id: string) => ['drive', 'breadcrumbs', id] as const,
+    favourites: ['drive', 'favourites'] as const,
+    recent: ['drive', 'recent'] as const,
+    trash: ['drive', 'trash'] as const,
+    search: (q: string) => ['drive', 'search', q] as const,
+    folders: ['drive', 'folders'] as const,
+    storage: ['drive', 'storage'] as const,
+  },
 };

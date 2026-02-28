@@ -390,20 +390,20 @@ function AppCard({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 14,
-        padding: '32px 20px 24px',
+        gap: 10,
+        padding: '22px 14px 18px',
         background: hovered ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         border: '1px solid rgba(255,255,255,0.18)',
-        borderRadius: 22,
+        borderRadius: 18,
         cursor: upcoming ? 'default' : 'pointer',
         transition: 'all 0.25s ease',
-        transform: hovered && !upcoming ? 'translateY(-6px)' : 'translateY(0)',
+        transform: hovered && !upcoming ? 'translateY(-4px)' : 'translateY(0)',
         boxShadow: hovered && !upcoming
-          ? '0 24px 48px rgba(0,0,0,0.3)'
-          : '0 8px 32px rgba(0,0,0,0.15)',
-        width: 150,
+          ? '0 20px 40px rgba(0,0,0,0.3)'
+          : '0 6px 24px rgba(0,0,0,0.15)',
+        width: 120,
         outline: 'none',
         fontFamily: 'var(--font-family)',
         position: 'relative',
@@ -414,9 +414,9 @@ function AppCard({
         <span
           style={{
             position: 'absolute',
-            top: 10,
-            right: 10,
-            fontSize: 10,
+            top: 8,
+            right: 8,
+            fontSize: 9,
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -424,8 +424,8 @@ function AppCard({
             background: 'rgba(255,255,255,0.2)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            padding: '3px 8px',
-            borderRadius: 8,
+            padding: '2px 6px',
+            borderRadius: 6,
             lineHeight: 1.2,
           }}
         >
@@ -434,29 +434,29 @@ function AppCard({
       )}
       <div
         style={{
-          width: 60,
-          height: 60,
-          borderRadius: 18,
+          width: 48,
+          height: 48,
+          borderRadius: 14,
           background: color,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: `0 6px 20px ${color}55`,
+          boxShadow: `0 4px 16px ${color}55`,
           transition: 'transform 0.25s ease',
           transform: hovered && !upcoming ? 'scale(1.08)' : 'scale(1)',
         }}
       >
-        <Icon size={28} color="#fff" strokeWidth={1.7} />
+        <Icon size={22} color="#fff" strokeWidth={1.7} />
       </div>
-      <span style={{ color: '#fff', fontSize: 15, fontWeight: 500 }}>
+      <span style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>
         {label}
       </span>
       {badge && (
         <span
           style={{
             color: 'rgba(255,255,255,0.55)',
-            fontSize: 14,
-            marginTop: -8,
+            fontSize: 12,
+            marginTop: -6,
           }}
         >
           {badge}
@@ -882,7 +882,7 @@ export function HomePage() {
         )}
 
         {/* App cards */}
-        <div style={{ display: 'flex', gap: 20, marginTop: 36, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 14, marginTop: 36, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 670 }}>
           <AppCard
             icon={Mail}
             label={t('nav.mail')}
@@ -953,7 +953,7 @@ export function HomePage() {
             icon={HardDrive}
             label="Drive"
             color="#64748b"
-            upcoming
+            onClick={() => navigate(ROUTES.DRIVE)}
           />
         </div>
       </div>

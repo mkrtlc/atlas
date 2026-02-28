@@ -11,3 +11,4 @@ export * from './document';
 export * from './drawing';
 export * from './task';
 export * from './table';
+export * from './drive';

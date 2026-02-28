@@ -11,6 +11,7 @@ import drawingsRoutes from './drawings.routes';
 import tasksRoutes from './tasks.routes';
 import tablesRoutes from './tables.routes';
 import uploadRoutes from './upload.routes';
+import driveRoutes from './drive.routes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/drawings', drawingsRoutes);
 router.use('/tasks', tasksRoutes);
 router.use('/tables', tablesRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/drive', driveRoutes);
 
 export default router;

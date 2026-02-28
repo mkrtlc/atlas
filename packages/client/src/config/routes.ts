@@ -16,4 +16,6 @@ export const ROUTES = {
   TASKS: '/tasks',
   TABLES: '/tables',
   TABLE_DETAIL: '/tables/:id',
+  DRIVE: '/drive',
+  DRIVE_FOLDER: '/drive/folder/:id',
 } as const;

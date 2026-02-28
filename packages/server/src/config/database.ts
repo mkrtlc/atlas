@@ -382,6 +382,31 @@ try { sqlite.prepare(`ALTER TABLE spreadsheets ADD COLUMN color TEXT`).run(); } 
 try { sqlite.prepare(`ALTER TABLE spreadsheets ADD COLUMN icon TEXT`).run(); } catch { /* column already exists */ }
 try { sqlite.prepare(`ALTER TABLE spreadsheets ADD COLUMN guide TEXT`).run(); } catch { /* column already exists */ }
 
+// ---- Drive items table (file storage) ----------------------------------------
+
+sqlite.prepare(`
+  CREATE TABLE IF NOT EXISTS drive_items (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'file',
+    mime_type TEXT,
+    size INTEGER,
+    parent_id TEXT REFERENCES drive_items(id) ON DELETE SET NULL,
+    storage_path TEXT,
+    is_favourite INTEGER NOT NULL DEFAULT 0,
+    is_archived INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  )
+`).run();
+
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_drive_items_user_parent ON drive_items(user_id, parent_id, is_archived)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_drive_items_user_archived ON drive_items(user_id, is_archived)`).run(); } catch { /* */ }
+try { sqlite.prepare(`CREATE INDEX IF NOT EXISTS idx_drive_items_user_favourite ON drive_items(user_id, is_favourite)`).run(); } catch { /* */ }
+
 // Create FTS5 virtual table for full-text search across emails.
 // content='' means we manage the index manually (external content table).
 sqlite.prepare(`
