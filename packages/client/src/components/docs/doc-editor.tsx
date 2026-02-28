@@ -20,7 +20,6 @@ import { common, createLowlight } from 'lowlight';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 import UniqueID from '@tiptap/extension-unique-id';
 import { Callout } from './extensions/callout';
-import { ToggleBlock, ToggleSummary } from './extensions/toggle-block';
 import { PageMention } from './extensions/page-mention';
 import { ResizableImage } from './extensions/resizable-image';
 import { SearchReplace } from './extensions/search-replace';
@@ -272,12 +271,6 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
     command: (editor) => editor.chain().focus().setCallout({ type: 'error' }).run(),
   },
   {
-    title: 'Toggle',
-    description: 'Collapsible section',
-    icon: '▶',
-    command: (editor) => editor.chain().focus().setToggleBlock().run(),
-  },
-  {
     title: 'Table of contents',
     description: 'Insert a linked list of headings',
     icon: '≡',
@@ -414,13 +407,11 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
       ResizableImage,
       // ── Unique ID per block (for future comments/anchoring) ──
       UniqueID.configure({
-        types: ['heading', 'paragraph', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote', 'table', 'resizableImage', 'callout', 'toggleBlock', 'drawingEmbed', 'tableEmbed'],
+        types: ['heading', 'paragraph', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote', 'table', 'resizableImage', 'callout', 'drawingEmbed', 'tableEmbed'],
       }),
       // ── Search & Replace (Cmd+F) ──
       SearchReplace,
       Callout,
-      ToggleSummary,
-      ToggleBlock,
       PageMention,
       DrawingEmbed,
       TableEmbed,
@@ -980,7 +971,7 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
         {!readOnly && (
           <BubbleMenu
             editor={editor}
-            tippyOptions={{ duration: 150 }}
+            tippyOptions={{ duration: 150, maxWidth: 'none' }}
             shouldShow={({ editor: e, state }) => {
               const { from, to } = state.selection;
               if (from === to) return false;

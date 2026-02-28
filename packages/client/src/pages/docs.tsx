@@ -1653,11 +1653,9 @@ function DocumentView({
           }}
         />
 
-        {isSaving && (
-          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 8 }}>
-            Saving...
-          </div>
-        )}
+        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 8, visibility: isSaving ? 'visible' : 'hidden' }}>
+          Saving...
+        </div>
       </div>
 
       <DocEditor
