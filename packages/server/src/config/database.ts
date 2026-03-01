@@ -604,6 +604,7 @@ try { sqlite.prepare(`ALTER TABLE tasks ADD COLUMN source_email_subject TEXT`).r
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN home_bg_type TEXT NOT NULL DEFAULT 'unsplash'`).run(); } catch { /* column already exists */ }
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN home_bg_value TEXT`).run(); } catch { /* column already exists */ }
 try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN recent_items TEXT NOT NULL DEFAULT '[]'`).run(); } catch { /* column already exists */ }
+try { sqlite.prepare(`ALTER TABLE user_settings ADD COLUMN home_enabled_widgets TEXT`).run(); } catch { /* column already exists */ }
 
 // Create FTS5 virtual table for full-text search across emails.
 // content='' means we manage the index manually (external content table).

@@ -228,6 +228,7 @@ export const userSettings = sqliteTable('user_settings', {
   // Home
   homeBgType: text('home_bg_type').notNull().default('unsplash'),
   homeBgValue: text('home_bg_value'),
+  homeEnabledWidgets: text('home_enabled_widgets', { mode: 'json' }).$type<string[] | null>(),
   recentItems: text('recent_items', { mode: 'json' }).notNull().$type<string[]>().default([]),
   createdAt: timestampNow().notNull(),
   updatedAt: timestampNow().notNull(),

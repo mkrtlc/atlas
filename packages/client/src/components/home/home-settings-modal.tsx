@@ -1,8 +1,9 @@
-import React, { type CSSProperties, useState } from 'react';
+import React, { type CSSProperties, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api-client';
 import { queryKeys } from '../../config/query-keys';
-import { SettingsSection, SettingsRow } from '../settings/settings-primitives';
+import { SettingsSection, SettingsRow, SettingsToggle } from '../settings/settings-primitives';
+import { widgetRegistry } from './widgets/registry';
 
 type BgType = 'unsplash' | 'solid' | 'gradient' | 'custom';
 
@@ -218,6 +219,103 @@ export function HomeBackgroundPanel() {
           </SettingsRow>
         </SettingsSection>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Widgets settings panel
+// ---------------------------------------------------------------------------
+
+export function HomeWidgetsPanel() {
+  const queryClient = useQueryClient();
+
+  const { data: settings } = useQuery({
+    queryKey: queryKeys.settings.all,
+    queryFn: async () => {
+      const { data } = await api.get('/settings');
+      return data.data as Record<string, unknown> | null;
+    },
+    staleTime: 60_000,
+  });
+
+  const enabledIds = useMemo(() => {
+    const raw = settings?.homeEnabledWidgets;
+    if (Array.isArray(raw)) return raw as string[];
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed as string[];
+      } catch { /* ignore */ }
+    }
+    return null;
+  }, [settings]);
+
+  const isEnabled = (widgetId: string): boolean => {
+    if (enabledIds === null) {
+      return widgetRegistry.find((w) => w.id === widgetId)?.defaultEnabled ?? false;
+    }
+    return enabledIds.includes(widgetId);
+  };
+
+  const mutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await api.put('/settings', { homeEnabledWidgets: ids });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+    },
+  });
+
+  const toggle = (widgetId: string) => {
+    const currentIds = enabledIds ?? widgetRegistry.filter((w) => w.defaultEnabled).map((w) => w.id);
+    const next = isEnabled(widgetId)
+      ? currentIds.filter((id) => id !== widgetId)
+      : [...currentIds, widgetId];
+    mutation.mutate(next);
+  };
+
+  return (
+    <div>
+      <SettingsSection title="Home widgets" description="Choose which widgets appear on your home screen (max 10)">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {widgetRegistry.map((widget) => {
+            const Icon = widget.icon;
+            return (
+              <div
+                key={widget.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--color-border-secondary)',
+                  background: isEnabled(widget.id) ? 'var(--color-bg-tertiary)' : 'transparent',
+                  transition: 'background 0.15s',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Icon size={16} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                      {widget.name}
+                    </div>
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 1 }}>
+                      {widget.description}
+                    </div>
+                  </div>
+                </div>
+                <SettingsToggle
+                  checked={isEnabled(widget.id)}
+                  onChange={() => toggle(widget.id)}
+                  label={widget.name}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </SettingsSection>
     </div>
   );
 }

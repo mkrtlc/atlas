@@ -124,6 +124,8 @@ export const settingsSchema = z.object({
   // Home background settings
   homeBgType: z.enum(['unsplash', 'solid', 'gradient', 'custom']).optional(),
   homeBgValue: z.string().max(1000).nullable().optional(),
+  // Home widget settings
+  homeEnabledWidgets: z.array(z.string()).nullable().optional(),
   // Search
   recentSearches: z.array(z.string()).optional(),
 });

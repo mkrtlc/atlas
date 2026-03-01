@@ -29,6 +29,7 @@ import {
   File,
   Home,
   Image,
+  LayoutGrid,
 } from 'lucide-react';
 
 import {
@@ -79,6 +80,7 @@ import {
 
 import {
   HomeBackgroundPanel,
+  HomeWidgetsPanel,
 } from '../components/home/home-settings-modal';
 
 // ---------------------------------------------------------------------------
@@ -116,6 +118,7 @@ export const settingsCategories: SettingsCategory[] = [
       { id: 'appearance', label: 'Appearance', icon: Palette, component: MailAppearancePanel },
       { id: 'notifications', label: 'Notifications', icon: Bell, component: MailNotificationsPanel },
       { id: 'home-background', label: 'Home background', icon: Image, component: HomeBackgroundPanel },
+      { id: 'home-widgets', label: 'Widgets', icon: LayoutGrid, component: HomeWidgetsPanel },
       { id: 'about', label: 'About', icon: Info, component: MailAboutPanel },
     ],
   },

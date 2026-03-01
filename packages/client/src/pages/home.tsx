@@ -20,6 +20,7 @@ import { useDriveStorage } from '../hooks/use-drive';
 import { ROUTES } from '../config/routes';
 import { useUIStore } from '../stores/ui-store';
 import { buildGoogleOAuthUrl } from '../components/auth/login-page';
+import { WidgetGrid } from '../components/home/widgets/widget-grid';
 import '../styles/home.css';
 
 // ---------------------------------------------------------------------------
@@ -1135,6 +1136,9 @@ export function HomePage() {
             upcoming
           />
         </div>
+
+        {/* Widgets */}
+        <WidgetGrid />
       </div>
     </div>
   );
