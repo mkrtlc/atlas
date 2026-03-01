@@ -375,12 +375,12 @@ function formatDate(date: Date): string {
 function SparkleOverlay() {
   // Generate random sparkle particles
   const particles = useMemo(() =>
-    Array.from({ length: 12 }, (_, i) => ({
+    Array.from({ length: 10 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
-      delay: Math.random() * 3,
-      duration: 1.2 + Math.random() * 1,
-      size: 4 + Math.random() * 6,
+      delay: Math.random() * 2.5,
+      duration: 0.8 + Math.random() * 0.8,
+      size: 2 + Math.random() * 3,
     })),
   []);
 
@@ -404,7 +404,7 @@ function SparkleOverlay() {
             height: p.size,
             borderRadius: '50%',
             background: '#FFD700',
-            boxShadow: '0 0 4px #FFD700, 0 0 8px rgba(255,215,0,0.5)',
+            boxShadow: '0 0 3px #FFD700, 0 0 5px rgba(255,215,0,0.4)',
             animation: `sparkle-float ${p.duration}s ease-out ${p.delay}s infinite`,
             opacity: 0,
           }}
@@ -545,14 +545,14 @@ function InstalledAppCards() {
           return next;
         });
 
-        // Remove sparkles after 5 seconds
+        // Remove sparkles after 4 seconds
         const timer = setTimeout(() => {
           setSparkleIds((prev) => {
             const next = new Set(prev);
             newIds.forEach((id) => next.delete(id));
             return next;
           });
-        }, 5000);
+        }, 4000);
         return () => clearTimeout(timer);
       }
     }

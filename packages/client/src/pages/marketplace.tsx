@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CatalogGrid } from '../components/marketplace/catalog-grid';
 import { AppDetailModal } from '../components/marketplace/app-detail-modal';
 import { InstallConfirmModal } from '../components/marketplace/install-confirm-modal';
-import { useCatalog, useMyTenants, useInstallApp, useInstallations } from '../hooks/use-platform';
+import { useCatalog, useMyTenants, useInstallApp, useUninstallApp, useInstallations } from '../hooks/use-platform';
 import { ROUTES } from '../config/routes';
 import { queryKeys } from '../config/query-keys';
 import type { CatalogApp } from '@atlasmail/shared';
@@ -20,6 +20,7 @@ export function MarketplacePage() {
   const [isInstalling, setIsInstalling] = useState(false);
   const { data: installations } = useInstallations(activeTenant?.id, isInstalling ? 3_000 : 15_000);
   const installApp = useInstallApp(activeTenant?.id ?? '');
+  const uninstallApp = useUninstallApp(activeTenant?.id ?? '');
 
   const [selectedApp, setSelectedApp] = useState<CatalogApp | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -71,6 +72,18 @@ export function MarketplacePage() {
         },
       },
     );
+  };
+
+  const handleUninstall = (app: CatalogApp) => {
+    const installation = installations?.find((i) => i.catalogAppId === app.id);
+    if (!installation) return;
+    uninstallApp.mutate(installation.id, {
+      onSuccess: () => {
+        setDetailOpen(false);
+        setSelectedApp(null);
+        queryClient.invalidateQueries({ queryKey: queryKeys.platform.all });
+      },
+    });
   };
 
   const handleInstallDone = useCallback(() => {
@@ -172,7 +185,9 @@ export function MarketplacePage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onInstall={handleInstallClick}
+        onUninstall={handleUninstall}
         isInstalled={selectedApp ? installedAppIds.has(selectedApp.id) : false}
+        isUninstalling={uninstallApp.isPending}
       />
 
       <InstallConfirmModal

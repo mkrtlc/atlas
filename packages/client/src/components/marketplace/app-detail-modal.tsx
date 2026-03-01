@@ -1,22 +1,33 @@
+import { useState } from 'react';
 import { Modal } from '../ui/modal';
-import { ExternalLink, Cpu, HardDrive, Database } from 'lucide-react';
-import type { CatalogApp } from '@atlasmail/shared';
+import { ExternalLink, Cpu, HardDrive, Database, Trash2 } from 'lucide-react';
+import type { CatalogApp, AtlasManifest } from '@atlasmail/shared';
+import { AppIcon } from './app-icons';
 
 interface AppDetailModalProps {
   app: CatalogApp | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onInstall: (app: CatalogApp) => void;
+  onUninstall?: (app: CatalogApp) => void;
   isInstalled?: boolean;
+  isUninstalling?: boolean;
 }
 
-export function AppDetailModal({ app, open, onOpenChange, onInstall, isInstalled }: AppDetailModalProps) {
+export function AppDetailModal({ app, open, onOpenChange, onInstall, onUninstall, isInstalled, isUninstalling }: AppDetailModalProps) {
+  const [confirmUninstall, setConfirmUninstall] = useState(false);
+
   if (!app) return null;
 
-  const manifest = app.manifest as any;
+  const manifest = app.manifest as AtlasManifest;
+
+  const handleOpenChange = (value: boolean) => {
+    if (!value) setConfirmUninstall(false);
+    onOpenChange(value);
+  };
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange} width={560} title={app.name}>
+    <Modal open={open} onOpenChange={handleOpenChange} width={560} title={app.name}>
       <Modal.Header title={app.name} subtitle={`v${app.currentVersion} · ${app.category}`}>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
           <div
@@ -31,11 +42,7 @@ export function AppDetailModal({ app, open, onOpenChange, onInstall, isInstalled
               flexShrink: 0,
             }}
           >
-            {app.iconUrl ? (
-              <img src={app.iconUrl} alt="" style={{ width: 32, height: 32 }} />
-            ) : (
-              <ExternalLink size={26} color="#fff" />
-            )}
+            {app.manifestId ? <AppIcon manifestId={app.manifestId} size={32} color="#fff" /> : <ExternalLink size={26} color="#fff" />}
           </div>
         </div>
       </Modal.Header>
@@ -120,40 +127,117 @@ export function AppDetailModal({ app, open, onOpenChange, onInstall, isInstalled
       </Modal.Body>
 
       <Modal.Footer>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button
-            onClick={() => onOpenChange(false)}
-            style={{
-              padding: '8px 18px',
+        {confirmUninstall ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+            <div style={{
+              padding: 12,
+              background: '#FFF3F3',
               borderRadius: 8,
-              border: '1px solid var(--color-border-primary)',
-              background: 'transparent',
-              color: 'var(--color-text-secondary)',
-              fontSize: 14,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-family)',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onInstall(app)}
-            disabled={isInstalled}
-            style={{
-              padding: '8px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: isInstalled ? 'var(--color-bg-tertiary)' : '#13715B',
-              color: isInstalled ? 'var(--color-text-tertiary)' : '#fff',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: isInstalled ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--font-family)',
-            }}
-          >
-            {isInstalled ? 'Installed' : 'Install'}
-          </button>
-        </div>
+              fontSize: 13,
+              color: '#D32F2F',
+              lineHeight: 1.5,
+            }}>
+              This will permanently remove {app.name} and all its data including databases and files. This action cannot be undone.
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmUninstall(false)}
+                disabled={isUninstalling}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: 8,
+                  border: '1px solid var(--color-border-primary)',
+                  background: 'transparent',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-family)',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onUninstall?.(app);
+                  setConfirmUninstall(false);
+                }}
+                disabled={isUninstalling}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: '#D32F2F',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: isUninstalling ? 'not-allowed' : 'pointer',
+                  opacity: isUninstalling ? 0.7 : 1,
+                  fontFamily: 'var(--font-family)',
+                }}
+              >
+                {isUninstalling ? 'Uninstalling...' : 'Yes, uninstall'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', width: '100%' }}>
+            {isInstalled && onUninstall && (
+              <button
+                onClick={() => setConfirmUninstall(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #FFCDD2',
+                  background: 'transparent',
+                  color: '#D32F2F',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-family)',
+                  marginRight: 'auto',
+                }}
+              >
+                <Trash2 size={14} />
+                Uninstall
+              </button>
+            )}
+            <button
+              onClick={() => handleOpenChange(false)}
+              style={{
+                padding: '8px 18px',
+                borderRadius: 8,
+                border: '1px solid var(--color-border-primary)',
+                background: 'transparent',
+                color: 'var(--color-text-secondary)',
+                fontSize: 14,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-family)',
+              }}
+            >
+              Close
+            </button>
+            {!isInstalled && (
+              <button
+                onClick={() => onInstall(app)}
+                style={{
+                  padding: '8px 24px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: '#13715B',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-family)',
+                }}
+              >
+                Install
+              </button>
+            )}
+          </div>
+        )}
       </Modal.Footer>
     </Modal>
   );
