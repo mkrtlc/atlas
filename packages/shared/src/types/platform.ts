@@ -3,7 +3,7 @@
 export type TenantPlan = 'starter' | 'pro' | 'enterprise';
 export type TenantStatus = 'active' | 'suspended' | 'deleted';
 export type TenantMemberRole = 'owner' | 'admin' | 'member';
-export type InstallationStatus = 'installing' | 'running' | 'stopped' | 'error';
+export type InstallationStatus = 'installing' | 'running' | 'stopped' | 'error' | 'uninstalling';
 export type AddonType = 'postgresql' | 'redis' | 'smtp' | 's3';
 export type BackupTrigger = 'scheduled' | 'manual' | 'pre-update';
 export type BackupStatus = 'pending' | 'running' | 'completed' | 'failed';

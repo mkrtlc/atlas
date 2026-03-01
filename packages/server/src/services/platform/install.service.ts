@@ -253,20 +253,58 @@ export async function uninstallApp(installationId: string) {
   const tenant = await getTenantById(inst.tenantId);
   if (!tenant) throw new Error('Tenant not found');
 
-  // 1. Delete runtime resources
-  if (env.PLATFORM_RUNTIME === 'docker') {
-    await removeAppContainer(installationId, tenant.slug);
-  } else if (inst.k8sDeploymentName) {
-    await deleteAppResources(tenant.k8sNamespace, inst.k8sDeploymentName, installationId);
+  // Mark as uninstalling so the UI can show progress
+  await db.update(appInstallations).set({
+    status: 'uninstalling',
+    updatedAt: new Date(),
+  }).where(eq(appInstallations.id, installationId));
+
+  const errors: { step: string; error: Error }[] = [];
+
+  // 1. Delete runtime resources (container / K8s deployment)
+  try {
+    if (env.PLATFORM_RUNTIME === 'docker') {
+      await removeAppContainer(installationId, tenant.slug);
+    } else if (inst.k8sDeploymentName) {
+      await deleteAppResources(tenant.k8sNamespace, inst.k8sDeploymentName, installationId);
+    }
+  } catch (err) {
+    logger.error({ err, installationId }, 'Failed to remove runtime resources during uninstall');
+    errors.push({ step: 'runtime', error: err as Error });
   }
 
-  // 2. Deprovision addons
-  await deprovisionAddons(installationId);
+  // 2. Deprovision addons (databases, Redis keys)
+  try {
+    await deprovisionAddons(installationId);
+  } catch (err) {
+    logger.error({ err, installationId }, 'Failed to deprovision addons during uninstall');
+    errors.push({ step: 'addons', error: err as Error });
+  }
 
-  // 3. Delete installation record (cascades to addons and backups)
-  await db.delete(appInstallations).where(eq(appInstallations.id, installationId));
+  // 3. Delete backup records (no cascade — we handle explicitly before deleting installation)
+  try {
+    await db.delete(appBackups).where(eq(appBackups.installationId, installationId));
+  } catch (err) {
+    logger.error({ err, installationId }, 'Failed to delete backup records during uninstall');
+    errors.push({ step: 'backups', error: err as Error });
+  }
 
-  logger.info({ installationId, tenantId: inst.tenantId }, 'App uninstalled');
+  // 4. Only delete installation record if all cleanup succeeded
+  //    Otherwise mark as error so admins can investigate and retry
+  if (errors.length === 0) {
+    await db.delete(appInstallations).where(eq(appInstallations.id, installationId));
+    logger.info({ installationId, tenantId: inst.tenantId }, 'App fully uninstalled');
+  } else {
+    await db.update(appInstallations).set({
+      status: 'error',
+      updatedAt: new Date(),
+    }).where(eq(appInstallations.id, installationId));
+    logger.error(
+      { installationId, failedSteps: errors.map((e) => e.step) },
+      'Uninstall partially failed — installation record preserved for manual cleanup',
+    );
+    throw new Error(`Uninstall incomplete: failed steps: ${errors.map((e) => e.step).join(', ')}`);
+  }
 }
 
 export async function updateHealthStatus(installationId: string) {

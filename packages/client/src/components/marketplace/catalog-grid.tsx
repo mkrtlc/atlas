@@ -8,6 +8,7 @@ interface CatalogGridProps {
   onSelect: (app: CatalogApp) => void;
   installedAppIds?: Set<string>;
   installingAppIds?: Set<string>;
+  uninstallingAppIds?: Set<string>;
 }
 
 const CATEGORIES = [
@@ -19,7 +20,7 @@ const CATEGORIES = [
   { value: 'finance', label: 'Finance' },
 ];
 
-export function CatalogGrid({ apps, onSelect, installedAppIds, installingAppIds }: CatalogGridProps) {
+export function CatalogGrid({ apps, onSelect, installedAppIds, installingAppIds, uninstallingAppIds }: CatalogGridProps) {
   const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
 
@@ -94,6 +95,7 @@ export function CatalogGrid({ apps, onSelect, installedAppIds, installingAppIds 
             onClick={() => onSelect(app)}
             isInstalled={installedAppIds?.has(app.id)}
             isInstalling={installingAppIds?.has(app.id)}
+            isUninstalling={uninstallingAppIds?.has(app.id)}
           />
         ))}
       </div>
@@ -117,11 +119,13 @@ function CatalogCard({
   onClick,
   isInstalled,
   isInstalling,
+  isUninstalling,
 }: {
   app: CatalogApp;
   onClick: () => void;
   isInstalled?: boolean;
   isInstalling?: boolean;
+  isUninstalling?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -148,7 +152,7 @@ function CatalogCard({
       }}
     >
       {/* Status badge */}
-      {(isInstalled || isInstalling) && (
+      {(isInstalled || isInstalling || isUninstalling) && (
         <span
           style={{
             position: 'absolute',
@@ -162,11 +166,16 @@ function CatalogCard({
             fontSize: 11,
             fontWeight: 600,
             lineHeight: '18px',
-            background: isInstalling ? '#FFF8E1' : '#E8F5E9',
-            color: isInstalling ? '#F57F17' : '#2E7D32',
+            background: isUninstalling ? '#FFEBEE' : isInstalling ? '#FFF8E1' : '#E8F5E9',
+            color: isUninstalling ? '#C62828' : isInstalling ? '#F57F17' : '#2E7D32',
           }}
         >
-          {isInstalling ? (
+          {isUninstalling ? (
+            <>
+              <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} />
+              Uninstalling...
+            </>
+          ) : isInstalling ? (
             <>
               <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} />
               Installing...

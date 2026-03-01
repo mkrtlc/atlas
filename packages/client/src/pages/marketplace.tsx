@@ -18,7 +18,8 @@ export function MarketplacePage() {
   const activeTenant = tenants?.[0];
 
   const [isInstalling, setIsInstalling] = useState(false);
-  const { data: installations } = useInstallations(activeTenant?.id, isInstalling ? 3_000 : 15_000);
+  const [isUninstalling, setIsUninstalling] = useState(false);
+  const { data: installations } = useInstallations(activeTenant?.id, (isInstalling || isUninstalling) ? 3_000 : 15_000);
   const installApp = useInstallApp(activeTenant?.id ?? '');
   const uninstallApp = useUninstallApp(activeTenant?.id ?? '');
 
@@ -41,6 +42,15 @@ export function MarketplacePage() {
     () => new Set(
       installations
         ?.filter((i) => i.status === 'installing')
+        .map((i) => i.catalogAppId) ?? [],
+    ),
+    [installations],
+  );
+
+  const uninstallingAppIds = useMemo(
+    () => new Set(
+      installations
+        ?.filter((i) => i.status === 'uninstalling')
         .map((i) => i.catalogAppId) ?? [],
     ),
     [installations],
@@ -79,9 +89,15 @@ export function MarketplacePage() {
     const installation = installations?.find((i) => i.catalogAppId === app.id);
     if (!installation) return;
     setUninstallDone(false);
+    setIsUninstalling(true);
     uninstallApp.mutate(installation.id, {
       onSuccess: () => {
         setUninstallDone(true);
+        setIsUninstalling(false);
+        queryClient.invalidateQueries({ queryKey: queryKeys.platform.all });
+      },
+      onError: () => {
+        setIsUninstalling(false);
         queryClient.invalidateQueries({ queryKey: queryKeys.platform.all });
       },
     });
@@ -176,6 +192,7 @@ export function MarketplacePage() {
             onSelect={handleSelect}
             installedAppIds={installedAppIds}
             installingAppIds={installingAppIds}
+            uninstallingAppIds={uninstallingAppIds}
           />
         )}
       </div>
