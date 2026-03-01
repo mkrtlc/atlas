@@ -21,7 +21,7 @@ async function attachSenderInfo(threadRows: any[]) {
       and(
         sql`${emails.threadId} IN (${sql.join(threadIds.map(id => sql`${id}`), sql`, `)})`,
         sql`${emails.internalDate} = (
-          SELECT MAX(e2."internalDate") FROM emails e2 WHERE e2.thread_id = ${emails.threadId}
+          SELECT MAX(e2.internal_date) FROM emails e2 WHERE e2.thread_id = ${emails.threadId}
         )`,
       ),
     );
@@ -40,30 +40,30 @@ export async function getThreadCounts(accountId: string) {
   // This avoids fetching thousands of rows into JS.
   const [row] = await db.select({
     // Mailbox counts
-    allTotal:         sql<number>`sum(case when is_trashed = 0 and is_spam = 0 then 1 else 0 end)`,
-    allUnread:        sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and unread_count > 0 then 1 else 0 end)`,
-    inboxTotal:       sql<number>`sum(case when is_archived = 0 and is_trashed = 0 and is_spam = 0 then 1 else 0 end)`,
-    inboxUnread:      sql<number>`sum(case when is_archived = 0 and is_trashed = 0 and is_spam = 0 and unread_count > 0 then 1 else 0 end)`,
-    archiveTotal:     sql<number>`sum(case when is_archived = 1 and is_trashed = 0 then 1 else 0 end)`,
-    archiveUnread:    sql<number>`sum(case when is_archived = 1 and is_trashed = 0 and unread_count > 0 then 1 else 0 end)`,
-    trashTotal:       sql<number>`sum(case when is_trashed = 1 then 1 else 0 end)`,
-    trashUnread:      sql<number>`sum(case when is_trashed = 1 and unread_count > 0 then 1 else 0 end)`,
-    starredTotal:     sql<number>`sum(case when is_starred = 1 and is_trashed = 0 then 1 else 0 end)`,
-    starredUnread:    sql<number>`sum(case when is_starred = 1 and is_trashed = 0 and unread_count > 0 then 1 else 0 end)`,
-    unreadTotal:      sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and unread_count > 0 then 1 else 0 end)`,
-    spamTotal:        sql<number>`sum(case when is_spam = 1 and is_trashed = 0 then 1 else 0 end)`,
-    spamUnread:       sql<number>`sum(case when is_spam = 1 and is_trashed = 0 and unread_count > 0 then 1 else 0 end)`,
+    allTotal:         sql<number>`sum(case when is_trashed = false and is_spam = false then 1 else 0 end)`,
+    allUnread:        sql<number>`sum(case when is_trashed = false and is_spam = false and unread_count > 0 then 1 else 0 end)`,
+    inboxTotal:       sql<number>`sum(case when is_archived = false and is_trashed = false and is_spam = false then 1 else 0 end)`,
+    inboxUnread:      sql<number>`sum(case when is_archived = false and is_trashed = false and is_spam = false and unread_count > 0 then 1 else 0 end)`,
+    archiveTotal:     sql<number>`sum(case when is_archived = true and is_trashed = false then 1 else 0 end)`,
+    archiveUnread:    sql<number>`sum(case when is_archived = true and is_trashed = false and unread_count > 0 then 1 else 0 end)`,
+    trashTotal:       sql<number>`sum(case when is_trashed = true then 1 else 0 end)`,
+    trashUnread:      sql<number>`sum(case when is_trashed = true and unread_count > 0 then 1 else 0 end)`,
+    starredTotal:     sql<number>`sum(case when is_starred = true and is_trashed = false then 1 else 0 end)`,
+    starredUnread:    sql<number>`sum(case when is_starred = true and is_trashed = false and unread_count > 0 then 1 else 0 end)`,
+    unreadTotal:      sql<number>`sum(case when is_trashed = false and is_spam = false and unread_count > 0 then 1 else 0 end)`,
+    spamTotal:        sql<number>`sum(case when is_spam = true and is_trashed = false then 1 else 0 end)`,
+    spamUnread:       sql<number>`sum(case when is_spam = true and is_trashed = false and unread_count > 0 then 1 else 0 end)`,
     // Category counts — do NOT filter by is_archived because Gmail's category
     // tabs (CATEGORY_PROMOTIONS, etc.) lack the INBOX label, which our sync
     // marks as is_archived=true.  Excluding those would show 0 for most categories.
-    importantTotal:   sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'important' then 1 else 0 end)`,
-    importantUnread:  sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'important' and unread_count > 0 then 1 else 0 end)`,
-    otherTotal:       sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'other' then 1 else 0 end)`,
-    otherUnread:      sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'other' and unread_count > 0 then 1 else 0 end)`,
-    newslettersTotal: sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'newsletters' then 1 else 0 end)`,
-    newslettersUnread:sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'newsletters' and unread_count > 0 then 1 else 0 end)`,
-    notificationsTotal:  sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'notifications' then 1 else 0 end)`,
-    notificationsUnread: sql<number>`sum(case when is_trashed = 0 and is_spam = 0 and category = 'notifications' and unread_count > 0 then 1 else 0 end)`,
+    importantTotal:   sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'important' then 1 else 0 end)`,
+    importantUnread:  sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'important' and unread_count > 0 then 1 else 0 end)`,
+    otherTotal:       sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'other' then 1 else 0 end)`,
+    otherUnread:      sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'other' and unread_count > 0 then 1 else 0 end)`,
+    newslettersTotal: sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'newsletters' then 1 else 0 end)`,
+    newslettersUnread:sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'newsletters' and unread_count > 0 then 1 else 0 end)`,
+    notificationsTotal:  sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'notifications' then 1 else 0 end)`,
+    notificationsUnread: sql<number>`sum(case when is_trashed = false and is_spam = false and category = 'notifications' and unread_count > 0 then 1 else 0 end)`,
   })
     .from(threads)
     .where(eq(threads.accountId, accountId));

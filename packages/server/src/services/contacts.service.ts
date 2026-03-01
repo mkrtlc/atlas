@@ -296,7 +296,7 @@ export async function getInteractionStats(accountId: string, contactEmail: strin
         sql`EXISTS (
           SELECT 1 FROM threads t
           WHERE t.id = ${emails.threadId}
-          AND t.is_trashed = 0
+          AND t.is_trashed = false
         )`,
         sql`(
           LOWER(${emails.fromAddress}) = ${normalizedEmail}
