@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserPlus, Mail, Search } from 'lucide-react';
+import { UserPlus, Mail, Search, UserMinus } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
 import {
   useTenantUsers,
@@ -10,115 +10,23 @@ import {
   useMyTenants,
 } from '../../hooks/use-platform';
 import type { TenantMemberRole } from '@atlasmail/shared';
+import { Avatar } from '../../components/ui/avatar';
+import { Button } from '../../components/ui/button';
+import { Chip } from '../../components/ui/chip';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Input } from '../../components/ui/input';
+import { Modal } from '../../components/ui/modal';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 
 // ---------------------------------------------------------------------------
-// Shared styles
+// Role chip color map
 // ---------------------------------------------------------------------------
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  border: '1px solid var(--color-border-primary)',
-  borderRadius: 'var(--radius-sm)',
-  fontSize: 'var(--font-size-sm)',
-  outline: 'none',
-  background: 'var(--color-bg-primary)',
-  color: 'var(--color-text-primary)',
-  boxSizing: 'border-box',
-  fontFamily: 'var(--font-family)',
-  transition: 'border-color 0.15s ease',
+const ROLE_COLORS: Record<string, string> = {
+  owner: '#7c3aed',
+  admin: '#2563eb',
+  member: '#6b7280',
 };
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 'var(--font-size-xs)',
-  fontWeight: 'var(--font-weight-medium)',
-  marginBottom: 6,
-  color: 'var(--color-text-primary)',
-};
-
-const primaryBtnStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '0 14px',
-  height: 34,
-  background: 'var(--color-accent-primary)',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 'var(--radius-sm)',
-  fontSize: 'var(--font-size-xs)',
-  fontWeight: 'var(--font-weight-medium)',
-  cursor: 'pointer',
-  fontFamily: 'var(--font-family)',
-  transition: 'opacity 0.15s ease',
-};
-
-const secondaryBtnStyle: React.CSSProperties = {
-  ...primaryBtnStyle,
-  background: 'var(--color-bg-primary)',
-  color: 'var(--color-text-primary)',
-  border: '1px solid var(--color-border-primary)',
-};
-
-// ---------------------------------------------------------------------------
-// Role badge
-// ---------------------------------------------------------------------------
-
-const ROLE_STYLES: Record<string, { bg: string; text: string }> = {
-  owner: { bg: 'color-mix(in srgb, #7c3aed 10%, transparent)', text: '#7c3aed' },
-  admin: { bg: 'color-mix(in srgb, #2563eb 10%, transparent)', text: '#2563eb' },
-  member: { bg: 'color-mix(in srgb, #6b7280 10%, transparent)', text: '#6b7280' },
-};
-
-function RoleBadge({ role }: { role: string }) {
-  const s = ROLE_STYLES[role] ?? ROLE_STYLES.member;
-  return (
-    <span style={{
-      display: 'inline-flex',
-      padding: '2px 8px',
-      fontSize: 11,
-      fontWeight: 500,
-      borderRadius: 10,
-      background: s.bg,
-      color: s.text,
-      textTransform: 'capitalize',
-    }}>
-      {role}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Avatar
-// ---------------------------------------------------------------------------
-
-function UserAvatar({ name, email }: { name: string | null; email: string }) {
-  const initials = (name || email)
-    .split(/[\s@.]+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('');
-  return (
-    <div style={{
-      width: 32,
-      height: 32,
-      borderRadius: '50%',
-      background: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
-      color: 'var(--color-accent-primary)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 12,
-      fontWeight: 600,
-      flexShrink: 0,
-      letterSpacing: '0.02em',
-      userSelect: 'none',
-    }}>
-      {initials}
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Skeleton row
@@ -126,18 +34,28 @@ function UserAvatar({ name, email }: { name: string | null; email: string }) {
 
 function SkeletonRow() {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing-md)',
-      padding: 'var(--spacing-md) var(--spacing-lg)',
-    }}>
-      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--color-border-primary)', opacity: 0.5 }} />
-      <div style={{ flex: 1 }}>
-        <div style={{ width: 120, height: 14, borderRadius: 'var(--radius-sm)', background: 'var(--color-border-primary)', opacity: 0.5, marginBottom: 4 }} />
-        <div style={{ width: 180, height: 12, borderRadius: 'var(--radius-sm)', background: 'var(--color-border-primary)', opacity: 0.3 }} />
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 100px 100px 80px',
+        gap: 'var(--spacing-sm)',
+        alignItems: 'center',
+        padding: 'var(--spacing-md) var(--spacing-lg)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+        <Skeleton width={32} height={32} borderRadius="50%" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Skeleton width={100} height={13} borderRadius={3} />
+          <Skeleton width={40} height={10} borderRadius={3} />
+        </div>
       </div>
-      <div style={{ width: 50, height: 20, borderRadius: 10, background: 'var(--color-border-primary)', opacity: 0.3 }} />
+      <Skeleton width={160} height={13} borderRadius={3} />
+      <Skeleton width={56} height={20} borderRadius={10} />
+      <Skeleton width={64} height={12} borderRadius={3} />
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Skeleton width={60} height={26} borderRadius={4} />
+      </div>
     </div>
   );
 }
@@ -161,9 +79,11 @@ export function OrgMembersPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [addForm, setAddForm] = useState({ email: '', name: '', password: '', role: 'member' as TenantMemberRole });
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'member' as TenantMemberRole });
-  const [error, setError] = useState('');
+  const [addError, setAddError] = useState('');
+  const [inviteError, setInviteError] = useState('');
   const [inviteSuccess, setInviteSuccess] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmRemoveUser, setConfirmRemoveUser] = useState<{ userId: string; displayName: string } | null>(null);
 
   if (!tenantId) {
     return (
@@ -176,19 +96,19 @@ export function OrgMembersPage() {
 
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setAddError('');
     try {
       await createUser.mutateAsync(addForm);
       setShowAddModal(false);
       setAddForm({ email: '', name: '', password: '', role: 'member' });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create user');
+      setAddError(err.response?.data?.error || 'Failed to create user');
     }
   }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setInviteError('');
     setInviteSuccess('');
     try {
       await inviteUser.mutateAsync(inviteForm);
@@ -196,7 +116,7 @@ export function OrgMembersPage() {
       setShowInviteModal(false);
       setInviteForm({ email: '', role: 'member' });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to send invitation');
+      setInviteError(err.response?.data?.error || 'Failed to send invitation');
     }
   }
 
@@ -219,14 +139,22 @@ export function OrgMembersPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => setShowInviteModal(true)} style={secondaryBtnStyle}>
-            <Mail size={14} />
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<Mail size={14} />}
+            onClick={() => setShowInviteModal(true)}
+          >
             Invite
-          </button>
-          <button onClick={() => setShowAddModal(true)} style={primaryBtnStyle}>
-            <UserPlus size={14} />
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            icon={<UserPlus size={14} />}
+            onClick={() => setShowAddModal(true)}
+          >
             Add user
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -254,14 +182,13 @@ export function OrgMembersPage() {
       )}
 
       {/* Search */}
-      <div style={{ position: 'relative', maxWidth: 320 }}>
-        <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-tertiary)', pointerEvents: 'none' }} />
-        <input
+      <div style={{ maxWidth: 320 }}>
+        <Input
           type="text"
           placeholder="Search members..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ ...inputStyle, paddingLeft: 32 }}
+          iconLeft={<Search size={14} />}
         />
       </div>
 
@@ -321,7 +248,7 @@ export function OrgMembersPage() {
               >
                 {/* User */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', minWidth: 0 }}>
-                  <UserAvatar name={user.name} email={user.email} />
+                  <Avatar name={user.name} email={user.email} size={32} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{
                       fontSize: 'var(--font-size-sm)',
@@ -353,7 +280,13 @@ export function OrgMembersPage() {
                 {/* Role */}
                 <div>
                   {isCurrentUser ? (
-                    <RoleBadge role={user.role} />
+                    <Chip
+                      color={ROLE_COLORS[user.role] ?? ROLE_COLORS.member}
+                      height={20}
+                      style={{ textTransform: 'capitalize' }}
+                    >
+                      {user.role}
+                    </Chip>
                   ) : (
                     <select
                       value={user.role}
@@ -365,7 +298,7 @@ export function OrgMembersPage() {
                         border: '1px solid var(--color-border-primary)',
                         borderRadius: 'var(--radius-sm)',
                         background: 'var(--color-bg-primary)',
-                        color: (ROLE_STYLES[user.role] ?? ROLE_STYLES.member).text,
+                        color: ROLE_COLORS[user.role] ?? ROLE_COLORS.member,
                         cursor: 'pointer',
                         fontFamily: 'var(--font-family)',
                         outline: 'none',
@@ -386,29 +319,19 @@ export function OrgMembersPage() {
                 {/* Actions */}
                 <div style={{ textAlign: 'right' }}>
                   {!isCurrentUser && (
-                    <button
-                      onClick={() => {
-                        if (confirm(`Remove ${user.name || user.email} from the team?`)) {
-                          removeUser.mutate(user.userId);
-                        }
-                      }}
-                      style={{
-                        padding: '3px 10px',
-                        fontSize: 11,
-                        fontWeight: 500,
-                        background: 'transparent',
-                        color: '#dc2626',
-                        border: '1px solid color-mix(in srgb, #dc2626 25%, transparent)',
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-family)',
-                        transition: 'background 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'color-mix(in srgb, #dc2626 8%, transparent)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={<UserMinus size={13} />}
+                      onClick={() =>
+                        setConfirmRemoveUser({
+                          userId: user.userId,
+                          displayName: user.name || user.email,
+                        })
+                      }
                     >
                       Remove
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -417,135 +340,200 @@ export function OrgMembersPage() {
         )}
       </div>
 
+      {/* Remove user confirm dialog */}
+      <ConfirmDialog
+        open={confirmRemoveUser !== null}
+        onOpenChange={(open) => { if (!open) setConfirmRemoveUser(null); }}
+        title="Remove team member"
+        description={`Remove ${confirmRemoveUser?.displayName ?? 'this user'} from the team? They will lose access immediately.`}
+        confirmLabel="Remove"
+        destructive
+        onConfirm={() => {
+          if (confirmRemoveUser) removeUser.mutate(confirmRemoveUser.userId);
+        }}
+      />
+
       {/* Add user modal */}
-      {showAddModal && (
-        <ModalOverlay onClose={() => { setShowAddModal(false); setError(''); }}>
-          <h3 style={{ fontSize: 'var(--font-size-md)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-primary)' }}>
-            Add team member
-          </h3>
-          {error && <ErrorBanner message={error} />}
-          <form onSubmit={handleAddUser}>
-            <FormField label="Email">
-              <input type="email" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} required style={inputStyle} placeholder="user@company.com" />
-            </FormField>
-            <FormField label="Name">
-              <input type="text" value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} required style={inputStyle} placeholder="Full name" />
-            </FormField>
-            <FormField label="Password">
-              <input type="password" value={addForm.password} onChange={(e) => setAddForm({ ...addForm, password: e.target.value })} required minLength={8} style={inputStyle} placeholder="Min. 8 characters" />
-            </FormField>
-            <FormField label="Role" last>
-              <select value={addForm.role} onChange={(e) => setAddForm({ ...addForm, role: e.target.value as TenantMemberRole })} style={inputStyle}>
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-            </FormField>
-            <ModalActions
-              onCancel={() => { setShowAddModal(false); setError(''); }}
-              submitLabel={createUser.isPending ? 'Adding...' : 'Add user'}
+      <Modal
+        open={showAddModal}
+        onOpenChange={(open) => { if (!open) { setShowAddModal(false); setAddError(''); } }}
+        width={440}
+        title="Add team member"
+      >
+        <Modal.Header title="Add team member" />
+        <form onSubmit={handleAddUser}>
+          <Modal.Body>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+              {addError && (
+                <div style={{
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  background: 'color-mix(in srgb, var(--color-error) 8%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-error) 25%, transparent)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-error)',
+                  fontSize: 'var(--font-size-xs)',
+                }}>
+                  {addError}
+                </div>
+              )}
+              <Input
+                label="Email"
+                type="email"
+                value={addForm.email}
+                onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                required
+                placeholder="user@company.com"
+              />
+              <Input
+                label="Name"
+                type="text"
+                value={addForm.name}
+                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                required
+                placeholder="Full name"
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={addForm.password}
+                onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                required
+                minLength={8}
+                placeholder="Min. 8 characters"
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+                <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+                  Role
+                </label>
+                <select
+                  value={addForm.role}
+                  onChange={(e) => setAddForm({ ...addForm, role: e.target.value as TenantMemberRole })}
+                  style={{
+                    width: '100%',
+                    height: 34,
+                    padding: '0 var(--spacing-sm)',
+                    background: 'var(--color-bg-tertiary)',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: 'var(--font-size-md)',
+                    fontFamily: 'var(--font-family)',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => { setShowAddModal(false); setAddError(''); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
               disabled={createUser.isPending}
-            />
-          </form>
-        </ModalOverlay>
-      )}
+              style={{ opacity: createUser.isPending ? 0.7 : 1 }}
+            >
+              {createUser.isPending ? 'Adding...' : 'Add user'}
+            </Button>
+          </Modal.Footer>
+        </form>
+      </Modal>
 
       {/* Invite user modal */}
-      {showInviteModal && (
-        <ModalOverlay onClose={() => { setShowInviteModal(false); setError(''); }}>
-          <h3 style={{ fontSize: 'var(--font-size-md)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-primary)' }}>
-            Invite team member
-          </h3>
-          {error && <ErrorBanner message={error} />}
-          <form onSubmit={handleInvite}>
-            <FormField label="Email">
-              <input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} required style={inputStyle} placeholder="user@company.com" />
-            </FormField>
-            <FormField label="Role">
-              <select value={inviteForm.role} onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as TenantMemberRole })} style={inputStyle}>
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-            </FormField>
-            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginBottom: 'var(--spacing-lg)' }}>
-              The user will receive an invitation link to set up their account.
-            </p>
-            <ModalActions
-              onCancel={() => { setShowInviteModal(false); setError(''); }}
-              submitLabel={inviteUser.isPending ? 'Sending...' : 'Send invitation'}
-              disabled={inviteUser.isPending}
-            />
-          </form>
-        </ModalOverlay>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Reusable modal helpers
-// ---------------------------------------------------------------------------
-
-function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0,0,0,0.45)',
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          width: 420,
-          padding: 24,
-          background: 'var(--color-bg-primary)',
-          border: '1px solid var(--color-border-primary)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-lg)',
-        }}
-        onClick={(e) => e.stopPropagation()}
+      <Modal
+        open={showInviteModal}
+        onOpenChange={(open) => { if (!open) { setShowInviteModal(false); setInviteError(''); } }}
+        width={440}
+        title="Invite team member"
       >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function FormField({ label, children, last }: { label: string; children: React.ReactNode; last?: boolean }) {
-  return (
-    <div style={{ marginBottom: last ? 'var(--spacing-lg)' : 'var(--spacing-md)' }}>
-      <label style={labelStyle}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function ModalActions({ onCancel, submitLabel, disabled }: { onCancel: () => void; submitLabel: string; disabled?: boolean }) {
-  return (
-    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-      <button type="button" onClick={onCancel} style={secondaryBtnStyle}>Cancel</button>
-      <button type="submit" disabled={disabled} style={{ ...primaryBtnStyle, opacity: disabled ? 0.7 : 1 }}>{submitLabel}</button>
-    </div>
-  );
-}
-
-function ErrorBanner({ message }: { message: string }) {
-  return (
-    <div style={{
-      padding: 'var(--spacing-sm) var(--spacing-md)',
-      marginBottom: 'var(--spacing-md)',
-      background: 'color-mix(in srgb, #dc2626 8%, transparent)',
-      border: '1px solid color-mix(in srgb, #dc2626 25%, transparent)',
-      borderRadius: 'var(--radius-sm)',
-      color: '#dc2626',
-      fontSize: 'var(--font-size-xs)',
-    }}>
-      {message}
+        <Modal.Header title="Invite team member" />
+        <form onSubmit={handleInvite}>
+          <Modal.Body>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+              {inviteError && (
+                <div style={{
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  background: 'color-mix(in srgb, var(--color-error) 8%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-error) 25%, transparent)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-error)',
+                  fontSize: 'var(--font-size-xs)',
+                }}>
+                  {inviteError}
+                </div>
+              )}
+              <Input
+                label="Email"
+                type="email"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                required
+                placeholder="user@company.com"
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+                <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+                  Role
+                </label>
+                <select
+                  value={inviteForm.role}
+                  onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as TenantMemberRole })}
+                  style={{
+                    width: '100%',
+                    height: 34,
+                    padding: '0 var(--spacing-sm)',
+                    background: 'var(--color-bg-tertiary)',
+                    border: '1px solid var(--color-border-primary)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: 'var(--font-size-md)',
+                    fontFamily: 'var(--font-family)',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
+                The user will receive an invitation link to set up their account.
+              </p>
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => { setShowInviteModal(false); setInviteError(''); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              disabled={inviteUser.isPending}
+              style={{ opacity: inviteUser.isPending ? 0.7 : 1 }}
+            >
+              {inviteUser.isPending ? 'Sending...' : 'Send invitation'}
+            </Button>
+          </Modal.Footer>
+        </form>
+      </Modal>
     </div>
   );
 }

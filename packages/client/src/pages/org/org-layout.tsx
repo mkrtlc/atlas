@@ -12,6 +12,9 @@ import {
 import { useAuthStore } from '../../stores/auth-store';
 import { useMyTenants, useCreateTenant } from '../../hooks/use-platform';
 import { ROUTES } from '../../config/routes';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { ScrollArea } from '../../components/ui/scroll-area';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -142,11 +145,14 @@ export function OrgLayout() {
 
   const navStyle: CSSProperties = {
     flex: 1,
-    padding: 'var(--spacing-sm)',
+    overflow: 'hidden',
+  };
+
+  const navInnerStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     gap: 2,
-    overflowY: 'auto',
+    padding: 'var(--spacing-sm)',
   };
 
   const sidebarFooterStyle: CSSProperties = {
@@ -218,43 +224,26 @@ export function OrgLayout() {
 
         {/* Nav */}
         <nav style={navStyle} aria-label="Organization navigation">
-          {NAV_ITEMS.map((item) => (
-            <NavLinkItem key={item.to} item={item} />
-          ))}
+          <ScrollArea>
+            <div style={navInnerStyle}>
+              {NAV_ITEMS.map((item) => (
+                <NavLinkItem key={item.to} item={item} />
+              ))}
+            </div>
+          </ScrollArea>
         </nav>
 
         {/* Footer — back to home */}
         <div style={sidebarFooterStyle}>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<ArrowLeft size={14} />}
             onClick={() => navigate(ROUTES.HOME)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-sm)',
-              width: '100%',
-              padding: '0 var(--spacing-sm)',
-              height: 34,
-              borderRadius: 'var(--radius-sm)',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--color-text-secondary)',
-              fontSize: 'var(--font-size-sm)',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-family)',
-              transition: 'background var(--transition-fast), color var(--transition-fast)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--color-surface-hover)';
-              e.currentTarget.style.color = 'var(--color-text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--color-text-secondary)';
-            }}
+            style={{ width: '100%', justifyContent: 'flex-start' }}
           >
-            <ArrowLeft size={14} />
             Back to home
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -367,18 +356,6 @@ function CreateOrgPrompt() {
     }
   }
 
-  const inputStyle: CSSProperties = {
-    width: '100%',
-    padding: '8px 12px',
-    border: '1px solid #d0d5dd',
-    borderRadius: 4,
-    fontSize: 14,
-    outline: 'none',
-    background: 'var(--color-bg-primary)',
-    color: 'var(--color-text-primary)',
-    boxSizing: 'border-box' as const,
-  };
-
   return (
     <div style={{
       display: 'flex',
@@ -423,10 +400,8 @@ function CreateOrgPrompt() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--color-text-primary)' }}>
-              Organization name
-            </label>
-            <input
+            <Input
+              label="Organization name"
               type="text"
               value={name}
               onChange={(e) => {
@@ -436,63 +411,39 @@ function CreateOrgPrompt() {
               }}
               required
               placeholder="Acme Corp"
-              style={inputStyle}
             />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--color-text-primary)' }}>
-              URL slug
-            </label>
-            <input
+            <Input
+              label="URL slug"
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
               required
               placeholder="acme-corp"
               pattern="[a-z0-9][a-z0-9\-]*[a-z0-9]"
-              style={inputStyle}
             />
             <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 4 }}>
               Lowercase letters, numbers, and hyphens only.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => navigate(ROUTES.HOME)}
-              style={{
-                flex: 1,
-                height: 34,
-                background: 'var(--color-bg-primary)',
-                color: 'var(--color-text-primary)',
-                border: '1px solid #d0d5dd',
-                borderRadius: 4,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-family)',
-              }}
+              style={{ flex: 1 }}
             >
               Back to home
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={createTenant.isPending}
-              style={{
-                flex: 1,
-                height: 34,
-                background: '#13715B',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 4,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-family)',
-              }}
+              style={{ flex: 1 }}
             >
               {createTenant.isPending ? 'Creating...' : 'Create organization'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -6,6 +6,9 @@ import { useTenantUsers, useMyTenants } from '../../hooks/use-platform';
 import { useInstalledApps } from '../../hooks/use-installed-apps';
 import { ROUTES } from '../../config/routes';
 import { AppIcon } from '../../components/marketplace/app-icons';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Chip } from '../../components/ui/chip';
+import { Button } from '../../components/ui/button';
 
 // ---------------------------------------------------------------------------
 // StatCard
@@ -94,6 +97,7 @@ function StatCard({ label, value, color, icon, onClick }: StatCardProps) {
 function SkeletonCard() {
   return (
     <div
+      aria-hidden="true"
       style={{
         background: 'var(--color-bg-primary)',
         border: '1px solid var(--color-border-primary)',
@@ -105,9 +109,9 @@ function SkeletonCard() {
         boxShadow: 'var(--shadow-sm)',
       }}
     >
-      <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--color-border-primary)', opacity: 0.5 }} />
-      <div style={{ width: 48, height: 28, borderRadius: 'var(--radius-sm)', background: 'var(--color-border-primary)', opacity: 0.5 }} />
-      <div style={{ width: 88, height: 14, borderRadius: 'var(--radius-sm)', background: 'var(--color-border-primary)', opacity: 0.35 }} />
+      <Skeleton width={40} height={40} borderRadius="var(--radius-md)" />
+      <Skeleton width={48} height={28} borderRadius="var(--radius-sm)" />
+      <Skeleton width={88} height={14} borderRadius="var(--radius-sm)" />
     </div>
   );
 }
@@ -279,24 +283,15 @@ export function OrgOverviewPage() {
             >
               Installed apps
             </h3>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<ArrowRight size={12} />}
               onClick={() => navigate(ROUTES.ORG_APPS)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-accent-primary)',
-                fontSize: 'var(--font-size-xs)',
-                fontWeight: 'var(--font-weight-medium)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-family)',
-              }}
+              style={{ color: 'var(--color-accent-primary)', flexDirection: 'row-reverse' }}
             >
               View all
-              <ArrowRight size={12} />
-            </button>
+            </Button>
           </div>
           <div
             style={{
@@ -358,22 +353,12 @@ function StatusDot({ status }: { status: string }) {
   const isRunning = status === 'running';
   const color = isRunning ? 'var(--color-success, #16a34a)' : '#6b7280';
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '3px 10px',
-        fontSize: 'var(--font-size-xs)',
-        fontWeight: 'var(--font-weight-medium)',
-        borderRadius: 12,
-        background: `color-mix(in srgb, ${color} 10%, transparent)`,
-        color,
-        textTransform: 'capitalize',
-      }}
-    >
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
+    <Chip color={color} height={24}>
+      <span
+        aria-hidden="true"
+        style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }}
+      />
       {status}
-    </span>
+    </Chip>
   );
 }

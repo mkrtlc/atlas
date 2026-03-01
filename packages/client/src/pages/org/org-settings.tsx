@@ -8,7 +8,6 @@ import {
   HardDrive,
   MemoryStick,
   Calendar,
-  Hash,
   Shield,
   Copy,
   Check,
@@ -16,6 +15,9 @@ import {
 import { useAuthStore } from '../../stores/auth-store';
 import { useMyTenants, useTenantUsers } from '../../hooks/use-platform';
 import { useInstalledApps } from '../../hooks/use-installed-apps';
+import { Chip } from '../../components/ui/chip';
+import { Skeleton } from '../../components/ui/skeleton';
+import { IconButton } from '../../components/ui/icon-button';
 
 // ---------------------------------------------------------------------------
 // Styles
@@ -83,53 +85,44 @@ function formatBytes(mb: number): string {
   return `${mb} MB`;
 }
 
+const PLAN_COLORS: Record<string, string> = {
+  starter: '#6b7280',
+  pro: 'var(--color-accent-primary)',
+  enterprise: '#7c3aed',
+};
+
 function PlanBadge({ plan }: { plan: string }) {
-  const colors: Record<string, { bg: string; fg: string }> = {
-    starter: { bg: 'color-mix(in srgb, #6b7280 12%, transparent)', fg: '#6b7280' },
-    pro: { bg: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)', fg: 'var(--color-accent-primary)' },
-    enterprise: { bg: 'color-mix(in srgb, #7c3aed 12%, transparent)', fg: '#7c3aed' },
-  };
-  const c = colors[plan] ?? colors.starter;
+  const color = PLAN_COLORS[plan] ?? PLAN_COLORS.starter;
   return (
-    <span
+    <Chip
+      color={color}
+      height={20}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '2px 10px',
-        borderRadius: 12,
-        fontSize: 'var(--font-size-xs)',
+        padding: '0 10px',
         fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
-        background: c.bg,
-        color: c.fg,
         textTransform: 'capitalize',
       }}
     >
       {plan}
-    </span>
+    </Chip>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const isActive = status === 'active';
-  const color = isActive ? 'var(--color-success, #16a34a)' : '#ef4444';
+  const color = isActive ? 'var(--color-success, #16a34a)' : 'var(--color-error, #ef4444)';
   return (
-    <span
+    <Chip
+      color={color}
+      height={20}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '2px 10px',
-        borderRadius: 12,
-        fontSize: 'var(--font-size-xs)',
+        padding: '0 10px',
         fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-        background: `color-mix(in srgb, ${color} 10%, transparent)`,
-        color,
         textTransform: 'capitalize',
       }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
       {status}
-    </span>
+    </Chip>
   );
 }
 
@@ -157,25 +150,16 @@ function CopyableValue({ value }: { value: string }) {
       >
         {value}
       </span>
-      <button
+      <IconButton
+        icon={copied ? <Check size={13} /> : <Copy size={13} />}
+        label={copied ? 'Copied' : 'Copy to clipboard'}
+        size={24}
+        tooltip
+        tooltipSide="top"
+        active={copied}
+        activeColor="var(--color-success, #16a34a)"
         onClick={handleCopy}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 24,
-          height: 24,
-          borderRadius: 'var(--radius-sm)',
-          border: 'none',
-          background: 'transparent',
-          color: copied ? 'var(--color-success, #16a34a)' : 'var(--color-text-tertiary)',
-          cursor: 'pointer',
-          transition: 'color 0.15s ease',
-        }}
-        title="Copy to clipboard"
-      >
-        {copied ? <Check size={13} /> : <Copy size={13} />}
-      </button>
+      />
     </div>
   );
 }
@@ -216,12 +200,12 @@ function SkeletonBlock() {
   return (
     <div style={sectionStyle}>
       <div style={sectionHeaderStyle}>
-        <div style={{ width: 120, height: 16, borderRadius: 'var(--radius-sm)', background: 'var(--color-border-primary)', opacity: 0.5 }} />
+        <Skeleton width={120} height={16} borderRadius="var(--radius-sm)" />
       </div>
       {[1, 2, 3].map((i) => (
         <div key={i} style={{ ...rowStyle, borderBottom: i < 3 ? rowStyle.borderBottom : 'none' }}>
-          <div style={{ width: 100, height: 14, borderRadius: 'var(--radius-sm)', background: 'var(--color-border-primary)', opacity: 0.4 }} />
-          <div style={{ width: 180, height: 14, borderRadius: 'var(--radius-sm)', background: 'var(--color-border-primary)', opacity: 0.3 }} />
+          <Skeleton width={100} height={14} borderRadius="var(--radius-sm)" />
+          <Skeleton width={180} height={14} borderRadius="var(--radius-sm)" />
         </div>
       ))}
     </div>
