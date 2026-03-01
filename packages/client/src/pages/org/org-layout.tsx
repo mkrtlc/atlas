@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppWindow,
   ArrowLeft,
@@ -8,7 +9,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
-import { useMyTenants } from '../../hooks/use-platform';
+import { useMyTenants, useCreateTenant } from '../../hooks/use-platform';
 import { ROUTES } from '../../config/routes';
 
 // ---------------------------------------------------------------------------
@@ -55,7 +56,7 @@ export function OrgLayout() {
   const { pathname } = useLocation();
 
   if (!tenantId) {
-    return <Navigate to={ROUTES.HOME} replace />;
+    return <CreateOrgPrompt />;
   }
 
   const pageTitle = getPageTitle(pathname);
@@ -328,5 +329,161 @@ function NavLinkItem({ item }: { item: NavItem }) {
       </span>
       {item.label}
     </NavLink>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CreateOrgPrompt — shown when user has no tenant
+// ---------------------------------------------------------------------------
+
+function CreateOrgPrompt() {
+  const navigate = useNavigate();
+  const createTenant = useCreateTenant();
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    try {
+      await createTenant.mutateAsync({ name, slug });
+      // After creating, reload the page to pick up the new tenant
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create organization');
+    }
+  }
+
+  const inputStyle: CSSProperties = {
+    width: '100%',
+    padding: '8px 12px',
+    border: '1px solid #d0d5dd',
+    borderRadius: 4,
+    fontSize: 14,
+    outline: 'none',
+    background: 'var(--color-bg-primary)',
+    color: 'var(--color-text-primary)',
+    boxSizing: 'border-box' as const,
+  };
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      background: 'var(--color-bg-secondary)',
+      fontFamily: 'var(--font-family)',
+    }}>
+      <div style={{
+        width: 440,
+        padding: 32,
+        background: 'var(--color-bg-primary)',
+        border: '1px solid var(--color-border-primary)',
+        borderRadius: 12,
+      }}>
+        <div style={{
+          width: 48,
+          height: 48,
+          borderRadius: 12,
+          background: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
+          color: 'var(--color-accent-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 20,
+        }}>
+          <Building2 size={24} />
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 8 }}>
+          Create your organization
+        </h2>
+        <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
+          Organizations let you manage team members and install apps. Create one to get started.
+        </p>
+
+        {error && (
+          <div style={{ padding: '8px 12px', marginBottom: 16, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 4, color: '#dc2626', fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--color-text-primary)' }}>
+              Organization name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                // Auto-generate slug from name
+                setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+              }}
+              required
+              placeholder="Acme Corp"
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--color-text-primary)' }}>
+              URL slug
+            </label>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              required
+              placeholder="acme-corp"
+              pattern="[a-z0-9][a-z0-9-]*[a-z0-9]"
+              style={inputStyle}
+            />
+            <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 4 }}>
+              Lowercase letters, numbers, and hyphens only.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => navigate(ROUTES.HOME)}
+              style={{
+                flex: 1,
+                height: 34,
+                background: 'var(--color-bg-primary)',
+                color: 'var(--color-text-primary)',
+                border: '1px solid #d0d5dd',
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-family)',
+              }}
+            >
+              Back to home
+            </button>
+            <button
+              type="submit"
+              disabled={createTenant.isPending}
+              style={{
+                flex: 1,
+                height: 34,
+                background: '#13715B',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-family)',
+              }}
+            >
+              {createTenant.isPending ? 'Creating...' : 'Create organization'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
