@@ -74,7 +74,7 @@ export const queryKeys = {
   platform: {
     all: ['platform'] as const,
     catalog: (category?: string) => ['platform', 'catalog', category] as const,
-    catalogApp: (manifestId: string) => ['platform', 'catalog', manifestId] as const,
+    catalogApp: (manifestId: string) => ['platform', 'catalog-app', manifestId] as const,
     tenants: ['platform', 'tenants'] as const,
     installations: (tenantId: string) => ['platform', 'installations', tenantId] as const,
   },
@@ -92,5 +92,13 @@ export const queryKeys = {
     versions: (id: string) => ['drive', 'versions', id] as const,
     shareLinks: (id: string) => ['drive', 'shareLinks', id] as const,
     byType: (type: string) => ['drive', 'byType', type] as const,
+  },
+  admin: {
+    all: ['admin'] as const,
+    overview: ['admin', 'overview'] as const,
+    tenants: ['admin', 'tenants'] as const,
+    tenant: (id: string) => ['admin', 'tenant', id] as const,
+    installations: ['admin', 'installations'] as const,
+    containers: ['admin', 'containers'] as const,
   },
 };

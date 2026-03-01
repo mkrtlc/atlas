@@ -14,9 +14,11 @@ import uploadRoutes from './upload.routes';
 import driveRoutes from './drive.routes';
 import notificationRoutes from './notification.routes';
 import platformRoutes from './platform.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
+router.use('/admin', adminRoutes);
 router.use('/auth', authRoutes);
 router.use('/threads', threadsRoutes);
 router.use('/search', searchRoutes);

@@ -22,6 +22,13 @@ import { CommandPalette } from './components/ui/command-palette';
 import { ErrorBoundary } from './components/ui/error-boundary';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { api } from './lib/api-client';
+import { AdminLoginPage } from './pages/admin/admin-login';
+import { AdminLayout, AdminProtectedRoute } from './pages/admin/admin-layout';
+import { AdminOverviewPage } from './pages/admin/admin-overview';
+import { AdminTenantsPage } from './pages/admin/admin-tenants';
+import { AdminTenantDetailPage } from './pages/admin/admin-tenant-detail';
+import { AdminInstallationsPage } from './pages/admin/admin-installations';
+import { AdminContainersPage } from './pages/admin/admin-containers';
 
 const DEV_MODE = import.meta.env.DEV && !import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -228,6 +235,23 @@ export function App() {
                   path={ROUTES.MARKETPLACE}
                   element={<AuthReadyGate><MarketplacePage /></AuthReadyGate>}
                 />
+                {/* Admin routes */}
+                <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginPage />} />
+                <Route
+                  path={ROUTES.ADMIN}
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminLayout />
+                    </AdminProtectedRoute>
+                  }
+                >
+                  <Route index element={<AdminOverviewPage />} />
+                  <Route path="tenants" element={<AdminTenantsPage />} />
+                  <Route path="tenants/:id" element={<AdminTenantDetailPage />} />
+                  <Route path="installations" element={<AdminInstallationsPage />} />
+                  <Route path="containers" element={<AdminContainersPage />} />
+                </Route>
+
                 <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
               </Routes>
               <CommandPalette />

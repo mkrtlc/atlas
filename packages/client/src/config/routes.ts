@@ -19,4 +19,11 @@ export const ROUTES = {
   DRIVE: '/drive',
   DRIVE_FOLDER: '/drive/folder/:id',
   MARKETPLACE: '/marketplace',
+  ADMIN_LOGIN: '/admin/login',
+  ADMIN: '/admin',
+  ADMIN_OVERVIEW: '/admin',
+  ADMIN_TENANTS: '/admin/tenants',
+  ADMIN_TENANT_DETAIL: '/admin/tenants/:id',
+  ADMIN_INSTALLATIONS: '/admin/installations',
+  ADMIN_CONTAINERS: '/admin/containers',
 } as const;

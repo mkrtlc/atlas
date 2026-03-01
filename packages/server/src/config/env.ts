@@ -24,6 +24,10 @@ const envSchema = z.object({
   S3_BACKUP_BUCKET: z.string().optional(),           // S3 bucket for app backups
   OIDC_SIGNING_KEY: z.string().min(100, 'OIDC_SIGNING_KEY must be a PEM-encoded RSA private key').optional(),
   PLATFORM_PUBLIC_URL: z.string().url().optional(),  // e.g. https://atlas.so
+
+  // ─── System Admin ──────────────────────────────────────────────────────────
+  ADMIN_USERNAME: z.string().optional(),
+  ADMIN_PASSWORD_HASH: z.string().optional(),        // bcrypt hash
 });
 
 export const env = envSchema.parse(process.env);
