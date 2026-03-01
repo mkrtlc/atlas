@@ -1,0 +1,44 @@
+{
+  "manifestVersion": 1,
+  "id": "com.atlas.nocodb",
+  "name": "NocoDB",
+  "version": "0.202.10",
+  "description": "Open-source Airtable alternative — turn any database into a smart spreadsheet with REST APIs, views, forms, and automations.",
+  "category": "productivity",
+  "tags": ["database", "no-code", "spreadsheet", "api"],
+  "ui": {
+    "icon": "https://cdn.atlas.so/icons/nocodb.svg",
+    "color": "#4A90E2",
+    "screenshots": [
+      "https://cdn.atlas.so/screenshots/nocodb-1.png",
+      "https://cdn.atlas.so/screenshots/nocodb-2.png"
+    ]
+  },
+  "runtime": {
+    "image": "registry.atlas.so/apps/nocodb:0.202.10",
+    "httpPort": 8080,
+    "healthCheckPath": "/api/v1/health",
+    "healthCheckTimeoutSeconds": 120
+  },
+  "resources": {
+    "memoryMb": 512,
+    "cpuMillicores": 250,
+    "storageMb": 2048
+  },
+  "addons": {
+    "postgresql": true,
+    "redis": false,
+    "smtp": false,
+    "s3": false
+  },
+  "persistentDirs": ["/app/data"],
+  "sso": {
+    "method": "oidc",
+    "oidcCallbackPath": "/auth/oidc/callback"
+  },
+  "lifecycle": {
+    "backupCommand": "/app/scripts/backup.sh",
+    "restoreCommand": "/app/scripts/restore.sh"
+  },
+  "minPlan": "starter"
+}

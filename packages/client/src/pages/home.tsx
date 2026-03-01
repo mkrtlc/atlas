@@ -8,6 +8,7 @@ import {
   Mail, Calendar, FileText, Pencil, CheckSquare, Table2,
   Clock, ArrowRight, Settings,
   Receipt, Users, Handshake, HardDrive,
+  ExternalLink, Store,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
 import { useThreadCounts } from '../hooks/use-threads';
@@ -17,6 +18,7 @@ import { useDocumentList } from '../hooks/use-documents';
 import { useDrawingList } from '../hooks/use-drawings';
 import { useTableList } from '../hooks/use-tables';
 import { useDriveStorage } from '../hooks/use-drive';
+import { useInstalledApps } from '../hooks/use-installed-apps';
 import { ROUTES } from '../config/routes';
 import { useUIStore } from '../stores/ui-store';
 import { buildGoogleOAuthUrl } from '../components/auth/login-page';
@@ -468,6 +470,33 @@ function AppCard({
         </span>
       )}
     </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Installed marketplace apps
+// ---------------------------------------------------------------------------
+
+function InstalledAppCards() {
+  const { installations, tenant } = useInstalledApps();
+  const runningApps = installations.filter((a) => a.status === 'running');
+
+  if (runningApps.length === 0) return null;
+
+  return (
+    <>
+      {runningApps.map((app) => (
+        <AppCard
+          key={app.id}
+          icon={ExternalLink}
+          label={app.name ?? app.subdomain}
+          color={app.color ?? '#4A90E2'}
+          onClick={() =>
+            window.open(`https://${app.subdomain}.${tenant?.slug ?? ''}.atlas.so`, '_blank')
+          }
+        />
+      ))}
+    </>
   );
 }
 
@@ -1134,6 +1163,15 @@ export function HomePage() {
             label="CRM"
             color="#8b5cf6"
             upcoming
+          />
+          {/* Installed marketplace apps */}
+          <InstalledAppCards />
+          {/* Marketplace link */}
+          <AppCard
+            icon={Store}
+            label="Marketplace"
+            color="#374151"
+            onClick={() => navigate(ROUTES.MARKETPLACE)}
           />
         </div>
 

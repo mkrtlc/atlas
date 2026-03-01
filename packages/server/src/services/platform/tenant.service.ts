@@ -1,0 +1,79 @@
+import { eq, and } from 'drizzle-orm';
+import { getPlatformDb } from '../../config/platform-database';
+import { tenants, tenantMembers } from '../../db/schema-platform';
+import { logger } from '../../utils/logger';
+import type { CreateTenantInput, TenantPlan } from '@atlasmail/shared';
+
+export async function createTenant(input: CreateTenantInput, ownerId: string) {
+  const db = getPlatformDb();
+  const k8sNamespace = `tenant-${input.slug}`;
+
+  const [tenant] = await db.insert(tenants).values({
+    slug: input.slug,
+    name: input.name,
+    plan: input.plan ?? 'starter',
+    ownerId,
+    k8sNamespace,
+  }).returning();
+
+  // Add owner as first member
+  await db.insert(tenantMembers).values({
+    tenantId: tenant.id,
+    userId: ownerId,
+    role: 'owner',
+  });
+
+  logger.info({ tenantId: tenant.id, slug: input.slug }, 'Tenant created');
+  return tenant;
+}
+
+export async function getTenantById(id: string) {
+  const db = getPlatformDb();
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
+  return tenant ?? null;
+}
+
+export async function getTenantBySlug(slug: string) {
+  const db = getPlatformDb();
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  return tenant ?? null;
+}
+
+export async function listTenantsForUser(userId: string) {
+  const db = getPlatformDb();
+  const memberships = await db
+    .select({
+      tenant: tenants,
+      role: tenantMembers.role,
+    })
+    .from(tenantMembers)
+    .innerJoin(tenants, eq(tenantMembers.tenantId, tenants.id))
+    .where(eq(tenantMembers.userId, userId));
+
+  return memberships.map((m) => ({ ...m.tenant, role: m.role }));
+}
+
+export async function getTenantMembership(tenantId: string, userId: string) {
+  const db = getPlatformDb();
+  const [membership] = await db
+    .select()
+    .from(tenantMembers)
+    .where(and(eq(tenantMembers.tenantId, tenantId), eq(tenantMembers.userId, userId)))
+    .limit(1);
+  return membership ?? null;
+}
+
+export async function addTenantMember(tenantId: string, userId: string, role: string) {
+  const db = getPlatformDb();
+  await db.insert(tenantMembers).values({ tenantId, userId, role }).onConflictDoNothing();
+}
+
+export async function updateTenantPlan(tenantId: string, plan: TenantPlan) {
+  const db = getPlatformDb();
+  const [updated] = await db
+    .update(tenants)
+    .set({ plan, updatedAt: new Date() })
+    .where(eq(tenants.id, tenantId))
+    .returning();
+  return updated;
+}

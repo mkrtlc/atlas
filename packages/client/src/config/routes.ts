@@ -18,4 +18,5 @@ export const ROUTES = {
   TABLE_DETAIL: '/tables/:id',
   DRIVE: '/drive',
   DRIVE_FOLDER: '/drive/folder/:id',
+  MARKETPLACE: '/marketplace',
 } as const;

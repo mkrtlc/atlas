@@ -16,6 +16,7 @@ import { DrawPage } from './pages/draw';
 import { TasksPage } from './pages/tasks';
 import { TablesPage } from './pages/tables';
 import { DrivePage } from './pages/drive';
+import { MarketplacePage } from './pages/marketplace';
 import { HomePage } from './pages/home';
 import { CommandPalette } from './components/ui/command-palette';
 import { ErrorBoundary } from './components/ui/error-boundary';
@@ -222,6 +223,10 @@ export function App() {
                 <Route
                   path={ROUTES.DRIVE_FOLDER}
                   element={<AuthReadyGate><DrivePage /></AuthReadyGate>}
+                />
+                <Route
+                  path={ROUTES.MARKETPLACE}
+                  element={<AuthReadyGate><MarketplacePage /></AuthReadyGate>}
                 />
                 <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
               </Routes>

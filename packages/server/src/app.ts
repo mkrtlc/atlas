@@ -9,6 +9,7 @@ import shareRoutes from './routes/share.routes';
 import { errorHandler } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 import { authMiddleware } from './middleware/auth';
+import oidcRoutes from './routes/oidc.routes';
 
 export function createApp() {
   const app = express();
@@ -30,6 +31,9 @@ export function createApp() {
 
   // Public share routes — no auth required
   app.use('/api/v1/share', shareRoutes);
+
+  // OIDC discovery + auth endpoints — public (apps need to access without Atlas JWT)
+  app.use('/oidc', oidcRoutes);
 
   // Serve uploaded files (auth via query token)
   app.use('/api/v1/uploads', authMiddleware, express.static(path.join(__dirname, '../uploads')));

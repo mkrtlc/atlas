@@ -15,6 +15,14 @@ const envSchema = z.object({
   TOKEN_ENCRYPTION_KEY: z.string().min(32),
   SERVER_PUBLIC_URL: z.string().url().default('http://localhost:3001'),
   GOOGLE_PUBSUB_TOPIC: z.string().optional(), // e.g. projects/my-proj/topics/gmail-push
+
+  // ─── Platform (optional — only needed when marketplace features are enabled) ──
+  DATABASE_PLATFORM_URL: z.string().optional(),     // PostgreSQL connection string for control plane
+  ADDON_PG_ADMIN_URL: z.string().optional(),         // PostgreSQL admin URL for provisioning app DBs
+  ADDON_REDIS_URL: z.string().optional(),            // Redis URL for addon provisioning
+  S3_BACKUP_BUCKET: z.string().optional(),           // S3 bucket for app backups
+  OIDC_SIGNING_KEY: z.string().optional(),           // RSA private key (PEM) for OIDC token signing
+  PLATFORM_PUBLIC_URL: z.string().optional(),        // e.g. https://atlas.so
 });
 
 export const env = envSchema.parse(process.env);

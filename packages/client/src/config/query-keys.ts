@@ -71,6 +71,13 @@ export const queryKeys = {
     all: ['notifications'] as const,
     unreadCount: ['notifications', 'unread-count'] as const,
   },
+  platform: {
+    all: ['platform'] as const,
+    catalog: (category?: string) => ['platform', 'catalog', category] as const,
+    catalogApp: (manifestId: string) => ['platform', 'catalog', manifestId] as const,
+    tenants: ['platform', 'tenants'] as const,
+    installations: (tenantId: string) => ['platform', 'installations', tenantId] as const,
+  },
   drive: {
     all: ['drive'] as const,
     items: (parentId?: string | null) => ['drive', 'items', parentId ?? 'root'] as const,

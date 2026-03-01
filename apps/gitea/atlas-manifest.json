@@ -1,0 +1,44 @@
+{
+  "manifestVersion": 1,
+  "id": "com.atlas.gitea",
+  "name": "Gitea",
+  "version": "1.22.3",
+  "description": "Lightweight, self-hosted Git service — code hosting, pull requests, issue tracking, CI/CD, and packages.",
+  "category": "development",
+  "tags": ["git", "devops", "ci-cd", "code-hosting"],
+  "ui": {
+    "icon": "https://cdn.atlas.so/icons/gitea.svg",
+    "color": "#609926",
+    "screenshots": [
+      "https://cdn.atlas.so/screenshots/gitea-1.png",
+      "https://cdn.atlas.so/screenshots/gitea-2.png"
+    ]
+  },
+  "runtime": {
+    "image": "registry.atlas.so/apps/gitea:1.22.3",
+    "httpPort": 3000,
+    "healthCheckPath": "/api/healthz",
+    "healthCheckTimeoutSeconds": 90
+  },
+  "resources": {
+    "memoryMb": 256,
+    "cpuMillicores": 200,
+    "storageMb": 5120
+  },
+  "addons": {
+    "postgresql": true,
+    "redis": true,
+    "smtp": false,
+    "s3": false
+  },
+  "persistentDirs": ["/data"],
+  "sso": {
+    "method": "oidc",
+    "oidcCallbackPath": "/user/oauth2/atlas/callback"
+  },
+  "lifecycle": {
+    "backupCommand": "/app/scripts/backup.sh",
+    "restoreCommand": "/app/scripts/restore.sh"
+  },
+  "minPlan": "starter"
+}

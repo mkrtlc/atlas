@@ -13,3 +13,4 @@ export * from './task';
 export * from './table';
 export * from './drive';
 export * from './notification';
+export * from './platform';
