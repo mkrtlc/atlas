@@ -43,10 +43,11 @@ export async function deployAppContainer(opts: DeployContainerOpts) {
   const hostname = `${subdomain}.${tenantSlug}.localhost`;
 
   // Pull image first (no-op if already present)
+  // Use linux/amd64 platform to ensure compatibility on ARM Macs (runs via Rosetta)
   logger.info({ image }, 'Pulling Docker image');
   try {
     await new Promise<void>((resolve, reject) => {
-      docker.pull(image, {}, (err: Error | null, stream?: NodeJS.ReadableStream) => {
+      docker.pull(image, { platform: 'linux/amd64' }, (err: Error | null, stream?: NodeJS.ReadableStream) => {
         if (err) return reject(err);
         if (!stream) return reject(new Error('No stream returned from pull'));
         docker.modem.followProgress(stream, (pullErr: Error | null) => {
@@ -97,7 +98,9 @@ export async function deployAppContainer(opts: DeployContainerOpts) {
       // Allow container to reach the host (for OIDC issuer)
       ExtraHosts: ['host.docker.internal:host-gateway'],
     },
-  });
+    // Force amd64 platform for images without ARM builds (runs via Rosetta on Apple Silicon)
+    platform: 'linux/amd64',
+  } as any);
 
   await container.start();
   logger.info({ name, image, hostname }, 'Docker container started');
