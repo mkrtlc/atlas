@@ -19,11 +19,14 @@ import { TasksPage } from './pages/tasks';
 import { TablesPage } from './pages/tables';
 import { DrivePage } from './pages/drive';
 import { MarketplacePage } from './pages/marketplace';
-import { TeamSettingsPage } from './pages/team-settings';
 import { HomePage } from './pages/home';
 import { CommandPalette } from './components/ui/command-palette';
 import { ErrorBoundary } from './components/ui/error-boundary';
 import { useEffect, type ReactNode } from 'react';
+import { OrgLayout } from './pages/org/org-layout';
+import { OrgOverviewPage } from './pages/org/org-overview';
+import { OrgMembersPage } from './pages/org/org-members';
+import { OrgAppsPage } from './pages/org/org-apps';
 import { AdminLoginPage } from './pages/admin/admin-login';
 import { AdminLayout, AdminProtectedRoute } from './pages/admin/admin-layout';
 import { AdminOverviewPage } from './pages/admin/admin-overview';
@@ -178,8 +181,17 @@ export function App() {
                 />
                 <Route
                   path={ROUTES.TENANT_USERS}
-                  element={<ProtectedRoute><TeamSettingsPage /></ProtectedRoute>}
+                  element={<Navigate to={ROUTES.ORG_MEMBERS} replace />}
                 />
+                {/* Org routes */}
+                <Route
+                  path={ROUTES.ORG}
+                  element={<ProtectedRoute><OrgLayout /></ProtectedRoute>}
+                >
+                  <Route index element={<OrgOverviewPage />} />
+                  <Route path="members" element={<OrgMembersPage />} />
+                  <Route path="apps" element={<OrgAppsPage />} />
+                </Route>
                 {/* Admin routes */}
                 <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginPage />} />
                 <Route

@@ -8,7 +8,7 @@ import {
   Mail, Calendar, FileText, Pencil, CheckSquare, Table2,
   Clock, ArrowRight, Settings,
   HardDrive,
-  ExternalLink, Store,
+  ExternalLink, Store, Building2,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
 import { useThreadCounts } from '../hooks/use-threads';
@@ -787,6 +787,42 @@ export function HomePage() {
           gap: 10,
         }}
       >
+        {/* Organization button */}
+        <button
+          onClick={() => navigate(ROUTES.ORG)}
+          aria-label="Organization"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            height: 36,
+            padding: '0 14px',
+            background: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            borderRadius: 18,
+            color: 'rgba(255,255,255,0.75)',
+            cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            transition: 'background 0.2s, color 0.2s',
+            fontFamily: 'var(--font-family)',
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.22)';
+            e.currentTarget.style.color = '#fff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+            e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
+          }}
+        >
+          <Building2 size={16} />
+          Organization
+        </button>
+
         {/* Marketplace button */}
         <button
           onClick={() => navigate(ROUTES.MARKETPLACE)}
