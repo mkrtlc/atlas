@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../lib/api-client';
+import { queryKeys } from '../config/query-keys';
 import {
   Mail, Calendar, FileText, Pencil, CheckSquare, Table2,
   Clock, ArrowRight, Settings,
@@ -513,6 +516,19 @@ export function HomePage() {
   const { data: driveStorageData } = useDriveStorage();
   const parallax = useMouseParallax(15);
 
+  // User settings for home background + recent items
+  const { data: userSettings } = useQuery({
+    queryKey: queryKeys.settings.all,
+    queryFn: async () => {
+      const { data } = await api.get('/settings');
+      return data.data as Record<string, unknown> | null;
+    },
+    staleTime: 60_000,
+  });
+
+  const bgType = (userSettings?.homeBgType as string) || 'unsplash';
+  const bgValue = userSettings?.homeBgValue as string | undefined;
+
   // Image rotation — changes daily, crossfade on manual cycle
   const [imageIndex, setImageIndex] = useState(getDailyImageIndex);
   const [prevImageIndex, setPrevImageIndex] = useState<number | null>(null);
@@ -576,6 +592,69 @@ export function HomePage() {
       })
       .slice(0, 3);
   }, [todayEvents, now]);
+
+  // Background style based on user settings
+  const backgroundStyle = useMemo(() => {
+    if (bgType === 'solid' && bgValue) {
+      return { backgroundColor: bgValue };
+    }
+    if (bgType === 'gradient' && bgValue) {
+      return { background: bgValue };
+    }
+    if (bgType === 'custom' && bgValue) {
+      return {
+        backgroundImage: `url(${bgValue})`,
+        backgroundSize: 'cover' as const,
+        backgroundPosition: 'center',
+      };
+    }
+    // Default: unsplash rotation — handled by BackgroundLayer component
+    return null;
+  }, [bgType, bgValue]);
+
+  // Recent items from settings
+  interface RecentItem {
+    type: 'doc' | 'drawing' | 'table' | 'task';
+    id: string;
+    title: string;
+    timestamp: string;
+  }
+
+  const recentItems: RecentItem[] = useMemo(() => {
+    try {
+      const raw = userSettings?.recentItems as string | undefined;
+      if (!raw) return [];
+      return JSON.parse(raw) as RecentItem[];
+    } catch {
+      return [];
+    }
+  }, [userSettings]);
+
+  // Quick create handlers
+  const handleNewEmail = () => {
+    navigate('/');
+  };
+
+  const handleNewDocument = async () => {
+    try {
+      const { data } = await api.post('/docs', { title: 'Untitled' });
+      navigate(`/docs/${data.data.id}`);
+    } catch {}
+  };
+
+  const handleNewTask = async () => {
+    try {
+      const { data } = await api.post('/tasks', { title: 'New task', when: 'inbox' });
+      navigate('/tasks');
+    } catch {}
+  };
+
+  const handleNewDrawing = async () => {
+    try {
+      const { data } = await api.post('/drawings', { title: 'Untitled' });
+      navigate(`/draw/${data.data.id}`);
+    } catch {}
+  };
 
   return (
     <div
@@ -644,23 +723,36 @@ export function HomePage() {
 
       {/* Background images with ken burns + parallax + crossfade */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        {/* Previous image (fading out) */}
-        {prevImageIndex !== null && (
-          <BackgroundLayer
-            key={`prev-${prevImageIndex}`}
-            imageUrl={BG_IMAGES[prevImageIndex]}
-            parallaxOffset={parallax}
-            className="home-bg-image home-bg-image--exiting"
+        {backgroundStyle ? (
+          /* Custom background (solid / gradient / custom image) */
+          <div
+            style={{
+              position: 'absolute',
+              inset: '-20px',
+              ...backgroundStyle,
+            }}
           />
-        )}
+        ) : (
+          <>
+            {/* Previous image (fading out) */}
+            {prevImageIndex !== null && (
+              <BackgroundLayer
+                key={`prev-${prevImageIndex}`}
+                imageUrl={BG_IMAGES[prevImageIndex]}
+                parallaxOffset={parallax}
+                className="home-bg-image home-bg-image--exiting"
+              />
+            )}
 
-        {/* Current image */}
-        <BackgroundLayer
-          key={`current-${imageIndex}`}
-          imageUrl={BG_IMAGES[imageIndex]}
-          parallaxOffset={parallax}
-          className={prevImageIndex !== null ? 'home-bg-image home-bg-image--entering' : 'home-bg-image'}
-        />
+            {/* Current image */}
+            <BackgroundLayer
+              key={`current-${imageIndex}`}
+              imageUrl={BG_IMAGES[imageIndex]}
+              parallaxOffset={parallax}
+              className={prevImageIndex !== null ? 'home-bg-image home-bg-image--entering' : 'home-bg-image'}
+            />
+          </>
+        )}
       </div>
 
       {/* Dark overlay + vignette */}
@@ -884,8 +976,57 @@ export function HomePage() {
           </div>
         )}
 
+        {/* Quick-create actions */}
+        <div className="flex gap-2 justify-center" style={{ marginTop: 28, marginBottom: 16 }}>
+          {[
+            { label: 'New email', icon: '\u2709', onClick: handleNewEmail },
+            { label: 'New document', icon: '\uD83D\uDCC4', onClick: handleNewDocument },
+            { label: 'New task', icon: '\u2611', onClick: handleNewTask },
+            { label: 'New drawing', icon: '\u270F', onClick: handleNewDrawing },
+          ].map((action) => (
+            <button
+              key={action.label}
+              onClick={action.onClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                text-white/90 bg-white/15 hover:bg-white/25 backdrop-blur-sm transition-colors cursor-pointer"
+            >
+              <span>{action.icon}</span>
+              {action.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Recent items */}
+        {recentItems.length > 0 && (
+          <div style={{ marginBottom: 16, maxWidth: 670, width: '100%', padding: '0 16px' }}>
+            <h3 className="text-xs font-medium text-white/60 uppercase tracking-wider" style={{ marginBottom: 8 }}>Recent</h3>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {recentItems.slice(0, 10).map((item) => {
+                const typeIcons: Record<string, string> = { doc: '\uD83D\uDCC4', drawing: '\uD83C\uDFA8', table: '\uD83D\uDCCA', task: '\u2611' };
+                const typePaths: Record<string, string> = { doc: '/docs/', drawing: '/draw/', table: '/tables/', task: '/tasks' };
+                return (
+                  <button
+                    key={`${item.type}-${item.id}`}
+                    onClick={() => navigate(typePaths[item.type] + (item.type === 'task' ? '' : item.id))}
+                    className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg
+                      bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors cursor-pointer
+                      text-left"
+                    style={{ minWidth: 140, maxWidth: 200 }}
+                  >
+                    <span className="text-sm">{typeIcons[item.type] || '\uD83D\uDCCE'}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="text-xs text-white/90 font-medium truncate">{item.title}</div>
+                      <div className="text-white/50" style={{ fontSize: 10 }}>{item.type}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* App cards */}
-        <div style={{ display: 'flex', gap: 14, marginTop: 36, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 670 }}>
+        <div style={{ display: 'flex', gap: 14, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 670 }}>
           <AppCard
             icon={Mail}
             label={t('nav.mail')}
