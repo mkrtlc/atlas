@@ -6,11 +6,14 @@ import {
   useRemoveTenantUser,
   useUpdateTenantUserRole,
   useInviteTenantUser,
+  useMyTenants,
 } from '../../hooks/use-platform';
 import type { TenantMemberRole } from '@atlasmail/shared';
 
 export function OrgMembersPage() {
-  const tenantId = useAuthStore((s) => s.tenantId);
+  const storeTenantId = useAuthStore((s) => s.tenantId);
+  const { data: tenants } = useMyTenants();
+  const tenantId = storeTenantId ?? tenants?.[0]?.id ?? null;
   const currentUserId = useAuthStore((s) => s.account?.userId);
   const { data: users, isLoading } = useTenantUsers(tenantId ?? undefined);
   const createUser = useCreateTenantUser(tenantId ?? '');

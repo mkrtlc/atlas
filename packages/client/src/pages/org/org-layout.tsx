@@ -50,12 +50,21 @@ function getPageTitle(pathname: string): string {
 
 export function OrgLayout() {
   const tenantId = useAuthStore((s) => s.tenantId);
-  const { data: tenants } = useMyTenants();
+  const { data: tenants, isLoading: tenantsLoading } = useMyTenants();
   const activeTenant = tenants?.[0];
+  const hasTenant = !!tenantId || !!activeTenant;
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  if (!tenantId) {
+  if (tenantsLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)' }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!hasTenant) {
     return <CreateOrgPrompt />;
   }
 

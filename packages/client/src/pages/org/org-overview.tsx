@@ -2,16 +2,18 @@ import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, AppWindow, Plus } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
-import { useTenantUsers } from '../../hooks/use-platform';
+import { useTenantUsers, useMyTenants } from '../../hooks/use-platform';
 import { useInstalledApps } from '../../hooks/use-installed-apps';
 import { ROUTES } from '../../config/routes';
 import { AppIcon } from '../../components/marketplace/app-icons';
 
 export function OrgOverviewPage() {
   const tenantId = useAuthStore((s) => s.tenantId);
+  const { data: tenants } = useMyTenants();
+  const effectiveTenantId = tenantId ?? tenants?.[0]?.id;
   const navigate = useNavigate();
 
-  const { data: users } = useTenantUsers(tenantId ?? undefined);
+  const { data: users } = useTenantUsers(effectiveTenantId ?? undefined);
   const { installations: activeInstallations } = useInstalledApps();
 
   // -------------------------------------------------------------------------

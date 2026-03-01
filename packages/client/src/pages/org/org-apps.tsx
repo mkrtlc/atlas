@@ -13,6 +13,7 @@ import {
   useAssignUser,
   useRemoveAssignment,
   useTenantUsers,
+  useMyTenants,
 } from '../../hooks/use-platform';
 import { queryKeys } from '../../config/query-keys';
 import { AppIcon } from '../../components/marketplace/app-icons';
@@ -58,7 +59,9 @@ function StatusBadge({ status }: { status: string }) {
 // ---------------------------------------------------------------------------
 
 export function OrgAppsPage() {
-  const tenantId = useAuthStore((s) => s.tenantId);
+  const storeTenantId = useAuthStore((s) => s.tenantId);
+  const { data: tenants } = useMyTenants();
+  const tenantId = storeTenantId ?? tenants?.[0]?.id ?? null;
   const queryClient = useQueryClient();
 
   const { data: catalogApps = [] } = useCatalog();

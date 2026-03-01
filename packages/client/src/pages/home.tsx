@@ -8,7 +8,7 @@ import {
   Mail, Calendar, FileText, Pencil, CheckSquare, Table2,
   Clock, ArrowRight, Settings,
   HardDrive,
-  ExternalLink, Store, Building2,
+  ExternalLink, Store, Building2, Shield,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
 import { useThreadCounts } from '../hooks/use-threads';
@@ -22,6 +22,7 @@ import { useInstalledApps } from '../hooks/use-installed-apps';
 import { AppIcon } from '../components/marketplace/app-icons';
 import { ROUTES } from '../config/routes';
 import { useUIStore } from '../stores/ui-store';
+import { useAdminAuthStore } from '../stores/admin-auth-store';
 import { buildGoogleOAuthUrl } from '../components/auth/login-page';
 import { WidgetGrid } from '../components/home/widgets/widget-grid';
 import '../styles/home.css';
@@ -622,6 +623,9 @@ export function HomePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isDesktop = !!('atlasDesktop' in window);
   const { openSettings } = useUIStore();
+  const adminHydrate = useAdminAuthStore((s) => s.hydrate);
+  const isAdminAuthenticated = useAdminAuthStore((s) => s.isAuthenticated);
+  useEffect(() => { adminHydrate(); }, [adminHydrate]);
   const isGoogleUser = account?.provider === 'google';
   const { data: counts } = useThreadCounts({ enabled: isGoogleUser });
   const { data: taskCounts } = useTaskCounts({ enabled: isAuthenticated });
@@ -858,6 +862,44 @@ export function HomePage() {
           <Store size={16} />
           Marketplace
         </button>
+
+        {/* Admin button — only visible to super admins */}
+        {isAdminAuthenticated && (
+          <button
+            onClick={() => navigate(ROUTES.ADMIN)}
+            aria-label="Admin"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              height: 36,
+              padding: '0 14px',
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              borderRadius: 18,
+              color: 'rgba(255,255,255,0.75)',
+              cursor: 'pointer',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              transition: 'background 0.2s, color 0.2s',
+              fontFamily: 'var(--font-family)',
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.22)';
+              e.currentTarget.style.color = '#fff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+              e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
+            }}
+          >
+            <Shield size={16} />
+            Admin
+          </button>
+        )}
 
         {/* Settings gear */}
         <button
