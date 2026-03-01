@@ -977,7 +977,7 @@ export function HomePage() {
         )}
 
         {/* Quick-create actions */}
-        <div className="flex gap-2 justify-center" style={{ marginTop: 28, marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 28, marginBottom: 16 }}>
           {[
             { label: 'New email', icon: <Mail size={14} />, onClick: handleNewEmail },
             { label: 'New document', icon: <FileText size={14} />, onClick: handleNewDocument },

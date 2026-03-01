@@ -323,18 +323,87 @@ export async function seedSampleFolder(userId: string, accountId: string) {
   if (existing.length > 0) return;
 
   const now = new Date().toISOString();
+  const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+  let sort = 0;
 
-  await db.insert(driveItems).values({
-    accountId,
-    userId,
-    name: 'Getting started',
-    type: 'folder',
-    sortOrder: 0,
-    createdAt: now,
-    updatedAt: now,
-  });
+  // Helper to create a folder
+  const mkFolder = async (name: string, parentId?: string | null, icon?: string) => {
+    const [f] = await db.insert(driveItems).values({
+      accountId, userId, name, type: 'folder', parentId: parentId || null,
+      icon: icon || null, sortOrder: sort++, createdAt: ago(14), updatedAt: ago(1),
+    }).returning();
+    return f;
+  };
 
-  logger.info({ userId }, 'Seeded sample drive folder');
+  // Helper to create a file (no actual storage, just metadata for demo)
+  const mkFile = async (name: string, mime: string, size: number, parentId?: string | null, opts?: { icon?: string; favourite?: boolean; created?: string; updated?: string }) => {
+    await db.insert(driveItems).values({
+      accountId, userId, name, type: 'file', mimeType: mime, size,
+      parentId: parentId || null, icon: opts?.icon || null,
+      isFavourite: opts?.favourite ? true : false,
+      sortOrder: sort++,
+      createdAt: opts?.created || ago(7), updatedAt: opts?.updated || ago(1),
+    });
+  };
+
+  // ─── Root folders ────────────────────────────────────────────────
+  const work = await mkFolder('Work', null, '💼');
+  const personal = await mkFolder('Personal', null, '🏠');
+  const projects = await mkFolder('Projects', null, '🚀');
+  const archive = await mkFolder('Archive', null, '📦');
+  const photos = await mkFolder('Photos', null, '📷');
+
+  // ─── Work subfolders & files ─────────────────────────────────────
+  const meetings = await mkFolder('Meeting notes', work.id);
+  const reports = await mkFolder('Reports', work.id);
+  const presentations = await mkFolder('Presentations', work.id);
+
+  await mkFile('Q4 planning notes.md', 'text/markdown', 4200, meetings.id, { created: ago(5), updated: ago(2) });
+  await mkFile('Weekly standup — Feb 24.md', 'text/markdown', 1800, meetings.id, { created: ago(4), updated: ago(4) });
+  await mkFile('Client call summary.md', 'text/markdown', 2400, meetings.id, { created: ago(2), updated: ago(1) });
+  await mkFile('Annual review 2025.pdf', 'application/pdf', 245000, reports.id, { favourite: true, created: ago(30), updated: ago(10) });
+  await mkFile('Budget forecast.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 89000, reports.id, { created: ago(20), updated: ago(5) });
+  await mkFile('Team metrics dashboard.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 67000, reports.id, { created: ago(12), updated: ago(3) });
+  await mkFile('Product roadmap 2026.pptx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 3200000, presentations.id, { favourite: true, created: ago(15), updated: ago(2) });
+  await mkFile('Company overview.pptx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 5400000, presentations.id, { created: ago(45), updated: ago(20) });
+
+  // ─── Personal files ──────────────────────────────────────────────
+  await mkFile('Reading list.md', 'text/markdown', 1200, personal.id, { created: ago(60), updated: ago(3) });
+  await mkFile('Apartment lease.pdf', 'application/pdf', 180000, personal.id, { created: ago(90), updated: ago(90) });
+  await mkFile('Tax documents 2025.pdf', 'application/pdf', 320000, personal.id, { favourite: true, created: ago(40), updated: ago(30) });
+  await mkFile('Recipes.md', 'text/markdown', 3400, personal.id, { created: ago(100), updated: ago(8) });
+
+  // ─── Projects subfolders & files ─────────────────────────────────
+  const atlas = await mkFolder('Atlas redesign', projects.id, '🎨');
+  const api = await mkFolder('API migration', projects.id, '⚡');
+
+  await mkFile('Design system tokens.json', 'application/json', 12000, atlas.id, { created: ago(10), updated: ago(2) });
+  await mkFile('Component inventory.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 45000, atlas.id, { created: ago(8), updated: ago(1) });
+  await mkFile('Wireframes v2.fig', 'application/octet-stream', 890000, atlas.id, { created: ago(6), updated: ago(1) });
+  await mkFile('Color palette.png', 'image/png', 156000, atlas.id, { created: ago(5), updated: ago(5) });
+  await mkFile('Migration checklist.md', 'text/markdown', 2800, api.id, { created: ago(14), updated: ago(3) });
+  await mkFile('Endpoint mapping.csv', 'text/csv', 8900, api.id, { created: ago(12), updated: ago(6) });
+  await mkFile('Load test results.pdf', 'application/pdf', 410000, api.id, { created: ago(4), updated: ago(2) });
+
+  // ─── Photos ──────────────────────────────────────────────────────
+  const vacation = await mkFolder('Vacation 2025', photos.id);
+  await mkFile('Beach sunset.jpg', 'image/jpeg', 4200000, vacation.id, { created: ago(50), updated: ago(50) });
+  await mkFile('Mountain hike.jpg', 'image/jpeg', 3800000, vacation.id, { created: ago(49), updated: ago(49) });
+  await mkFile('Group photo.jpg', 'image/jpeg', 5100000, vacation.id, { created: ago(48), updated: ago(48) });
+  await mkFile('Team offsite.jpg', 'image/jpeg', 2900000, photos.id, { created: ago(20), updated: ago(20) });
+  await mkFile('Profile photo.png', 'image/png', 1200000, photos.id, { favourite: true, created: ago(60), updated: ago(15) });
+
+  // ─── Archive files ───────────────────────────────────────────────
+  await mkFile('Old project brief.pdf', 'application/pdf', 98000, archive.id, { created: ago(180), updated: ago(120) });
+  await mkFile('2024 invoices.zip', 'application/zip', 12400000, archive.id, { created: ago(365), updated: ago(365) });
+  await mkFile('Legacy database export.sql', 'application/sql', 2300000, archive.id, { created: ago(200), updated: ago(200) });
+
+  // ─── Root-level files ────────────────────────────────────────────
+  await mkFile('Resume — latest.pdf', 'application/pdf', 156000, null, { favourite: true, created: ago(30), updated: ago(5) });
+  await mkFile('Quick notes.md', 'text/markdown', 890, null, { created: ago(1), updated: ago(0) });
+  await mkFile('Project ideas.md', 'text/markdown', 2100, null, { created: ago(15), updated: ago(2) });
+
+  logger.info({ userId }, 'Seeded sample drive folders and files');
 }
 
 // ─── List all folders (for move modal) ───────────────────────────────
