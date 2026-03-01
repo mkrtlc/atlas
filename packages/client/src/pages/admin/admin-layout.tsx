@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAdminAuthStore } from '../../stores/admin-auth-store';
 import { ROUTES } from '../../config/routes';
@@ -13,8 +13,13 @@ const NAV_ITEMS = [
 export function AdminProtectedRoute({ children }: { children: ReactNode }) {
   const hydrate = useAdminAuthStore((s) => s.hydrate);
   const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated);
+  const hydrated = useRef(false);
 
-  useEffect(() => { hydrate(); }, [hydrate]);
+  // Hydrate synchronously on first render to avoid redirect flash
+  if (!hydrated.current) {
+    hydrated.current = true;
+    hydrate();
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.ADMIN_LOGIN} replace />;

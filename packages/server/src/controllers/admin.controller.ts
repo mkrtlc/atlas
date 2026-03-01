@@ -24,13 +24,9 @@ export async function login(req: Request, res: Response) {
     return;
   }
 
-  if (username !== env.ADMIN_USERNAME) {
-    res.status(401).json({ success: false, error: 'Invalid credentials' });
-    return;
-  }
-
+  // Always run bcrypt.compare to prevent timing-based username enumeration
   const valid = await bcrypt.compare(password, env.ADMIN_PASSWORD_HASH);
-  if (!valid) {
+  if (!valid || username !== env.ADMIN_USERNAME) {
     res.status(401).json({ success: false, error: 'Invalid credentials' });
     return;
   }
@@ -198,14 +194,16 @@ export async function updateTenantStatus(req: Request, res: Response) {
   }
 }
 
+const VALID_PLANS = ['starter', 'pro', 'enterprise'];
+
 export async function updateTenantPlanHandler(req: Request, res: Response) {
   try {
     const db = getPlatformDb();
     const id = req.params.id as string;
     const { plan } = req.body;
 
-    if (!plan) {
-      res.status(400).json({ success: false, error: 'Plan is required' });
+    if (!plan || !VALID_PLANS.includes(plan)) {
+      res.status(400).json({ success: false, error: `Plan must be one of: ${VALID_PLANS.join(', ')}` });
       return;
     }
 

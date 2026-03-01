@@ -3,7 +3,7 @@ import { useAdminTenant, useUpdateTenantStatus, useUpdateTenantPlan, useInstalla
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../config/query-keys';
 
-const PLANS = ['starter', 'pro', 'business', 'enterprise'];
+const PLANS = ['starter', 'pro', 'enterprise'];
 
 const thStyle: React.CSSProperties = {
   textAlign: 'left',

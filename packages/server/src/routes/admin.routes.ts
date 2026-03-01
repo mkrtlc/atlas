@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/admin-auth';
+import { authLimiter } from '../middleware/rate-limit';
 import {
   login,
   getOverview,
@@ -17,7 +18,7 @@ import {
 const router = Router();
 
 // Public
-router.post('/login', login);
+router.post('/login', authLimiter, login);
 
 // Protected
 router.use(adminAuthMiddleware);
