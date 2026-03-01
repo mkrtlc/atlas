@@ -855,18 +855,14 @@ export function MailAppearancePanel() {
   const { t } = useTranslation();
   const {
     theme,
-    density,
     fontFamily,
     language,
     colorTheme,
-    sendAnimation,
     themeTransition,
     setTheme,
-    setDensity,
     setFontFamily,
     setLanguage,
     setColorTheme,
-    setSendAnimation,
     setThemeTransition,
   } = useSettingsStore();
 
@@ -874,12 +870,6 @@ export function MailAppearancePanel() {
     { value: 'light', label: t('settings.light'), icon: Sun, desc: t('settings.lightDesc') },
     { value: 'dark', label: t('settings.dark'), icon: Moon, desc: t('settings.darkDesc') },
     { value: 'system', label: t('settings.system'), icon: Monitor, desc: t('settings.systemDesc') },
-  ];
-
-  const densityOptions: Array<{ value: typeof density; label: string; desc: string }> = [
-    { value: 'compact', label: t('settings.compact'), desc: t('settings.compactDesc') },
-    { value: 'default', label: t('settings.default'), desc: t('settings.defaultDesc') },
-    { value: 'comfortable', label: t('settings.comfortable'), desc: t('settings.comfortableDesc') },
   ];
 
   const fontOptions: Array<{ value: FontFamilyId; label: string; css: string }> = [
@@ -1010,38 +1000,6 @@ export function MailAppearancePanel() {
         />
       </SettingsSection>
 
-      <SettingsSection title={t('settings.density')} description={t('settings.densityDescription')}>
-        <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
-          {densityOptions.map(({ value, label, desc }) => (
-            <SelectableCard
-              key={value}
-              selected={density === value}
-              onClick={() => setDensity(value)}
-              style={{ flex: 1, minHeight: 100, gap: 'var(--spacing-xs)' }}
-            >
-              <DensityPreview density={value} />
-              <span
-                style={{
-                  fontSize: 'var(--font-size-md)',
-                  fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-                  color: density === value ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
-                }}
-              >
-                {label}
-              </span>
-              <span
-                style={{
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-text-tertiary)',
-                }}
-              >
-                {desc}
-              </span>
-            </SelectableCard>
-          ))}
-        </div>
-      </SettingsSection>
-
       <SettingsSection title={t('settings.font')} description={t('settings.fontDescription')}>
         <div style={{
           display: 'grid',
@@ -1106,17 +1064,6 @@ export function MailAppearancePanel() {
       </SettingsSection>
 
       <SettingsSection title={t('settings.animations')} description={t('settings.animationsDescription')}>
-        <SettingsRow
-          label={t('settings.sendAnimation')}
-          description={t('settings.sendAnimationDesc')}
-        >
-          <SettingsToggle
-            checked={sendAnimation}
-            onChange={setSendAnimation}
-            label={t('settings.sendAnimation')}
-          />
-        </SettingsRow>
-
         <SettingsRow
           label={t('settings.themeTransition')}
           description={t('settings.themeTransitionDesc')}
@@ -1990,7 +1937,16 @@ export function MailAIPanel() {
 
 export function MailInboxPanel() {
   const { t } = useTranslation();
-  const { autoAdvance, setAutoAdvance, trackingEnabled, setTrackingEnabled } = useSettingsStore();
+  const {
+    autoAdvance,
+    setAutoAdvance,
+    density,
+    setDensity,
+    sendAnimation,
+    setSendAnimation,
+    trackingEnabled,
+    setTrackingEnabled,
+  } = useSettingsStore();
 
   const options: Array<{
     value: typeof autoAdvance;
@@ -2014,8 +1970,46 @@ export function MailInboxPanel() {
     },
   ];
 
+  const densityOptions: Array<{ value: typeof density; label: string; desc: string }> = [
+    { value: 'compact', label: t('settings.compact'), desc: t('settings.compactDesc') },
+    { value: 'default', label: t('settings.default'), desc: t('settings.defaultDesc') },
+    { value: 'comfortable', label: t('settings.comfortable'), desc: t('settings.comfortableDesc') },
+  ];
+
   return (
     <div>
+      <SettingsSection title={t('settings.density')} description={t('settings.densityDescription')}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+          {densityOptions.map(({ value, label, desc }) => (
+            <SelectableCard
+              key={value}
+              selected={density === value}
+              onClick={() => setDensity(value)}
+              style={{ flex: 1, minHeight: 100, gap: 'var(--spacing-xs)' }}
+            >
+              <DensityPreview density={value} />
+              <span
+                style={{
+                  fontSize: 'var(--font-size-md)',
+                  fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+                  color: density === value ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',
+                }}
+              >
+                {label}
+              </span>
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                }}
+              >
+                {desc}
+              </span>
+            </SelectableCard>
+          ))}
+        </div>
+      </SettingsSection>
+
       <SettingsSection
         title="Auto-advance"
         description="What happens after you archive, trash, or complete an action on an email"
@@ -2046,6 +2040,17 @@ export function MailInboxPanel() {
             checked={trackingEnabled}
             onChange={setTrackingEnabled}
             label={t('settings.readReceipts')}
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          label={t('settings.sendAnimation')}
+          description={t('settings.sendAnimationDesc')}
+        >
+          <SettingsToggle
+            checked={sendAnimation}
+            onChange={setSendAnimation}
+            label={t('settings.sendAnimation')}
           />
         </SettingsRow>
       </SettingsSection>
