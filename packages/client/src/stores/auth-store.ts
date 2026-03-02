@@ -200,16 +200,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const nextTokens = tokenMap[next.id];
         if (nextTokens) {
           writeActiveTokens(next.id, nextTokens.access, nextTokens.refresh);
+          const payload = decodeJwtPayload(nextTokens.access);
+          set({ accounts: updated, account: next, tenantId: (payload?.tenantId as string) ?? null, isSuperAdmin: !!(payload?.isSuperAdmin) });
         } else {
           clearActiveTokens();
+          set({ accounts: updated, account: next, isSuperAdmin: false });
         }
-        set({ accounts: updated, account: next });
         window.dispatchEvent(new CustomEvent('atlasmail:account-switch', { detail: { accountId: next.id } }));
       } else {
         clearActiveTokens();
         localStorage.removeItem('atlasmail_accounts');
         localStorage.removeItem('atlasmail_tokens');
-        set({ accounts: [], account: null, isAuthenticated: false });
+        set({ accounts: [], account: null, isAuthenticated: false, isSuperAdmin: false });
       }
     } else {
       set({ accounts: updated });

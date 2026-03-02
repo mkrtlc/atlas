@@ -64,7 +64,15 @@ export async function handleCallback(req: Request, res: Response) {
     const { account, isNew } = await authService.findOrCreateAccount(userInfo, tokens, existingUserId);
     logger.info({ accountId: account.id, isNew }, 'Account ready');
 
-    const jwtTokens = authService.generateTokens(account);
+    // Look up tenant and super admin status for the JWT
+    let tenantId: string | undefined;
+    try {
+      const tenants = await tenantService.listTenantsForUser(account.userId);
+      if (tenants.length > 0) tenantId = tenants[0].id;
+    } catch { /* platform features may not be configured */ }
+    const isSuperAdmin = await authService.isUserSuperAdmin(account.userId);
+
+    const jwtTokens = authService.generateTokens(account, tenantId, isSuperAdmin);
 
     // Enqueue a full sync for brand-new accounts so their mailbox is populated.
     // Existing accounts are kept up to date by the periodic incremental sync.
@@ -171,10 +179,12 @@ export async function register(req: Request, res: Response) {
 
     const jwtTokens = authService.generateTokens(account, tenantId, isSuperAdmin);
 
-    // Send welcome email (fire and forget)
-    import('../services/email.service').then(({ sendWelcomeEmail }) => {
-      sendWelcomeEmail(email, { name: userName, tenantName: companyName }).catch(() => {});
-    });
+    // Send welcome email (fire and forget) — only if a real email was provided
+    if (email) {
+      import('../services/email.service').then(({ sendWelcomeEmail }) => {
+        sendWelcomeEmail(email, { name: userName, tenantName: companyName }).catch(() => {});
+      });
+    }
 
     res.status(201).json({
       success: true,

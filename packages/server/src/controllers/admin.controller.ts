@@ -36,6 +36,12 @@ export async function createTenant(req: Request, res: Response) {
     // If owner details provided, create a user for this tenant
     let ownerId: string;
     if (ownerName && ownerPassword) {
+      const { validatePasswordStrength } = await import('../utils/password');
+      const strength = validatePasswordStrength(ownerPassword);
+      if (!strength.valid) {
+        res.status(400).json({ success: false, error: strength.error });
+        return;
+      }
       const email = `${slug.replace(/[^a-z0-9]/g, '')}@${slug}.local`;
       const passwordHash = await hashPassword(ownerPassword);
       const { user } = await createPasswordAccount({ email, name: ownerName, passwordHash });
