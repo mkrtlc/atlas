@@ -53,9 +53,17 @@ async function provisionPostgresql(installationId: string, tenantSlug: string): 
   const password = crypto.randomBytes(24).toString('base64url');
 
   const adminClient = new pg.Client({ connectionString: env.ADDON_PG_ADMIN_URL });
-  await adminClient.connect();
+  try {
+    await adminClient.connect();
+  } catch (err) {
+    throw new Error(`Cannot reach addon PostgreSQL at ${env.ADDON_PG_ADMIN_URL} — check ADDON_PG_ADMIN_URL: ${(err as Error).message}`);
+  }
 
   try {
+    // Verify connectivity
+    const versionResult = await adminClient.query('SELECT version()');
+    logger.info({ server: versionResult.rows[0]?.version }, 'Addon PostgreSQL connectivity verified');
+
     // Create user + database (idempotent via IF NOT EXISTS)
     // Use pg.escapeIdentifier/escapeLiteral for DDL to prevent SQL injection
     const safeUser = pg.escapeIdentifier(username);
@@ -81,9 +89,9 @@ async function provisionPostgresql(installationId: string, tenantSlug: string): 
   // Parse admin URL for host/port
   const url = new URL(env.ADDON_PG_ADMIN_URL);
   // For Docker runtime, app containers reach postgres via the Docker network
-  // hostname ("postgres") rather than localhost
+  // hostname ("postgres") on the internal port (5432), not the host-mapped port
   const host = env.PLATFORM_RUNTIME === 'docker' ? 'postgres' : url.hostname;
-  const port = parseInt(url.port || '5432', 10);
+  const port = env.PLATFORM_RUNTIME === 'docker' ? 5432 : parseInt(url.port || '5432', 10);
 
   // Store addon record
   await db.insert(appAddons).values({

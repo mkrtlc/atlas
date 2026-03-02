@@ -170,6 +170,7 @@ export async function deployAppContainer(opts: DeployContainerOpts) {
     [`traefik.http.routers.${routerName}.rule`]: `Host(\`${hostname}\`)`,
     [`traefik.http.routers.${routerName}.entrypoints`]: 'web',
     [`traefik.http.services.${routerName}.loadbalancer.server.port`]: String(manifest.runtime.httpPort),
+    'traefik.docker.network': networkName,
     'atlas-managed': 'true',
     'atlas-installation-id': installationId,
     'atlas-app-id': manifest.id,
