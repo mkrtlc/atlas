@@ -8,11 +8,14 @@ import { logger } from '../../utils/logger';
 import { env } from '../../config/env';
 import type { AtlasManifest, ProvisioningAction } from '@atlasmail/shared';
 import type { AppProvisioningAdapter, ProvisioningContext, AdapterSetupContext } from './adapters/base.adapter';
+import { MattermostAdapter } from './adapters/mattermost.adapter';
 
 // ─── Adapter Registry ────────────────────────────────────────────────
 // Register app-specific provisioning adapters here as they are added.
 
-const adapters: Record<string, AppProvisioningAdapter> = {};
+const adapters: Record<string, AppProvisioningAdapter> = {
+  mattermost: new MattermostAdapter(),
+};
 
 function resolveAdapter(name: string): AppProvisioningAdapter {
   const adapter = adapters[name];

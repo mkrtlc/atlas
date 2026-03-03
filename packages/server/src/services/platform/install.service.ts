@@ -361,6 +361,41 @@ function applyAppSpecificEnv(
   // Each case should map the generic Atlas env vars (DATABASE_URL, OIDC_ISSUER, etc.)
   // to the app's native configuration format.
   switch (manifestId) {
+    case 'com.atlas.mattermost': {
+      const issuer = envVars.OIDC_ISSUER;
+      // Mattermost's "GitLab" SSO is a generic OAuth2 client — point it at Atlas OIDC
+      envVars.MM_GITLABSETTINGS_ENABLE = 'true';
+      envVars.MM_GITLABSETTINGS_ID = oidcClientId;
+      envVars.MM_GITLABSETTINGS_SECRET = oidcClientSecret;
+      envVars.MM_GITLABSETTINGS_AUTHENDPOINT = `${issuer}/authorize`;
+      envVars.MM_GITLABSETTINGS_TOKENENDPOINT = `${issuer}/token`;
+      envVars.MM_GITLABSETTINGS_USERAPIENDPOINT = `${issuer}/userinfo`;
+      envVars.MM_GITLABSETTINGS_DISCOVERYENDPOINT = `${issuer}/.well-known/openid-configuration`;
+      envVars.MM_GITLABSETTINGS_BUTTONTTEXT = 'Login with Atlas';
+      envVars.MM_GITLABSETTINGS_BUTTONCOLOR = '#0058CC';
+
+      // Map DATABASE_URL to Mattermost's native format
+      if (envVars.DATABASE_URL) {
+        envVars.MM_SQLSETTINGS_DRIVERNAME = 'postgres';
+        envVars.MM_SQLSETTINGS_DATASOURCE = `${envVars.DATABASE_URL}?sslmode=disable&connect_timeout=10`;
+      }
+
+      // Site URL
+      envVars.MM_SERVICESETTINGS_SITEURL = appUrl;
+
+      // Force SSO-only login (disable email/password sign-in)
+      envVars.MM_EMAILSETTINGS_ENABLESIGNINWITHEMAIL = 'false';
+      envVars.MM_EMAILSETTINGS_ENABLESIGNUPWITHEMAIL = 'false';
+
+      // Enable API user deletion for provisioning adapter
+      envVars.MM_SERVICESETTINGS_ENABLEAPICHANNEL_DELETION = 'true';
+      envVars.MM_SERVICESETTINGS_ENABLEAPIUSERDELETION = 'true';
+
+      // Disable onboarding and telemetry
+      envVars.MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW = 'false';
+      envVars.MM_LOGSETTINGS_ENABLEDIAGNOSTICS = 'false';
+      break;
+    }
     default:
       break;
   }

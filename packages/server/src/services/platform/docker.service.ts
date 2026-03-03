@@ -12,7 +12,9 @@ const CONTAINER_PREFIX = 'atlas-app-';
  * In production, the images are pre-loaded into the host's Docker daemon
  * via the platform's image provisioning pipeline.
  */
-const DEV_IMAGE_MAP: Record<string, string> = {};
+const DEV_IMAGE_MAP: Record<string, string> = {
+  'registry.atlas.so/apps/mattermost:10.11.1': 'mattermost/mattermost-team-edition:10.11',
+};
 
 function resolveImage(manifestImage: string): string {
   return DEV_IMAGE_MAP[manifestImage] ?? manifestImage;

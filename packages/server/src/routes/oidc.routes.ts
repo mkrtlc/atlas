@@ -179,6 +179,7 @@ router.get('/tenants/:slug/userinfo', async (req, res) => {
 
     res.json({
       sub: payload.sub,
+      id: payload.sub, // Mattermost GitLab SSO expects an `id` field
       email: payload.email || `${payload.sub}@atlas.so`,
       name: payload.name,
       atlas_tenant_id: payload.atlas_tenant_id,
