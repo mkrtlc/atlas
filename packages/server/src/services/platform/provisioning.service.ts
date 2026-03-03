@@ -8,17 +8,11 @@ import { logger } from '../../utils/logger';
 import { env } from '../../config/env';
 import type { AtlasManifest, ProvisioningAction } from '@atlasmail/shared';
 import type { AppProvisioningAdapter, ProvisioningContext, AdapterSetupContext } from './adapters/base.adapter';
-import { GiteaAdapter } from './adapters/gitea.adapter';
-import { NocoDBAdapter } from './adapters/nocodb.adapter';
-import { CalcomAdapter } from './adapters/calcom.adapter';
 
 // ─── Adapter Registry ────────────────────────────────────────────────
+// Register app-specific provisioning adapters here as they are added.
 
-const adapters: Record<string, AppProvisioningAdapter> = {
-  gitea: new GiteaAdapter(),
-  nocodb: new NocoDBAdapter(),
-  calcom: new CalcomAdapter(),
-};
+const adapters: Record<string, AppProvisioningAdapter> = {};
 
 function resolveAdapter(name: string): AppProvisioningAdapter {
   const adapter = adapters[name];

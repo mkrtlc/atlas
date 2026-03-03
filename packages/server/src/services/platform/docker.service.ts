@@ -12,11 +12,7 @@ const CONTAINER_PREFIX = 'atlas-app-';
  * In production, the images are pre-loaded into the host's Docker daemon
  * via the platform's image provisioning pipeline.
  */
-const DEV_IMAGE_MAP: Record<string, string> = {
-  'registry.atlas.so/apps/calcom:5.6.19': 'calcom/cal.com:latest',
-  'registry.atlas.so/apps/nocodb:0.202.10': 'nocodb/nocodb:latest',
-  'registry.atlas.so/apps/gitea:1.22.3': 'gitea/gitea:latest',
-};
+const DEV_IMAGE_MAP: Record<string, string> = {};
 
 function resolveImage(manifestImage: string): string {
   return DEV_IMAGE_MAP[manifestImage] ?? manifestImage;

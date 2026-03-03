@@ -357,68 +357,10 @@ function applyAppSpecificEnv(
   const protocol = env.PLATFORM_RUNTIME === 'docker' ? 'http' : 'https';
   const appUrl = `${protocol}://${hostname}`;
 
+  // Add app-specific env var overrides here as new apps are integrated.
+  // Each case should map the generic Atlas env vars (DATABASE_URL, OIDC_ISSUER, etc.)
+  // to the app's native configuration format.
   switch (manifestId) {
-    case 'com.atlas.calcom': {
-      // Cal.com uses NextAuth and needs specific env var names
-      envVars.NEXTAUTH_SECRET = crypto.randomBytes(32).toString('base64url');
-      envVars.NEXTAUTH_URL = appUrl;
-      envVars.NEXT_PUBLIC_WEBAPP_URL = appUrl;
-      envVars.CALENDSO_ENCRYPTION_KEY = crypto.randomBytes(24).toString('base64url');
-      // Cal.com SSO (OIDC/SAML) uses BoxyHQ Jackson and requires an enterprise
-      // license. The OIDC credentials are entered via the admin UI at
-      // /settings/security/sso, not via env vars. These vars enable the feature
-      // infrastructure, but actual OIDC provider registration needs the UI.
-      envVars.SAML_DATABASE_URL = envVars.DATABASE_URL;
-      envVars.SAML_CLIENT_SECRET_VERIFIER = crypto.randomBytes(24).toString('base64url');
-      envVars.SAML_ADMINS = ''; // managed via Atlas tenant roles
-      break;
-    }
-    case 'com.atlas.nocodb': {
-      envVars.NC_PUBLIC_URL = appUrl;
-      // NocoDB OIDC (NC_OIDC_* env vars) requires an enterprise/paid license.
-      // The community edition only supports email/password and Google OAuth.
-      // OIDC SSO will only work if a commercial NocoDB license is available.
-      break;
-    }
-    case 'com.atlas.gitea': {
-      envVars.GITEA__server__ROOT_URL = appUrl;
-      envVars.GITEA__server__DOMAIN = hostname;
-      // Gitea uses its own env var format (GITEA__section__key), not DATABASE_URL
-      if (envVars.DATABASE_URL) {
-        const dbUrl = new URL(envVars.DATABASE_URL);
-        envVars.GITEA__database__DB_TYPE = 'postgres';
-        envVars.GITEA__database__HOST = `${dbUrl.hostname}:${dbUrl.port || '5432'}`;
-        envVars.GITEA__database__NAME = dbUrl.pathname.slice(1);
-        envVars.GITEA__database__USER = decodeURIComponent(dbUrl.username);
-        envVars.GITEA__database__PASSWD = decodeURIComponent(dbUrl.password);
-        envVars.GITEA__database__SSL_MODE = 'disable';
-      }
-      // Gitea Redis cache/session/queue configuration
-      if (envVars.REDIS_URL) {
-        const redisUrl = envVars.REDIS_URL;
-        envVars.GITEA__cache__ADAPTER = 'redis';
-        envVars.GITEA__cache__HOST = redisUrl;
-        envVars.GITEA__session__PROVIDER = 'redis';
-        envVars.GITEA__session__PROVIDER_CONFIG = redisUrl;
-        envVars.GITEA__queue__TYPE = 'redis';
-        envVars.GITEA__queue__CONN_STR = redisUrl;
-      }
-      // Gitea OIDC: auth sources are stored in DB, not app.ini, so they can't
-      // be set via GITEA__* env vars. The provisioning engine must run
-      // `gitea admin auth add-oauth` after the container is ready.
-      // These env vars control the OAuth2 client behavior once a source exists.
-      envVars.GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION = 'true';
-      envVars.GITEA__oauth2_client__USERNAME = 'preferred_username';
-      envVars.GITEA__oauth2_client__OPENID_CONNECT_SCOPES = 'openid email profile';
-      envVars.GITEA__oauth2_client__ACCOUNT_LINKING = 'auto';
-      envVars.GITEA__oauth2_client__REGISTER_EMAIL_CONFIRM = 'false';
-      envVars.GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION = 'false';
-      envVars.GITEA__openid__ENABLE_OPENID_SIGNIN = 'true';
-      // Pass OIDC details so the provisioning init script can register the source
-      envVars.ATLAS_OIDC_PROVIDER_NAME = 'Atlas';
-      envVars.ATLAS_OIDC_DISCOVERY_URL = `${envVars.OIDC_ISSUER}/.well-known/openid-configuration`;
-      break;
-    }
     default:
       break;
   }
