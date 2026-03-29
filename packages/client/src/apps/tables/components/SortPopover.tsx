@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowUpDown, Plus, X } from 'lucide-react';
 import type { TableColumn, TableViewConfig } from '@atlasmail/shared';
 import { Popover, PopoverTrigger, PopoverContent } from '../../../components/ui/popover';
+import { Select } from '../../../components/ui/select';
 
 interface SortRule {
   columnId: string;
@@ -57,21 +58,21 @@ export function SortPopover({ columns, viewConfig, onUpdate }: SortPopoverProps)
           <div className="tables-popover-list">
             {sorts.map((sort, idx) => (
               <div key={idx} className="tables-popover-rule">
-                <select
+                <Select
                   value={sort.columnId}
-                  onChange={(e) => handleChange(idx, 'columnId', e.target.value)}
-                >
-                  {columns.map((col) => (
-                    <option key={col.id} value={col.id}>{col.name}</option>
-                  ))}
-                </select>
-                <select
+                  onChange={(v) => handleChange(idx, 'columnId', v)}
+                  options={columns.map((col) => ({ value: col.id, label: col.name }))}
+                  size="sm"
+                />
+                <Select
                   value={sort.direction}
-                  onChange={(e) => handleChange(idx, 'direction', e.target.value)}
-                >
-                  <option value="asc">{t('tables.ascending')}</option>
-                  <option value="desc">{t('tables.descending')}</option>
-                </select>
+                  onChange={(v) => handleChange(idx, 'direction', v)}
+                  options={[
+                    { value: 'asc', label: t('tables.ascending') },
+                    { value: 'desc', label: t('tables.descending') },
+                  ]}
+                  size="sm"
+                />
                 <button className="tables-popover-rule-remove" onClick={() => handleRemove(idx)}>
                   <X size={14} />
                 </button>

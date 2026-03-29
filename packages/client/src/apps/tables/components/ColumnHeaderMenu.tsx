@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { TableFieldType } from '@atlasmail/shared';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from '../../../components/ui/context-menu';
+import { Textarea } from '../../../components/ui/textarea';
 
 const FIELD_TYPE_OPTIONS: { value: TableFieldType; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
   { value: 'text', label: 'Text', icon: Type },
@@ -110,23 +111,15 @@ export function ColumnHeaderMenu({
         </div>
       ) : isEditingDesc ? (
         <div className="tables-context-menu-rename">
-          <textarea
+          <Textarea
             ref={descRef}
             value={descValue}
             onChange={(e) => setDescValue(e.target.value)}
             placeholder={t('tables.descriptionPlaceholder')}
             rows={3}
             style={{
-              width: '100%',
-              padding: '5px 8px',
-              border: '1px solid var(--color-border-focus)',
-              borderRadius: 'var(--radius-md, 4px)',
               background: 'var(--color-bg-primary)',
-              color: 'var(--color-text-primary)',
               fontSize: 'var(--font-size-sm)',
-              fontFamily: 'var(--font-family)',
-              outline: 'none',
-              resize: 'vertical',
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDescSubmit(); }

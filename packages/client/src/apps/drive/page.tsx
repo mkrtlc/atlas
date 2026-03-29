@@ -28,6 +28,7 @@ import { useToastStore } from '../../stores/toast-store';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from '../../components/ui/context-menu';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Modal } from '../../components/ui/modal';
+import { Select } from '../../components/ui/select';
 import { Chip } from '../../components/ui/chip';
 import { EmojiPicker } from '../../components/shared/emoji-picker';
 import { getFileTypeIcon, formatBytes, formatRelativeDate, isImageFile } from '../../lib/drive-utils';
@@ -2429,21 +2430,17 @@ export function DrivePage() {
       <Modal open={!!shareModalItem} onOpenChange={() => setShareModalItem(null)} width={440} title={`Share "${shareModalItem?.name || ''}"`}>
         <div style={{ padding: 'var(--spacing-xl)' }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <select
+            <Select
               value={shareExpiry}
-              onChange={(e) => setShareExpiry(e.target.value)}
-              style={{
-                flex: 1, padding: '8px 12px', border: '1px solid var(--color-border-primary)',
-                borderRadius: 'var(--radius-md)', background: 'var(--color-bg-primary)',
-                color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)',
-                fontFamily: 'var(--font-family)', outline: 'none',
-              }}
-            >
-              <option value="never">Never expires</option>
-              <option value="1">Expires in 1 day</option>
-              <option value="7">Expires in 7 days</option>
-              <option value="30">Expires in 30 days</option>
-            </select>
+              onChange={(v) => setShareExpiry(v)}
+              options={[
+                { value: 'never', label: 'Never expires' },
+                { value: '1', label: 'Expires in 1 day' },
+                { value: '7', label: 'Expires in 7 days' },
+                { value: '30', label: 'Expires in 30 days' },
+              ]}
+              style={{ flex: 1 }}
+            />
             <Button
               variant="primary"
               size="sm"

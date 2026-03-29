@@ -8,6 +8,8 @@ import { IconButton } from '../../../components/ui/icon-button';
 import type { TableColumn, TableRow, TableAttachment, TableFieldType } from '@atlasmail/shared';
 import { FIELD_TYPE_ICONS } from '../../../lib/field-type-icons';
 import { api } from '../../../lib/api-client';
+import { Textarea } from '../../../components/ui/textarea';
+import { Select } from '../../../components/ui/select';
 
 const FIELD_TYPES: { value: TableFieldType; label: string }[] = [
   { value: 'text', label: 'Text' },
@@ -166,16 +168,14 @@ export function ExpandRowModal({
         );
       case 'singleSelect':
         return (
-          <select
-            className="tables-expand-input"
+          <Select
             value={value != null ? String(value) : ''}
-            onChange={(e) => onUpdateField(row._id, col.id, e.target.value)}
-          >
-            <option value="">—</option>
-            {(col.options || []).map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
+            onChange={(v) => onUpdateField(row._id, col.id, v)}
+            options={[
+              { value: '', label: '—' },
+              ...(col.options || []).map((opt) => ({ value: opt, label: opt })),
+            ]}
+          />
         );
       case 'multiSelect': {
         const selected = Array.isArray(value) ? value as string[] : [];
@@ -210,7 +210,7 @@ export function ExpandRowModal({
         );
       case 'longText':
         return (
-          <textarea
+          <Textarea
             className="tables-expand-textarea"
             rows={4}
             value={value != null ? String(value) : ''}

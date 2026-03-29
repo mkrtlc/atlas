@@ -103,6 +103,7 @@ import { FIELD_TYPE_ICONS } from '../../lib/field-type-icons';
 import { GanttView } from './components/gantt-view';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
+import { Select } from '../../components/ui/select';
 import '../../styles/tables.css';
 import '../../styles/docs.css'; // Re-use .tg-* template gallery styles
 
@@ -3449,28 +3450,17 @@ export function TablesPage() {
 
               {/* Kanban group-by selector */}
               {localViewConfig.activeView === 'kanban' && selectColumns.length > 0 && (
-                <select
+                <Select
                   value={localViewConfig.kanbanGroupByColumnId || effectiveKanbanCol?.id || ''}
-                  onChange={(e) => {
-                    const updated = { ...localViewConfig, kanbanGroupByColumnId: e.target.value };
+                  onChange={(v) => {
+                    const updated = { ...localViewConfig, kanbanGroupByColumnId: v };
                     setLocalViewConfig(updated);
                     triggerAutoSave({ viewConfig: updated });
                   }}
-                  style={{
-                    padding: '4px 8px',
-                    border: '1px solid var(--color-border-primary)',
-                    borderRadius: 'var(--radius-md, 4px)',
-                    background: 'var(--color-bg-primary)',
-                    color: 'var(--color-text-secondary)',
-                    fontSize: 'var(--font-size-sm)',
-                    fontFamily: 'var(--font-family)',
-                    height: 28,
-                  }}
-                >
-                  {selectColumns.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  options={selectColumns.map((c) => ({ value: c.id, label: c.name }))}
+                  size="sm"
+                  width={160}
+                />
               )}
             </div>
 
@@ -3712,19 +3702,17 @@ export function TablesPage() {
                     {localColumns.filter((c) => c.type === 'date').length > 1 && (
                       <div className="tables-calendar-date-selector">
                         <span>{t('tables.calendarDateColumn')}:</span>
-                        <select
+                        <Select
                           value={effectiveCalendarDateCol.id}
-                          onChange={(e) => {
-                            const updated = { ...localViewConfig, calendarDateColumnId: e.target.value };
+                          onChange={(v) => {
+                            const updated = { ...localViewConfig, calendarDateColumnId: v };
                             setLocalViewConfig(updated);
                             triggerAutoSave({ viewConfig: updated });
                           }}
-                          style={{ fontSize: 'var(--font-size-xs)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border-primary)' }}
-                        >
-                          {localColumns.filter((c) => c.type === 'date').map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
+                          options={localColumns.filter((c) => c.type === 'date').map((c) => ({ value: c.id, label: c.name }))}
+                          size="sm"
+                          width={140}
+                        />
                       </div>
                     )}
                     {/* Month navigation */}

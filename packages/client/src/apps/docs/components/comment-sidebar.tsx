@@ -9,6 +9,7 @@ import {
 import type { DocumentComment } from '@atlasmail/shared';
 import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
+import { Textarea } from '../../../components/ui/textarea';
 
 interface CommentSidebarProps {
   docId: string;
@@ -64,12 +65,12 @@ export function CommentSidebar({ docId, isOpen, onClose }: CommentSidebarProps) 
 
       {/* New comment input */}
       <div className="px-3 py-2 border-b border-gray-100">
-        <textarea
+        <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Add a comment..."
-          className="w-full text-sm px-2.5 py-2 border border-gray-200 rounded-md resize-none focus:outline-none focus:border-blue-400"
           rows={2}
+          style={{ resize: 'none', fontSize: 'var(--font-size-sm)' }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
           }}

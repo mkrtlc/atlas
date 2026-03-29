@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
+import { Textarea } from '../../components/ui/textarea';
 import { DocSidebar } from './components/doc-sidebar';
 import { DocEditor } from './components/doc-editor';
 import {
@@ -1635,13 +1636,14 @@ function DocumentView({
         </div>
 
         {/* Inline title */}
-        <textarea
+        <Textarea
           ref={titleRef}
           className="doc-inline-title"
           value={doc.title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Untitled"
           rows={1}
+          style={{ resize: 'none' }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();

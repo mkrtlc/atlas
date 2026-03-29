@@ -88,8 +88,8 @@
 }
 
 .doc-editor .tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
-  background: var(--color-accent-primary, #13715B);
-  border-color: var(--color-accent-primary, #13715B);
+  background: var(--color-accent-primary);
+  border-color: var(--color-accent-primary);
 }
 
 .doc-editor .tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
@@ -105,7 +105,7 @@
 }
 
 .doc-editor .tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:hover {
-  border-color: var(--color-accent-primary, #13715B);
+  border-color: var(--color-accent-primary);
 }
 
 .doc-editor .tiptap ul[data-type="taskList"] li > div {
@@ -191,7 +191,7 @@
 }
 
 .doc-editor .tiptap img.ProseMirror-selectednode {
-  outline: 2px solid var(--color-accent-primary, #13715B);
+  outline: 2px solid var(--color-accent-primary);
   outline-offset: 2px;
 }
 
@@ -227,7 +227,7 @@
 }
 
 .doc-editor .tiptap table .selectedCell {
-  background: color-mix(in srgb, var(--color-accent-primary, #13715B) 10%, transparent);
+  background: color-mix(in srgb, var(--color-accent-primary) 10%, transparent);
 }
 
 /* ─── Toggle block (details/summary) ────────────────────────────────── */
@@ -411,7 +411,7 @@
 
 .bubble-menu-btn.is-active {
   background: var(--color-surface-selected);
-  color: var(--color-accent-primary, #13715B);
+  color: var(--color-accent-primary);
 }
 
 .bubble-menu-divider {
@@ -641,7 +641,7 @@
   border-radius: 4px;
   font-size: 0.875em;
   font-weight: 500;
-  color: var(--color-accent-primary, #13715B);
+  color: var(--color-accent-primary);
   white-space: nowrap;
   vertical-align: middle;
   cursor: pointer;
@@ -651,15 +651,15 @@
 }
 
 .doc-editor .tiptap span.page-mention:hover {
-  background: color-mix(in srgb, var(--color-accent-primary, #13715B) 8%, var(--color-bg-secondary));
-  border-color: var(--color-accent-primary, #13715B);
+  background: color-mix(in srgb, var(--color-accent-primary) 8%, var(--color-bg-secondary));
+  border-color: var(--color-accent-primary);
 }
 
 /* Node-selection focus ring (ProseMirror adds this class on click/keyboard nav) */
 .doc-editor .tiptap span.page-mention.ProseMirror-selectednode {
-  outline: 2px solid var(--color-accent-primary, #13715B);
+  outline: 2px solid var(--color-accent-primary);
   outline-offset: 1px;
-  background: color-mix(in srgb, var(--color-accent-primary, #13715B) 12%, var(--color-bg-secondary));
+  background: color-mix(in srgb, var(--color-accent-primary) 12%, var(--color-bg-secondary));
 }
 
 /* ─── Table toolbar ──────────────────────────────────────────────────── */
@@ -671,7 +671,7 @@
   gap: 2px;
   padding: 3px 5px;
   background: var(--color-bg-elevated, #fff);
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   font-family: var(--font-family);
@@ -711,7 +711,7 @@
 .table-toolbar-divider {
   width: 1px;
   height: 16px;
-  background: var(--color-border-primary, #d0d5dd);
+  background: var(--color-border-primary);
   margin: 0 2px;
   flex-shrink: 0;
 }
@@ -773,7 +773,7 @@
 
 .doc-sidebar-resize-handle:hover,
 .doc-sidebar-resize-handle.is-dragging {
-  background: var(--color-accent-primary, #13715B);
+  background: var(--color-accent-primary);
   opacity: 0.3;
 }
 
@@ -841,7 +841,7 @@
 }
 
 .tg-search:focus-within {
-  border-color: var(--color-accent-primary, #13715B);
+  border-color: var(--color-accent-primary);
   background: var(--color-bg-primary);
 }
 
@@ -916,8 +916,8 @@
 }
 
 .tg-pill.is-active {
-  background: var(--color-accent-primary, #13715B);
-  border-color: var(--color-accent-primary, #13715B);
+  background: var(--color-accent-primary);
+  border-color: var(--color-accent-primary);
   color: #fff;
 }
 
@@ -1113,7 +1113,7 @@
 }
 
 .tg-card.is-blank:hover {
-  border-color: var(--color-accent-primary, #13715B);
+  border-color: var(--color-accent-primary);
   box-shadow: none;
 }
 
@@ -1201,7 +1201,7 @@
   width: 22px;
   height: 22px;
   border-radius: 4px;
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   background: var(--color-bg-primary, #fff);
   color: var(--color-text-tertiary, #98a2b3);
   font-size: 16px;
@@ -1223,7 +1223,7 @@
   left: 28px;
   top: 0;
   background: var(--color-bg-elevated, #fff);
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   border-radius: 8px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
   padding: 4px;
@@ -1355,7 +1355,7 @@
  * We preserve it via a faint overlay class that ProseMirror adds.
  */
 .doc-editor .tiptap .ProseMirror-selectednode {
-  outline: 2px solid var(--color-accent-primary, #13715B);
+  outline: 2px solid var(--color-accent-primary);
   outline-offset: 2px;
 }
 
@@ -1432,7 +1432,7 @@
 }
 
 .doc-editor .tiptap .resizable-image-figure.ProseMirror-selectednode .resizable-image-wrapper img {
-  outline: 2px solid var(--color-accent-primary, #13715B);
+  outline: 2px solid var(--color-accent-primary);
   outline-offset: 2px;
 }
 
@@ -1441,7 +1441,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: var(--color-accent-primary, #13715B);
+  background: var(--color-accent-primary);
   border: 2px solid #fff;
   border-radius: 50%;
   z-index: 5;
@@ -1496,7 +1496,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 8px 16px;
-  border-top: 1px solid var(--color-border-primary, #d0d5dd);
+  border-top: 1px solid var(--color-border-primary);
   background: var(--color-bg-primary, #fff);
   font-family: var(--font-family);
 }
@@ -1512,7 +1512,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   background: var(--color-bg-secondary, #f9fafb);
   flex: 1;
@@ -1520,7 +1520,7 @@
 }
 
 .search-replace-input-wrap:focus-within {
-  border-color: var(--color-accent-primary, #13715B);
+  border-color: var(--color-accent-primary);
 }
 
 .search-replace-input {
@@ -1600,7 +1600,7 @@
 
 .shortcuts-modal {
   background: var(--color-bg-elevated, #fff);
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   border-radius: 12px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
   width: 480px;
@@ -1615,7 +1615,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--color-border-primary, #d0d5dd);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .shortcuts-modal-title {
@@ -1672,7 +1672,7 @@
   height: 22px;
   padding: 0 5px;
   background: var(--color-bg-secondary, #f9fafb);
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   font-size: 11px;
   font-family: var(--font-family);

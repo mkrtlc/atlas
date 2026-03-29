@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Filter, Plus, X } from 'lucide-react';
 import type { TableColumn, TableViewConfig, TableFieldType } from '@atlasmail/shared';
 import { Popover, PopoverTrigger, PopoverContent } from '../../../components/ui/popover';
+import { Select } from '../../../components/ui/select';
 
 interface FilterRule {
   columnId: string;
@@ -135,22 +136,18 @@ export function FilterPopover({ columns, viewConfig, onUpdate }: FilterPopoverPr
 
               return (
                 <div key={idx} className="tables-popover-rule">
-                  <select
+                  <Select
                     value={filter.columnId}
-                    onChange={(e) => handleChange(idx, 'columnId', e.target.value)}
-                  >
-                    {columns.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  <select
+                    onChange={(v) => handleChange(idx, 'columnId', v)}
+                    options={columns.map((c) => ({ value: c.id, label: c.name }))}
+                    size="sm"
+                  />
+                  <Select
                     value={filter.operator}
-                    onChange={(e) => handleChange(idx, 'operator', e.target.value)}
-                  >
-                    {ops.map((op) => (
-                      <option key={op.value} value={op.value}>{t(op.labelKey)}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => handleChange(idx, 'operator', v)}
+                    options={ops.map((op) => ({ value: op.value, label: t(op.labelKey) }))}
+                    size="sm"
+                  />
                   {!hideValue && (
                     <input
                       value={filter.value != null ? String(filter.value) : ''}

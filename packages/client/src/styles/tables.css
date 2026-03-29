@@ -569,7 +569,7 @@
   --ag-header-height: 34px;
   --ag-checkbox-checked-color: var(--color-accent-primary);
   --ag-input-focus-border-color: var(--color-accent-primary);
-  --ag-header-column-resize-handle-color: #d0d5dd;
+  --ag-header-column-resize-handle-color: var(--color-border-primary);
   --ag-header-column-resize-handle-width: 1px;
   --ag-header-column-resize-handle-height: 50%;
 }
@@ -2729,7 +2729,7 @@
 .table-header-dropdown {
   width: 360px;
   background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -2759,7 +2759,7 @@
 }
 
 .table-header-dropdown-section {
-  border-top: 1px solid var(--color-border-primary, #d0d5dd);
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .table-header-dropdown-section-header {
@@ -2788,7 +2788,7 @@
 .table-header-dropdown-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid var(--color-border-primary, #d0d5dd);
+  border-bottom: 1px solid var(--color-border-primary);
   margin-bottom: 10px;
 }
 
@@ -2877,7 +2877,7 @@
 
 .table-guide-editor {
   min-height: 80px;
-  border: 1px solid var(--color-border-primary, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   padding: 8px;
   font-size: 13px;

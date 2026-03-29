@@ -10,6 +10,7 @@ import {
 import type { TenantMemberRole } from '@atlasmail/shared';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
+import { Select } from '../components/ui/select';
 
 export function TeamSettingsPage() {
   const tenantId = useAuthStore((s) => s.tenantId);
@@ -35,20 +36,6 @@ export function TeamSettingsPage() {
       </div>
     );
   }
-
-  const selectStyle: React.CSSProperties = {
-    width: '100%',
-    height: '34px',
-    padding: '0 var(--spacing-sm)',
-    background: 'var(--color-bg-tertiary)',
-    border: '1px solid var(--color-border-primary)',
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--color-text-primary)',
-    fontSize: 'var(--font-size-md)',
-    fontFamily: 'var(--font-family)',
-    outline: 'none',
-    boxSizing: 'border-box' as const,
-  };
 
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault();
@@ -121,27 +108,20 @@ export function TeamSettingsPage() {
                 <td style={{ padding: '10px 12px', color: 'var(--color-text-primary)' }}>{user.name || '—'}</td>
                 <td style={{ padding: '10px 12px', color: 'var(--color-text-secondary)' }}>{user.email}</td>
                 <td style={{ padding: '10px 12px' }}>
-                  <select
+                  <Select
                     value={user.role}
-                    onChange={(e) =>
-                      updateRole.mutate({ userId: user.userId, role: e.target.value as TenantMemberRole })
+                    onChange={(v) =>
+                      updateRole.mutate({ userId: user.userId, role: v as TenantMemberRole })
                     }
                     disabled={user.userId === currentUserId}
-                    style={{
-                      padding: '2px 8px',
-                      fontSize: 12,
-                      fontWeight: 500,
-                      border: '1px solid var(--color-border-primary)',
-                      borderRadius: 'var(--radius-md)',
-                      background: 'var(--color-bg-primary)',
-                      color: roleBadgeColor[user.role] || '#6b7280',
-                      cursor: user.userId === currentUserId ? 'default' : 'pointer',
-                    }}
-                  >
-                    <option value="owner">Owner</option>
-                    <option value="admin">Admin</option>
-                    <option value="member">Member</option>
-                  </select>
+                    size="sm"
+                    width={100}
+                    options={[
+                      { value: 'owner', label: 'Owner', color: roleBadgeColor.owner },
+                      { value: 'admin', label: 'Admin', color: roleBadgeColor.admin },
+                      { value: 'member', label: 'Member', color: roleBadgeColor.member },
+                    ]}
+                  />
                 </td>
                 <td style={{ padding: '10px 12px', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
                   {new Date(user.createdAt).toLocaleDateString()}
@@ -210,11 +190,14 @@ export function TeamSettingsPage() {
                 <Input label="Password" type="password" value={addForm.password} onChange={(e) => setAddForm({ ...addForm, password: e.target.value })} required minLength={8} />
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 'var(--spacing-xs)' }}>Role</label>
-                <select value={addForm.role} onChange={(e) => setAddForm({ ...addForm, role: e.target.value as TenantMemberRole })} style={selectStyle}>
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <Select
+                  value={addForm.role}
+                  onChange={(v) => setAddForm({ ...addForm, role: v as TenantMemberRole })}
+                  options={[
+                    { value: 'member', label: 'Member' },
+                    { value: 'admin', label: 'Admin' },
+                  ]}
+                />
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <Button variant="secondary" size="sm" type="button" onClick={() => { setShowAddModal(false); setError(''); }}>
@@ -266,11 +249,14 @@ export function TeamSettingsPage() {
                 <Input label="Email" type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} required />
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 'var(--spacing-xs)' }}>Role</label>
-                <select value={inviteForm.role} onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as TenantMemberRole })} style={selectStyle}>
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <Select
+                  value={inviteForm.role}
+                  onChange={(v) => setInviteForm({ ...inviteForm, role: v as TenantMemberRole })}
+                  options={[
+                    { value: 'member', label: 'Member' },
+                    { value: 'admin', label: 'Admin' },
+                  ]}
+                />
               </div>
               <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginBottom: 16 }}>
                 The user will receive an invitation link to set up their account.

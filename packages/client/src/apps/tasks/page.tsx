@@ -28,6 +28,7 @@ import { useUIStore } from '../../stores/ui-store';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
+import { Select } from '../../components/ui/select';
 import '../../styles/tasks.css';
 
 // ─── Navigation sections (Things 3 inspired) ────────────────────────
@@ -849,18 +850,15 @@ function TaskDetailPanel({
           {/* Recurrence */}
           <div className="task-detail-field">
             <span className="task-detail-label">{t('tasks.repeat')}</span>
-            <select
-              className="task-recurrence-select"
+            <Select
               value={task.recurrenceRule || ''}
-              onChange={e => {
-                const val = e.target.value || null;
+              onChange={(v) => {
+                const val = v || null;
                 updateTask.mutate({ id: task.id, recurrenceRule: val as RecurrenceRule | null });
               }}
-            >
-              {RECURRENCE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
-              ))}
-            </select>
+              options={RECURRENCE_OPTIONS.map(opt => ({ value: opt.value, label: t(opt.labelKey) }))}
+              size="sm"
+            />
           </div>
 
           {/* Project */}

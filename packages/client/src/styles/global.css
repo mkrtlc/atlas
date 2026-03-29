@@ -349,7 +349,7 @@
 .email-html-body blockquote {
   margin: var(--spacing-sm) 0;
   padding-left: var(--spacing-md);
-  border-left: 3px solid #d0d5dd;
+  border-left: 3px solid var(--color-border-primary);
 }
 
 .email-html-body h1,
@@ -383,7 +383,7 @@
 
 .email-html-body hr {
   border: none;
-  border-top: 1px solid #d0d5dd;
+  border-top: 1px solid var(--color-border-primary);
   margin: var(--spacing-md) 0;
 }
 

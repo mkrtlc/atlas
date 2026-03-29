@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Paintbrush, Check } from 'lucide-react';
 import type { TableColumn, TableViewConfig } from '@atlasmail/shared';
 import { Popover, PopoverTrigger, PopoverContent } from '../../../components/ui/popover';
+import { Select } from '../../../components/ui/select';
 
 interface RowColorPopoverProps {
   columns: TableColumn[];
@@ -55,24 +56,12 @@ export function RowColorPopover({ columns, viewConfig, onUpdate }: RowColorPopov
             <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', display: 'block', marginBottom: 4 }}>
               {t('tables.selectColorColumn')}
             </label>
-            <select
+            <Select
               value={selectedColId}
-              onChange={(e) => onUpdate('bySelectField', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '5px 8px',
-                border: '1px solid var(--color-border-primary)',
-                borderRadius: 'var(--radius-md, 4px)',
-                background: 'var(--color-bg-primary)',
-                color: 'var(--color-text-primary)',
-                fontSize: 'var(--font-size-sm)',
-                fontFamily: 'var(--font-family)',
-              }}
-            >
-              {selectColumns.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+              onChange={(v) => onUpdate('bySelectField', v)}
+              options={selectColumns.map((c) => ({ value: c.id, label: c.name }))}
+              size="sm"
+            />
           </div>
         )}
       </PopoverContent>

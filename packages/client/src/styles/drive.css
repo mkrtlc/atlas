@@ -506,7 +506,7 @@
 .drive-preview-table th,
 .drive-preview-table td {
   padding: 6px 10px;
-  border: 1px solid var(--color-border, #d0d5dd);
+  border: 1px solid var(--color-border-primary);
   text-align: left;
   white-space: nowrap;
   max-width: 200px;
@@ -530,7 +530,7 @@
   font-size: 11px;
   color: var(--color-text-tertiary);
   text-align: center;
-  border-top: 1px solid var(--color-border, #d0d5dd);
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .drive-preview-icon {
