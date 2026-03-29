@@ -4,6 +4,7 @@ import {
   ChevronRight, Trash2, Phone as PhoneIcon, Mail,
   Trophy, XCircle, LayoutGrid, List, ArrowUp, ArrowDown,
   PhoneCall, CalendarDays, StickyNote,
+  Download, Upload,
 } from 'lucide-react';
 import {
   useCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany,
@@ -16,6 +17,9 @@ import {
   type CrmCompany, type CrmContact, type CrmDealStage, type CrmDeal, type CrmActivity,
 } from './hooks';
 import { DealKanban } from './components/deal-kanban';
+import { FilterBar, applyFilters, type CrmFilter, type FilterColumn } from './components/filter-bar';
+import { SavedViews, type SavedView } from './components/saved-views';
+import { CsvImportModal, exportToCsv } from './components/csv-import-modal';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -140,6 +144,89 @@ function InlineSelectCell({
 // ─── Types ─────────────────────────────────────────────────────────
 
 type ActiveView = 'pipeline' | 'deals' | 'contacts' | 'companies' | 'activities';
+
+// ─── Column definitions for filtering ─────────────────────────────
+
+function getDealsFilterColumns(stages: CrmDealStage[]): FilterColumn[] {
+  return [
+    { key: 'title', label: 'Title', type: 'text' },
+    { key: 'companyName', label: 'Company', type: 'text' },
+    { key: 'contactName', label: 'Contact', type: 'text' },
+    { key: 'value', label: 'Value', type: 'number' },
+    { key: 'stageName', label: 'Stage', type: 'select', options: stages.map((s) => ({ value: s.name, label: s.name })) },
+    { key: 'expectedCloseDate', label: 'Close date', type: 'date' },
+  ];
+}
+
+const CONTACTS_FILTER_COLUMNS: FilterColumn[] = [
+  { key: 'name', label: 'Name', type: 'text' },
+  { key: 'email', label: 'Email', type: 'text' },
+  { key: 'phone', label: 'Phone', type: 'text' },
+  { key: 'companyName', label: 'Company', type: 'text' },
+  { key: 'position', label: 'Position', type: 'text' },
+];
+
+const COMPANIES_FILTER_COLUMNS: FilterColumn[] = [
+  { key: 'name', label: 'Name', type: 'text' },
+  { key: 'domain', label: 'Domain', type: 'text' },
+  { key: 'industry', label: 'Industry', type: 'text' },
+  { key: 'size', label: 'Size', type: 'text' },
+];
+
+// CSV export column configs
+const DEALS_CSV_COLUMNS = [
+  { key: 'title', label: 'Title' },
+  { key: 'value', label: 'Value' },
+  { key: 'stageName', label: 'Stage' },
+  { key: 'companyName', label: 'Company' },
+  { key: 'contactName', label: 'Contact' },
+  { key: 'probability', label: 'Probability' },
+  { key: 'expectedCloseDate', label: 'Close date' },
+];
+
+const CONTACTS_CSV_COLUMNS = [
+  { key: 'name', label: 'Name' },
+  { key: 'email', label: 'Email' },
+  { key: 'phone', label: 'Phone' },
+  { key: 'companyName', label: 'Company' },
+  { key: 'position', label: 'Position' },
+  { key: 'source', label: 'Source' },
+];
+
+const COMPANIES_CSV_COLUMNS = [
+  { key: 'name', label: 'Name' },
+  { key: 'domain', label: 'Domain' },
+  { key: 'industry', label: 'Industry' },
+  { key: 'size', label: 'Size' },
+  { key: 'address', label: 'Address' },
+  { key: 'phone', label: 'Phone' },
+];
+
+// CSV import field configs
+const DEALS_IMPORT_FIELDS = [
+  { key: 'title', label: 'Title', required: true },
+  { key: 'value', label: 'Value' },
+  { key: 'stage', label: 'Stage' },
+  { key: 'probability', label: 'Probability' },
+  { key: 'expectedCloseDate', label: 'Close date' },
+];
+
+const CONTACTS_IMPORT_FIELDS = [
+  { key: 'name', label: 'Name', required: true },
+  { key: 'email', label: 'Email' },
+  { key: 'phone', label: 'Phone' },
+  { key: 'position', label: 'Position' },
+  { key: 'source', label: 'Source' },
+];
+
+const COMPANIES_IMPORT_FIELDS = [
+  { key: 'name', label: 'Name', required: true },
+  { key: 'domain', label: 'Domain' },
+  { key: 'industry', label: 'Industry' },
+  { key: 'size', label: 'Size' },
+  { key: 'address', label: 'Address' },
+  { key: 'phone', label: 'Phone' },
+];
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -1647,6 +1734,12 @@ export function CrmPage() {
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [bulkStageId, setBulkStageId] = useState<string | null>(null);
 
+  // Filters
+  const [filters, setFilters] = useState<CrmFilter[]>([]);
+
+  // Import/export modals
+  const [showImportModal, setShowImportModal] = useState(false);
+
   // Modals
   const [showCreateDeal, setShowCreateDeal] = useState(false);
   const [showCreateContact, setShowCreateContact] = useState(false);
@@ -1709,7 +1802,65 @@ export function CrmPage() {
     setFocusedIndex(null);
     setEditingCell(null);
     setSort(null);
+    setFilters([]);
   }, [activeView]);
+
+  // Filter column definitions (memoized)
+  const dealsFilterColumns = useMemo(() => getDealsFilterColumns(stages), [stages]);
+
+  // Filtered data (applying advanced filters)
+  const filteredDeals = useMemo(
+    () => applyFilters(deals as unknown as Record<string, unknown>[], filters, dealsFilterColumns) as unknown as CrmDeal[],
+    [deals, filters, dealsFilterColumns],
+  );
+  const filteredContacts = useMemo(
+    () => applyFilters(contacts as unknown as Record<string, unknown>[], filters, CONTACTS_FILTER_COLUMNS) as unknown as CrmContact[],
+    [contacts, filters],
+  );
+  const filteredCompanies = useMemo(
+    () => applyFilters(companies as unknown as Record<string, unknown>[], filters, COMPANIES_FILTER_COLUMNS) as unknown as CrmCompany[],
+    [companies, filters],
+  );
+
+  // Apply saved view handler
+  const handleApplyView = useCallback((view: SavedView) => {
+    setFilters(view.filters);
+    if (view.sortColumn) {
+      setSort({ column: view.sortColumn, direction: view.sortDirection });
+    } else {
+      setSort(null);
+    }
+  }, []);
+
+  // Export handler
+  const handleExport = useCallback(() => {
+    const now = new Date().toISOString().slice(0, 10);
+    switch (activeView) {
+      case 'deals':
+        exportToCsv(filteredDeals as unknown as Record<string, unknown>[], DEALS_CSV_COLUMNS, `crm-deals-${now}`);
+        break;
+      case 'contacts':
+        exportToCsv(filteredContacts as unknown as Record<string, unknown>[], CONTACTS_CSV_COLUMNS, `crm-contacts-${now}`);
+        break;
+      case 'companies':
+        exportToCsv(filteredCompanies as unknown as Record<string, unknown>[], COMPANIES_CSV_COLUMNS, `crm-companies-${now}`);
+        break;
+    }
+  }, [activeView, filteredDeals, filteredContacts, filteredCompanies]);
+
+  // Import fields for current entity type
+  const importEntityType = activeView === 'deals' ? 'deals' : activeView === 'contacts' ? 'contacts' : 'companies';
+  const importFields = activeView === 'deals' ? DEALS_IMPORT_FIELDS : activeView === 'contacts' ? CONTACTS_IMPORT_FIELDS : COMPANIES_IMPORT_FIELDS;
+
+  // Current filter columns based on view
+  const currentFilterColumns = useMemo(() => {
+    switch (activeView) {
+      case 'deals': return dealsFilterColumns;
+      case 'contacts': return CONTACTS_FILTER_COLUMNS;
+      case 'companies': return COMPANIES_FILTER_COLUMNS;
+      default: return [];
+    }
+  }, [activeView, dealsFilterColumns]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -1924,6 +2075,31 @@ export function CrmPage() {
           </div>
         )}
 
+        {/* Toolbar (for deals, contacts, companies) */}
+        {(activeView === 'deals' || activeView === 'contacts' || activeView === 'companies') && (
+          <div className="crm-toolbar">
+            <SavedViews
+              entityType={importEntityType as 'deals' | 'contacts' | 'companies'}
+              currentFilters={filters}
+              currentSort={sort}
+              onApplyView={handleApplyView}
+            />
+            <div className="crm-toolbar-separator" />
+            <FilterBar
+              columns={currentFilterColumns}
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+            <div className="crm-toolbar-separator" />
+            <Button variant="ghost" size="sm" icon={<Upload size={13} />} onClick={() => setShowImportModal(true)}>
+              Import
+            </Button>
+            <Button variant="ghost" size="sm" icon={<Download size={13} />} onClick={handleExport}>
+              Export
+            </Button>
+          </div>
+        )}
+
         {/* Content area */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1938,7 +2114,7 @@ export function CrmPage() {
 
             {activeView === 'deals' && (
               <DealsListView
-                deals={deals}
+                deals={filteredDeals}
                 stages={stages}
                 selectedId={selectedDealId}
                 onSelect={handleDealClick}
@@ -1956,7 +2132,7 @@ export function CrmPage() {
 
             {activeView === 'contacts' && (
               <ContactsListView
-                contacts={contacts}
+                contacts={filteredContacts}
                 selectedId={selectedContactId}
                 onSelect={(id) => { setSelectedContactId(id); setSelectedDealId(null); setSelectedCompanyId(null); }}
                 searchQuery={searchQuery}
@@ -1973,7 +2149,7 @@ export function CrmPage() {
 
             {activeView === 'companies' && (
               <CompaniesListView
-                companies={companies}
+                companies={filteredCompanies}
                 selectedId={selectedCompanyId}
                 onSelect={(id) => { setSelectedCompanyId(id); setSelectedDealId(null); setSelectedContactId(null); }}
                 searchQuery={searchQuery}
@@ -2094,6 +2270,14 @@ export function CrmPage() {
           open={!!markLostDealId}
           onClose={() => setMarkLostDealId(null)}
           dealId={markLostDealId}
+        />
+      )}
+      {(activeView === 'deals' || activeView === 'contacts' || activeView === 'companies') && (
+        <CsvImportModal
+          open={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          entityType={importEntityType as 'deals' | 'contacts' | 'companies'}
+          fields={importFields}
         />
       )}
     </div>

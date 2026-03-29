@@ -7,6 +7,7 @@ router.use(authMiddleware);
 
 // Companies (before /:id to avoid route conflicts)
 router.get('/companies/list', crmController.listCompanies);
+router.post('/companies/import', crmController.importCompanies);
 router.post('/companies', crmController.createCompany);
 router.get('/companies/:id', crmController.getCompany);
 router.patch('/companies/:id', crmController.updateCompany);
@@ -14,6 +15,7 @@ router.delete('/companies/:id', crmController.deleteCompany);
 
 // Contacts
 router.get('/contacts/list', crmController.listContacts);
+router.post('/contacts/import', crmController.importContacts);
 router.post('/contacts', crmController.createContact);
 router.get('/contacts/:id', crmController.getContact);
 router.patch('/contacts/:id', crmController.updateContact);
@@ -31,6 +33,7 @@ router.delete('/stages/:id', crmController.deleteDealStage);
 router.get('/deals/list', crmController.listDeals);
 router.get('/deals/counts-by-stage', crmController.countsByStage);
 router.get('/deals/pipeline-value', crmController.pipelineValue);
+router.post('/deals/import', crmController.importDeals);
 router.post('/deals', crmController.createDeal);
 router.get('/deals/:id', crmController.getDeal);
 router.patch('/deals/:id', crmController.updateDeal);

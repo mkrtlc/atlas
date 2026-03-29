@@ -875,3 +875,136 @@ export async function seedSampleData(userId: string, accountId: string) {
   logger.info({ userId, accountId }, 'Seeded CRM sample data');
   return { companies: 4, contacts: 5, stages: stages.length, deals: 4, activities: 5 };
 }
+
+// ─── Bulk Import ───────────────────────────────────────────────────────
+
+export async function bulkCreateContacts(
+  userId: string,
+  accountId: string,
+  rows: Array<Record<string, string>>,
+): Promise<{ imported: number; failed: number; errors: string[] }> {
+  let imported = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    try {
+      if (!row.name?.trim()) {
+        errors.push(`Row ${i + 1}: Name is required`);
+        failed++;
+        continue;
+      }
+      await createContact(userId, accountId, {
+        name: row.name.trim(),
+        email: row.email?.trim() || null,
+        phone: row.phone?.trim() || null,
+        position: row.position?.trim() || null,
+        source: row.source?.trim() || null,
+        companyId: null,
+      });
+      imported++;
+    } catch (err) {
+      failed++;
+      errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  }
+
+  logger.info({ userId, accountId, imported, failed }, 'Bulk imported CRM contacts');
+  return { imported, failed, errors };
+}
+
+export async function bulkCreateCompanies(
+  userId: string,
+  accountId: string,
+  rows: Array<Record<string, string>>,
+): Promise<{ imported: number; failed: number; errors: string[] }> {
+  let imported = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    try {
+      if (!row.name?.trim()) {
+        errors.push(`Row ${i + 1}: Name is required`);
+        failed++;
+        continue;
+      }
+      await createCompany(userId, accountId, {
+        name: row.name.trim(),
+        domain: row.domain?.trim() || null,
+        industry: row.industry?.trim() || null,
+        size: row.size?.trim() || null,
+        address: row.address?.trim() || null,
+        phone: row.phone?.trim() || null,
+      });
+      imported++;
+    } catch (err) {
+      failed++;
+      errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  }
+
+  logger.info({ userId, accountId, imported, failed }, 'Bulk imported CRM companies');
+  return { imported, failed, errors };
+}
+
+export async function bulkCreateDeals(
+  userId: string,
+  accountId: string,
+  rows: Array<Record<string, string>>,
+): Promise<{ imported: number; failed: number; errors: string[] }> {
+  let imported = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  // Get default stage for deals without a stage
+  const stages = await listDealStages(accountId);
+  const defaultStage = stages.find((s) => s.isDefault) ?? stages[0];
+
+  if (!defaultStage) {
+    return { imported: 0, failed: rows.length, errors: ['No deal stages configured. Create stages first.'] };
+  }
+
+  // Build a stage lookup by name (case-insensitive)
+  const stageByName: Record<string, string> = {};
+  for (const s of stages) {
+    stageByName[s.name.toLowerCase()] = s.id;
+  }
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    try {
+      if (!row.title?.trim()) {
+        errors.push(`Row ${i + 1}: Title is required`);
+        failed++;
+        continue;
+      }
+
+      // Resolve stage by name or use default
+      let stageId = defaultStage.id;
+      if (row.stage?.trim()) {
+        const matchedStageId = stageByName[row.stage.trim().toLowerCase()];
+        if (matchedStageId) stageId = matchedStageId;
+      }
+
+      await createDeal(userId, accountId, {
+        title: row.title.trim(),
+        value: Number(row.value) || 0,
+        stageId,
+        probability: Number(row.probability) || 0,
+        expectedCloseDate: row.expectedCloseDate?.trim() || null,
+        contactId: null,
+        companyId: null,
+      });
+      imported++;
+    } catch (err) {
+      failed++;
+      errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  }
+
+  logger.info({ userId, accountId, imported, failed }, 'Bulk imported CRM deals');
+  return { imported, failed, errors };
+}

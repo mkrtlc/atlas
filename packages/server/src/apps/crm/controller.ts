@@ -557,6 +557,65 @@ export async function deleteActivity(req: Request, res: Response) {
   }
 }
 
+// ─── Bulk Import ────────────────────────────────────────────────────
+
+export async function importContacts(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const { rows } = req.body;
+
+    if (!Array.isArray(rows)) {
+      res.status(400).json({ success: false, error: 'rows must be an array' });
+      return;
+    }
+
+    const result = await crmService.bulkCreateContacts(userId, accountId, rows);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error({ error }, 'Failed to bulk import CRM contacts');
+    res.status(500).json({ success: false, error: 'Failed to import contacts' });
+  }
+}
+
+export async function importCompanies(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const { rows } = req.body;
+
+    if (!Array.isArray(rows)) {
+      res.status(400).json({ success: false, error: 'rows must be an array' });
+      return;
+    }
+
+    const result = await crmService.bulkCreateCompanies(userId, accountId, rows);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error({ error }, 'Failed to bulk import CRM companies');
+    res.status(500).json({ success: false, error: 'Failed to import companies' });
+  }
+}
+
+export async function importDeals(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const { rows } = req.body;
+
+    if (!Array.isArray(rows)) {
+      res.status(400).json({ success: false, error: 'rows must be an array' });
+      return;
+    }
+
+    const result = await crmService.bulkCreateDeals(userId, accountId, rows);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error({ error }, 'Failed to bulk import CRM deals');
+    res.status(500).json({ success: false, error: 'Failed to import deals' });
+  }
+}
+
 // ─── Seed Sample Data ───────────────────────────────────────────────
 
 export async function seedSampleData(req: Request, res: Response) {

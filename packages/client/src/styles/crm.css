@@ -384,6 +384,58 @@
   white-space: nowrap;
 }
 
+/* ─── Toolbar ────────────────────────────────────────────────── */
+
+.crm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 6px var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-secondary);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  min-height: 38px;
+}
+
+.crm-toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border-secondary);
+  flex-shrink: 0;
+}
+
+.crm-toolbar-spacer {
+  flex: 1;
+}
+
+/* ─── Filter bar ─────────────────────────────────────────────── */
+
+.crm-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─── Import preview ─────────────────────────────────────────── */
+
+.crm-import-preview {
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.crm-import-preview table {
+  min-width: 100%;
+}
+
+.crm-import-preview tr:last-child td {
+  border-bottom: none;
+}
+
 /* ─── Table footer (aggregation) ─────────────────────────────── */
 
 .crm-table-footer {
