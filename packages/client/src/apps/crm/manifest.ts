@@ -1,0 +1,30 @@
+import { Briefcase, Settings } from 'lucide-react';
+import type { ClientAppManifest } from '../../config/app-manifest.client';
+import { CrmPage } from './page';
+import { CrmStagesPanel, CrmGeneralPanel } from './components/crm-settings-modal';
+
+export const crmManifest: ClientAppManifest = {
+  id: 'crm',
+  name: 'CRM',
+  labelKey: 'sidebar.crm',
+  iconName: 'Briefcase',
+  icon: Briefcase,
+  color: '#f97316',
+  minPlan: 'starter',
+  category: 'data',
+  dependencies: [],
+  defaultEnabled: true,
+  version: '1.0.0',
+  sidebarOrder: 60,
+  routes: [{ path: '/crm', component: CrmPage }],
+  settingsCategory: {
+    id: 'crm',
+    label: 'CRM',
+    icon: Briefcase,
+    color: '#f97316',
+    panels: [
+      { id: 'stages', label: 'Pipeline stages', icon: Settings, component: CrmStagesPanel },
+      { id: 'general', label: 'General', icon: Settings, component: CrmGeneralPanel },
+    ],
+  },
+};

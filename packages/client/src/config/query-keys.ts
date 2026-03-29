@@ -91,4 +91,25 @@ export const queryKeys = {
     fields: (docId: string) => ['sign', 'fields', docId] as const,
     tokens: (docId: string) => ['sign', 'tokens', docId] as const,
   },
+  crm: {
+    all: ['crm'] as const,
+    contacts: {
+      all: ['crm', 'contacts'] as const,
+      detail: (id: string) => ['crm', 'contacts', id] as const,
+    },
+    companies: {
+      all: ['crm', 'companies'] as const,
+      detail: (id: string) => ['crm', 'companies', id] as const,
+    },
+    stages: ['crm', 'stages'] as const,
+    deals: {
+      all: ['crm', 'deals'] as const,
+      detail: (id: string) => ['crm', 'deals', id] as const,
+      counts: ['crm', 'deals', 'counts'] as const,
+      pipeline: ['crm', 'deals', 'pipeline'] as const,
+    },
+    activities: {
+      all: ['crm', 'activities'] as const,
+    },
+  },
 };

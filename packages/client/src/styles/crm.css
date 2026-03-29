@@ -1,0 +1,238 @@
+/* ─── CRM App Styles ───────────────────────────────────────────── */
+
+/* ─── Kanban ──────────────────────────────────────────────────── */
+
+.crm-kanban {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.crm-kanban-column {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  transition: box-shadow 0.15s, background 0.15s;
+}
+
+.crm-kanban-column.drag-over {
+  box-shadow: inset 0 0 0 2px var(--color-accent-primary);
+  background: var(--color-surface-hover);
+}
+
+.crm-kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.crm-kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-sm) var(--spacing-sm);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 40px;
+}
+
+.crm-kanban-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  transition: box-shadow 0.1s, transform 0.1s;
+  user-select: none;
+}
+
+.crm-kanban-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.crm-kanban-card:active {
+  cursor: grabbing;
+}
+
+.crm-kanban-card.dragging {
+  opacity: 0.5;
+}
+
+/* ─── Table rows ──────────────────────────────────────────────── */
+
+.crm-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 10px var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-secondary);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.crm-row:hover {
+  background: var(--color-surface-hover);
+}
+
+.crm-row.selected {
+  background: var(--color-surface-selected);
+}
+
+/* ─── Detail panel ────────────────────────────────────────────── */
+
+.crm-detail-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--color-bg-primary);
+  height: 100%;
+}
+
+.crm-detail-body {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.crm-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.crm-detail-field-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--font-family);
+}
+
+/* ─── Empty state ─────────────────────────────────────────────── */
+
+.crm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-3xl);
+  gap: var(--spacing-md);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  flex: 1;
+}
+
+.crm-empty-state-icon {
+  opacity: 0.3;
+}
+
+.crm-empty-state-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family);
+}
+
+.crm-empty-state-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family);
+  max-width: 300px;
+}
+
+/* ─── Content header ──────────────────────────────────────────── */
+
+.crm-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-secondary);
+  flex-shrink: 0;
+  gap: var(--spacing-md);
+}
+
+.crm-content-header-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+}
+
+.crm-content-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ─── Search bar ──────────────────────────────────────────────── */
+
+.crm-search-bar {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-secondary);
+  flex-shrink: 0;
+}
+
+/* ─── Activity timeline ───────────────────────────────────────── */
+
+.crm-activity-item {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+}
+
+.crm-activity-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.crm-activity-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-activity-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  line-height: 1.4;
+}
+
+.crm-activity-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family);
+  margin-top: 2px;
+}
+
+/* ─── Won/Lost buttons ────────────────────────────────────────── */
+
+.crm-deal-action-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+}
