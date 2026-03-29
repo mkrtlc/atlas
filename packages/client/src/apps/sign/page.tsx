@@ -256,9 +256,11 @@ export function SignPage() {
     expired: documents?.filter((d) => d.status === 'expired').length ?? 0,
   }), [documents]);
 
-  // PDF url for the selected document
+  // PDF url for the selected document (include auth token for pdfjs-dist)
+  const token = localStorage.getItem('atlasmail_token');
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
   const pdfUrl = selectedDocId
-    ? `${config.apiUrl}/sign/${selectedDocId}/view`
+    ? `${config.apiUrl}/sign/${selectedDocId}/view${tokenParam}`
     : undefined;
 
   return (
