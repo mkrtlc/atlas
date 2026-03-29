@@ -645,3 +645,101 @@ export async function seedSampleData(req: Request, res: Response) {
     res.status(500).json({ success: false, error: 'Failed to seed CRM sample data' });
   }
 }
+
+// ─── Workflow Automations ──────────────────────────────────────────
+
+export async function listWorkflows(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    const workflows = await crmService.listWorkflows(userId, accountId);
+    res.json({ success: true, data: { workflows } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list CRM workflows');
+    res.status(500).json({ success: false, error: 'Failed to list workflows' });
+  }
+}
+
+export async function createWorkflow(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const { name, trigger, triggerConfig, action, actionConfig } = req.body;
+
+    if (!name?.trim()) {
+      res.status(400).json({ success: false, error: 'Name is required' });
+      return;
+    }
+    if (!trigger) {
+      res.status(400).json({ success: false, error: 'Trigger is required' });
+      return;
+    }
+    if (!action) {
+      res.status(400).json({ success: false, error: 'Action is required' });
+      return;
+    }
+
+    const workflow = await crmService.createWorkflow(userId, accountId, {
+      name: name.trim(), trigger, triggerConfig, action, actionConfig: actionConfig ?? {},
+    });
+
+    res.json({ success: true, data: workflow });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create CRM workflow');
+    res.status(500).json({ success: false, error: 'Failed to create workflow' });
+  }
+}
+
+export async function updateWorkflow(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const id = req.params.id as string;
+    const { name, trigger, triggerConfig, action, actionConfig, isActive } = req.body;
+
+    const workflow = await crmService.updateWorkflow(userId, id, {
+      name, trigger, triggerConfig, action, actionConfig, isActive,
+    });
+
+    if (!workflow) {
+      res.status(404).json({ success: false, error: 'Workflow not found' });
+      return;
+    }
+
+    res.json({ success: true, data: workflow });
+  } catch (error) {
+    logger.error({ error }, 'Failed to update CRM workflow');
+    res.status(500).json({ success: false, error: 'Failed to update workflow' });
+  }
+}
+
+export async function deleteWorkflow(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const id = req.params.id as string;
+
+    await crmService.deleteWorkflow(userId, id);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to delete CRM workflow');
+    res.status(500).json({ success: false, error: 'Failed to delete workflow' });
+  }
+}
+
+export async function toggleWorkflow(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const id = req.params.id as string;
+
+    const workflow = await crmService.toggleWorkflow(userId, id);
+    if (!workflow) {
+      res.status(404).json({ success: false, error: 'Workflow not found' });
+      return;
+    }
+
+    res.json({ success: true, data: workflow });
+  } catch (error) {
+    logger.error({ error }, 'Failed to toggle CRM workflow');
+    res.status(500).json({ success: false, error: 'Failed to toggle workflow' });
+  }
+}

@@ -4,7 +4,7 @@ import {
   ChevronRight, Trash2, Phone as PhoneIcon, Mail,
   Trophy, XCircle, LayoutGrid, List, ArrowUp, ArrowDown,
   PhoneCall, CalendarDays, StickyNote,
-  Download, Upload, BarChart3,
+  Download, Upload, BarChart3, Zap,
 } from 'lucide-react';
 import {
   useCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany,
@@ -21,6 +21,7 @@ import { FilterBar, applyFilters, type CrmFilter, type FilterColumn } from './co
 import { SavedViews, type SavedView } from './components/saved-views';
 import { CsvImportModal, exportToCsv } from './components/csv-import-modal';
 import { CrmDashboard } from './components/dashboard';
+import { AutomationsView } from './components/automations-view';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -144,7 +145,7 @@ function InlineSelectCell({
 
 // ─── Types ─────────────────────────────────────────────────────────
 
-type ActiveView = 'dashboard' | 'pipeline' | 'deals' | 'contacts' | 'companies' | 'activities';
+type ActiveView = 'dashboard' | 'pipeline' | 'deals' | 'contacts' | 'companies' | 'activities' | 'automations';
 
 // ─── Column definitions for filtering ─────────────────────────────
 
@@ -1897,6 +1898,7 @@ export function CrmPage() {
       case 'contacts': return 'Contacts';
       case 'companies': return 'Companies';
       case 'activities': return 'Activities';
+      case 'automations': return 'Automations';
     }
   }, [activeView]);
 
@@ -2039,6 +2041,12 @@ export function CrmPage() {
             isActive={activeView === 'activities'}
             onClick={() => setActiveView('activities')}
           />
+          <SidebarItem
+            label="Automations"
+            icon={<Zap size={14} />}
+            isActive={activeView === 'automations'}
+            onClick={() => setActiveView('automations')}
+          />
         </SidebarSection>
       </AppSidebar>
 
@@ -2047,7 +2055,7 @@ export function CrmPage() {
         {/* Content header */}
         <div className="crm-content-header">
           <span className="crm-content-header-title">{sectionTitle}</span>
-          {activeView !== 'dashboard' && (
+          {activeView !== 'dashboard' && activeView !== 'automations' && (
             <div className="crm-content-header-actions">
               <IconButton
                 icon={<Search size={14} />}
@@ -2185,6 +2193,10 @@ export function CrmPage() {
                 activities={activities}
                 searchQuery={searchQuery}
               />
+            )}
+
+            {activeView === 'automations' && (
+              <AutomationsView stages={stages} />
             )}
           </div>
 

@@ -111,6 +111,9 @@ export const queryKeys = {
     activities: {
       all: ['crm', 'activities'] as const,
     },
+    workflows: {
+      all: ['crm', 'workflows'] as const,
+    },
     dashboard: ['crm', 'dashboard'] as const,
   },
 };

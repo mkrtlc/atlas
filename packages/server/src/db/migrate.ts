@@ -914,6 +914,22 @@ export async function runMigrations() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS crm_workflows (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        account_id UUID NOT NULL,
+        user_id UUID NOT NULL,
+        name VARCHAR(500) NOT NULL,
+        trigger VARCHAR(100) NOT NULL,
+        trigger_config JSONB NOT NULL DEFAULT '{}',
+        action VARCHAR(100) NOT NULL,
+        action_config JSONB NOT NULL DEFAULT '{}',
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        execution_count INTEGER NOT NULL DEFAULT 0,
+        last_executed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
     `);
 
     // ─── Indexes ────────────────────────────────────────────────────
@@ -1044,6 +1060,9 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_crm_activities_deal ON crm_activities(deal_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_activities_contact ON crm_activities(contact_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_activities_company ON crm_activities(company_id)',
+      // CRM Workflows
+      'CREATE INDEX IF NOT EXISTS idx_crm_workflows_account ON crm_workflows(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_workflows_trigger ON crm_workflows(trigger)',
     ];
 
     for (const idx of indexes) {

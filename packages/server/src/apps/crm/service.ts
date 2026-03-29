@@ -1,5 +1,6 @@
 import { db } from '../../config/database';
-import { crmCompanies, crmContacts, crmDealStages, crmDeals, crmActivities } from '../../db/schema';
+import { crmCompanies, crmContacts, crmDealStages, crmDeals, crmActivities, crmWorkflows } from '../../db/schema';
+import { tasks as tasksTable } from '../../db/schema';
 import { eq, and, asc, desc, sql, gte, lte } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 
@@ -338,6 +339,10 @@ export async function createContact(userId: string, accountId: string, input: Cr
     .returning();
 
   logger.info({ userId, contactId: created.id }, 'CRM contact created');
+
+  // Fire workflow trigger
+  executeWorkflows(accountId, userId, 'contact_created', { contactId: created.id }).catch(() => {});
+
   return created;
 }
 
@@ -605,12 +610,24 @@ export async function createDeal(userId: string, accountId: string, input: Creat
     .returning();
 
   logger.info({ userId, dealId: created.id }, 'CRM deal created');
+
+  // Fire workflow trigger
+  executeWorkflows(accountId, userId, 'deal_created', { dealId: created.id }).catch(() => {});
+
   return created;
 }
 
 export async function updateDeal(userId: string, accountId: string, id: string, input: UpdateDealInput) {
   const now = new Date();
   const updates: Record<string, unknown> = { updatedAt: now };
+
+  // Capture old stage for workflow trigger
+  let oldStageId: string | null = null;
+  if (input.stageId !== undefined) {
+    const [existing] = await db.select({ stageId: crmDeals.stageId }).from(crmDeals)
+      .where(and(eq(crmDeals.id, id), eq(crmDeals.userId, userId), eq(crmDeals.accountId, accountId))).limit(1);
+    if (existing) oldStageId = existing.stageId;
+  }
 
   if (input.title !== undefined) updates.title = input.title;
   if (input.value !== undefined) updates.value = input.value;
@@ -629,6 +646,13 @@ export async function updateDeal(userId: string, accountId: string, id: string, 
     .set(updates)
     .where(and(eq(crmDeals.id, id), eq(crmDeals.userId, userId), eq(crmDeals.accountId, accountId)));
 
+  // Fire workflow trigger if stage changed
+  if (input.stageId !== undefined && oldStageId && oldStageId !== input.stageId) {
+    executeWorkflows(accountId, userId, 'deal_stage_changed', {
+      dealId: id, fromStage: oldStageId, toStage: input.stageId,
+    }).catch(() => {});
+  }
+
   return getDeal(userId, accountId, id);
 }
 
@@ -643,6 +667,9 @@ export async function markDealWon(userId: string, accountId: string, id: string)
     .set({ wonAt: now, lostAt: null, lostReason: null, probability: 100, updatedAt: now })
     .where(and(eq(crmDeals.id, id), eq(crmDeals.userId, userId), eq(crmDeals.accountId, accountId)));
 
+  // Fire workflow trigger
+  executeWorkflows(accountId, userId, 'deal_won', { dealId: id }).catch(() => {});
+
   return getDeal(userId, accountId, id);
 }
 
@@ -652,6 +679,9 @@ export async function markDealLost(userId: string, accountId: string, id: string
     .update(crmDeals)
     .set({ lostAt: now, wonAt: null, lostReason: reason ?? null, probability: 0, updatedAt: now })
     .where(and(eq(crmDeals.id, id), eq(crmDeals.userId, userId), eq(crmDeals.accountId, accountId)));
+
+  // Fire workflow trigger
+  executeWorkflows(accountId, userId, 'deal_lost', { dealId: id }).catch(() => {});
 
   return getDeal(userId, accountId, id);
 }
@@ -739,6 +769,15 @@ export async function createActivity(userId: string, accountId: string, input: C
     .returning();
 
   logger.info({ userId, activityId: created.id }, 'CRM activity created');
+
+  // Fire workflow trigger
+  executeWorkflows(accountId, userId, 'activity_logged', {
+    activityId: created.id,
+    dealId: created.dealId,
+    contactId: created.contactId,
+    activityType: created.type,
+  }).catch(() => {});
+
   return created;
 }
 
@@ -1205,4 +1244,227 @@ export async function bulkCreateDeals(
 
   logger.info({ userId, accountId, imported, failed }, 'Bulk imported CRM deals');
   return { imported, failed, errors };
+}
+
+// ─── Workflow Automations ──────────────────────────────────────────
+
+interface CreateWorkflowInput {
+  name: string;
+  trigger: string;
+  triggerConfig?: Record<string, unknown>;
+  action: string;
+  actionConfig: Record<string, unknown>;
+}
+
+interface UpdateWorkflowInput {
+  name?: string;
+  trigger?: string;
+  triggerConfig?: Record<string, unknown>;
+  action?: string;
+  actionConfig?: Record<string, unknown>;
+  isActive?: boolean;
+}
+
+export async function listWorkflows(userId: string, accountId: string) {
+  return db
+    .select()
+    .from(crmWorkflows)
+    .where(and(eq(crmWorkflows.userId, userId), eq(crmWorkflows.accountId, accountId)))
+    .orderBy(desc(crmWorkflows.createdAt));
+}
+
+export async function createWorkflow(userId: string, accountId: string, input: CreateWorkflowInput) {
+  const now = new Date();
+
+  const [created] = await db
+    .insert(crmWorkflows)
+    .values({
+      accountId,
+      userId,
+      name: input.name,
+      trigger: input.trigger,
+      triggerConfig: input.triggerConfig ?? {},
+      action: input.action,
+      actionConfig: input.actionConfig,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  logger.info({ userId, workflowId: created.id }, 'CRM workflow created');
+  return created;
+}
+
+export async function updateWorkflow(userId: string, workflowId: string, input: UpdateWorkflowInput) {
+  const now = new Date();
+  const updates: Record<string, unknown> = { updatedAt: now };
+
+  if (input.name !== undefined) updates.name = input.name;
+  if (input.trigger !== undefined) updates.trigger = input.trigger;
+  if (input.triggerConfig !== undefined) updates.triggerConfig = input.triggerConfig;
+  if (input.action !== undefined) updates.action = input.action;
+  if (input.actionConfig !== undefined) updates.actionConfig = input.actionConfig;
+  if (input.isActive !== undefined) updates.isActive = input.isActive;
+
+  await db
+    .update(crmWorkflows)
+    .set(updates)
+    .where(and(eq(crmWorkflows.id, workflowId), eq(crmWorkflows.userId, userId)));
+
+  const [updated] = await db
+    .select()
+    .from(crmWorkflows)
+    .where(and(eq(crmWorkflows.id, workflowId), eq(crmWorkflows.userId, userId)))
+    .limit(1);
+
+  return updated || null;
+}
+
+export async function deleteWorkflow(userId: string, workflowId: string) {
+  await db
+    .delete(crmWorkflows)
+    .where(and(eq(crmWorkflows.id, workflowId), eq(crmWorkflows.userId, userId)));
+}
+
+export async function toggleWorkflow(userId: string, workflowId: string) {
+  const [existing] = await db
+    .select()
+    .from(crmWorkflows)
+    .where(and(eq(crmWorkflows.id, workflowId), eq(crmWorkflows.userId, userId)))
+    .limit(1);
+
+  if (!existing) return null;
+
+  const now = new Date();
+  await db
+    .update(crmWorkflows)
+    .set({ isActive: !existing.isActive, updatedAt: now })
+    .where(eq(crmWorkflows.id, workflowId));
+
+  const [updated] = await db
+    .select()
+    .from(crmWorkflows)
+    .where(eq(crmWorkflows.id, workflowId))
+    .limit(1);
+
+  return updated || null;
+}
+
+export async function executeWorkflows(
+  accountId: string,
+  userId: string,
+  trigger: string,
+  context: Record<string, unknown>,
+) {
+  // Find all active workflows matching this trigger for the account
+  const workflows = await db
+    .select()
+    .from(crmWorkflows)
+    .where(and(
+      eq(crmWorkflows.accountId, accountId),
+      eq(crmWorkflows.trigger, trigger),
+      eq(crmWorkflows.isActive, true),
+    ));
+
+  for (const workflow of workflows) {
+    try {
+      // Check trigger config matches context
+      if (!matchesTriggerConfig(workflow.triggerConfig, trigger, context)) {
+        continue;
+      }
+
+      // Execute the action
+      await executeAction(userId, accountId, workflow.action, workflow.actionConfig, context);
+
+      // Update execution stats
+      const now = new Date();
+      await db
+        .update(crmWorkflows)
+        .set({
+          executionCount: sql`${crmWorkflows.executionCount} + 1`,
+          lastExecutedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(crmWorkflows.id, workflow.id));
+
+      logger.info({ workflowId: workflow.id, trigger, action: workflow.action }, 'CRM workflow executed');
+    } catch (error) {
+      logger.error({ error, workflowId: workflow.id, trigger }, 'CRM workflow execution failed');
+    }
+  }
+}
+
+function matchesTriggerConfig(
+  config: Record<string, unknown>,
+  trigger: string,
+  context: Record<string, unknown>,
+): boolean {
+  if (!config || Object.keys(config).length === 0) return true;
+
+  if (trigger === 'deal_stage_changed') {
+    if (config.fromStage && config.fromStage !== context.fromStage) return false;
+    if (config.toStage && config.toStage !== context.toStage) return false;
+  }
+
+  if (trigger === 'activity_logged') {
+    if (config.activityType && config.activityType !== context.activityType) return false;
+  }
+
+  return true;
+}
+
+async function executeAction(
+  userId: string,
+  accountId: string,
+  action: string,
+  actionConfig: Record<string, unknown>,
+  context: Record<string, unknown>,
+) {
+  switch (action) {
+    case 'create_task': {
+      const title = (actionConfig.taskTitle as string) || 'Automated task';
+      const now = new Date();
+      await db.insert(tasksTable).values({
+        accountId,
+        userId,
+        title,
+        status: 'todo',
+        when: 'inbox',
+        priority: 'none',
+        type: 'task',
+        tags: [],
+        sortOrder: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      break;
+    }
+    case 'update_field': {
+      const fieldName = actionConfig.fieldName as string;
+      const fieldValue = actionConfig.fieldValue as string;
+      const dealId = context.dealId as string | undefined;
+      if (dealId && fieldName) {
+        const now = new Date();
+        const updates: Record<string, unknown> = { updatedAt: now };
+        // Support common deal fields
+        if (fieldName === 'probability') updates.probability = Number(fieldValue) || 0;
+        else if (fieldName === 'value') updates.value = Number(fieldValue) || 0;
+        else if (fieldName === 'title') updates.title = fieldValue;
+
+        if (Object.keys(updates).length > 1) {
+          await db.update(crmDeals).set(updates).where(eq(crmDeals.id, dealId));
+        }
+      }
+      break;
+    }
+    case 'change_deal_stage': {
+      const newStageId = actionConfig.newStageId as string;
+      const dealId = context.dealId as string | undefined;
+      if (dealId && newStageId) {
+        const now = new Date();
+        await db.update(crmDeals).set({ stageId: newStageId, updatedAt: now }).where(eq(crmDeals.id, dealId));
+      }
+      break;
+    }
+  }
 }

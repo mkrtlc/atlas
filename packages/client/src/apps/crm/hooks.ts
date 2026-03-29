@@ -516,6 +516,88 @@ export function useDashboard() {
   });
 }
 
+// ─── Workflow Types ───────────────────────────────────────────────
+
+export interface CrmWorkflow {
+  id: string;
+  accountId: string;
+  userId: string;
+  name: string;
+  trigger: string;
+  triggerConfig: Record<string, unknown>;
+  action: string;
+  actionConfig: Record<string, unknown>;
+  isActive: boolean;
+  executionCount: number;
+  lastExecutedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Workflow Queries ─────────────────────────────────────────────
+
+export function useWorkflows() {
+  return useQuery({
+    queryKey: queryKeys.crm.workflows.all,
+    queryFn: async () => {
+      const { data } = await api.get('/crm/workflows');
+      return data.data as { workflows: CrmWorkflow[] };
+    },
+    staleTime: 15_000,
+  });
+}
+
+export function useCreateWorkflow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; trigger: string; triggerConfig?: Record<string, unknown>; action: string; actionConfig: Record<string, unknown> }) => {
+      const { data } = await api.post('/crm/workflows', input);
+      return data.data as CrmWorkflow;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
+export function useUpdateWorkflow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: { id: string } & Partial<{ name: string; trigger: string; triggerConfig: Record<string, unknown>; action: string; actionConfig: Record<string, unknown>; isActive: boolean }>) => {
+      const { data } = await api.put(`/crm/workflows/${id}`, input);
+      return data.data as CrmWorkflow;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
+export function useDeleteWorkflow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/crm/workflows/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
+export function useToggleWorkflow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/crm/workflows/${id}/toggle`);
+      return data.data as CrmWorkflow;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
 // ─── Seed ──────────────────────────────────────────────────────────
 
 export function useSeedCrmData() {

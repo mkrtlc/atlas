@@ -55,3 +55,32 @@ export interface CreateCrmContactInput { name: string; email?: string; phone?: s
 export interface CreateCrmCompanyInput { name: string; domain?: string; industry?: string; size?: string; address?: string; phone?: string; }
 export interface CreateCrmDealInput { title: string; value: number; stageId: string; contactId?: string; companyId?: string; expectedCloseDate?: string; }
 export interface CreateCrmActivityInput { type: CrmActivityType; body: string; dealId?: string; contactId?: string; companyId?: string; scheduledAt?: string; }
+
+// ─── Workflow Automations ──────────────────────────────────────────
+
+export type CrmWorkflowTrigger = 'deal_stage_changed' | 'deal_created' | 'deal_won' | 'deal_lost' | 'contact_created' | 'activity_logged';
+export type CrmWorkflowAction = 'create_task' | 'update_field' | 'change_deal_stage';
+
+export interface CrmWorkflow {
+  id: string;
+  accountId: string;
+  userId: string;
+  name: string;
+  trigger: CrmWorkflowTrigger;
+  triggerConfig: Record<string, unknown>;
+  action: CrmWorkflowAction;
+  actionConfig: Record<string, unknown>;
+  isActive: boolean;
+  executionCount: number;
+  lastExecutedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCrmWorkflowInput {
+  name: string;
+  trigger: CrmWorkflowTrigger;
+  triggerConfig?: Record<string, unknown>;
+  action: CrmWorkflowAction;
+  actionConfig: Record<string, unknown>;
+}

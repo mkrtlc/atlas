@@ -50,6 +50,13 @@ router.post('/activities', crmController.createActivity);
 router.patch('/activities/:id', crmController.updateActivity);
 router.delete('/activities/:id', crmController.deleteActivity);
 
+// Workflow Automations
+router.get('/workflows', crmController.listWorkflows);
+router.post('/workflows', crmController.createWorkflow);
+router.put('/workflows/:id', crmController.updateWorkflow);
+router.delete('/workflows/:id', crmController.deleteWorkflow);
+router.post('/workflows/:id/toggle', crmController.toggleWorkflow);
+
 // Seed sample data
 router.post('/seed', crmController.seedSampleData);
 

@@ -999,3 +999,23 @@ export const crmActivities = pgTable('crm_activities', {
   companyIdx: index('idx_crm_activities_company').on(table.companyId),
 }));
 
+// ─── CRM: Workflow Automations ────────────────────────────────────
+export const crmWorkflows = pgTable('crm_workflows', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  name: varchar('name', { length: 500 }).notNull(),
+  trigger: varchar('trigger', { length: 100 }).notNull(),
+  triggerConfig: jsonb('trigger_config').$type<Record<string, unknown>>().notNull().default({}),
+  action: varchar('action', { length: 100 }).notNull(),
+  actionConfig: jsonb('action_config').$type<Record<string, unknown>>().notNull().default({}),
+  isActive: boolean('is_active').notNull().default(true),
+  executionCount: integer('execution_count').notNull().default(0),
+  lastExecutedAt: timestamp('last_executed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  accountIdx: index('idx_crm_workflows_account').on(table.accountId),
+  triggerIdx: index('idx_crm_workflows_trigger').on(table.trigger),
+}));
+
