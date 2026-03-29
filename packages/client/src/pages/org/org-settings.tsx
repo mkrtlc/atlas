@@ -7,12 +7,18 @@ import {
   Calendar,
   Copy,
   Check,
+  Shield,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
 import { useMyTenants, useTenantUsers } from '../../hooks/use-platform';
+import { useUpdateTenantStatus, useUpdateTenantPlan } from '../../hooks/use-admin';
+import { useQueryClient } from '@tanstack/react-query';
 import { Chip } from '../../components/ui/chip';
 import { Skeleton } from '../../components/ui/skeleton';
 import { IconButton } from '../../components/ui/icon-button';
+import { Button } from '../../components/ui/button';
+import { Select } from '../../components/ui/select';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 
 // ---------------------------------------------------------------------------
 // Styles
@@ -174,15 +180,29 @@ function SkeletonBlock() {
 // OrgSettingsPage
 // ---------------------------------------------------------------------------
 
+const PLANS = ['starter', 'pro', 'enterprise'];
+
 export function OrgSettingsPage() {
   const storeTenantId = useAuthStore((s) => s.tenantId);
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const { data: tenants, isLoading: tenantsLoading } = useMyTenants();
   const tenant = tenants?.[0];
   const effectiveTenantId = storeTenantId ?? tenant?.id;
 
   const { data: users, isLoading: usersLoading } = useTenantUsers(effectiveTenantId ?? undefined);
+  const statusMutation = useUpdateTenantStatus();
+  const planMutation = useUpdateTenantPlan();
+  const qc = useQueryClient();
+
+  const [confirmSuspend, setConfirmSuspend] = useState(false);
 
   const isLoading = tenantsLoading || usersLoading;
+
+  const invalidate = () => {
+    if (effectiveTenantId) {
+      qc.invalidateQueries({ queryKey: ['my-tenants'] });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -202,6 +222,7 @@ export function OrgSettingsPage() {
   }
 
   const memberCount = users?.length ?? 0;
+  const isSuspended = tenant.status === 'suspended';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)', maxWidth: 720 }}>
@@ -281,6 +302,68 @@ export function OrgSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Super admin controls */}
+      {isSuperAdmin && (
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <Shield size={15} style={{ color: 'var(--color-text-tertiary)' }} />
+            <span style={sectionTitleStyle}>Admin controls</span>
+          </div>
+          <div style={rowStyle}>
+            <span style={labelStyle}>Plan</span>
+            <div style={valueStyle}>
+              <Select
+                value={tenant.plan}
+                onChange={(val) => {
+                  planMutation.mutate({ id: tenant.id, plan: val }, { onSuccess: invalidate });
+                }}
+                options={PLANS.map((p) => ({
+                  value: p,
+                  label: p,
+                  color: PLAN_COLORS[p],
+                }))}
+                size="sm"
+                width={140}
+              />
+            </div>
+          </div>
+          <div style={{ ...rowStyle, borderBottom: 'none' }}>
+            <span style={labelStyle}>Status</span>
+            <div style={valueStyle}>
+              <Button
+                variant={isSuspended ? 'secondary' : 'danger'}
+                size="sm"
+                disabled={statusMutation.isPending}
+                onClick={() => {
+                  if (isSuspended) {
+                    statusMutation.mutate({ id: tenant.id, status: 'active' }, { onSuccess: invalidate });
+                  } else {
+                    setConfirmSuspend(true);
+                  }
+                }}
+              >
+                {isSuspended ? 'Activate' : 'Suspend'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm suspend dialog */}
+      {isSuperAdmin && (
+        <ConfirmDialog
+          open={confirmSuspend}
+          onOpenChange={setConfirmSuspend}
+          title="Suspend organization"
+          description={`This will suspend "${tenant.name}". Users will lose access until reactivated.`}
+          confirmLabel="Suspend"
+          destructive
+          onConfirm={() => {
+            statusMutation.mutate({ id: tenant.id, status: 'suspended' }, { onSuccess: invalidate });
+          }}
+        />
+      )}
     </div>
   );
 }

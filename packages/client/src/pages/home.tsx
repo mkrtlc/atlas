@@ -8,7 +8,7 @@ import {
   FileText, Pencil, CheckSquare, Table2,
   ArrowRight, Settings, LogOut,
   HardDrive,
-  Building2, Shield,
+  Building2,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
 import { useTaskCounts } from '../apps/tasks/hooks';
@@ -549,7 +549,6 @@ export function HomePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isDesktop = !!('atlasDesktop' in window);
   const { openSettings } = useUIStore();
-  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const logout = useAuthStore((s) => s.logout);
   const { data: taskCounts } = useTaskCounts({ enabled: isAuthenticated });
   const parallax = useMouseParallax(15);
@@ -716,44 +715,6 @@ export function HomePage() {
           <Building2 size={16} />
           Organization
         </button>
-
-        {/* Admin button — only visible to super admins */}
-        {isSuperAdmin && (
-          <button
-            onClick={() => navigate(ROUTES.ADMIN)}
-            aria-label="Admin"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              height: 36,
-              padding: '0 14px',
-              background: 'rgba(255,255,255,0.12)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              borderRadius: 18,
-              color: 'rgba(255,255,255,0.75)',
-              cursor: 'pointer',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              transition: 'background 0.2s, color 0.2s',
-              fontFamily: 'var(--font-family)',
-              fontSize: 13,
-              fontWeight: 500,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.22)';
-              e.currentTarget.style.color = '#fff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-              e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
-            }}
-          >
-            <Shield size={16} />
-            Admin
-          </button>
-        )}
 
         {/* Settings gear */}
         <button

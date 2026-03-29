@@ -18,13 +18,10 @@ import { type ReactNode } from 'react';
 import { OrgLayout } from './pages/org/org-layout';
 import { OrgOverviewPage } from './pages/org/org-overview';
 import { OrgMembersPage } from './pages/org/org-members';
+import { OrgAppsPage } from './pages/org/org-apps';
 import { OrgSettingsPage } from './pages/org/org-settings';
 import { ForgotPasswordPage } from './pages/forgot-password';
 import { ResetPasswordPage } from './pages/reset-password';
-import { AdminLayout, AdminProtectedRoute } from './pages/admin/admin-layout';
-import { AdminOverviewPage } from './pages/admin/admin-overview';
-import { AdminTenantsPage } from './pages/admin/admin-tenants';
-import { AdminTenantDetailPage } from './pages/admin/admin-tenant-detail';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -110,22 +107,12 @@ export function App() {
                 >
                   <Route index element={<OrgOverviewPage />} />
                   <Route path="members" element={<OrgMembersPage />} />
+                  <Route path="apps" element={<OrgAppsPage />} />
                   <Route path="settings" element={<OrgSettingsPage />} />
                 </Route>
-                {/* Admin routes */}
-                <Route path={ROUTES.ADMIN_LOGIN} element={<Navigate to={ROUTES.LOGIN} replace />} />
-                <Route
-                  path={ROUTES.ADMIN}
-                  element={
-                    <AdminProtectedRoute>
-                      <AdminLayout />
-                    </AdminProtectedRoute>
-                  }
-                >
-                  <Route index element={<AdminOverviewPage />} />
-                  <Route path="tenants" element={<AdminTenantsPage />} />
-                  <Route path="tenants/:id" element={<AdminTenantDetailPage />} />
-                </Route>
+                {/* Legacy admin routes — redirect to org */}
+                <Route path="/admin/login" element={<Navigate to={ROUTES.LOGIN} replace />} />
+                <Route path="/admin/*" element={<Navigate to={ROUTES.ORG} replace />} />
 
                 <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
               </Routes>

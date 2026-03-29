@@ -16,12 +16,8 @@ export const ROUTES = {
   DRIVE_FOLDER: '/drive/folder/:id',
   ORG: '/org',
   ORG_MEMBERS: '/org/members',
+  ORG_APPS: '/org/apps',
   ORG_SETTINGS: '/org/settings',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password/:token',
-  ADMIN_LOGIN: '/admin/login',
-  ADMIN: '/admin',
-  ADMIN_OVERVIEW: '/admin',
-  ADMIN_TENANTS: '/admin/tenants',
-  ADMIN_TENANT_DETAIL: '/admin/tenants/:id',
 } as const;
