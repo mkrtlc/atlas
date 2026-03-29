@@ -232,13 +232,14 @@ export function SidebarSection({ title, children }: SidebarSectionProps) {
 export interface SidebarItemProps {
   label: string;
   icon?: ReactNode;
+  iconColor?: string;
   isActive?: boolean;
   count?: number;
   onClick?: () => void;
   style?: React.CSSProperties;
 }
 
-export function SidebarItem({ label, icon, isActive, count, onClick, style }: SidebarItemProps) {
+export function SidebarItem({ label, icon, iconColor, isActive, count, onClick, style }: SidebarItemProps) {
   return (
     <button
       onClick={onClick}
@@ -268,7 +269,7 @@ export function SidebarItem({ label, icon, isActive, count, onClick, style }: Si
       }}
     >
       {icon && (
-        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.7 }}>
+        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.7, color: iconColor || 'inherit' }}>
           {icon}
         </span>
       )}

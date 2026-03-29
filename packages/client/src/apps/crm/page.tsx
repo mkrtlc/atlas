@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Briefcase, Users, Building2, Clock, Plus, Search, Settings2, X,
   ChevronRight, Trash2, Phone as PhoneIcon, Mail,
@@ -1726,7 +1727,13 @@ export function CrmPage() {
   const myRole = myPermission?.role ?? 'admin'; // Default admin for backward compat
 
   // Navigation
-  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  // URL-based routing for sidebar views
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = (searchParams.get('view') || 'dashboard') as ActiveView;
+  const activeView = viewParam;
+  const setActiveView = useCallback((view: ActiveView) => {
+    setSearchParams({ view }, { replace: true });
+  }, [setSearchParams]);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
@@ -2009,18 +2016,21 @@ export function CrmPage() {
           <SidebarItem
             label="Dashboard"
             icon={<BarChart3 size={14} />}
+            iconColor="#f97316"
             isActive={activeView === 'dashboard'}
             onClick={() => setActiveView('dashboard')}
           />
           <SidebarItem
             label="Pipeline"
             icon={<LayoutGrid size={14} />}
+            iconColor="#8b5cf6"
             isActive={activeView === 'pipeline'}
             onClick={() => setActiveView('pipeline')}
           />
           <SidebarItem
             label="Deals"
             icon={<List size={14} />}
+            iconColor="#3b82f6"
             isActive={activeView === 'deals'}
             count={deals.length}
             onClick={() => setActiveView('deals')}
@@ -2031,6 +2041,7 @@ export function CrmPage() {
           <SidebarItem
             label="Contacts"
             icon={<Users size={14} />}
+            iconColor="#10b981"
             isActive={activeView === 'contacts'}
             count={contacts.length}
             onClick={() => setActiveView('contacts')}
@@ -2038,6 +2049,7 @@ export function CrmPage() {
           <SidebarItem
             label="Companies"
             icon={<Building2 size={14} />}
+            iconColor="#06b6d4"
             isActive={activeView === 'companies'}
             count={companies.length}
             onClick={() => setActiveView('companies')}
@@ -2049,6 +2061,7 @@ export function CrmPage() {
             <SidebarItem
               label="Activities"
               icon={<Clock size={14} />}
+              iconColor="#f59e0b"
               isActive={activeView === 'activities'}
               onClick={() => setActiveView('activities')}
             />
@@ -2057,6 +2070,7 @@ export function CrmPage() {
             <SidebarItem
               label="Automations"
               icon={<Zap size={14} />}
+              iconColor="#ef4444"
               isActive={activeView === 'automations'}
               onClick={() => setActiveView('automations')}
             />
@@ -2065,6 +2079,7 @@ export function CrmPage() {
             <SidebarItem
               label="Permissions"
               icon={<Shield size={14} />}
+              iconColor="#6b7280"
               isActive={activeView === 'permissions'}
               onClick={() => setActiveView('permissions')}
             />
