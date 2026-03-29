@@ -1,7 +1,7 @@
-import { db } from '../config/database';
-import { drawings } from '../db/schema';
+import { db } from '../../config/database';
+import { drawings } from '../../db/schema';
 import { eq, and, asc, sql } from 'drizzle-orm';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 import type { CreateDrawingInput, UpdateDrawingInput } from '@atlasmail/shared';
 
 // ─── List all drawings (flat list) ───────────────────────────────────

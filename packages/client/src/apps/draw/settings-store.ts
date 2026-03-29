@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api-client';
-import { queryKeys } from '../config/query-keys';
+import { api } from '../../lib/api-client';
+import { queryKeys } from '../../config/query-keys';
 
 export type DrawExportQuality = 1 | 2 | 4;
 export type DrawBackground = 'white' | 'light' | 'dark';

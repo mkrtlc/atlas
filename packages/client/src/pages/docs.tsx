@@ -35,7 +35,7 @@ import { useDocSettingsStore, useDocSettingsSync } from '../stores/docs-settings
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api-client';
 import { queryKeys } from '../config/query-keys';
-import { useDrawingList } from '../hooks/use-drawings';
+import { useDrawingList } from '../apps/draw/hooks';
 import { useTableList } from '../hooks/use-tables';
 import { EmojiPicker } from '../components/shared/emoji-picker';
 import { CoverPicker, isCoverGradient } from '../components/shared/cover-picker';

@@ -1,7 +1,7 @@
 import { createApp } from './app';
 import { env } from './config/env';
 import { logger } from './utils/logger';
-import { purgeOldArchivedDrawings } from './services/drawing.service';
+import { purgeOldArchivedDrawings } from './apps/draw/service';
 import { runScheduledBackup } from './services/backup.service';
 import { runMigrations } from './db/migrate';
 import { closeDb } from './config/database';

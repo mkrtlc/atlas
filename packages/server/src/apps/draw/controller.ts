@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import * as drawingService from '../services/drawing.service';
-import { logger } from '../utils/logger';
+import * as drawingService from './service';
+import { logger } from '../../utils/logger';
 
 // GET /api/drawings
 export async function listDrawings(req: Request, res: Response) {

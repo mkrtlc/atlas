@@ -628,7 +628,7 @@ export async function createLinkedDocument(userId: string, accountId: string, pa
 }
 
 export async function createLinkedDrawing(userId: string, accountId: string, parentId?: string | null) {
-  const { createDrawing } = await import('./drawing.service');
+  const { createDrawing } = await import('../apps/draw/service');
   const drawing = await createDrawing(userId, accountId, { title: 'Untitled drawing' });
 
   const now = new Date();

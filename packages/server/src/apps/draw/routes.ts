@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import * as drawingController from '../controllers/drawing.controller';
-import { authMiddleware } from '../middleware/auth';
+import * as drawingController from './controller';
+import { authMiddleware } from '../../middleware/auth';
 
 const router = Router();
 router.use(authMiddleware);

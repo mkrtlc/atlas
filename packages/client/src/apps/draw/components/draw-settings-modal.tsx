@@ -6,15 +6,15 @@ import {
   type DrawBackground,
   type DrawExportQuality,
   type DrawAutoSaveInterval,
-} from '../../stores/draw-settings-store';
+} from '../settings-store';
 import {
   SettingsSection,
   SettingsRow,
   SettingsToggle,
   SelectableCard,
   SettingsSelect,
-} from '../settings/settings-primitives';
-import { Modal, ModalSidebarNavButton } from '../ui/modal';
+} from '../../../components/settings/settings-primitives';
+import { Modal, ModalSidebarNavButton } from '../../../components/ui/modal';
 
 // ---------------------------------------------------------------------------
 // Types

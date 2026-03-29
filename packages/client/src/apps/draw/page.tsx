@@ -20,7 +20,7 @@ import {
   LayoutTemplate,
   ArrowDownAZ,
 } from 'lucide-react';
-import { AppSidebar } from '../components/layout/app-sidebar';
+import { AppSidebar } from '../../components/layout/app-sidebar';
 import { useTranslation } from 'react-i18next';
 import {
   useDrawingList,
@@ -31,14 +31,14 @@ import {
   useRestoreDrawing,
   useDuplicateDrawing,
   useAutoSaveDrawing,
-} from '../hooks/use-drawings';
-import { useSettingsStore } from '../stores/settings-store';
-import { useDrawSettingsStore, useDrawSettingsSync, type DrawSortOrder } from '../stores/draw-settings-store';
-import { DrawSettingsModal } from '../components/draw/draw-settings-modal';
-import { SmartButtonBar } from '../components/shared/SmartButtonBar';
-import { useUIStore } from '../stores/ui-store';
-import { DRAWING_TEMPLATES } from '../config/drawing-templates';
-import { DEFAULT_LIBRARY_ITEMS } from '../config/drawing-libraries';
+} from './hooks';
+import { useSettingsStore } from '../../stores/settings-store';
+import { useDrawSettingsStore, useDrawSettingsSync, type DrawSortOrder } from './settings-store';
+import { DrawSettingsModal } from './components/draw-settings-modal';
+import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { useUIStore } from '../../stores/ui-store';
+import { DRAWING_TEMPLATES } from '../../config/drawing-templates';
+import { DEFAULT_LIBRARY_ITEMS } from '../../config/drawing-libraries';
 import type { Drawing } from '@atlasmail/shared';
 
 // ─── Sort helper ────────────────────────────────────────────────────
@@ -1162,7 +1162,7 @@ function pickAppState(appState: Record<string, unknown>): Record<string, unknown
 
 // ─── Library persistence (server-backed) ─────────────────────────────
 
-import { api as drawApi } from '../lib/api-client';
+import { api as drawApi } from '../../lib/api-client';
 
 const libraryAdapter = {
   async load() {

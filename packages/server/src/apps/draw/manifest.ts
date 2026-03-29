@@ -1,4 +1,4 @@
-import drawingsRouter from '../../routes/drawings.routes';
+import drawingsRouter from './routes';
 import type { ServerAppManifest } from '../../config/app-manifest.server';
 
 export const drawServerManifest: ServerAppManifest = {

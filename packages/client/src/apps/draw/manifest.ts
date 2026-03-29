@@ -1,7 +1,7 @@
 import { Pencil, Palette, Download } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { DrawPage } from '../../pages/draw';
-import { DrawCanvasPanel, DrawExportPanel } from '../../components/draw/draw-settings-modal';
+import { DrawPage } from './page';
+import { DrawCanvasPanel, DrawExportPanel } from './components/draw-settings-modal';
 
 export const drawManifest: ClientAppManifest = {
   id: 'draw',
