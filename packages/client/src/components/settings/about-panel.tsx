@@ -1,13 +1,9 @@
 import { type CSSProperties } from 'react';
-import { Mail, Keyboard, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Keyboard, ChevronRight } from 'lucide-react';
 import {
   SettingsSection,
   SettingsRow,
 } from './settings-primitives';
-
-// ---------------------------------------------------------------------------
-// AboutPanel
-// ---------------------------------------------------------------------------
 
 export function AboutPanel() {
   return (
@@ -37,7 +33,7 @@ export function AboutPanel() {
               flexShrink: 0,
             }}
           >
-            <Mail size={28} color="#ffffff" />
+            <LayoutGrid size={28} color="#ffffff" />
           </div>
           <div>
             <div
@@ -58,7 +54,7 @@ export function AboutPanel() {
                 fontFamily: 'var(--font-family)',
               }}
             >
-              Fast, keyboard-first email client
+              All-in-one business platform
             </div>
           </div>
         </div>
@@ -79,9 +75,30 @@ export function AboutPanel() {
           </span>
         </SettingsRow>
 
+        <SettingsRow label="Apps" description="Integrated applications">
+          <div style={{ display: 'flex', gap: 'var(--spacing-xs)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {['Write', 'Draw', 'Tasks', 'Tables', 'Drive'].map((name) => (
+              <span
+                key={name}
+                style={{
+                  fontFamily: 'var(--font-family)',
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-secondary)',
+                  background: 'var(--color-bg-tertiary)',
+                  padding: '3px 10px',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border-secondary)',
+                }}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </SettingsRow>
+
         <SettingsRow label="Built with" description="Core technologies">
           <div style={{ display: 'flex', gap: 'var(--spacing-xs)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {['React', 'TypeScript', 'Vite', 'Zustand'].map((name) => (
+            {['React', 'TypeScript', 'Express', 'PostgreSQL'].map((name) => (
               <span
                 key={name}
                 style={{
