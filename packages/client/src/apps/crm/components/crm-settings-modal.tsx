@@ -104,6 +104,7 @@ export function CrmStagesPanel() {
                     {STAGE_COLORS.map((c) => (
                       <button
                         key={c}
+                        aria-label={`Select color ${c}`}
                         onClick={() => setEditColor(c)}
                         style={{
                           width: 16, height: 16, borderRadius: '50%', background: c, border: editColor === c ? '2px solid var(--color-text-primary)' : '2px solid transparent', cursor: 'pointer', padding: 0,
@@ -149,6 +150,7 @@ export function CrmStagesPanel() {
                 {STAGE_COLORS.slice(0, 5).map((c) => (
                   <button
                     key={c}
+                    aria-label={`Select color ${c}`}
                     onClick={() => setNewColor(c)}
                     style={{
                       width: 16, height: 16, borderRadius: '50%', background: c, border: newColor === c ? '2px solid var(--color-text-primary)' : '2px solid transparent', cursor: 'pointer', padding: 0,
