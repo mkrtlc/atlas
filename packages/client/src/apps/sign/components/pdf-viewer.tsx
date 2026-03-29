@@ -20,15 +20,18 @@ export function PdfViewer({ url, scale = 1.5, onPageCount, renderOverlay }: PdfV
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const renderedPages = useRef<Set<number>>(new Set());
 
+  // Load PDF document and extract page info
   useEffect(() => {
     let cancelled = false;
+    renderedPages.current.clear();
 
     async function loadPdf() {
       setLoading(true);
       setError(null);
+      setPages([]);
 
       try {
         const loadingTask = pdfjsLib.getDocument(url);
@@ -54,29 +57,9 @@ export function PdfViewer({ url, scale = 1.5, onPageCount, renderOverlay }: PdfV
         if (cancelled) return;
         setPages(pageInfos);
         setLoading(false);
-
-        // Render each page to canvas
-        for (let i = 1; i <= pageCount; i++) {
-          if (cancelled) break;
-          const page = await pdfDoc.getPage(i);
-          const viewport = page.getViewport({ scale });
-          const canvas = canvasRefs.current.get(i);
-          if (!canvas) continue;
-
-          const context = canvas.getContext('2d');
-          if (!context) continue;
-
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-
-          await page.render({
-            canvasContext: context,
-            viewport,
-            canvas,
-          } as any).promise;
-        }
       } catch (err) {
         if (!cancelled) {
+          console.error('PDF load error:', err);
           setError('Failed to load PDF');
           setLoading(false);
         }
@@ -94,19 +77,51 @@ export function PdfViewer({ url, scale = 1.5, onPageCount, renderOverlay }: PdfV
     };
   }, [url, scale, onPageCount]);
 
+  // Store canvas refs stably
+  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
+
+  // Render pages after they're in the DOM
+  useEffect(() => {
+    if (pages.length === 0 || !pdfDocRef.current) return;
+
+    let cancelled = false;
+
+    async function renderAllPages() {
+      const doc = pdfDocRef.current;
+      if (!doc) return;
+
+      for (const pageInfo of pages) {
+        if (cancelled) break;
+
+        const canvas = canvasRefs.current.get(pageInfo.pageNumber);
+        if (!canvas) continue;
+
+        try {
+          const page = await doc.getPage(pageInfo.pageNumber);
+          const viewport = page.getViewport({ scale: scaleRef.current });
+          const context = canvas.getContext('2d');
+          if (!context) continue;
+
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({ canvasContext: context, viewport, canvas } as any).promise;
+        } catch (err) {
+          if (!cancelled) console.error(`Failed to render page ${pageInfo.pageNumber}:`, err);
+        }
+      }
+    }
+
+    // Small delay to ensure canvases are in the DOM
+    const timer = setTimeout(renderAllPages, 50);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [pages]);
+
   if (loading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 40,
-          color: 'var(--color-text-secondary)',
-          fontFamily: 'var(--font-family)',
-          fontSize: 'var(--font-size-sm)',
-        }}
-      >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)', fontSize: 'var(--font-size-sm)' }}>
         Loading PDF...
       </div>
     );
@@ -114,17 +129,7 @@ export function PdfViewer({ url, scale = 1.5, onPageCount, renderOverlay }: PdfV
 
   if (error) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 40,
-          color: 'var(--color-error)',
-          fontFamily: 'var(--font-family)',
-          fontSize: 'var(--font-size-sm)',
-        }}
-      >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, color: 'var(--color-error)', fontFamily: 'var(--font-family)', fontSize: 'var(--font-size-sm)' }}>
         {error}
       </div>
     );
@@ -133,7 +138,7 @@ export function PdfViewer({ url, scale = 1.5, onPageCount, renderOverlay }: PdfV
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '16px 0' }}>
       {pages.map((page) => (
-        <div key={page.pageNumber} style={{ position: 'relative' }}>
+        <div key={page.pageNumber} id={`sign-page-${page.pageNumber}`} style={{ position: 'relative' }}>
           <canvas
             ref={(el) => {
               if (el) canvasRefs.current.set(page.pageNumber, el);
@@ -153,21 +158,12 @@ export function PdfViewer({ url, scale = 1.5, onPageCount, renderOverlay }: PdfV
                 left: 0,
                 width: page.width,
                 height: page.height,
-                pointerEvents: 'none',
               }}
             >
               {renderOverlay(page.pageNumber, page.width, page.height)}
             </div>
           )}
-          <div
-            style={{
-              textAlign: 'center',
-              marginTop: 4,
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-tertiary)',
-              fontFamily: 'var(--font-family)',
-            }}
-          >
+          <div style={{ textAlign: 'center', marginTop: 4, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
             Page {page.pageNumber} of {pages.length}
           </div>
         </div>
