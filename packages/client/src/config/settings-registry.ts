@@ -3,17 +3,8 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Globe,
   Settings,
-  Users,
   Palette,
-  Bell,
-  Keyboard,
   Info,
-  Mail,
-  PenLine,
-  Sparkles,
-  Inbox,
-  PanelRight,
-  Tag,
   CheckSquare,
   Eye,
   Zap,
@@ -33,15 +24,7 @@ import {
 
 import {
   MailGeneralPanel,
-  MailAccountsPanel,
   MailAppearancePanel,
-  MailNotificationsPanel,
-  MailComposerPanel,
-  MailAIPanel,
-  MailInboxPanel,
-  MailReadingPanePanel,
-  MailLabelsPanel,
-  MailShortcutsPanel,
   MailAboutPanel,
 } from '../components/settings/settings-modal';
 
@@ -112,22 +95,6 @@ export const settingsCategories: SettingsCategory[] = [
       { id: 'home-background', label: 'Home background', icon: Image, component: HomeBackgroundPanel },
       { id: 'home-widgets', label: 'Widgets', icon: LayoutGrid, component: HomeWidgetsPanel },
       { id: 'about', label: 'About', icon: Info, component: MailAboutPanel },
-    ],
-  },
-  {
-    id: 'mail',
-    label: 'Mail',
-    icon: Mail,
-    color: '#4a9e8f',
-    panels: [
-      { id: 'accounts', label: 'Accounts', icon: Users, component: MailAccountsPanel },
-      { id: 'notifications', label: 'Notifications', icon: Bell, component: MailNotificationsPanel },
-      { id: 'composer', label: 'Composer', icon: PenLine, component: MailComposerPanel },
-      { id: 'ai', label: 'AI assistant in Mail', icon: Sparkles, component: MailAIPanel },
-      { id: 'inbox', label: 'Inbox', icon: Inbox, component: MailInboxPanel },
-      { id: 'reading-pane', label: 'Reading pane', icon: PanelRight, component: MailReadingPanePanel },
-      { id: 'labels', label: 'Labels', icon: Tag, component: MailLabelsPanel },
-      { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard, component: MailShortcutsPanel },
     ],
   },
   {
