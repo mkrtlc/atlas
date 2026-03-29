@@ -101,6 +101,8 @@ import { isFormulaValue } from '../../lib/formula-engine';
 import { getTagColor } from '../../lib/tag-colors';
 import { FIELD_TYPE_ICONS } from '../../lib/field-type-icons';
 import { GanttView } from './components/gantt-view';
+import { Button } from '../../components/ui/button';
+import { IconButton } from '../../components/ui/icon-button';
 import '../../styles/tables.css';
 import '../../styles/docs.css'; // Re-use .tg-* template gallery styles
 
@@ -810,10 +812,9 @@ function TableTemplateGallery({
     <div className="tg-root">
       {/* Header */}
       <div className="tg-header">
-        <button className="tg-back-btn" onClick={onClose}>
-          <ArrowLeft size={14} />
-          <span>{t('tables.backToTables')}</span>
-        </button>
+        <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={onClose} className="tg-back-btn">
+          {t('tables.backToTables')}
+        </Button>
         <div className="tg-header-spacer" />
         <div className="tg-search">
           <Search size={14} />
@@ -1447,8 +1448,8 @@ function AddColumnPopover({
         </div>
       )}
       <div className="tables-add-col-actions">
-        <button onClick={onClose}>{t('tables.cancel')}</button>
-        <button className="primary" onClick={handleSubmit}>{t('tables.addColumn')}</button>
+        <Button variant="secondary" size="sm" onClick={onClose}>{t('tables.cancel')}</Button>
+        <Button variant="primary" size="sm" onClick={handleSubmit}>{t('tables.addColumn')}</Button>
       </div>
     </div>
   );
@@ -3018,22 +3019,18 @@ export function TablesPage() {
         title={t('tables.title')}
         headerAction={
           <div style={{ display: 'flex', gap: 2 }}>
-            <button
-              className="tables-toolbar-btn"
+            <IconButton
+              icon={<LayoutTemplate size={14} />}
+              label={t('tables.browseTemplates')}
               onClick={() => setShowTemplates(true)}
-              title={t('tables.browseTemplates')}
-              style={{ padding: '4px 8px' }}
-            >
-              <LayoutTemplate size={14} />
-            </button>
-            <button
-              className="tables-toolbar-btn"
+              size={28}
+            />
+            <IconButton
+              icon={<Plus size={14} />}
+              label={t('tables.newTable')}
               onClick={handleCreateTable}
-              title={t('tables.newTable')}
-              style={{ padding: '4px 8px' }}
-            >
-              <Plus size={14} />
-            </button>
+              size={28}
+            />
           </div>
         }
         search={
@@ -3096,20 +3093,19 @@ export function TablesPage() {
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {table.title}
               </span>
-              <button
+              <IconButton
+                icon={<Trash2 size={12} />}
+                label={t('tables.delete')}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDeleteTable(table.id);
                 }}
-                style={{
-                  border: 'none', background: 'none', padding: 2, cursor: 'pointer',
-                  color: 'var(--color-text-tertiary)', opacity: 0, transition: 'opacity 100ms',
-                }}
+                size={22}
+                destructive
+                tooltip={false}
                 className="tables-sidebar-delete-btn"
-                title={t('tables.delete')}
-              >
-                <Trash2 size={12} />
-              </button>
+                style={{ opacity: 0, transition: 'opacity 100ms' }}
+              />
             </div>
             );
           })}
@@ -3138,16 +3134,15 @@ export function TablesPage() {
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {table.title}
                     </span>
-                    <button
+                    <IconButton
+                      icon={<RotateCcw size={12} />}
+                      label={t('tables.restore')}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRestoreTable(table.id);
                       }}
-                      style={{ border: 'none', background: 'none', padding: 2, cursor: 'pointer', color: 'var(--color-text-tertiary)' }}
-                      title={t('tables.restore')}
-                    >
-                      <RotateCcw size={12} />
-                    </button>
+                      size={22}
+                    />
                   </div>
                 ))}
             </>
@@ -3168,12 +3163,12 @@ export function TablesPage() {
             <div className="tables-empty-state-title">{t('tables.emptyTitle')}</div>
             <div className="tables-empty-state-desc">{t('tables.emptyDesc')}</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="tables-toolbar-btn" onClick={handleCreateTable}>
-                <Plus size={14} /> {t('tables.newTable')}
-              </button>
-              <button className="tables-toolbar-btn" onClick={() => setShowTemplates(true)}>
-                <LayoutTemplate size={14} /> {t('tables.browseTemplates')}
-              </button>
+              <Button variant="ghost" size="sm" icon={<Plus size={14} />} onClick={handleCreateTable}>
+                {t('tables.newTable')}
+              </Button>
+              <Button variant="ghost" size="sm" icon={<LayoutTemplate size={14} />} onClick={() => setShowTemplates(true)}>
+                {t('tables.browseTemplates')}
+              </Button>
             </div>
             <div className="tables-templates-section">
               <div className="tables-templates-label">{t('tables.startFromTemplate')}</div>
@@ -3203,14 +3198,15 @@ export function TablesPage() {
                   onChange={(e) => handleTitleChange(e.target.value)}
                   onBlur={() => triggerAutoSave({ title: localTitle })}
                 />
-                <button
+                <IconButton
                   ref={headerChevronRef}
-                  className="tables-topbar-btn tables-topbar-chevron"
+                  icon={<ChevronDown size={14} />}
+                  label="Table settings"
                   onClick={() => setShowHeaderDropdown(!showHeaderDropdown)}
-                  title="Table settings"
-                >
-                  <ChevronDown size={14} />
-                </button>
+                  size={28}
+                  className="tables-topbar-chevron"
+                  style={{ color: 'inherit' }}
+                />
 
                 {showHeaderDropdown && (
                   <TableHeaderDropdown
@@ -3241,46 +3237,47 @@ export function TablesPage() {
 
                 <div className="tables-topbar-spacer" />
 
-                <button
-                  className="tables-topbar-btn"
+                <IconButton
+                  icon={<Undo2 size={14} />}
+                  label={t('tables.undo')}
                   onClick={handleUndo}
                   disabled={!canUndo}
-                  title={t('tables.undo')}
-                >
-                  <Undo2 size={14} />
-                </button>
-                <button
-                  className="tables-topbar-btn"
+                  size={28}
+                  style={{ color: 'inherit' }}
+                />
+                <IconButton
+                  icon={<Redo2 size={14} />}
+                  label={t('tables.redo')}
                   onClick={handleRedo}
                   disabled={!canRedo}
-                  title={t('tables.redo')}
-                >
-                  <Redo2 size={14} />
-                </button>
+                  size={28}
+                  style={{ color: 'inherit' }}
+                />
 
-                <button
-                  className="tables-topbar-btn"
+                <IconButton
+                  icon={<Download size={14} />}
+                  label="Export to Excel"
                   onClick={handleExportExcel}
-                  title="Export to Excel"
-                >
-                  <Download size={14} />
-                </button>
+                  size={28}
+                  style={{ color: 'inherit' }}
+                />
 
-                <button
-                  className="tables-topbar-btn"
+                <IconButton
+                  icon={<Upload size={14} />}
+                  label="Import CSV/Excel"
                   onClick={handleImportCSV}
-                  title="Import CSV/Excel"
-                >
-                  <Upload size={14} />
-                </button>
+                  size={28}
+                  style={{ color: 'inherit' }}
+                />
 
-                <button
-                  className={`tables-topbar-btn${showSearch ? ' active' : ''}`}
+                <IconButton
+                  icon={<Search size={14} />}
+                  label={t('tables.search')}
                   onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchText(''); }}
-                  title={t('tables.search')}
-                >
-                  <Search size={14} />
-                </button>
+                  active={showSearch}
+                  size={28}
+                  style={{ color: 'inherit' }}
+                />
 
                 {isSaving && (
                   <span className="tables-topbar-saving">
@@ -3363,9 +3360,9 @@ export function TablesPage() {
             {/* Tools row */}
             <div className="tables-toolbar">
               <div style={{ position: 'relative' }}>
-                <button className="tables-toolbar-btn" onClick={() => setShowAddColumn(!showAddColumn)}>
-                  <Plus size={14} /> {t('tables.column')}
-                </button>
+                <Button variant="ghost" size="sm" icon={<Plus size={14} />} onClick={() => setShowAddColumn(!showAddColumn)}>
+                  {t('tables.column')}
+                </Button>
                 {showAddColumn && (
                   <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 100 }}>
                     <AddColumnPopover onAdd={handleAddColumn} onClose={() => setShowAddColumn(false)} />
@@ -3405,13 +3402,17 @@ export function TablesPage() {
 
               {/* Group by button */}
               {localViewConfig.groupByColumnId ? (
-                <button className="tables-toolbar-btn active" onClick={handleUngroupRows}>
-                  <Ungroup size={14} /> Ungroup
-                </button>
+                <Button variant="ghost" size="sm" icon={<Ungroup size={14} />} onClick={handleUngroupRows}
+                  style={{ background: 'var(--color-surface-active)' }}
+                >
+                  Ungroup
+                </Button>
               ) : (
                 <div style={{ position: 'relative' }}>
-                  <button
-                    className="tables-toolbar-btn"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<Group size={14} />}
                     onClick={() => {
                       // Auto-group by first select column
                       const selectCol = localColumns.find((c) => c.type === 'singleSelect');
@@ -3420,8 +3421,8 @@ export function TablesPage() {
                     disabled={!localColumns.some((c) => c.type === 'singleSelect')}
                     style={{ opacity: localColumns.some((c) => c.type === 'singleSelect') ? 1 : 0.4 }}
                   >
-                    <Group size={14} /> {t('tables.group')}
-                  </button>
+                    {t('tables.group')}
+                  </Button>
                 </div>
               )}
 
@@ -3484,9 +3485,13 @@ export function TablesPage() {
                   placeholder={t('tables.searchPlaceholder')}
                   onKeyDown={(e) => { if (e.key === 'Escape') { setShowSearch(false); setSearchText(''); } }}
                 />
-                <button onClick={() => { setShowSearch(false); setSearchText(''); }}>
-                  <X size={14} />
-                </button>
+                <IconButton
+                  icon={<X size={14} />}
+                  label="Close search"
+                  onClick={() => { setShowSearch(false); setSearchText(''); }}
+                  size={24}
+                  tooltip={false}
+                />
               </div>
             )}
 
@@ -3603,22 +3608,34 @@ export function TablesPage() {
                       <span className="tables-selection-float-count">
                         {selectedRowIds.length}
                       </span>
-                      <button className="tables-selection-float-btn" onClick={handleBulkDuplicate} title={t('tables.duplicateSelected')}>
-                        <Copy size={13} />
-                      </button>
-                      <button className="tables-selection-float-btn tables-selection-float-btn-danger" onClick={handleBulkDelete} title={t('tables.deleteSelected')}>
-                        <Trash2 size={13} />
-                      </button>
-                      <button className="tables-selection-float-btn" onClick={handleClearSelection} title={t('tables.clearSelection')}>
-                        <X size={13} />
-                      </button>
+                      <IconButton
+                        icon={<Copy size={13} />}
+                        label={t('tables.duplicateSelected')}
+                        onClick={handleBulkDuplicate}
+                        size={28}
+                        style={{ color: 'inherit' }}
+                      />
+                      <IconButton
+                        icon={<Trash2 size={13} />}
+                        label={t('tables.deleteSelected')}
+                        onClick={handleBulkDelete}
+                        destructive
+                        size={28}
+                      />
+                      <IconButton
+                        icon={<X size={13} />}
+                        label={t('tables.clearSelection')}
+                        onClick={handleClearSelection}
+                        size={28}
+                        style={{ color: 'inherit' }}
+                      />
                     </div>
                   )}
                 </div>
                 <div className="tables-footer">
-                  <button className="tables-footer-btn" onClick={handleAddRow}>
-                    <Plus size={14} /> {t('tables.addRow')}
-                  </button>
+                  <Button variant="ghost" size="sm" icon={<Plus size={14} />} onClick={handleAddRow} className="tables-footer-btn">
+                    {t('tables.addRow')}
+                  </Button>
                   <span>
                     {filteredRows.length !== localRows.length
                       ? t('tables.filteredRowCount', { filtered: filteredRows.length, total: localRows.length })
@@ -3702,7 +3719,7 @@ export function TablesPage() {
                             setLocalViewConfig(updated);
                             triggerAutoSave({ viewConfig: updated });
                           }}
-                          style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, border: '1px solid var(--color-border-primary)' }}
+                          style={{ fontSize: 'var(--font-size-xs)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border-primary)' }}
                         >
                           {localColumns.filter((c) => c.type === 'date').map((c) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
@@ -3712,37 +3729,38 @@ export function TablesPage() {
                     )}
                     {/* Month navigation */}
                     <div className="tables-calendar-header">
-                      <button
-                        className="tables-toolbar-btn"
+                      <IconButton
+                        icon={<ChevronLeft size={16} />}
+                        label="Previous month"
                         onClick={() => setCalendarMonth((prev) => {
                           const d = new Date(prev.year, prev.month - 1, 1);
                           return { year: d.getFullYear(), month: d.getMonth() };
                         })}
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
+                        size={28}
+                      />
                       <span className="tables-calendar-month-label">
                         {new Date(calendarMonth.year, calendarMonth.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                       </span>
-                      <button
-                        className="tables-toolbar-btn"
+                      <IconButton
+                        icon={<ChevronRight size={16} />}
+                        label="Next month"
                         onClick={() => setCalendarMonth((prev) => {
                           const d = new Date(prev.year, prev.month + 1, 1);
                           return { year: d.getFullYear(), month: d.getMonth() };
                         })}
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-                      <button
-                        className="tables-toolbar-btn"
+                        size={28}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           const now = new Date();
                           setCalendarMonth({ year: now.getFullYear(), month: now.getMonth() });
                         }}
-                        style={{ marginLeft: 8, fontSize: 12 }}
+                        style={{ marginLeft: 8 }}
                       >
                         {t('tables.today')}
-                      </button>
+                      </Button>
                     </div>
                     {/* Weekday header */}
                     <div className="tables-calendar-grid">

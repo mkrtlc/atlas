@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, Paperclip, FileIcon, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { Modal } from '../../../components/ui/modal';
+import { Button } from '../../../components/ui/button';
+import { IconButton } from '../../../components/ui/icon-button';
 import type { TableColumn, TableRow, TableAttachment, TableFieldType } from '@atlasmail/shared';
 import { FIELD_TYPE_ICONS } from '../../../lib/field-type-icons';
 import { api } from '../../../lib/api-client';
@@ -288,29 +290,30 @@ export function ExpandRowModal({
             <div className="tables-expand-topbar-left">
               {onNavigateRow && (
                 <>
-                  <button
-                    className="tables-expand-nav-btn"
+                  <IconButton
+                    icon={<ChevronUp size={16} />}
+                    label="Previous row"
                     disabled={!hasPrev}
                     onClick={() => onNavigateRow('prev')}
-                    title="Previous row"
-                  >
-                    <ChevronUp size={16} />
-                  </button>
-                  <button
-                    className="tables-expand-nav-btn"
+                    size={28}
+                  />
+                  <IconButton
+                    icon={<ChevronDown size={16} />}
+                    label="Next row"
                     disabled={!hasNext}
                     onClick={() => onNavigateRow('next')}
-                    title="Next row"
-                  >
-                    <ChevronDown size={16} />
-                  </button>
+                    size={28}
+                  />
                 </>
               )}
             </div>
             <Dialog.Close asChild>
-              <button className="tables-expand-close">
-                <X size={16} />
-              </button>
+              <IconButton
+                icon={<X size={16} />}
+                label="Close"
+                size={28}
+                tooltip={false}
+              />
             </Dialog.Close>
           </div>
 
@@ -353,13 +356,15 @@ export function ExpandRowModal({
             {onAddColumn && (
               <div className="tables-expand-add-field-wrapper">
                 {!showAddField ? (
-                  <button
-                    className="tables-expand-add-field-btn"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<Plus size={14} />}
                     onClick={() => setShowAddField(true)}
+                    className="tables-expand-add-field-btn"
                   >
-                    <Plus size={14} />
-                    <span>{t('tables.addFieldToTable', 'Add a field to this table')}</span>
-                  </button>
+                    {t('tables.addFieldToTable', 'Add a field to this table')}
+                  </Button>
                 ) : (
                   <InlineAddField
                     onAdd={(name, type, options) => {
@@ -498,8 +503,8 @@ function InlineAddField({
         </div>
       )}
       <div className="tables-expand-add-field-actions">
-        <button className="tables-expand-add-field-cancel" onClick={onClose}>{t('tables.cancel', 'Cancel')}</button>
-        <button className="tables-expand-add-field-submit" onClick={handleSubmit}>{t('tables.addColumn', 'Add field')}</button>
+        <Button variant="secondary" size="sm" onClick={onClose}>{t('tables.cancel', 'Cancel')}</Button>
+        <Button variant="primary" size="sm" onClick={handleSubmit}>{t('tables.addColumn', 'Add field')}</Button>
       </div>
     </div>
   );
