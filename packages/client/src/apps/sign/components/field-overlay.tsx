@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { Trash2, CheckSquare, ChevronDown } from 'lucide-react';
 import type { SignatureField, SignatureFieldType } from '@atlasmail/shared';
 
@@ -27,6 +27,8 @@ interface FieldOverlayProps {
   selectedFieldId?: string;
   highlightFieldId?: string;
   editable?: boolean;
+  /** Enable click-to-sign on fields without enabling drag/resize (for public signing) */
+  signable?: boolean;
 }
 
 // ─── Component ──────────────────────────────────────────────────────
@@ -43,6 +45,7 @@ export function FieldOverlay({
   selectedFieldId,
   highlightFieldId,
   editable = false,
+  signable = false,
 }: FieldOverlayProps) {
   const pageFields = fields.filter((f) => f.pageNumber === pageNumber);
 
@@ -57,6 +60,7 @@ export function FieldOverlay({
           isSelected={selectedFieldId === field.id}
           isHighlighted={highlightFieldId === field.id}
           editable={editable}
+          signable={signable}
           onMove={onFieldMove}
           onResize={onFieldResize}
           onClick={onFieldClick}
@@ -76,6 +80,7 @@ interface FieldBoxProps {
   isSelected: boolean;
   isHighlighted?: boolean;
   editable: boolean;
+  signable?: boolean;
   onMove?: (id: string, x: number, y: number) => void;
   onResize?: (id: string, w: number, h: number) => void;
   onClick?: (id: string) => void;
@@ -89,6 +94,7 @@ function FieldBox({
   isSelected,
   isHighlighted = false,
   editable,
+  signable = false,
   onMove,
   onResize,
   onClick,
@@ -96,40 +102,65 @@ function FieldBox({
 }: FieldBoxProps) {
   const colors = FIELD_COLORS[field.type] || FIELD_COLORS.text;
   const boxRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef<{ startX: number; startY: number; fieldX: number; fieldY: number } | null>(null);
-  const resizeState = useRef<{ startX: number; startY: number; fieldW: number; fieldH: number } | null>(null);
+  const dragState = useRef<{ startX: number; startY: number; fieldX: number; fieldY: number; hasMoved: boolean } | null>(null);
+  const resizeState = useRef<{ startX: number; startY: number; fieldW: number; fieldH: number; hasResized: boolean } | null>(null);
+
+  // Local drag/resize offsets for smooth visual feedback
+  const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null);
+  const [resizeOffset, setResizeOffset] = useState<{ dw: number; dh: number } | null>(null);
 
   // Pixel positions from percentage-based x/y/width/height
-  const left = (field.x / 100) * pageWidth;
-  const top = (field.y / 100) * pageHeight;
-  const width = (field.width / 100) * pageWidth;
-  const height = (field.height / 100) * pageHeight;
+  const baseLeft = (field.x / 100) * pageWidth;
+  const baseTop = (field.y / 100) * pageHeight;
+  const baseWidth = (field.width / 100) * pageWidth;
+  const baseHeight = (field.height / 100) * pageHeight;
+
+  // Apply local drag/resize offsets for smooth visual movement
+  const left = dragOffset ? baseLeft + dragOffset.dx : baseLeft;
+  const top = dragOffset ? baseTop + dragOffset.dy : baseTop;
+  const width = resizeOffset ? Math.max(baseWidth + resizeOffset.dw, (3 / 100) * pageWidth) : baseWidth;
+  const height = resizeOffset ? Math.max(baseHeight + resizeOffset.dh, (2 / 100) * pageHeight) : baseHeight;
+
+  const isInteractive = editable || signable;
 
   // ─── Drag handler ─────────────────────────────────────────────────
 
   const handleMouseDown = useCallback(
     (e: ReactMouseEvent) => {
       if (!editable || !onMove) return;
-      e.preventDefault();
-      e.stopPropagation();
+      // Don't preventDefault here — let click events fire for selection
       dragState.current = {
         startX: e.clientX,
         startY: e.clientY,
         fieldX: field.x,
         fieldY: field.y,
+        hasMoved: false,
       };
+
+      const pW = pageWidth;
+      const pH = pageHeight;
+      const fW = field.width;
+      const fH = field.height;
+      const fId = field.id;
 
       function handleMouseMove(ev: globalThis.MouseEvent) {
         if (!dragState.current) return;
+        dragState.current.hasMoved = true;
         const dx = ev.clientX - dragState.current.startX;
         const dy = ev.clientY - dragState.current.startY;
-        const newX = dragState.current.fieldX + (dx / pageWidth) * 100;
-        const newY = dragState.current.fieldY + (dy / pageHeight) * 100;
-        onMove!(field.id, Math.max(0, Math.min(100 - field.width, newX)), Math.max(0, Math.min(100 - field.height, newY)));
+        setDragOffset({ dx, dy });
       }
 
-      function handleMouseUp() {
+      function handleMouseUp(ev: globalThis.MouseEvent) {
+        if (dragState.current && dragState.current.hasMoved) {
+          const dx = ev.clientX - dragState.current.startX;
+          const dy = ev.clientY - dragState.current.startY;
+          const newX = dragState.current.fieldX + (dx / pW) * 100;
+          const newY = dragState.current.fieldY + (dy / pH) * 100;
+          onMove!(fId, Math.max(0, Math.min(100 - fW, newX)), Math.max(0, Math.min(100 - fH, newY)));
+        }
         dragState.current = null;
+        setDragOffset(null);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       }
@@ -152,19 +183,33 @@ function FieldBox({
         startY: e.clientY,
         fieldW: field.width,
         fieldH: field.height,
+        hasResized: false,
       };
+
+      const pW = pageWidth;
+      const pH = pageHeight;
+      const fX = field.x;
+      const fY = field.y;
+      const fId = field.id;
 
       function handleMouseMove(ev: globalThis.MouseEvent) {
         if (!resizeState.current) return;
+        resizeState.current.hasResized = true;
         const dx = ev.clientX - resizeState.current.startX;
         const dy = ev.clientY - resizeState.current.startY;
-        const newW = resizeState.current.fieldW + (dx / pageWidth) * 100;
-        const newH = resizeState.current.fieldH + (dy / pageHeight) * 100;
-        onResize!(field.id, Math.max(3, Math.min(100 - field.x, newW)), Math.max(2, Math.min(100 - field.y, newH)));
+        setResizeOffset({ dw: dx, dh: dy });
       }
 
-      function handleMouseUp() {
+      function handleMouseUp(ev: globalThis.MouseEvent) {
+        if (resizeState.current && resizeState.current.hasResized) {
+          const dx = ev.clientX - resizeState.current.startX;
+          const dy = ev.clientY - resizeState.current.startY;
+          const newW = resizeState.current.fieldW + (dx / pW) * 100;
+          const newH = resizeState.current.fieldH + (dy / pH) * 100;
+          onResize!(fId, Math.max(3, Math.min(100 - fX, newW)), Math.max(2, Math.min(100 - fY, newH)));
+        }
         resizeState.current = null;
+        setResizeOffset(null);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       }
@@ -191,7 +236,9 @@ function FieldBox({
       onMouseDown={editable ? handleMouseDown : undefined}
       onClick={(e) => {
         e.stopPropagation();
-        onClick?.(field.id);
+        if (isInteractive) {
+          onClick?.(field.id);
+        }
       }}
       style={{
         position: 'absolute',
@@ -202,17 +249,18 @@ function FieldBox({
         border: `2px ${isSelected || isHighlighted ? 'solid' : 'dashed'} ${colors.border}`,
         background: isHighlighted ? `${colors.border}20` : colors.bg,
         borderRadius: 'var(--radius-sm)',
-        cursor: editable ? 'move' : 'pointer',
-        pointerEvents: 'auto',
+        cursor: editable ? 'move' : isInteractive ? 'pointer' : 'default',
+        pointerEvents: isInteractive ? 'auto' : 'none',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
         boxSizing: 'border-box',
-        transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
+        transition: dragOffset || resizeOffset ? 'none' : 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
         boxShadow: isHighlighted ? `0 0 0 3px ${colors.border}40, 0 0 12px ${colors.border}30` : 'none',
         animation: isHighlighted ? 'sign-field-pulse 1.5s ease-in-out infinite' : 'none',
+        zIndex: dragOffset || resizeOffset ? 100 : undefined,
       }}
     >
       {/* Field content: signature image, checkbox, dropdown, or label */}
@@ -282,9 +330,10 @@ function FieldBox({
         </span>
       )}
 
-      {/* Delete button (top-right) */}
-      {editable && isSelected && (
+      {/* Delete button (top-right, visible on hover or select) */}
+      {editable && (
         <button
+          className="sign-field-delete-btn"
           aria-label="Delete field"
           onClick={(e) => {
             e.stopPropagation();
@@ -306,6 +355,9 @@ function FieldBox({
             cursor: 'pointer',
             padding: 0,
             zIndex: 10,
+            opacity: isSelected ? 1 : 0,
+            transition: 'opacity 0.15s',
+            pointerEvents: isSelected ? 'auto' : 'none',
           }}
         >
           <Trash2 size={10} />

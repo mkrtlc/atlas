@@ -37,10 +37,48 @@
   gap: var(--spacing-sm);
 }
 
+.sign-field-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  width: 48px;
+  flex-shrink: 0;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border-primary);
+  overflow-y: auto;
+}
+
+.sign-field-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sign-field-toolbar-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
 .sign-content {
   flex: 1;
   overflow: auto;
   background: var(--color-bg-tertiary);
+}
+
+.sign-field:hover .sign-field-delete-btn {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .sign-list-header {
