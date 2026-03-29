@@ -5,7 +5,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 // Re-export the new SVG file type icon system
-export { getFileTypeIcon } from '../components/drive/file-type-icons';
+export { getFileTypeIcon } from '../apps/drive/components/file-type-icons';
 
 export function getFileIcon(mimeType: string | null, type: 'file' | 'folder'): LucideIcon {
   if (type === 'folder') return Folder;

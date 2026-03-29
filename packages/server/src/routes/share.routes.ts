@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import * as driveService from '../services/drive.service';
+import * as driveService from '../apps/drive/service';
 import { logger } from '../utils/logger';
 import path from 'node:path';
 import { existsSync, createReadStream, statSync } from 'node:fs';

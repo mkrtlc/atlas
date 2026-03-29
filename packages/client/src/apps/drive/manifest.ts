@@ -1,7 +1,7 @@
 import { HardDrive, Settings, Eye, File } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { DrivePage } from '../../pages/drive';
-import { DriveGeneralPanel, DriveDisplayPanel, DriveFilesPanel } from '../../components/drive/drive-settings-modal';
+import { DrivePage } from './page';
+import { DriveGeneralPanel, DriveDisplayPanel, DriveFilesPanel } from './components/drive-settings-modal';
 
 export const driveManifest: ClientAppManifest = {
   id: 'drive',

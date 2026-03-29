@@ -1,4 +1,4 @@
-import driveRouter from '../../routes/drive.routes';
+import driveRouter from './routes';
 import type { ServerAppManifest } from '../../config/app-manifest.server';
 
 export const driveServerManifest: ServerAppManifest = {
