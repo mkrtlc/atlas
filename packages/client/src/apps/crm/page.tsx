@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   Briefcase, Users, Building2, Clock, Plus, Search, Settings2, X,
-  ChevronRight, Trash2, Phone as PhoneIcon, Mail, DollarSign,
-  Trophy, XCircle, LayoutGrid, List,
-  MessageSquare, PhoneCall, CalendarDays, StickyNote,
+  ChevronRight, Trash2, Phone as PhoneIcon, Mail,
+  Trophy, XCircle, LayoutGrid, List, ArrowUp, ArrowDown,
+  PhoneCall, CalendarDays, StickyNote,
 } from 'lucide-react';
 import {
   useCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany,
@@ -25,8 +25,117 @@ import { Textarea } from '../../components/ui/textarea';
 import { IconButton } from '../../components/ui/icon-button';
 import { Badge } from '../../components/ui/badge';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { useUIStore } from '../../stores/ui-store';
 import '../../styles/crm.css';
+
+// ─── Table interaction types ──────────────────────────────────
+
+interface EditingCell {
+  rowId: string;
+  column: string;
+}
+
+type SortDirection = 'asc' | 'desc';
+
+interface SortState {
+  column: string;
+  direction: SortDirection;
+}
+
+// ─── Sort header helper ───────────────────────────────────────
+
+function SortHeader({
+  label, column, sort, onSort, style,
+}: {
+  label: string;
+  column: string;
+  sort: SortState | null;
+  onSort: (col: string) => void;
+  style?: React.CSSProperties;
+}) {
+  const isActive = sort?.column === column;
+  return (
+    <span
+      className="crm-sort-header"
+      style={style}
+      onClick={(e) => { e.stopPropagation(); onSort(column); }}
+    >
+      {label}
+      {isActive && (
+        <span className="crm-sort-indicator">
+          {sort!.direction === 'asc' ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ─── Inline edit cell helper ──────────────────────────────────
+
+function InlineEditInput({
+  value, type, onSave, onCancel,
+}: {
+  value: string;
+  type: 'text' | 'number' | 'date';
+  onSave: (val: string) => void;
+  onCancel: () => void;
+}) {
+  const [val, setVal] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  return (
+    <input
+      ref={inputRef}
+      type={type}
+      value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') onSave(val);
+        if (e.key === 'Escape') onCancel();
+      }}
+      onBlur={() => onSave(val)}
+    />
+  );
+}
+
+function InlineSelectCell({
+  value, options, onSave, onCancel,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onSave: (val: string) => void;
+  onCancel: () => void;
+}) {
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    selectRef.current?.focus();
+  }, []);
+
+  return (
+    <select
+      ref={selectRef}
+      value={value}
+      onChange={(e) => onSave(e.target.value)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === 'Escape') onCancel();
+      }}
+      onBlur={() => onCancel()}
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -829,13 +938,27 @@ function CompanyDetailPanel({
 // ─── Deals List View ───────────────────────────────────────────────
 
 function DealsListView({
-  deals, selectedId, onSelect, searchQuery,
+  deals, stages, selectedId, onSelect, searchQuery,
+  selectedIds, onSelectionChange, focusedIndex, onFocusedIndexChange,
+  editingCell, onEditingCellChange, sort, onSortChange,
 }: {
   deals: CrmDeal[];
+  stages: CrmDealStage[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   searchQuery: string;
+  selectedIds: Set<string>;
+  onSelectionChange: (ids: Set<string>) => void;
+  focusedIndex: number | null;
+  onFocusedIndexChange: (idx: number | null) => void;
+  editingCell: EditingCell | null;
+  onEditingCellChange: (cell: EditingCell | null) => void;
+  sort: SortState | null;
+  onSortChange: (sort: SortState | null) => void;
 }) {
+  const updateDeal = useUpdateDeal();
+  const lastSelectedIndex = useRef<number | null>(null);
+
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return deals;
     const q = searchQuery.toLowerCase();
@@ -845,6 +968,97 @@ function DealsListView({
       (d.contactName?.toLowerCase().includes(q)),
     );
   }, [deals, searchQuery]);
+
+  const sorted = useMemo(() => {
+    if (!sort) return filtered;
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let aVal: string | number = '';
+      let bVal: string | number = '';
+      switch (sort.column) {
+        case 'title': aVal = a.title.toLowerCase(); bVal = b.title.toLowerCase(); break;
+        case 'company': aVal = (a.companyName || '').toLowerCase(); bVal = (b.companyName || '').toLowerCase(); break;
+        case 'contact': aVal = (a.contactName || '').toLowerCase(); bVal = (b.contactName || '').toLowerCase(); break;
+        case 'value': aVal = a.value; bVal = b.value; break;
+        case 'stage': aVal = (a.stageName || '').toLowerCase(); bVal = (b.stageName || '').toLowerCase(); break;
+        case 'closeDate': aVal = a.expectedCloseDate || ''; bVal = b.expectedCloseDate || ''; break;
+      }
+      if (aVal < bVal) return sort.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sort]);
+
+  const handleSort = useCallback((col: string) => {
+    onSortChange(
+      !sort || sort.column !== col
+        ? { column: col, direction: 'asc' }
+        : sort.direction === 'asc'
+          ? { column: col, direction: 'desc' }
+          : null,
+    );
+  }, [sort, onSortChange]);
+
+  const allChecked = sorted.length > 0 && sorted.every((d) => selectedIds.has(d.id));
+  const someChecked = sorted.some((d) => selectedIds.has(d.id));
+
+  const handleHeaderCheckbox = () => {
+    if (allChecked) onSelectionChange(new Set());
+    else onSelectionChange(new Set(sorted.map((d) => d.id)));
+  };
+
+  const handleRowCheckbox = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const deal = sorted[index];
+    const newSet = new Set(selectedIds);
+    if (e.shiftKey && lastSelectedIndex.current !== null) {
+      const start = Math.min(lastSelectedIndex.current, index);
+      const end = Math.max(lastSelectedIndex.current, index);
+      for (let i = start; i <= end; i++) newSet.add(sorted[i].id);
+    } else {
+      if (newSet.has(deal.id)) newSet.delete(deal.id); else newSet.add(deal.id);
+    }
+    lastSelectedIndex.current = index;
+    onSelectionChange(newSet);
+  };
+
+  const handleCellClick = (rowId: string, column: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditingCellChange({ rowId, column });
+  };
+
+  const handleSave = (dealId: string, column: string, value: string) => {
+    const updates: Record<string, unknown> = { id: dealId };
+    switch (column) {
+      case 'title': updates.title = value; break;
+      case 'value': updates.value = Number(value) || 0; break;
+      case 'stage': updates.stageId = value; break;
+      case 'closeDate': updates.expectedCloseDate = value || null; break;
+    }
+    updateDeal.mutate(updates as Parameters<typeof updateDeal.mutate>[0]);
+    onEditingCellChange(null);
+  };
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (editingCell) return;
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); onFocusedIndexChange(Math.min((focusedIndex ?? -1) + 1, sorted.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); onFocusedIndexChange(Math.max((focusedIndex ?? 1) - 1, 0)); }
+    else if (e.key === 'Enter' && focusedIndex !== null && sorted[focusedIndex]) { e.preventDefault(); onSelect(sorted[focusedIndex].id); }
+    else if (e.key === 'Escape') { onFocusedIndexChange(null); onSelectionChange(new Set()); }
+    else if (e.key === ' ' && focusedIndex !== null && sorted[focusedIndex]) {
+      e.preventDefault();
+      const id = sorted[focusedIndex].id;
+      const ns = new Set(selectedIds);
+      if (ns.has(id)) ns.delete(id); else ns.add(id);
+      onSelectionChange(ns);
+    }
+  }, [editingCell, focusedIndex, sorted, selectedIds, onFocusedIndexChange, onSelectionChange, onSelect]);
+
+  const totalValue = useMemo(() => sorted.reduce((sum, d) => sum + d.value, 0), [sorted]);
+  const avgValue = sorted.length > 0 ? totalValue / sorted.length : 0;
 
   if (filtered.length === 0) {
     return (
@@ -856,55 +1070,93 @@ function DealsListView({
     );
   }
 
+  const hdrStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: '8px var(--spacing-lg)',
+    borderBottom: '1px solid var(--color-border-secondary)', fontSize: 'var(--font-size-xs)',
+    fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)',
+    textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
+  };
+
   return (
-    <div style={{ flex: 1, overflow: 'auto' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: '8px var(--spacing-lg)',
-        borderBottom: '1px solid var(--color-border-secondary)', fontSize: 'var(--font-size-xs)',
-        fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)',
-        textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
-      }}>
-        <span style={{ width: 200, flexShrink: 0 }}>Title</span>
-        <span style={{ width: 140, flexShrink: 0 }}>Company</span>
-        <span style={{ width: 120, flexShrink: 0 }}>Contact</span>
-        <span style={{ width: 100, flexShrink: 0, textAlign: 'right' }}>Value</span>
-        <span style={{ width: 100, flexShrink: 0 }}>Stage</span>
-        <span style={{ flex: 1 }}>Close date</span>
-      </div>
-      {filtered.map((deal) => (
-        <div
-          key={deal.id}
-          className={`crm-row${selectedId === deal.id ? ' selected' : ''}`}
-          onClick={() => onSelect(deal.id)}
-        >
-          <span style={{ width: 200, flexShrink: 0, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {deal.title}
-          </span>
-          <span style={{ width: 140, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {deal.companyName || '-'}
-          </span>
-          <span style={{ width: 120, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {deal.contactName || '-'}
-          </span>
-          <span style={{ width: 100, flexShrink: 0, fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-            {formatCurrency(deal.value)}
-          </span>
-          <span style={{ width: 100, flexShrink: 0 }}>
-            {deal.stageName && (
-              <Badge variant="default">
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: deal.stageColor || '#6b7280' }} />
-                  {deal.stageName}
-                </span>
-              </Badge>
-            )}
-          </span>
-          <span style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-            {deal.expectedCloseDate ? formatDate(deal.expectedCloseDate) : '-'}
-          </span>
-          {selectedId === deal.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }} tabIndex={0} onKeyDown={handleKeyDown}>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <div style={hdrStyle}>
+          <input type="checkbox" className={`crm-checkbox${!allChecked && someChecked ? ' indeterminate' : ''}`} checked={allChecked} onChange={handleHeaderCheckbox} />
+          <SortHeader label="Title" column="title" sort={sort} onSort={handleSort} style={{ width: 180, flexShrink: 0 }} />
+          <SortHeader label="Company" column="company" sort={sort} onSort={handleSort} style={{ width: 130, flexShrink: 0 }} />
+          <SortHeader label="Contact" column="contact" sort={sort} onSort={handleSort} style={{ width: 110, flexShrink: 0 }} />
+          <SortHeader label="Value" column="value" sort={sort} onSort={handleSort} style={{ width: 100, flexShrink: 0, textAlign: 'right' }} />
+          <SortHeader label="Stage" column="stage" sort={sort} onSort={handleSort} style={{ width: 100, flexShrink: 0 }} />
+          <SortHeader label="Close date" column="closeDate" sort={sort} onSort={handleSort} style={{ flex: 1 }} />
         </div>
-      ))}
+        {sorted.map((deal, idx) => {
+          const isEd = (col: string) => editingCell?.rowId === deal.id && editingCell?.column === col;
+          return (
+            <div
+              key={deal.id}
+              className={`crm-row${selectedId === deal.id ? ' selected' : ''}${focusedIndex === idx ? ' focused' : ''}`}
+              onClick={() => { onFocusedIndexChange(idx); if (!editingCell) onSelect(deal.id); }}
+            >
+              <input type="checkbox" className="crm-checkbox" checked={selectedIds.has(deal.id)} onClick={(e) => handleRowCheckbox(idx, e)} readOnly />
+              {isEd('title') ? (
+                <span className="crm-cell-editing" style={{ width: 180, flexShrink: 0 }}>
+                  <InlineEditInput value={deal.title} type="text" onSave={(v) => handleSave(deal.id, 'title', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 180, flexShrink: 0, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} onClick={(e) => handleCellClick(deal.id, 'title', e)}>
+                  {deal.title}
+                </span>
+              )}
+              <span style={{ width: 130, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {deal.companyName || '-'}
+              </span>
+              <span style={{ width: 110, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {deal.contactName || '-'}
+              </span>
+              {isEd('value') ? (
+                <span className="crm-cell-editing" style={{ width: 100, flexShrink: 0 }}>
+                  <InlineEditInput value={String(deal.value)} type="number" onSave={(v) => handleSave(deal.id, 'value', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 100, flexShrink: 0, fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', textAlign: 'right', fontVariantNumeric: 'tabular-nums', cursor: 'text' }} onClick={(e) => handleCellClick(deal.id, 'value', e)}>
+                  {formatCurrency(deal.value)}
+                </span>
+              )}
+              {isEd('stage') ? (
+                <span className="crm-cell-editing" style={{ width: 100, flexShrink: 0 }}>
+                  <InlineSelectCell value={deal.stageId} options={stages.map((s) => ({ value: s.id, label: s.name }))} onSave={(v) => handleSave(deal.id, 'stage', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 100, flexShrink: 0, cursor: 'pointer' }} onClick={(e) => handleCellClick(deal.id, 'stage', e)}>
+                  {deal.stageName && (
+                    <Badge variant="default">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: deal.stageColor || '#6b7280' }} />
+                        {deal.stageName}
+                      </span>
+                    </Badge>
+                  )}
+                </span>
+              )}
+              {isEd('closeDate') ? (
+                <span className="crm-cell-editing" style={{ flex: 1 }}>
+                  <InlineEditInput value={deal.expectedCloseDate || ''} type="date" onSave={(v) => handleSave(deal.id, 'closeDate', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', cursor: 'text' }} onClick={(e) => handleCellClick(deal.id, 'closeDate', e)}>
+                  {deal.expectedCloseDate ? formatDate(deal.expectedCloseDate) : '-'}
+                </span>
+              )}
+              {selectedId === deal.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+            </div>
+          );
+        })}
+      </div>
+      <div className="crm-table-footer">
+        <span>{sorted.length} deal{sorted.length !== 1 ? 's' : ''}</span>
+        <span style={{ marginLeft: 'auto' }}>Total: {formatCurrency(totalValue)}</span>
+        <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-normal)' }}>Avg: {formatCurrency(Math.round(avgValue))}</span>
+      </div>
     </div>
   );
 }
@@ -913,12 +1165,25 @@ function DealsListView({
 
 function ContactsListView({
   contacts, selectedId, onSelect, searchQuery,
+  selectedIds, onSelectionChange, focusedIndex, onFocusedIndexChange,
+  editingCell, onEditingCellChange, sort, onSortChange,
 }: {
   contacts: CrmContact[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   searchQuery: string;
+  selectedIds: Set<string>;
+  onSelectionChange: (ids: Set<string>) => void;
+  focusedIndex: number | null;
+  onFocusedIndexChange: (idx: number | null) => void;
+  editingCell: EditingCell | null;
+  onEditingCellChange: (cell: EditingCell | null) => void;
+  sort: SortState | null;
+  onSortChange: (sort: SortState | null) => void;
 }) {
+  const updateContact = useUpdateContact();
+  const lastSelectedIndex = useRef<number | null>(null);
+
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return contacts;
     const q = searchQuery.toLowerCase();
@@ -928,6 +1193,89 @@ function ContactsListView({
       (c.companyName?.toLowerCase().includes(q)),
     );
   }, [contacts, searchQuery]);
+
+  const sorted = useMemo(() => {
+    if (!sort) return filtered;
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let aVal = '', bVal = '';
+      switch (sort.column) {
+        case 'name': aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+        case 'email': aVal = (a.email || '').toLowerCase(); bVal = (b.email || '').toLowerCase(); break;
+        case 'phone': aVal = (a.phone || '').toLowerCase(); bVal = (b.phone || '').toLowerCase(); break;
+        case 'company': aVal = (a.companyName || '').toLowerCase(); bVal = (b.companyName || '').toLowerCase(); break;
+        case 'position': aVal = (a.position || '').toLowerCase(); bVal = (b.position || '').toLowerCase(); break;
+      }
+      if (aVal < bVal) return sort.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sort]);
+
+  const handleSort = useCallback((col: string) => {
+    onSortChange(
+      !sort || sort.column !== col ? { column: col, direction: 'asc' }
+        : sort.direction === 'asc' ? { column: col, direction: 'desc' } : null,
+    );
+  }, [sort, onSortChange]);
+
+  const allChecked = sorted.length > 0 && sorted.every((c) => selectedIds.has(c.id));
+  const someChecked = sorted.some((c) => selectedIds.has(c.id));
+
+  const handleHeaderCheckbox = () => {
+    if (allChecked) onSelectionChange(new Set());
+    else onSelectionChange(new Set(sorted.map((c) => c.id)));
+  };
+
+  const handleRowCheckbox = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const contact = sorted[index];
+    const newSet = new Set(selectedIds);
+    if (e.shiftKey && lastSelectedIndex.current !== null) {
+      const start = Math.min(lastSelectedIndex.current, index);
+      const end = Math.max(lastSelectedIndex.current, index);
+      for (let i = start; i <= end; i++) newSet.add(sorted[i].id);
+    } else {
+      if (newSet.has(contact.id)) newSet.delete(contact.id); else newSet.add(contact.id);
+    }
+    lastSelectedIndex.current = index;
+    onSelectionChange(newSet);
+  };
+
+  const handleCellClick = (rowId: string, column: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditingCellChange({ rowId, column });
+  };
+
+  const handleSave = (contactId: string, column: string, value: string) => {
+    const updates: Record<string, unknown> = { id: contactId };
+    switch (column) {
+      case 'name': updates.name = value; break;
+      case 'email': updates.email = value || null; break;
+      case 'phone': updates.phone = value || null; break;
+      case 'position': updates.position = value || null; break;
+    }
+    updateContact.mutate(updates as Parameters<typeof updateContact.mutate>[0]);
+    onEditingCellChange(null);
+  };
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (editingCell) return;
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); onFocusedIndexChange(Math.min((focusedIndex ?? -1) + 1, sorted.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); onFocusedIndexChange(Math.max((focusedIndex ?? 1) - 1, 0)); }
+    else if (e.key === 'Enter' && focusedIndex !== null && sorted[focusedIndex]) { e.preventDefault(); onSelect(sorted[focusedIndex].id); }
+    else if (e.key === 'Escape') { onFocusedIndexChange(null); onSelectionChange(new Set()); }
+    else if (e.key === ' ' && focusedIndex !== null && sorted[focusedIndex]) {
+      e.preventDefault();
+      const id = sorted[focusedIndex].id;
+      const ns = new Set(selectedIds);
+      if (ns.has(id)) ns.delete(id); else ns.add(id);
+      onSelectionChange(ns);
+    }
+  }, [editingCell, focusedIndex, sorted, selectedIds, onFocusedIndexChange, onSelectionChange, onSelect]);
 
   if (filtered.length === 0) {
     return (
@@ -939,44 +1287,77 @@ function ContactsListView({
     );
   }
 
+  const hdrStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: '8px var(--spacing-lg)',
+    borderBottom: '1px solid var(--color-border-secondary)', fontSize: 'var(--font-size-xs)',
+    fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)',
+    textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
+  };
+
   return (
-    <div style={{ flex: 1, overflow: 'auto' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: '8px var(--spacing-lg)',
-        borderBottom: '1px solid var(--color-border-secondary)', fontSize: 'var(--font-size-xs)',
-        fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)',
-        textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
-      }}>
-        <span style={{ width: 180, flexShrink: 0 }}>Name</span>
-        <span style={{ width: 180, flexShrink: 0 }}>Email</span>
-        <span style={{ width: 120, flexShrink: 0 }}>Phone</span>
-        <span style={{ width: 140, flexShrink: 0 }}>Company</span>
-        <span style={{ flex: 1 }}>Position</span>
-      </div>
-      {filtered.map((contact) => (
-        <div
-          key={contact.id}
-          className={`crm-row${selectedId === contact.id ? ' selected' : ''}`}
-          onClick={() => onSelect(contact.id)}
-        >
-          <span style={{ width: 180, flexShrink: 0, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {contact.name}
-          </span>
-          <span style={{ width: 180, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {contact.email || '-'}
-          </span>
-          <span style={{ width: 120, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {contact.phone || '-'}
-          </span>
-          <span style={{ width: 140, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {contact.companyName || '-'}
-          </span>
-          <span style={{ flex: 1, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {contact.position || '-'}
-          </span>
-          {selectedId === contact.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }} tabIndex={0} onKeyDown={handleKeyDown}>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <div style={hdrStyle}>
+          <input type="checkbox" className={`crm-checkbox${!allChecked && someChecked ? ' indeterminate' : ''}`} checked={allChecked} onChange={handleHeaderCheckbox} />
+          <SortHeader label="Name" column="name" sort={sort} onSort={handleSort} style={{ width: 160, flexShrink: 0 }} />
+          <SortHeader label="Email" column="email" sort={sort} onSort={handleSort} style={{ width: 170, flexShrink: 0 }} />
+          <SortHeader label="Phone" column="phone" sort={sort} onSort={handleSort} style={{ width: 120, flexShrink: 0 }} />
+          <SortHeader label="Company" column="company" sort={sort} onSort={handleSort} style={{ width: 130, flexShrink: 0 }} />
+          <SortHeader label="Position" column="position" sort={sort} onSort={handleSort} style={{ flex: 1 }} />
         </div>
-      ))}
+        {sorted.map((contact, idx) => {
+          const isEd = (col: string) => editingCell?.rowId === contact.id && editingCell?.column === col;
+          return (
+            <div
+              key={contact.id}
+              className={`crm-row${selectedId === contact.id ? ' selected' : ''}${focusedIndex === idx ? ' focused' : ''}`}
+              onClick={() => { onFocusedIndexChange(idx); if (!editingCell) onSelect(contact.id); }}
+            >
+              <input type="checkbox" className="crm-checkbox" checked={selectedIds.has(contact.id)} onClick={(e) => handleRowCheckbox(idx, e)} readOnly />
+              {isEd('name') ? (
+                <span className="crm-cell-editing" style={{ width: 160, flexShrink: 0 }}>
+                  <InlineEditInput value={contact.name} type="text" onSave={(v) => handleSave(contact.id, 'name', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 160, flexShrink: 0, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} onClick={(e) => handleCellClick(contact.id, 'name', e)}>
+                  {contact.name}
+                </span>
+              )}
+              {isEd('email') ? (
+                <span className="crm-cell-editing" style={{ width: 170, flexShrink: 0 }}>
+                  <InlineEditInput value={contact.email || ''} type="text" onSave={(v) => handleSave(contact.id, 'email', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 170, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} onClick={(e) => handleCellClick(contact.id, 'email', e)}>
+                  {contact.email || '-'}
+                </span>
+              )}
+              {isEd('phone') ? (
+                <span className="crm-cell-editing" style={{ width: 120, flexShrink: 0 }}>
+                  <InlineEditInput value={contact.phone || ''} type="text" onSave={(v) => handleSave(contact.id, 'phone', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 120, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} onClick={(e) => handleCellClick(contact.id, 'phone', e)}>
+                  {contact.phone || '-'}
+                </span>
+              )}
+              <span style={{ width: 130, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {contact.companyName || '-'}
+              </span>
+              {isEd('position') ? (
+                <span className="crm-cell-editing" style={{ flex: 1 }}>
+                  <InlineEditInput value={contact.position || ''} type="text" onSave={(v) => handleSave(contact.id, 'position', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ flex: 1, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} onClick={(e) => handleCellClick(contact.id, 'position', e)}>
+                  {contact.position || '-'}
+                </span>
+              )}
+              {selectedId === contact.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -985,12 +1366,25 @@ function ContactsListView({
 
 function CompaniesListView({
   companies, selectedId, onSelect, searchQuery,
+  selectedIds, onSelectionChange, focusedIndex, onFocusedIndexChange,
+  editingCell, onEditingCellChange, sort, onSortChange,
 }: {
   companies: CrmCompany[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   searchQuery: string;
+  selectedIds: Set<string>;
+  onSelectionChange: (ids: Set<string>) => void;
+  focusedIndex: number | null;
+  onFocusedIndexChange: (idx: number | null) => void;
+  editingCell: EditingCell | null;
+  onEditingCellChange: (cell: EditingCell | null) => void;
+  sort: SortState | null;
+  onSortChange: (sort: SortState | null) => void;
 }) {
+  const updateCompany = useUpdateCompany();
+  const lastSelectedIndex = useRef<number | null>(null);
+
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return companies;
     const q = searchQuery.toLowerCase();
@@ -1000,6 +1394,87 @@ function CompaniesListView({
       (c.industry?.toLowerCase().includes(q)),
     );
   }, [companies, searchQuery]);
+
+  const sorted = useMemo(() => {
+    if (!sort) return filtered;
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      let aVal = '', bVal = '';
+      switch (sort.column) {
+        case 'name': aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+        case 'domain': aVal = (a.domain || '').toLowerCase(); bVal = (b.domain || '').toLowerCase(); break;
+        case 'industry': aVal = (a.industry || '').toLowerCase(); bVal = (b.industry || '').toLowerCase(); break;
+        case 'size': aVal = (a.size || '').toLowerCase(); bVal = (b.size || '').toLowerCase(); break;
+      }
+      if (aVal < bVal) return sort.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sort]);
+
+  const handleSort = useCallback((col: string) => {
+    onSortChange(
+      !sort || sort.column !== col ? { column: col, direction: 'asc' }
+        : sort.direction === 'asc' ? { column: col, direction: 'desc' } : null,
+    );
+  }, [sort, onSortChange]);
+
+  const allChecked = sorted.length > 0 && sorted.every((c) => selectedIds.has(c.id));
+  const someChecked = sorted.some((c) => selectedIds.has(c.id));
+
+  const handleHeaderCheckbox = () => {
+    if (allChecked) onSelectionChange(new Set());
+    else onSelectionChange(new Set(sorted.map((c) => c.id)));
+  };
+
+  const handleRowCheckbox = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const company = sorted[index];
+    const newSet = new Set(selectedIds);
+    if (e.shiftKey && lastSelectedIndex.current !== null) {
+      const start = Math.min(lastSelectedIndex.current, index);
+      const end = Math.max(lastSelectedIndex.current, index);
+      for (let i = start; i <= end; i++) newSet.add(sorted[i].id);
+    } else {
+      if (newSet.has(company.id)) newSet.delete(company.id); else newSet.add(company.id);
+    }
+    lastSelectedIndex.current = index;
+    onSelectionChange(newSet);
+  };
+
+  const handleCellClick = (rowId: string, column: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditingCellChange({ rowId, column });
+  };
+
+  const handleSave = (companyId: string, column: string, value: string) => {
+    const updates: Record<string, unknown> = { id: companyId };
+    switch (column) {
+      case 'name': updates.name = value; break;
+      case 'domain': updates.domain = value || null; break;
+      case 'industry': updates.industry = value || null; break;
+    }
+    updateCompany.mutate(updates as Parameters<typeof updateCompany.mutate>[0]);
+    onEditingCellChange(null);
+  };
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (editingCell) return;
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); onFocusedIndexChange(Math.min((focusedIndex ?? -1) + 1, sorted.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); onFocusedIndexChange(Math.max((focusedIndex ?? 1) - 1, 0)); }
+    else if (e.key === 'Enter' && focusedIndex !== null && sorted[focusedIndex]) { e.preventDefault(); onSelect(sorted[focusedIndex].id); }
+    else if (e.key === 'Escape') { onFocusedIndexChange(null); onSelectionChange(new Set()); }
+    else if (e.key === ' ' && focusedIndex !== null && sorted[focusedIndex]) {
+      e.preventDefault();
+      const id = sorted[focusedIndex].id;
+      const ns = new Set(selectedIds);
+      if (ns.has(id)) ns.delete(id); else ns.add(id);
+      onSelectionChange(ns);
+    }
+  }, [editingCell, focusedIndex, sorted, selectedIds, onFocusedIndexChange, onSelectionChange, onSelect]);
 
   if (filtered.length === 0) {
     return (
@@ -1011,44 +1486,71 @@ function CompaniesListView({
     );
   }
 
+  const hdrStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: '8px var(--spacing-lg)',
+    borderBottom: '1px solid var(--color-border-secondary)', fontSize: 'var(--font-size-xs)',
+    fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)',
+    textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
+  };
+
   return (
-    <div style={{ flex: 1, overflow: 'auto' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: '8px var(--spacing-lg)',
-        borderBottom: '1px solid var(--color-border-secondary)', fontSize: 'var(--font-size-xs)',
-        fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)',
-        textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
-      }}>
-        <span style={{ width: 180, flexShrink: 0 }}>Name</span>
-        <span style={{ width: 160, flexShrink: 0 }}>Domain</span>
-        <span style={{ width: 120, flexShrink: 0 }}>Industry</span>
-        <span style={{ width: 80, flexShrink: 0 }}>Size</span>
-        <span style={{ flex: 1 }}>Contacts / Deals</span>
-      </div>
-      {filtered.map((company) => (
-        <div
-          key={company.id}
-          className={`crm-row${selectedId === company.id ? ' selected' : ''}`}
-          onClick={() => onSelect(company.id)}
-        >
-          <span style={{ width: 180, flexShrink: 0, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {company.name}
-          </span>
-          <span style={{ width: 160, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {company.domain || '-'}
-          </span>
-          <span style={{ width: 120, flexShrink: 0 }}>
-            {company.industry ? <Badge variant="default">{company.industry}</Badge> : <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>-</span>}
-          </span>
-          <span style={{ width: 80, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-            {company.size || '-'}
-          </span>
-          <span style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', fontVariantNumeric: 'tabular-nums' }}>
-            {company.contactCount} contacts &middot; {company.dealCount} deals
-          </span>
-          {selectedId === company.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }} tabIndex={0} onKeyDown={handleKeyDown}>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <div style={hdrStyle}>
+          <input type="checkbox" className={`crm-checkbox${!allChecked && someChecked ? ' indeterminate' : ''}`} checked={allChecked} onChange={handleHeaderCheckbox} />
+          <SortHeader label="Name" column="name" sort={sort} onSort={handleSort} style={{ width: 160, flexShrink: 0 }} />
+          <SortHeader label="Domain" column="domain" sort={sort} onSort={handleSort} style={{ width: 150, flexShrink: 0 }} />
+          <SortHeader label="Industry" column="industry" sort={sort} onSort={handleSort} style={{ width: 120, flexShrink: 0 }} />
+          <SortHeader label="Size" column="size" sort={sort} onSort={handleSort} style={{ width: 80, flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>Contacts / Deals</span>
         </div>
-      ))}
+        {sorted.map((company, idx) => {
+          const isEd = (col: string) => editingCell?.rowId === company.id && editingCell?.column === col;
+          return (
+            <div
+              key={company.id}
+              className={`crm-row${selectedId === company.id ? ' selected' : ''}${focusedIndex === idx ? ' focused' : ''}`}
+              onClick={() => { onFocusedIndexChange(idx); if (!editingCell) onSelect(company.id); }}
+            >
+              <input type="checkbox" className="crm-checkbox" checked={selectedIds.has(company.id)} onClick={(e) => handleRowCheckbox(idx, e)} readOnly />
+              {isEd('name') ? (
+                <span className="crm-cell-editing" style={{ width: 160, flexShrink: 0 }}>
+                  <InlineEditInput value={company.name} type="text" onSave={(v) => handleSave(company.id, 'name', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 160, flexShrink: 0, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} onClick={(e) => handleCellClick(company.id, 'name', e)}>
+                  {company.name}
+                </span>
+              )}
+              {isEd('domain') ? (
+                <span className="crm-cell-editing" style={{ width: 150, flexShrink: 0 }}>
+                  <InlineEditInput value={company.domain || ''} type="text" onSave={(v) => handleSave(company.id, 'domain', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 150, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} onClick={(e) => handleCellClick(company.id, 'domain', e)}>
+                  {company.domain || '-'}
+                </span>
+              )}
+              {isEd('industry') ? (
+                <span className="crm-cell-editing" style={{ width: 120, flexShrink: 0 }}>
+                  <InlineEditInput value={company.industry || ''} type="text" onSave={(v) => handleSave(company.id, 'industry', v)} onCancel={() => onEditingCellChange(null)} />
+                </span>
+              ) : (
+                <span style={{ width: 120, flexShrink: 0, cursor: 'text' }} onClick={(e) => handleCellClick(company.id, 'industry', e)}>
+                  {company.industry ? <Badge variant="default">{company.industry}</Badge> : <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>-</span>}
+                </span>
+              )}
+              <span style={{ width: 80, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                {company.size || '-'}
+              </span>
+              <span style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', fontVariantNumeric: 'tabular-nums' }}>
+                {company.contactCount} contacts &middot; {company.dealCount} deals
+              </span>
+              {selectedId === company.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1137,6 +1639,14 @@ export function CrmPage() {
   const [showSearch, setShowSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Multi-select & table interaction state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+  const [sort, setSort] = useState<SortState | null>(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkStageId, setBulkStageId] = useState<string | null>(null);
+
   // Modals
   const [showCreateDeal, setShowCreateDeal] = useState(false);
   const [showCreateContact, setShowCreateContact] = useState(false);
@@ -1161,6 +1671,9 @@ export function CrmPage() {
   const activities = activitiesData?.activities ?? [];
 
   const updateDeal = useUpdateDeal();
+  const deleteDeal = useDeleteDeal();
+  const deleteContact = useDeleteContact();
+  const deleteCompany = useDeleteCompany();
   const markWon = useMarkDealWon();
   const seedCrm = useSeedCrmData();
 
@@ -1192,6 +1705,10 @@ export function CrmPage() {
     setSelectedCompanyId(null);
     setSearchQuery('');
     setShowSearch(false);
+    setSelectedIds(new Set());
+    setFocusedIndex(null);
+    setEditingCell(null);
+    setSort(null);
   }, [activeView]);
 
   // Keyboard shortcuts
@@ -1278,6 +1795,26 @@ export function CrmPage() {
     setSelectedContactId(null);
     setSelectedCompanyId(null);
   }, []);
+
+  // Bulk actions
+  const handleBulkDelete = useCallback(() => {
+    const ids = Array.from(selectedIds);
+    if (activeView === 'deals') {
+      ids.forEach((id) => deleteDeal.mutate(id));
+    } else if (activeView === 'contacts') {
+      ids.forEach((id) => deleteContact.mutate(id));
+    } else if (activeView === 'companies') {
+      ids.forEach((id) => deleteCompany.mutate(id));
+    }
+    setSelectedIds(new Set());
+    setShowBulkDeleteConfirm(false);
+  }, [selectedIds, activeView, deleteDeal, deleteContact, deleteCompany]);
+
+  const handleBulkStageChange = useCallback((stageId: string) => {
+    const ids = Array.from(selectedIds);
+    ids.forEach((id) => updateDeal.mutate({ id, stageId }));
+    setBulkStageId(null);
+  }, [selectedIds, updateDeal]);
 
   // Has detail panel
   const hasDetailPanel = !!(
@@ -1402,9 +1939,18 @@ export function CrmPage() {
             {activeView === 'deals' && (
               <DealsListView
                 deals={deals}
+                stages={stages}
                 selectedId={selectedDealId}
                 onSelect={handleDealClick}
                 searchQuery={searchQuery}
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                focusedIndex={focusedIndex}
+                onFocusedIndexChange={setFocusedIndex}
+                editingCell={editingCell}
+                onEditingCellChange={setEditingCell}
+                sort={sort}
+                onSortChange={setSort}
               />
             )}
 
@@ -1414,6 +1960,14 @@ export function CrmPage() {
                 selectedId={selectedContactId}
                 onSelect={(id) => { setSelectedContactId(id); setSelectedDealId(null); setSelectedCompanyId(null); }}
                 searchQuery={searchQuery}
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                focusedIndex={focusedIndex}
+                onFocusedIndexChange={setFocusedIndex}
+                editingCell={editingCell}
+                onEditingCellChange={setEditingCell}
+                sort={sort}
+                onSortChange={setSort}
               />
             )}
 
@@ -1423,6 +1977,14 @@ export function CrmPage() {
                 selectedId={selectedCompanyId}
                 onSelect={(id) => { setSelectedCompanyId(id); setSelectedDealId(null); setSelectedContactId(null); }}
                 searchQuery={searchQuery}
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                focusedIndex={focusedIndex}
+                onFocusedIndexChange={setFocusedIndex}
+                editingCell={editingCell}
+                onEditingCellChange={setEditingCell}
+                sort={sort}
+                onSortChange={setSort}
               />
             )}
 
@@ -1471,6 +2033,37 @@ export function CrmPage() {
           )}
         </div>
       </div>
+
+      {/* Floating bulk action bar */}
+      {selectedIds.size > 0 && (activeView === 'deals' || activeView === 'contacts' || activeView === 'companies') && (
+        <div className="crm-bulk-bar">
+          <span className="crm-bulk-bar-count">{selectedIds.size} selected</span>
+          {activeView === 'deals' && (
+            <Select
+              value={bulkStageId || ''}
+              onChange={(v) => { if (v) handleBulkStageChange(v); }}
+              options={[{ value: '', label: 'Change stage...' }, ...stages.map((s) => ({ value: s.id, label: s.name }))]}
+              size="sm"
+              width={150}
+            />
+          )}
+          <Button variant="danger" size="sm" icon={<Trash2 size={14} />} onClick={() => setShowBulkDeleteConfirm(true)}>
+            Delete
+          </Button>
+          <IconButton icon={<X size={14} />} label="Clear selection" size={24} onClick={() => setSelectedIds(new Set())} />
+        </div>
+      )}
+
+      {/* Bulk delete confirmation */}
+      <ConfirmDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        title={`Delete ${selectedIds.size} ${activeView === 'deals' ? 'deal' : activeView === 'contacts' ? 'contact' : 'company'}${selectedIds.size !== 1 ? (activeView === 'companies' ? 'ies' : 's') : activeView === 'companies' ? 'y' : ''}`}
+        description={`This will permanently delete the selected ${activeView}. This action cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleBulkDelete}
+        destructive
+      />
 
       {/* Modals */}
       <CreateDealModal

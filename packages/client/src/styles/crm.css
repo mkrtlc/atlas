@@ -236,3 +236,167 @@
   gap: var(--spacing-sm);
   padding-top: var(--spacing-sm);
 }
+
+/* ─── Row checkbox ───────────────────────────────────────────── */
+
+.crm-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--color-border-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--color-bg-primary);
+  transition: background 0.1s, border-color 0.1s;
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crm-checkbox:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.crm-checkbox:checked {
+  background: var(--color-accent-primary);
+  border-color: var(--color-accent-primary);
+}
+
+.crm-checkbox:checked::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  margin-top: -1px;
+}
+
+.crm-checkbox.indeterminate {
+  background: var(--color-accent-primary);
+  border-color: var(--color-accent-primary);
+}
+
+.crm-checkbox.indeterminate::after {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 1.5px;
+  background: #fff;
+}
+
+/* ─── Focused row ────────────────────────────────────────────── */
+
+.crm-row.focused {
+  background: color-mix(in srgb, var(--color-accent-primary) 6%, transparent);
+  outline: none;
+}
+
+.crm-row.focused.selected {
+  background: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+}
+
+/* ─── Sortable column header ─────────────────────────────────── */
+
+.crm-sort-header {
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.1s;
+}
+
+.crm-sort-header:hover {
+  color: var(--color-text-secondary);
+}
+
+.crm-sort-indicator {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--color-accent-primary);
+}
+
+/* ─── Inline cell editing ────────────────────────────────────── */
+
+.crm-cell-editing {
+  padding: 0 !important;
+}
+
+.crm-cell-editing input,
+.crm-cell-editing select {
+  width: 100%;
+  height: 100%;
+  border: 1.5px solid var(--color-accent-primary);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+/* ─── Floating bulk action bar ───────────────────────────────── */
+
+.crm-bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: color-mix(in srgb, var(--color-bg-elevated) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-family);
+  animation: crm-bulk-bar-enter 0.15s ease-out;
+}
+
+@keyframes crm-bulk-bar-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.crm-bulk-bar-count {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  padding-right: var(--spacing-sm);
+  border-right: 1px solid var(--color-border-secondary);
+  white-space: nowrap;
+}
+
+/* ─── Table footer (aggregation) ─────────────────────────────── */
+
+.crm-table-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 10px var(--spacing-lg);
+  border-top: 1px solid var(--color-border-secondary);
+  background: var(--color-bg-secondary);
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
