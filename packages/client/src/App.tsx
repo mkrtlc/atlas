@@ -6,14 +6,10 @@ import { ShortcutProvider } from './providers/shortcut-provider';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useAuthStore } from './stores/auth-store';
 import { ROUTES } from './config/routes';
+import { appRegistry } from './apps';
 import { LoginPage } from './pages/login';
 import { InvitationPage } from './pages/invitation';
 import { SettingsPage, SettingsModal } from './pages/settings';
-import { DocsPage } from './pages/docs';
-import { DrawPage } from './pages/draw';
-import { TasksPage } from './pages/tasks';
-import { TablesPage } from './pages/tables';
-import { DrivePage } from './pages/drive';
 import { HomePage } from './pages/home';
 import { CommandPalette } from './components/ui/command-palette';
 import { ErrorBoundary } from './components/ui/error-boundary';
@@ -61,6 +57,8 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 }
 
 export function App() {
+  const appRoutes = appRegistry.getRoutes();
+
   return (
     <QueryProvider>
       <ThemeProvider>
@@ -89,42 +87,16 @@ export function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
-                  path={ROUTES.DOCS}
-                  element={<ProtectedRoute><DocsPage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.DOC_DETAIL}
-                  element={<ProtectedRoute><DocsPage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.DRAW}
-                  element={<ProtectedRoute><DrawPage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.DRAW_DETAIL}
-                  element={<ProtectedRoute><DrawPage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.TASKS}
-                  element={<ProtectedRoute><TasksPage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.TABLES}
-                  element={<ProtectedRoute><TablesPage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.TABLE_DETAIL}
-                  element={<ProtectedRoute><TablesPage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.DRIVE}
-                  element={<ProtectedRoute><DrivePage /></ProtectedRoute>}
-                />
-                <Route
-                  path={ROUTES.DRIVE_FOLDER}
-                  element={<ProtectedRoute><DrivePage /></ProtectedRoute>}
-                />
+
+                {/* App routes from registry */}
+                {appRoutes.map(({ path, component: Component }) => (
+                  <Route
+                    key={path}
+                    path={path}
+                    element={<ProtectedRoute><Component /></ProtectedRoute>}
+                  />
+                ))}
+
                 <Route
                   path={ROUTES.TENANT_USERS}
                   element={<Navigate to={ROUTES.ORG_MEMBERS} replace />}

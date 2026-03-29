@@ -7,3 +7,4 @@ export * from './task';
 export * from './table';
 export * from './drive';
 export * from './platform';
+export * from './app-manifest';

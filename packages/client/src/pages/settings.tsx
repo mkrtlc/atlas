@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, type CSSProperties, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties, type ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { settingsCategories } from '../config/settings-registry';
+import { getSettingsCategories } from '../config/settings-registry';
+import { appRegistry } from '../apps';
 import { SidebarNavButton } from '../components/settings/settings-modal';
 import { useUIStore } from '../stores/ui-store';
 
@@ -10,6 +11,10 @@ import { useUIStore } from '../stores/ui-store';
 
 export function SettingsModal() {
   const { settingsOpen, settingsApp, settingsPanel, closeSettings } = useUIStore();
+  const settingsCategories = useMemo(
+    () => getSettingsCategories(appRegistry.getSettingsCategories()),
+    [],
+  );
 
   // Resolve initial category from store
   const resolvedCategory = settingsCategories.find((c) => c.id === settingsApp) ?? settingsCategories[0];

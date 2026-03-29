@@ -5,17 +5,13 @@ import {
   Moon,
   Monitor,
   ArrowLeft,
-  FileText,
-  Pencil,
-  CheckSquare,
-  Table2,
-  HardDrive,
   Building2,
   Settings,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../stores/settings-store';
 import { AccountSwitcher } from './account-switcher';
+import { appRegistry } from '../../apps';
 import { ROUTES } from '../../config/routes';
 import type { ThemeMode } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
@@ -28,23 +24,14 @@ const THEME_ICONS: Record<ThemeMode, typeof Sun> = {
   system: Monitor,
 };
 
-interface NavEntry {
-  id: string;
-  labelKey: string;
-  icon: typeof FileText;
-  color: string;
-  route: string;
+// App nav items from the registry + fixed platform entries
+function getNavItems() {
+  return [
+    ...appRegistry.getNavItems(),
+    { id: 'org', labelKey: 'sidebar.organization', icon: Building2, color: '#7889a0', route: ROUTES.ORG },
+    { id: 'settings', labelKey: 'sidebar.settings', icon: Settings, color: '#6b7280', route: ROUTES.SETTINGS },
+  ];
 }
-
-const NAV_ITEMS: NavEntry[] = [
-  { id: 'docs', labelKey: 'sidebar.docs', icon: FileText, color: '#c4856c', route: ROUTES.DOCS },
-  { id: 'draw', labelKey: 'sidebar.draw', icon: Pencil, color: '#e06c9f', route: ROUTES.DRAW },
-  { id: 'tasks', labelKey: 'sidebar.tasks', icon: CheckSquare, color: '#6366f1', route: ROUTES.TASKS },
-  { id: 'tables', labelKey: 'sidebar.tables', icon: Table2, color: '#2d8a6e', route: ROUTES.TABLES },
-  { id: 'drive', labelKey: 'sidebar.drive', icon: HardDrive, color: '#64748b', route: ROUTES.DRIVE },
-  { id: 'org', labelKey: 'sidebar.organization', icon: Building2, color: '#7889a0', route: ROUTES.ORG },
-  { id: 'settings', labelKey: 'sidebar.settings', icon: Settings, color: '#6b7280', route: ROUTES.SETTINGS },
-];
 
 function NavButton({
   label,
@@ -54,7 +41,7 @@ function NavButton({
   onClick,
 }: {
   label: string;
-  icon: typeof FileText;
+  icon: typeof Building2;
   isActive: boolean;
   color: string;
   onClick: () => void;
@@ -261,7 +248,7 @@ export function Sidebar() {
         aria-label="Application navigation"
         style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}
       >
-        {NAV_ITEMS.map(({ id, labelKey, icon, color, route }) => (
+        {getNavItems().map(({ id, labelKey, icon, color, route }) => (
           <NavButton
             key={id}
             label={t(labelKey, id.charAt(0).toUpperCase() + id.slice(1))}
