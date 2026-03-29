@@ -1,43 +1,10 @@
 export const queryKeys = {
-  threads: {
-    all: ['threads'] as const,
-    counts: ['threads', 'counts'] as const,
-    list: (category?: string) => ['threads', 'list', category] as const,
-    detail: (id: string) => ['threads', 'detail', id] as const,
-    mailbox: (mailbox: string, category?: string) =>
-      ['threads', 'mailbox', mailbox, category] as const,
-  },
-  labels: {
-    all: ['labels'] as const,
-    gmail: ['labels', 'gmail'] as const,
-  },
-  search: {
-    all: ['search'] as const,
-    results: (query: string) => ['search', query] as const,
-  },
   settings: {
     all: ['settings'] as const,
     tasks: ['settings', 'tasks'] as const,
   },
   account: {
     all: ['account'] as const,
-  },
-  tracking: {
-    all: ['tracking'] as const,
-    thread: (threadId: string) => ['tracking', 'thread', threadId] as const,
-  },
-  contacts: {
-    all: ['contacts'] as const,
-    search: (query: string) => ['contacts', 'search', query] as const,
-    byEmail: (email: string) => ['contacts', 'byEmail', email] as const,
-  },
-  calendar: {
-    all: ['calendar'] as const,
-    calendars: ['calendar', 'calendars'] as const,
-    events: (timeMin: string, timeMax: string) => ['calendar', 'events', timeMin, timeMax] as const,
-    freeBusy: (emails: string, timeMin: string, timeMax: string) =>
-      ['calendar', 'freebusy', emails, timeMin, timeMax] as const,
-    search: (query: string) => ['calendar', 'search', query] as const,
   },
   docs: {
     all: ['docs'] as const,
@@ -66,10 +33,6 @@ export const queryKeys = {
     all: ['tables'] as const,
     list: ['tables', 'list'] as const,
     detail: (id: string) => ['tables', 'detail', id] as const,
-  },
-  notifications: {
-    all: ['notifications'] as const,
-    unreadCount: ['notifications', 'unread-count'] as const,
   },
   platform: {
     all: ['platform'] as const,

@@ -3,8 +3,6 @@ import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes';
-import trackingRoutes from './routes/tracking.routes';
-import pushRoutes from './routes/push.routes';
 import shareRoutes from './routes/share.routes';
 import { errorHandler } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
@@ -23,7 +21,6 @@ export function createApp() {
   const allowedOrigins = env.CORS_ORIGINS.split(',').map(o => o.trim());
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, etc.)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -49,12 +46,6 @@ export function createApp() {
     });
   });
 
-  // Public tracking endpoints — short /t prefix, no auth
-  app.use('/t', trackingRoutes);
-
-  // Gmail push notification webhook — no auth (Pub/Sub can't send JWTs)
-  app.use('/webhooks/push', pushRoutes);
-
   // Public share routes — no auth required
   app.use('/api/v1/share', shareRoutes);
 
@@ -65,9 +56,6 @@ export function createApp() {
   app.use('/api/v1', routes);
   app.use(errorHandler);
 
-  // ─── Serve client SPA in production ────────────────────────────
-  // In production the Express server serves the Vite-built client assets.
-  // All non-API routes fall through to index.html for client-side routing.
   if (env.NODE_ENV === 'production') {
     const clientDist = path.join(__dirname, '../../client/dist');
     app.use(express.static(clientDist));

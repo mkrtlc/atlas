@@ -6,13 +6,9 @@ import { ShortcutProvider } from './providers/shortcut-provider';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useAuthStore } from './stores/auth-store';
 import { ROUTES } from './config/routes';
-import { InboxPage } from './pages/inbox';
 import { LoginPage } from './pages/login';
-import { RegisterPage } from './pages/register';
 import { InvitationPage } from './pages/invitation';
-import { OAuthCallback } from './components/auth/oauth-callback';
 import { SettingsPage, SettingsModal } from './pages/settings';
-import { CalendarPage } from './pages/calendar';
 import { DocsPage } from './pages/docs';
 import { DrawPage } from './pages/draw';
 import { TasksPage } from './pages/tasks';
@@ -21,7 +17,7 @@ import { DrivePage } from './pages/drive';
 import { HomePage } from './pages/home';
 import { CommandPalette } from './components/ui/command-palette';
 import { ErrorBoundary } from './components/ui/error-boundary';
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { OrgLayout } from './pages/org/org-layout';
 import { OrgOverviewPage } from './pages/org/org-overview';
 import { OrgMembersPage } from './pages/org/org-members';
@@ -33,39 +29,12 @@ import { AdminOverviewPage } from './pages/admin/admin-overview';
 import { AdminTenantsPage } from './pages/admin/admin-tenants';
 import { AdminTenantDetailPage } from './pages/admin/admin-tenant-detail';
 
-const DEV_MODE = import.meta.env.DEV && !import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-function DevAuthInit() {
-  const setAccount = useAuthStore((s) => s.setAccount);
-  useEffect(() => {
-    if (DEV_MODE) {
-      setAccount({
-        id: 'dev-account',
-        userId: 'dev-user',
-        email: 'demo@atlasmail.dev',
-        name: 'Demo User',
-        pictureUrl: null,
-        provider: 'google',
-        providerId: 'dev',
-        historyId: null,
-        lastSync: null,
-        syncStatus: 'idle',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    }
-  }, [setAccount]);
-  return null;
-}
-
-
-/** Requires Google OAuth. Redirects to HOME if not authenticated. */
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
 
-  if (isLoading && !DEV_MODE) {
+  if (isLoading) {
     return (
       <div
         style={{
@@ -84,7 +53,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!isAuthenticated && !DEV_MODE) {
+  if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
@@ -98,13 +67,10 @@ export function App() {
         <TooltipProvider>
           <ShortcutProvider>
             <BrowserRouter>
-            <DevAuthInit />
             <ErrorBoundary>
               <Routes>
                 <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-                <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
                 <Route path={ROUTES.INVITATION} element={<InvitationPage />} />
-                <Route path={ROUTES.AUTH_CALLBACK} element={<OAuthCallback />} />
                 <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
                 <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
                 <Route
@@ -116,26 +82,10 @@ export function App() {
                   }
                 />
                 <Route
-                  path={ROUTES.INBOX}
-                  element={
-                    <ProtectedRoute>
-                      <InboxPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
                   path={ROUTES.SETTINGS}
                   element={
                     <ProtectedRoute>
                       <SettingsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.CALENDAR}
-                  element={
-                    <ProtectedRoute>
-                      <CalendarPage />
                     </ProtectedRoute>
                   }
                 />

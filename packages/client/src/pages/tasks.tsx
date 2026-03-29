@@ -4,7 +4,7 @@ import {
   ArrowLeft, Plus, Search, Inbox, Star, Calendar, Coffee,
   Archive, BookOpen, Check, Trash2, X, ChevronRight, ChevronDown,
   Hash, CircleDot, MoreHorizontal, Moon, Sun, GripVertical,
-  Video, Clock, FileText, Filter, Tag, CheckCircle2, Settings2,
+  Clock, FileText, Filter, Tag, CheckCircle2, Settings2,
   Repeat, LayoutList, LayoutGrid,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,6 @@ import {
   useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask,
   useTaskActivities,
 } from '../hooks/use-tasks';
-import { useCalendarEvents } from '../hooks/use-calendar';
 import { TaskNotesEditor } from '../components/tasks/task-notes-editor';
 import { queryKeys } from '../config/query-keys';
 import { api } from '../lib/api-client';
@@ -102,10 +101,6 @@ function getDueBadgeClass(dateStr: string): string {
   if (isOverdue(dateStr)) return 'task-due-badge overdue';
   if (isToday(dateStr)) return 'task-due-badge today';
   return 'task-due-badge upcoming';
-}
-
-function formatEventTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 // ─── Priority selector ──────────────────────────────────────────────
@@ -406,40 +401,6 @@ function HeadingRow({
       <button className="tasks-icon-btn task-heading-delete" onClick={onDelete} title="Delete section">
         <X size={12} />
       </button>
-    </div>
-  );
-}
-
-// ─── Calendar Events Section (feature 6) ────────────────────────────
-
-function TodayCalendarEvents() {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-
-  const { data: events } = useCalendarEvents(todayStart, todayEnd);
-
-  if (!events || events.length === 0) return null;
-
-  return (
-    <div className="task-calendar-events">
-      <div className="task-calendar-events-header">
-        <Clock size={13} />
-        <span>Schedule</span>
-      </div>
-      {events.map((event: any) => (
-        <div key={event.id} className="task-calendar-event-row">
-          <span className="task-calendar-event-time">
-            {event.isAllDay ? 'All day' : `${formatEventTime(event.startTime)} – ${formatEventTime(event.endTime)}`}
-          </span>
-          <span className="task-calendar-event-title">{event.summary || 'Untitled event'}</span>
-          {event.hangoutLink && (
-            <a href={event.hangoutLink} target="_blank" rel="noreferrer" className="task-calendar-event-video" title="Join video call">
-              <Video size={12} />
-            </a>
-          )}
-        </div>
-      ))}
     </div>
   );
 }
@@ -1631,8 +1592,6 @@ export function TasksPage() {
                 {/* Project header (features 9 + 10) */}
                 {activeProject && <ProjectHeader project={activeProject} />}
 
-                {/* Calendar events in Today view (feature 6) */}
-                {activeSection === 'today' && tasksSettings.showCalendarInToday && <TodayCalendarEvents />}
 
                 {/* ─── Today view with evening split (feature 2) ─── */}
                 {todayTasks ? (

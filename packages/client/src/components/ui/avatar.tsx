@@ -1,7 +1,15 @@
 import { useState, useCallback, useRef } from 'react';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import BoringAvatar from 'boring-avatars';
-import { getInitials } from '@atlasmail/shared';
+function getInitials(name: string | null, email?: string): string {
+  if (name) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  if (email) return email.substring(0, 2).toUpperCase();
+  return '?';
+}
 
 // Theme-aware color palettes.  Light palettes use softer, desaturated tones so
 // they don't pop too aggressively on a bright background.  Dark palettes keep

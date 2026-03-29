@@ -5,14 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api-client';
 import { queryKeys } from '../config/query-keys';
 import {
-  Mail, Calendar, FileText, Pencil, CheckSquare, Table2,
-  Clock, ArrowRight, Settings, LogOut,
+  FileText, Pencil, CheckSquare, Table2,
+  ArrowRight, Settings, LogOut,
   HardDrive,
   Building2, Shield,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
-import { useThreadCounts } from '../hooks/use-threads';
-import { useCalendarEvents } from '../hooks/use-calendar';
 import { useTaskCounts } from '../hooks/use-tasks';
 import { useDocumentList } from '../hooks/use-documents';
 import { useDrawingList } from '../hooks/use-drawings';
@@ -20,7 +18,6 @@ import { useTableList } from '../hooks/use-tables';
 import { useDriveStorage } from '../hooks/use-drive';
 import { ROUTES } from '../config/routes';
 import { useUIStore } from '../stores/ui-store';
-import { buildGoogleOAuthUrl } from '../components/auth/login-page';
 import { WidgetGrid } from '../components/home/widgets/widget-grid';
 import '../styles/home.css';
 
@@ -422,7 +419,7 @@ function AppCard({
   upcoming,
   sparkle,
 }: {
-  icon?: typeof Mail;
+  icon?: typeof FileText;
   iconNode?: React.ReactNode;
   label: string;
   color: string;
@@ -557,8 +554,6 @@ export function HomePage() {
   const { openSettings } = useUIStore();
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const logout = useAuthStore((s) => s.logout);
-  const isGoogleUser = account?.provider === 'google';
-  const { data: counts } = useThreadCounts({ enabled: isGoogleUser });
   const { data: taskCounts } = useTaskCounts({ enabled: isAuthenticated });
   const { data: docListData } = useDocumentList(false, { enabled: isAuthenticated });
   const { data: drawingListData } = useDrawingList(false, { enabled: isAuthenticated });
@@ -604,26 +599,12 @@ export function HomePage() {
     img.src = BG_IMAGES[nextIdx];
   }, [imageIndex]);
 
-  // Today's events
-  const todayStart = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
-  }, []);
-  const todayEnd = useMemo(() => {
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
-    return d.toISOString();
-  }, []);
-  const { data: todayEvents } = useCalendarEvents(todayStart, todayEnd, { enabled: isGoogleUser });
 
   const rawName = account?.name || '';
   const cleanedName = rawName.replace(/^Dr\.?\s+/i, '');
   const firstName = cleanedName.split(' ')[0] || '';
   const hour = now.getHours();
   const greetingKey = getGreetingKey(hour);
-  const inboxUnread = counts?.categories?.all?.unread ?? 0;
-  const eventCount = todayEvents?.length ?? 0;
   const pendingTaskCount = taskCounts?.total ?? 0;
   const docCount = docListData?.documents?.length ?? 0;
   const drawingCount = drawingListData?.drawings?.length ?? 0;
@@ -631,17 +612,6 @@ export function HomePage() {
   const driveFileCount = driveStorageData?.fileCount ?? 0;
   const timeTint = getTimeTint(hour);
 
-  // Upcoming events (next 3 that haven't ended yet)
-  const upcomingEvents = useMemo(() => {
-    if (!todayEvents?.length) return [];
-    const nowMs = now.getTime();
-    return todayEvents
-      .filter((ev) => {
-        const end = ev.endTime ? new Date(ev.endTime).getTime() : Infinity;
-        return end > nowMs;
-      })
-      .slice(0, 3);
-  }, [todayEvents, now]);
 
   // Background style based on user settings
   const backgroundStyle = useMemo(() => {
@@ -959,26 +929,6 @@ export function HomePage() {
           }}
         >
           <AppCard
-            icon={Mail}
-            label={t('nav.mail')}
-            color="#4a9e8f"
-            badge={inboxUnread > 0 ? t('home.unread', { count: inboxUnread }) : undefined}
-            onClick={() => {
-              if (isGoogleUser) { navigate(ROUTES.INBOX); }
-              else { window.location.href = buildGoogleOAuthUrl(); }
-            }}
-          />
-          <AppCard
-            icon={Calendar}
-            label={t('nav.calendar')}
-            color="#7c6fbd"
-            badge={eventCount > 0 ? t('home.eventsToday', { count: eventCount }) : undefined}
-            onClick={() => {
-              if (isGoogleUser) { navigate(ROUTES.CALENDAR); }
-              else { window.location.href = buildGoogleOAuthUrl(); }
-            }}
-          />
-          <AppCard
             icon={CheckSquare}
             label={t('nav.tasks')}
             color="#6366f1"
@@ -1079,8 +1029,8 @@ export function HomePage() {
             </p>
           )}
 
-          {/* Today at a glance */}
-          {(upcomingEvents.length > 0 || pendingTaskCount > 0) && (
+          {/* Quick stats */}
+          {pendingTaskCount > 0 && (
             <div
               style={{
                 marginTop: 28,
@@ -1089,107 +1039,40 @@ export function HomePage() {
                 alignItems: 'stretch',
               }}
             >
-              {/* Upcoming events */}
-              {upcomingEvents.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  padding: '14px 20px',
+                  background: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 14,
+                  textAlign: 'left',
+                  fontFamily: 'var(--font-family)',
+                  minWidth: 160,
+                }}
+              >
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                  {t('home.today')}
+                </span>
                 <button
-                  onClick={() => navigate(ROUTES.CALENDAR)}
+                  onClick={() => navigate(ROUTES.TASKS)}
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    padding: '14px 20px',
-                    background: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    borderRadius: 14,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontFamily: 'var(--font-family)',
-                    outline: 'none',
-                    transition: 'background 0.2s',
-                    minWidth: 200,
-                    maxWidth: 280,
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                    <Clock size={14} color="rgba(255,255,255,0.5)" />
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {t('home.comingUp')}
-                    </span>
-                  </div>
-                  {upcomingEvents.map((ev) => (
-                    <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 500, minWidth: 48 }}>
-                        {ev.startTime && !ev.isAllDay
-                          ? new Date(ev.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          : t('home.allDay')}
-                      </span>
-                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, fontWeight: 500 }}>
-                        {ev.summary || t('home.event')}
-                      </span>
-                    </div>
-                  ))}
-                </button>
-              )}
-
-              {/* Quick stats */}
-              {(inboxUnread > 0 || pendingTaskCount > 0) && (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    padding: '14px 20px',
-                    background: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    borderRadius: 14,
-                    textAlign: 'left',
-                    fontFamily: 'var(--font-family)',
-                    minWidth: 160,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    fontFamily: 'var(--font-family)', outline: 'none',
                   }}
                 >
-                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
-                    {t('home.today')}
+                  <CheckSquare size={15} color="rgba(255,255,255,0.6)" />
+                  <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: 500 }}>
+                    {t('home.pendingTasksFull', { count: pendingTaskCount })}
                   </span>
-                  {inboxUnread > 0 && (
-                    <button
-                      onClick={() => navigate(ROUTES.INBOX)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                        fontFamily: 'var(--font-family)', outline: 'none',
-                      }}
-                    >
-                      <Mail size={15} color="rgba(255,255,255,0.6)" />
-                      <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: 500 }}>
-                        {t('home.unreadEmails', { count: inboxUnread })}
-                      </span>
-                      <ArrowRight size={13} color="rgba(255,255,255,0.3)" />
-                    </button>
-                  )}
-                  {pendingTaskCount > 0 && (
-                    <button
-                      onClick={() => navigate(ROUTES.TASKS)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                        fontFamily: 'var(--font-family)', outline: 'none',
-                      }}
-                    >
-                      <CheckSquare size={15} color="rgba(255,255,255,0.6)" />
-                      <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: 500 }}>
-                        {t('home.pendingTasksFull', { count: pendingTaskCount })}
-                      </span>
-                      <ArrowRight size={13} color="rgba(255,255,255,0.3)" />
-                    </button>
-                  )}
-                </div>
-              )}
+                  <ArrowRight size={13} color="rgba(255,255,255,0.3)" />
+                </button>
+              </div>
             </div>
           )}
 

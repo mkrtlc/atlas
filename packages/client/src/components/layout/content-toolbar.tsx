@@ -1,17 +1,13 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings, SlidersHorizontal } from 'lucide-react';
-import { useEmailStore } from '../../stores/email-store';
 import { useUIStore } from '../../stores/ui-store';
 import { SearchBar } from '../search/search-bar';
 import { Chip } from '../ui/chip';
-import { NotificationCenter } from '../notifications/notification-center';
-import type { EmailCategory } from '@atlasmail/shared';
-import type { Mailbox } from '../../stores/email-store';
 import type { CSSProperties } from 'react';
 
 // ---------------------------------------------------------------------------
-// Search filter parsing (shared with email-list-pane)
+// Search filter parsing
 // ---------------------------------------------------------------------------
 
 interface SearchFilters {
@@ -133,39 +129,13 @@ function SearchFilterChips({ query, onChange }: { query: string; onChange: (q: s
 // ContentToolbar
 // ---------------------------------------------------------------------------
 
-const CATEGORY_LABELS: Record<EmailCategory, string> = {
-  all: 'sidebar.allMail',
-  important: 'sidebar.important',
-  other: 'sidebar.other',
-  newsletters: 'sidebar.newsletters',
-  notifications: 'sidebar.notifications',
-};
-
-const MAILBOX_LABELS: Record<Mailbox, string> = {
-  inbox: 'sidebar.allMail',
-  starred: 'sidebar.starred',
-  unread: 'sidebar.unread',
-  sent: 'sidebar.sent',
-  drafts: 'sidebar.drafts',
-  archive: 'sidebar.archive',
-  trash: 'sidebar.trash',
-  spam: 'sidebar.spam',
-};
-
 export function ContentToolbar() {
   const { t } = useTranslation();
-  const activeCategory = useEmailStore((s) => s.activeCategory);
-  const activeMailbox = useEmailStore((s) => s.activeMailbox);
-  const searchQuery = useEmailStore((s) => s.searchQuery);
-  const setSearchQuery = useEmailStore((s) => s.setSearchQuery);
   const { openSettings } = useUIStore();
-
-  const isInbox = activeMailbox === 'inbox';
-  const parsedFilters = useMemo(() => parseSearchQuery(searchQuery), [searchQuery]);
 
   return (
     <div style={{ flexShrink: 0, background: 'var(--color-bg-primary)' }}>
-      {/* Header row: folder name | search | gear */}
+      {/* Header row: search | gear */}
       <div
         style={{
           display: 'grid',
@@ -176,28 +146,14 @@ export function ContentToolbar() {
           minHeight: 40,
         }}
       >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 'var(--font-size-md)',
-            fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
-            fontFamily: 'var(--font-family)',
-            color: 'var(--color-text-primary)',
-            lineHeight: 1.4,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {isInbox ? t(CATEGORY_LABELS[activeCategory]) : t(MAILBOX_LABELS[activeMailbox])}
-        </h2>
+        <div />
 
         <div role="search" style={{ width: 400 }}>
-          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search..." />
+          <SearchBar value="" onChange={() => {}} placeholder="Search..." />
         </div>
 
-        {/* Notifications & settings */}
+        {/* Settings */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
-          <NotificationCenter />
-
           {/* Global app settings */}
           <button
             aria-label="App settings"
@@ -221,10 +177,9 @@ export function ContentToolbar() {
             <SlidersHorizontal size={15} />
           </button>
 
-          {/* Mail settings */}
           <button
-            aria-label="Mail settings"
-            onClick={() => openSettings('mail')}
+            aria-label="Settings"
+            onClick={() => openSettings()}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -245,13 +200,6 @@ export function ContentToolbar() {
           </button>
         </div>
       </div>
-
-      {/* Search filter chips */}
-      {hasActiveFilters(parsedFilters) && (
-        <div style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
-          <SearchFilterChips query={searchQuery} onChange={setSearchQuery} />
-        </div>
-      )}
     </div>
   );
 }

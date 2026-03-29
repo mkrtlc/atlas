@@ -4,46 +4,7 @@ import { useAuthStore } from '../../stores/auth-store';
 import { Avatar } from '../ui/avatar';
 import type { Account } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
-import { AddAccountModal } from '../settings/add-account-modal';
 import { ConfirmDialog } from '../ui/confirm-dialog';
-
-// ─── Sync status dot ────────────────────────────────────────────────────────
-
-function SyncDot({ status }: { status: Account['syncStatus'] }) {
-  const base: CSSProperties = {
-    width: 7,
-    height: 7,
-    borderRadius: '50%',
-    flexShrink: 0,
-    position: 'relative',
-  };
-
-  if (status === 'syncing') {
-    return (
-      <>
-        <style>{`
-          @keyframes am-spin { to { transform: rotate(360deg); } }
-        `}</style>
-        <span
-          aria-label="Syncing"
-          style={{
-            ...base,
-            border: '1.5px solid transparent',
-            borderTopColor: 'var(--color-accent-primary)',
-            borderRightColor: 'var(--color-accent-primary)',
-            background: 'transparent',
-            animation: 'am-spin 0.8s linear infinite',
-          }}
-        />
-      </>
-    );
-  }
-
-  const color =
-    status === 'idle' ? '#22c55e' : status === 'error' ? '#ef4444' : 'var(--color-text-tertiary)';
-
-  return <span aria-label={status} style={{ ...base, background: color }} />;
-}
 
 // ─── Account row inside the dropdown ────────────────────────────────────────
 
@@ -79,22 +40,7 @@ function AccountRow({
       role="menuitem"
       aria-current={isActive ? true : undefined}
     >
-      {/* Avatar with sync dot overlay */}
-      <div style={{ position: 'relative', flexShrink: 0 }}>
-        <Avatar src={account.pictureUrl} name={account.name} email={account.email} size={28} />
-        <span
-          style={{
-            position: 'absolute',
-            bottom: -1,
-            right: -1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <SyncDot status={account.syncStatus} />
-        </span>
-      </div>
+      <Avatar src={account.pictureUrl} name={account.name} email={account.email} size={28} />
 
       {/* Name + email */}
       <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
@@ -169,7 +115,6 @@ function AccountRow({
 export function AccountSwitcher() {
   const { account, accounts, switchAccount, removeAccount, logout } = useAuthStore();
   const [open, setOpen] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [triggerHovered, setTriggerHovered] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -198,7 +143,6 @@ export function AccountSwitcher() {
 
   const handleAddAccount = useCallback(() => {
     setOpen(false);
-    setShowAddModal(true);
   }, []);
 
   const handleSwitch = useCallback(
@@ -383,7 +327,6 @@ export function AccountSwitcher() {
           onConfirm={() => executeRemove(confirmRemoveId)}
         />
       )}
-      <AddAccountModal open={showAddModal} onOpenChange={setShowAddModal} />
     </div>
   );
 }

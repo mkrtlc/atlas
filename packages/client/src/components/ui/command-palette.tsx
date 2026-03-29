@@ -3,10 +3,8 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_SHORTCUTS } from '@atlasmail/shared';
 import { useUIStore } from '../../stores/ui-store';
-import { useEmailStore } from '../../stores/email-store';
 import { Kbd } from './kbd';
 import { Search } from 'lucide-react';
-import type { EmailCategory } from '@atlasmail/shared';
 
 interface Command {
   id: string;
@@ -19,29 +17,15 @@ interface Command {
 export function CommandPalette() {
   const { t } = useTranslation();
   const { commandPaletteOpen, toggleCommandPalette } = useUIStore();
-  const { openCompose, setActiveCategory } = useEmailStore();
   const [query, setQuery] = useState('');
 
-  // Build commands list — shortcuts + quick actions
+  // Build commands list from keyboard shortcuts
   const allCommands: Command[] = useMemo(() => {
-    const categoryActions: Command[] = [
-      { id: 'go_important', label: t('commandPalette.goToImportant'), keys: 'g i', action: () => setActiveCategory('important' as EmailCategory) },
-      { id: 'go_other', label: t('commandPalette.goToOther'), keys: 'g o', action: () => setActiveCategory('other' as EmailCategory) },
-      { id: 'go_newsletters', label: t('commandPalette.goToNewsletters'), keys: 'g n', action: () => setActiveCategory('newsletters' as EmailCategory) },
-      { id: 'go_notifications', label: t('commandPalette.goToNotifications'), keys: 'g t', action: () => setActiveCategory('notifications' as EmailCategory) },
-    ];
-    const composeAction: Command = {
-      id: 'compose_new',
-      label: t('commandPalette.composeNewEmail'),
-      keys: 'c',
-      action: () => openCompose('new'),
-    };
     const shortcutCommands: Command[] = DEFAULT_SHORTCUTS
-      .filter((s) => !categoryActions.some((a) => a.id === s.id) && s.id !== 'compose_new')
       .map((s) => ({ id: s.id, label: s.label, description: s.description, keys: s.keys }));
 
-    return [composeAction, ...categoryActions, ...shortcutCommands];
-  }, [openCompose, setActiveCategory, t]);
+    return shortcutCommands;
+  }, [t]);
 
   const filteredCommands = useMemo(() => {
     if (!query.trim()) return allCommands;

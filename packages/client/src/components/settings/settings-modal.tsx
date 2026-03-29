@@ -48,7 +48,6 @@ import { useUIStore } from '../../stores/ui-store';
 import { useSettingsStore, type FontFamilyId, type AIProvider } from '../../stores/settings-store';
 import { useAuthStore } from '../../stores/auth-store';
 import { Avatar } from '../ui/avatar';
-import { AddAccountModal } from './add-account-modal';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import {
   SettingsSection,
@@ -832,8 +831,6 @@ export function MailAccountsPanel() {
           {t('settings.addAccount')}
         </button>
       </SettingsSection>
-
-      <AddAccountModal open={showAddAccount} onOpenChange={setShowAddAccount} />
 
       <ConfirmDialog
         open={!!confirmRemoveId}

@@ -1,7 +1,6 @@
 import { useState, useCallback, type ReactNode, type CSSProperties } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useUIStore } from '../../stores/ui-store';
-import { useEmailStore } from '../../stores/email-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useMediaQuery } from '../../hooks/use-media-query';
 import { Sidebar } from './sidebar';
@@ -56,7 +55,7 @@ interface AppLayoutProps {
 export function AppLayout({ emailList, readingPane }: AppLayoutProps) {
   const { sidebarOpen, toggleSidebar } = useUIStore();
   const readingPanePosition = useSettingsStore((s) => s.readingPane);
-  const activeThreadId = useEmailStore((s) => s.activeThreadId);
+  const activeThreadId: string | null = null;
 
   // Breakpoint detection
   const isTablet = useMediaQuery('(max-width: 1024px)');

@@ -5,7 +5,6 @@ import { tenantMembers, tenantInvitations, accounts } from '../../db/schema';
 import { hashPassword } from '../../utils/password';
 import * as authService from '../auth.service';
 import { logger } from '../../utils/logger';
-import { sendInvitationEmail } from '../email.service';
 import { getTenantById } from './tenant.service';
 import type { TenantMemberRole } from '@atlasmail/shared';
 
@@ -104,17 +103,8 @@ export async function inviteUser(tenantId: string, email: string, role: TenantMe
 
   logger.info({ tenantId, email, invitationId: invitation.id }, 'User invited to tenant');
 
-  // Send invitation email
-  try {
-    const tenant = await getTenantById(tenantId);
-    await sendInvitationEmail(email, {
-      tenantName: tenant?.name ?? 'your organization',
-      role,
-      token,
-    });
-  } catch (err) {
-    logger.warn({ err, email, tenantId }, 'Failed to send invitation email — invitation created but email not sent');
-  }
+  // TODO: Send invitation email when SMTP is configured
+  logger.info({ email, tenantId, token }, 'Invitation created (email sending not yet configured)');
 
   return invitation;
 }
