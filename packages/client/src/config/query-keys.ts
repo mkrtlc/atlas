@@ -6,6 +6,14 @@ export const queryKeys = {
   account: {
     all: ['account'] as const,
   },
+  links: {
+    all: ['links'] as const,
+    counts: (appId: string, recordId: string) => ['links', 'counts', appId, recordId] as const,
+    details: (appId: string, recordId: string) => ['links', 'details', appId, recordId] as const,
+  },
+  search: {
+    global: (q: string) => ['search', 'global', q] as const,
+  },
   docs: {
     all: ['docs'] as const,
     list: ['docs', 'list'] as const,

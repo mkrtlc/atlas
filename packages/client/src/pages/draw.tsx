@@ -35,6 +35,7 @@ import {
 import { useSettingsStore } from '../stores/settings-store';
 import { useDrawSettingsStore, useDrawSettingsSync, type DrawSortOrder } from '../stores/draw-settings-store';
 import { DrawSettingsModal } from '../components/draw/draw-settings-modal';
+import { SmartButtonBar } from '../components/shared/SmartButtonBar';
 import { useUIStore } from '../stores/ui-store';
 import { DRAWING_TEMPLATES } from '../config/drawing-templates';
 import { DEFAULT_LIBRARY_ITEMS } from '../config/drawing-libraries';
@@ -1325,6 +1326,7 @@ function ExcalidrawCanvas({
         isSaving={isSaving}
         excalidrawApi={excalidrawApi}
       />
+      <SmartButtonBar appId="draw" recordId={drawing.id} />
       <div style={{ flex: 1, position: 'relative' }}>
         <Excalidraw
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => {

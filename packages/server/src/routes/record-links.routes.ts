@@ -6,6 +6,32 @@ import { logger } from '../utils/logger';
 const router = Router();
 router.use(authMiddleware);
 
+router.get('/:appId/:recordId/counts', async (req: Request, res: Response) => {
+  try {
+    const counts = await recordLinkService.getLinkCounts(
+      req.params.appId as string,
+      req.params.recordId as string,
+    );
+    res.json({ success: true, data: counts });
+  } catch (err) {
+    logger.error({ err }, 'Failed to get link counts');
+    res.status(500).json({ success: false, error: 'Failed to get link counts' });
+  }
+});
+
+router.get('/:appId/:recordId/details', async (req: Request, res: Response) => {
+  try {
+    const links = await recordLinkService.getLinksWithTitles(
+      req.params.appId as string,
+      req.params.recordId as string,
+    );
+    res.json({ success: true, data: links });
+  } catch (err) {
+    logger.error({ err }, 'Failed to get linked records');
+    res.status(500).json({ success: false, error: 'Failed to get linked records' });
+  }
+});
+
 router.get('/:appId/:recordId', async (req: Request, res: Response) => {
   try {
     const links = await recordLinkService.getLinksForRecord(

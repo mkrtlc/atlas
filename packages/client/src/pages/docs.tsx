@@ -39,6 +39,7 @@ import { useDrawingList } from '../hooks/use-drawings';
 import { useTableList } from '../hooks/use-tables';
 import { EmojiPicker } from '../components/shared/emoji-picker';
 import { CoverPicker, isCoverGradient } from '../components/shared/cover-picker';
+import { SmartButtonBar } from '../components/shared/SmartButtonBar';
 import '../styles/docs.css';
 
 // ─── Page templates ──────────────────────────────────────────────────────
@@ -1143,6 +1144,8 @@ export function DocsPage() {
             onToggleComments={() => setShowComments(!showComments)}
           />
         )}
+
+        {doc && !showTemplates && <SmartButtonBar appId="docs" recordId={doc.id} />}
 
         {/* Editor area or template gallery */}
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'row' }}>

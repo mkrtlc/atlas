@@ -25,6 +25,7 @@ import { TasksSettingsModal } from '../components/tasks/tasks-settings-modal';
 import { KanbanBoard } from '../components/tasks/kanban-board';
 import { useTasksSettingsStore } from '../stores/tasks-settings-store';
 import { useUIStore } from '../stores/ui-store';
+import { SmartButtonBar } from '../components/shared/SmartButtonBar';
 import '../styles/tasks.css';
 
 // ─── Navigation sections (Things 3 inspired) ────────────────────────
@@ -709,6 +710,8 @@ function TaskDetailPanel({
           </button>
         </div>
       </div>
+
+      <SmartButtonBar appId="tasks" recordId={task.id} />
 
       {/* Body */}
       <div className="task-detail-body task-list-scroll">

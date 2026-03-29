@@ -60,6 +60,27 @@ export interface RecordLink {
   createdAt: string;
 }
 
+export interface LinkCount {
+  appId: string;
+  count: number;
+}
+
+export interface LinkedRecord {
+  linkId: string;
+  appId: string;
+  recordId: string;
+  title: string;
+  linkType: string;
+  createdAt: string;
+}
+
+export interface GlobalSearchResult {
+  appId: string;
+  recordId: string;
+  title: string;
+  appName: string;
+}
+
 // ─── Tenant App Access ──────────────────────────────────────────────
 
 export interface TenantApp {
