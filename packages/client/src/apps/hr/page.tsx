@@ -3,6 +3,7 @@ import {
   Users, Building2, CalendarDays, Plus, Search, Settings2, X,
   Check, XCircle, Mail, Phone,
   ChevronRight, Trash2, Edit3,
+  User, Briefcase, Tag,
 } from 'lucide-react';
 import {
   useEmployeeList, useEmployeeCounts, useCreateEmployee, useUpdateEmployee, useDeleteEmployee,
@@ -20,6 +21,7 @@ import { IconButton } from '../../components/ui/icon-button';
 import { Badge } from '../../components/ui/badge';
 import { Avatar } from '../../components/ui/avatar';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { ColumnHeader } from '../../components/ui/column-header';
 import { useUIStore } from '../../stores/ui-store';
 import '../../styles/hr.css';
 
@@ -728,12 +730,12 @@ function EmployeesListView({
           flexShrink: 0,
         }}
       >
-        <span style={{ width: 220, flexShrink: 0 }}>Name</span>
-        <span style={{ width: 180, flexShrink: 0 }}>Email</span>
-        <span style={{ width: 140, flexShrink: 0 }}>Role</span>
-        <span style={{ width: 120, flexShrink: 0 }}>Department</span>
-        <span style={{ width: 80, flexShrink: 0 }}>Status</span>
-        <span style={{ flex: 1 }}>Started</span>
+        <span style={{ width: 220, flexShrink: 0 }}><ColumnHeader label="Name" icon={<User size={12} />} /></span>
+        <span style={{ width: 180, flexShrink: 0 }}><ColumnHeader label="Email" icon={<Mail size={12} />} /></span>
+        <span style={{ width: 140, flexShrink: 0 }}><ColumnHeader label="Role" icon={<Briefcase size={12} />} /></span>
+        <span style={{ width: 120, flexShrink: 0 }}><ColumnHeader label="Department" icon={<Building2 size={12} />} /></span>
+        <span style={{ width: 80, flexShrink: 0 }}><ColumnHeader label="Status" icon={<Tag size={12} />} /></span>
+        <span style={{ flex: 1 }}><ColumnHeader label="Started" icon={<CalendarDays size={12} />} /></span>
       </div>
 
       {filtered.map((emp) => {

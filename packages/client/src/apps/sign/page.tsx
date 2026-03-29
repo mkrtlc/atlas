@@ -26,6 +26,7 @@ import {
   Pencil,
   Tag,
 } from 'lucide-react';
+import { ColumnHeader } from '../../components/ui/column-header';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -438,11 +439,11 @@ export function SignPage() {
                 <table className="sign-doc-table">
                   <thead>
                     <tr>
-                      <th>{t('sign.list.title')}</th>
-                      <th>{t('sign.list.status')}</th>
-                      <th>{t('sign.list.created')}</th>
-                      <th>{t('sign.list.pages')}</th>
-                      <th style={{ width: 80 }}>{t('sign.list.actions')}</th>
+                      <th><ColumnHeader label={t('sign.list.title')} icon={<FileText size={12} />} /></th>
+                      <th><ColumnHeader label={t('sign.list.status')} icon={<Tag size={12} />} /></th>
+                      <th><ColumnHeader label={t('sign.list.created')} icon={<Calendar size={12} />} /></th>
+                      <th><ColumnHeader label={t('sign.list.pages')} icon={<Users size={12} />} /></th>
+                      <th style={{ width: 80 }}><ColumnHeader label={t('sign.list.actions')} /></th>
                     </tr>
                   </thead>
                   <tbody>

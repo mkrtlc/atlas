@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserPlus, Search, ChevronRight, Trash2, ArrowRightLeft } from 'lucide-react';
+import { UserPlus, Search, ChevronRight, Trash2, ArrowRightLeft, User, Mail, Building2, Globe, Tag } from 'lucide-react';
 import {
   useLeads, useCreateLead, useUpdateLead, useDeleteLead, useConvertLead, useStages,
   type CrmLead, type CrmLeadStatus, type CrmLeadSource,
@@ -13,6 +13,7 @@ import { Textarea } from '../../../components/ui/textarea';
 import { Badge } from '../../../components/ui/badge';
 import { IconButton } from '../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
+import { ColumnHeader } from '../../../components/ui/column-header';
 
 function getStatusOptions(t: (key: string) => string): { value: CrmLeadStatus; label: string }[] {
   return [
@@ -321,11 +322,11 @@ export function LeadsView() {
             <table className="crm-table">
               <thead>
                 <tr>
-                  <th>{t('crm.leads.name')}</th>
-                  <th>{t('crm.leads.email')}</th>
-                  <th>{t('crm.leads.companyName')}</th>
-                  <th>{t('crm.leads.source')}</th>
-                  <th>{t('crm.leads.status')}</th>
+                  <th><ColumnHeader label={t('crm.leads.name')} icon={<User size={12} />} /></th>
+                  <th><ColumnHeader label={t('crm.leads.email')} icon={<Mail size={12} />} /></th>
+                  <th><ColumnHeader label={t('crm.leads.companyName')} icon={<Building2 size={12} />} /></th>
+                  <th><ColumnHeader label={t('crm.leads.source')} icon={<Globe size={12} />} /></th>
+                  <th><ColumnHeader label={t('crm.leads.status')} icon={<Tag size={12} />} /></th>
                   <th>{t('crm.deals.closeDate')}</th>
                   <th style={{ width: 60 }}>{t('crm.actions.delete')}</th>
                 </tr>

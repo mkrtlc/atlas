@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { UserPlus, Mail, Search, UserMinus } from 'lucide-react';
+import { UserPlus, Mail, Search, UserMinus, User, Shield, Calendar } from 'lucide-react';
+import { ColumnHeader } from '../../components/ui/column-header';
 import { useAuthStore } from '../../stores/auth-store';
 import {
   useTenantUsers,
@@ -213,11 +214,11 @@ export function OrgMembersPage() {
           borderBottom: '1px solid var(--color-border-primary)',
           background: 'var(--color-bg-secondary)',
         }}>
-          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-tertiary)' }}>User</span>
-          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-tertiary)' }}>Email</span>
-          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-tertiary)' }}>Role</span>
-          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-tertiary)' }}>Joined</span>
-          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-tertiary)', textAlign: 'right' }}></span>
+          <ColumnHeader label="User" icon={<User size={12} />} />
+          <ColumnHeader label="Email" icon={<Mail size={12} />} />
+          <ColumnHeader label="Role" icon={<Shield size={12} />} />
+          <ColumnHeader label="Joined" icon={<Calendar size={12} />} />
+          <span></span>
         </div>
 
         {/* Rows */}

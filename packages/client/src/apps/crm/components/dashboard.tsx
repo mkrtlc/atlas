@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import {
   DollarSign, Trophy, Target, TrendingUp,
   CalendarDays, PhoneCall, Mail, StickyNote, Users as UsersIcon,
+  Briefcase, Building2, Tag,
 } from 'lucide-react';
 import { useDashboard, type CrmDashboard, type CrmDeal, type CrmActivity } from '../hooks';
 import { Skeleton } from '../../../components/ui/skeleton';
+import { ColumnHeader } from '../../../components/ui/column-header';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -202,11 +204,11 @@ function DealsTable({
         <table className="crm-dashboard-table">
           <thead>
             <tr>
-              <th>Deal</th>
-              <th>Company</th>
-              <th style={{ textAlign: 'right' }}>Value</th>
-              {showCloseDate && <th>Close date</th>}
-              <th>Stage</th>
+              <th><ColumnHeader label="Deal" icon={<Briefcase size={12} />} /></th>
+              <th><ColumnHeader label="Company" icon={<Building2 size={12} />} /></th>
+              <th style={{ textAlign: 'right' }}><ColumnHeader label="Value" icon={<DollarSign size={12} />} /></th>
+              {showCloseDate && <th><ColumnHeader label="Close date" icon={<CalendarDays size={12} />} /></th>}
+              <th><ColumnHeader label="Stage" icon={<Tag size={12} />} /></th>
             </tr>
           </thead>
           <tbody>

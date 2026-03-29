@@ -8,6 +8,7 @@ import {
   PhoneCall, CalendarDays, StickyNote,
   Download, Upload, BarChart3, Zap, Shield,
   UserPlus, TrendingUp, Merge,
+  DollarSign, Calendar, Globe, Tag, User,
 } from 'lucide-react';
 import {
   useCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany,
@@ -42,6 +43,7 @@ import { IconButton } from '../../components/ui/icon-button';
 import { Badge } from '../../components/ui/badge';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { ColumnHeader } from '../../components/ui/column-header';
 import { useUIStore } from '../../stores/ui-store';
 import '../../styles/crm.css';
 
@@ -59,33 +61,7 @@ interface SortState {
   direction: SortDirection;
 }
 
-// ─── Sort header helper ───────────────────────────────────────
-
-function SortHeader({
-  label, column, sort, onSort, style,
-}: {
-  label: string;
-  column: string;
-  sort: SortState | null;
-  onSort: (col: string) => void;
-  style?: React.CSSProperties;
-}) {
-  const isActive = sort?.column === column;
-  return (
-    <span
-      className="crm-sort-header"
-      style={style}
-      onClick={(e) => { e.stopPropagation(); onSort(column); }}
-    >
-      {label}
-      {isActive && (
-        <span className="crm-sort-indicator">
-          {sort!.direction === 'asc' ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
-        </span>
-      )}
-    </span>
-  );
-}
+// ─── Sort header helper (uses shared ColumnHeader) ──────────────
 
 // ─── Inline edit cell helper ──────────────────────────────────
 
@@ -1222,12 +1198,12 @@ function DealsListView({
       <div style={{ flex: 1, overflow: 'auto' }}>
         <div style={hdrStyle}>
           <input type="checkbox" className={`crm-checkbox${!allChecked && someChecked ? ' indeterminate' : ''}`} checked={allChecked} onChange={handleHeaderCheckbox} />
-          <SortHeader label={t('crm.deals.title')} column="title" sort={sort} onSort={handleSort} style={{ width: 180, flexShrink: 0 }} />
-          <SortHeader label={t('crm.deals.company')} column="company" sort={sort} onSort={handleSort} style={{ width: 130, flexShrink: 0 }} />
-          <SortHeader label={t('crm.deals.contact')} column="contact" sort={sort} onSort={handleSort} style={{ width: 110, flexShrink: 0 }} />
-          <SortHeader label={t('crm.deals.value')} column="value" sort={sort} onSort={handleSort} style={{ width: 100, flexShrink: 0, textAlign: 'right' }} />
-          <SortHeader label={t('crm.deals.stage')} column="stage" sort={sort} onSort={handleSort} style={{ width: 100, flexShrink: 0 }} />
-          <SortHeader label={t('crm.deals.closeDate')} column="closeDate" sort={sort} onSort={handleSort} style={{ flex: 1 }} />
+          <ColumnHeader label={t('crm.deals.title')} icon={<Briefcase size={12} />} sortable columnKey="title" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 180, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.deals.company')} icon={<Building2 size={12} />} sortable columnKey="company" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 130, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.deals.contact')} icon={<Users size={12} />} sortable columnKey="contact" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 110, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.deals.value')} icon={<DollarSign size={12} />} sortable columnKey="value" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 100, flexShrink: 0, textAlign: 'right' }} />
+          <ColumnHeader label={t('crm.deals.stage')} icon={<LayoutGrid size={12} />} sortable columnKey="stage" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 100, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.deals.closeDate')} icon={<Calendar size={12} />} sortable columnKey="closeDate" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ flex: 1 }} />
         </div>
         {sorted.map((deal, idx) => {
           const isEd = (col: string) => editingCell?.rowId === deal.id && editingCell?.column === col;
@@ -1440,11 +1416,11 @@ function ContactsListView({
       <div style={{ flex: 1, overflow: 'auto' }}>
         <div style={hdrStyle}>
           <input type="checkbox" className={`crm-checkbox${!allChecked && someChecked ? ' indeterminate' : ''}`} checked={allChecked} onChange={handleHeaderCheckbox} />
-          <SortHeader label={t('crm.contacts.name')} column="name" sort={sort} onSort={handleSort} style={{ width: 160, flexShrink: 0 }} />
-          <SortHeader label={t('crm.contacts.email')} column="email" sort={sort} onSort={handleSort} style={{ width: 170, flexShrink: 0 }} />
-          <SortHeader label={t('crm.contacts.phone')} column="phone" sort={sort} onSort={handleSort} style={{ width: 120, flexShrink: 0 }} />
-          <SortHeader label={t('crm.deals.company')} column="company" sort={sort} onSort={handleSort} style={{ width: 130, flexShrink: 0 }} />
-          <SortHeader label={t('crm.contacts.position')} column="position" sort={sort} onSort={handleSort} style={{ flex: 1 }} />
+          <ColumnHeader label={t('crm.contacts.name')} icon={<User size={12} />} sortable columnKey="name" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 160, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.contacts.email')} icon={<Mail size={12} />} sortable columnKey="email" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 170, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.contacts.phone')} icon={<PhoneIcon size={12} />} sortable columnKey="phone" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 120, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.deals.company')} icon={<Building2 size={12} />} sortable columnKey="company" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 130, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.contacts.position')} icon={<Briefcase size={12} />} sortable columnKey="position" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ flex: 1 }} />
         </div>
         {sorted.map((contact, idx) => {
           const isEd = (col: string) => editingCell?.rowId === contact.id && editingCell?.column === col;
@@ -1640,10 +1616,10 @@ function CompaniesListView({
       <div style={{ flex: 1, overflow: 'auto' }}>
         <div style={hdrStyle}>
           <input type="checkbox" className={`crm-checkbox${!allChecked && someChecked ? ' indeterminate' : ''}`} checked={allChecked} onChange={handleHeaderCheckbox} />
-          <SortHeader label={t('crm.companies.name')} column="name" sort={sort} onSort={handleSort} style={{ width: 160, flexShrink: 0 }} />
-          <SortHeader label={t('crm.companies.domain')} column="domain" sort={sort} onSort={handleSort} style={{ width: 150, flexShrink: 0 }} />
-          <SortHeader label={t('crm.companies.industry')} column="industry" sort={sort} onSort={handleSort} style={{ width: 120, flexShrink: 0 }} />
-          <SortHeader label={t('crm.companies.size')} column="size" sort={sort} onSort={handleSort} style={{ width: 80, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.companies.name')} icon={<Building2 size={12} />} sortable columnKey="name" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 160, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.companies.domain')} icon={<Globe size={12} />} sortable columnKey="domain" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 150, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.companies.industry')} icon={<Tag size={12} />} sortable columnKey="industry" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 120, flexShrink: 0 }} />
+          <ColumnHeader label={t('crm.companies.size')} icon={<Users size={12} />} sortable columnKey="size" sortColumn={sort?.column} sortDirection={sort?.direction} onSort={handleSort} style={{ width: 80, flexShrink: 0 }} />
           <span style={{ flex: 1 }}>{t('crm.companies.contactsDeals')}</span>
         </div>
         {sorted.map((company, idx) => {

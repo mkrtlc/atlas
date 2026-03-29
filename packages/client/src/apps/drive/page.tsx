@@ -7,8 +7,9 @@ import {
   LayoutGrid, LayoutList, Home, Clock, Heart, HardDrive, Upload as UploadIcon,
   Copy, X, Check, ChevronDown, Tag, FileArchive, Share2, History,
   FileImage, FileText, FileVideo, FileAudio, Link2, Trash, Music, Settings,
-  ExternalLink, Table2,
+  ExternalLink, Table2, File,
 } from 'lucide-react';
+import { ColumnHeader } from '../../components/ui/column-header';
 import { AppSidebar } from '../../components/layout/app-sidebar';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
@@ -1626,24 +1627,33 @@ export function DrivePage() {
             <>
               {/* List header */}
               <div className="drive-list-header">
-                <span
-                  className="drive-sort-header"
-                  onClick={() => setSortBy(sortBy === 'name' ? 'default' : 'name')}
-                >
-                  Name {sortBy === 'name' && '↑'}
-                </span>
-                <span
-                  className="drive-sort-header"
-                  onClick={() => setSortBy(sortBy === 'size' ? 'default' : 'size')}
-                >
-                  Size {sortBy === 'size' && '↓'}
-                </span>
-                <span
-                  className="drive-sort-header"
-                  onClick={() => setSortBy(sortBy === 'date' ? 'default' : 'date')}
-                >
-                  Modified {sortBy === 'date' && '↓'}
-                </span>
+                <ColumnHeader
+                  label="Name"
+                  icon={<File size={12} />}
+                  sortable
+                  columnKey="name"
+                  sortColumn={sortBy === 'name' ? 'name' : null}
+                  sortDirection="asc"
+                  onSort={() => setSortBy(sortBy === 'name' ? 'default' : 'name')}
+                />
+                <ColumnHeader
+                  label="Size"
+                  icon={<HardDrive size={12} />}
+                  sortable
+                  columnKey="size"
+                  sortColumn={sortBy === 'size' ? 'size' : null}
+                  sortDirection="desc"
+                  onSort={() => setSortBy(sortBy === 'size' ? 'default' : 'size')}
+                />
+                <ColumnHeader
+                  label="Modified"
+                  icon={<Clock size={12} />}
+                  sortable
+                  columnKey="date"
+                  sortColumn={sortBy === 'date' ? 'date' : null}
+                  sortDirection="desc"
+                  onSort={() => setSortBy(sortBy === 'date' ? 'default' : 'date')}
+                />
               </div>
               {displayItems.map((item) => {
                 const Icon = getFileTypeIcon(item.mimeType, item.type, item.linkedResourceType);
