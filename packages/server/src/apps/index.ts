@@ -4,11 +4,13 @@ import { drawServerManifest } from './draw/manifest';
 import { tasksServerManifest } from './tasks/manifest';
 import { tablesServerManifest } from './tables/manifest';
 import { driveServerManifest } from './drive/manifest';
+import { hrServerManifest } from './hr/manifest';
 
 serverAppRegistry.register(docsServerManifest);
 serverAppRegistry.register(drawServerManifest);
 serverAppRegistry.register(tasksServerManifest);
 serverAppRegistry.register(tablesServerManifest);
 serverAppRegistry.register(driveServerManifest);
+serverAppRegistry.register(hrServerManifest);
 
 export { serverAppRegistry };
