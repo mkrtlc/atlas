@@ -763,10 +763,10 @@ export function HomePage() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
             textAlign: 'center',
             overflowY: 'auto',
             maxHeight: 'calc(100vh - 120px)',
-            paddingTop: isDesktop ? 56 : 24,
             paddingBottom: 24,
             width: '100%',
           }}
