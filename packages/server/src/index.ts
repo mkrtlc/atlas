@@ -5,7 +5,6 @@ import { purgeOldArchivedDrawings } from './services/drawing.service';
 import { runScheduledBackup } from './services/backup.service';
 import { runMigrations } from './db/migrate';
 import { closeDb } from './config/database';
-import { getTenantBySlug, createTenant } from './services/platform/tenant.service';
 
 const PURGE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -23,19 +22,6 @@ app.listen(env.PORT, async () => {
   } catch (err) {
     logger.error({ err }, 'Database migration failed');
     process.exit(1);
-  }
-
-  // Auto-create a dev tenant for local development
-  try {
-    const existing = await getTenantBySlug('dev');
-    if (!existing) {
-      const devOwnerId = '00000000-0000-0000-0000-000000000000';
-      await createTenant({ slug: 'dev', name: 'Dev Tenant', plan: 'enterprise' }, devOwnerId);
-      logger.info('Auto-created dev tenant');
-    }
-    logger.info('Tenant services initialized');
-  } catch (err) {
-    logger.error({ err }, 'Tenant initialization failed');
   }
 
   // Auto-purge archived drawings older than 30 days (runs every hour)

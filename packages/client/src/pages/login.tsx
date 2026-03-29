@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { api } from '../lib/api-client';
 import { useAuthStore } from '../stores/auth-store';
@@ -14,9 +14,26 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(true);
+
+  // Redirect to setup page if Atlas hasn't been set up yet
+  useEffect(() => {
+    api.get('/auth/setup-status')
+      .then(({ data }) => {
+        if (data.data.needsSetup) {
+          navigate(ROUTES.SETUP, { replace: true });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCheckingSetup(false));
+  }, [navigate]);
 
   if (isAuthenticated) {
     return <Navigate to={ROUTES.HOME} replace />;
+  }
+
+  if (checkingSetup) {
+    return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {

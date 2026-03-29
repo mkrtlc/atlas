@@ -40,6 +40,11 @@ function param(req: Request, name: string): string {
 
 export async function createTenant(req: Request, res: Response) {
   try {
+    if (!req.auth!.isSuperAdmin) {
+      res.status(403).json({ success: false, error: 'Only super admins can create tenants' });
+      return;
+    }
+
     const { slug, name, plan } = req.body;
     if (!slug || !name) {
       res.status(400).json({ success: false, error: 'slug and name are required' });

@@ -9,10 +9,9 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
-import { useMyTenants, useCreateTenant } from '../../hooks/use-platform';
+import { useMyTenants } from '../../hooks/use-platform';
 import { ROUTES } from '../../config/routes';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
 import { ScrollArea } from '../../components/ui/scroll-area';
 
 // ---------------------------------------------------------------------------
@@ -68,7 +67,15 @@ export function OrgLayout() {
   }
 
   if (!hasTenant) {
-    return <CreateOrgPrompt />;
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', fontFamily: 'var(--font-family)',
+        color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)',
+      }}>
+        You are not part of an organization. Contact your administrator.
+      </div>
+    );
   }
 
   const pageTitle = getPageTitle(pathname);
@@ -330,120 +337,3 @@ function NavLinkItem({ item }: { item: NavItem }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// CreateOrgPrompt — shown when user has no tenant
-// ---------------------------------------------------------------------------
-
-function CreateOrgPrompt() {
-  const navigate = useNavigate();
-  const createTenant = useCreateTenant();
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [error, setError] = useState('');
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    try {
-      await createTenant.mutateAsync({ name, slug });
-      // After creating, reload the page to pick up the new tenant
-      window.location.reload();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create organization');
-    }
-  }
-
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      background: 'var(--color-bg-secondary)',
-      fontFamily: 'var(--font-family)',
-    }}>
-      <div style={{
-        width: 440,
-        padding: 32,
-        background: 'var(--color-bg-primary)',
-        border: '1px solid var(--color-border-primary)',
-        borderRadius: 12,
-      }}>
-        <div style={{
-          width: 48,
-          height: 48,
-          borderRadius: 12,
-          background: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
-          color: 'var(--color-accent-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 20,
-        }}>
-          <Building2 size={24} />
-        </div>
-        <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 8 }}>
-          Create your organization
-        </h2>
-        <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
-          Organizations let you manage team members. Create one to get started.
-        </p>
-
-        {error && (
-          <div style={{ padding: '8px 12px', marginBottom: 16, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 4, color: '#dc2626', fontSize: 13 }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 12 }}>
-            <Input
-              label="Organization name"
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                // Auto-generate slug from name
-                setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
-              }}
-              required
-              placeholder="Acme Corp"
-            />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <Input
-              label="URL slug"
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-              required
-              placeholder="acme-corp"
-              pattern="[a-z0-9][a-z0-9\-]*[a-z0-9]"
-            />
-            <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 4 }}>
-              Lowercase letters, numbers, and hyphens only.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => navigate(ROUTES.HOME)}
-              style={{ flex: 1 }}
-            >
-              Back to home
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={createTenant.isPending}
-              style={{ flex: 1 }}
-            >
-              {createTenant.isPending ? 'Creating...' : 'Create organization'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}

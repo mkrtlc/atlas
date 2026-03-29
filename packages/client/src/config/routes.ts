@@ -1,4 +1,5 @@
 export const ROUTES = {
+  SETUP: '/setup',
   LOGIN: '/login',
   INVITATION: '/invitation/:token',
   TENANT_USERS: '/settings/team',
