@@ -52,6 +52,7 @@ router.delete('/activities/:id', crmController.deleteActivity);
 
 // Workflow Automations
 router.get('/workflows', crmController.listWorkflows);
+router.post('/workflows/seed', crmController.seedExampleWorkflows);
 router.post('/workflows', crmController.createWorkflow);
 router.put('/workflows/:id', crmController.updateWorkflow);
 router.delete('/workflows/:id', crmController.deleteWorkflow);

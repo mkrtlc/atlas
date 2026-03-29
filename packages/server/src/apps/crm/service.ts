@@ -1188,6 +1188,116 @@ export async function seedSampleData(userId: string, accountId: string) {
   return { companies: 4, contacts: 5, stages: stages.length, deals: 4, activities: 5 };
 }
 
+// ─── Seed Example Workflows ──────────────────────────────────────────
+
+export async function seedExampleWorkflows(userId: string, accountId: string) {
+  // Idempotency guard — skip if workflows already exist for this account
+  const existing = await db.select({ id: crmWorkflows.id }).from(crmWorkflows)
+    .where(and(eq(crmWorkflows.userId, userId), eq(crmWorkflows.accountId, accountId))).limit(1);
+  if (existing.length > 0) return { skipped: true };
+
+  // Look up stages by name for this account
+  const stages = await db.select().from(crmDealStages)
+    .where(eq(crmDealStages.accountId, accountId))
+    .orderBy(asc(crmDealStages.sequence));
+
+  const stageByName: Record<string, string> = {};
+  for (const s of stages) {
+    stageByName[s.name.toLowerCase()] = s.id;
+  }
+
+  const qualifiedId = stageByName['qualified'] ?? '';
+  const proposalId = stageByName['proposal'] ?? '';
+
+  const workflows: Array<{
+    name: string;
+    trigger: string;
+    triggerConfig: Record<string, unknown>;
+    action: string;
+    actionConfig: Record<string, unknown>;
+  }> = [
+    {
+      name: 'Qualified → Schedule demo',
+      trigger: 'deal_stage_changed',
+      triggerConfig: qualifiedId ? { toStage: qualifiedId } : {},
+      action: 'create_task',
+      actionConfig: { taskTitle: 'Schedule discovery call with contact' },
+    },
+    {
+      name: 'Proposal → Prepare document',
+      trigger: 'deal_stage_changed',
+      triggerConfig: proposalId ? { toStage: proposalId } : {},
+      action: 'create_task',
+      actionConfig: { taskTitle: 'Prepare and send proposal' },
+    },
+    {
+      name: 'Won → Welcome task',
+      trigger: 'deal_won',
+      triggerConfig: {},
+      action: 'create_task',
+      actionConfig: { taskTitle: 'Send welcome package to new customer' },
+    },
+    {
+      name: 'Won → Set probability',
+      trigger: 'deal_won',
+      triggerConfig: {},
+      action: 'update_field',
+      actionConfig: { fieldName: 'probability', fieldValue: '100' },
+    },
+    {
+      name: 'Won → Tag customer',
+      trigger: 'deal_won',
+      triggerConfig: {},
+      action: 'add_tag',
+      actionConfig: { tag: 'customer' },
+    },
+    {
+      name: 'Lost → Review task',
+      trigger: 'deal_lost',
+      triggerConfig: {},
+      action: 'create_task',
+      actionConfig: { taskTitle: 'Schedule deal loss review' },
+    },
+    {
+      name: 'Lost → Log activity',
+      trigger: 'deal_lost',
+      triggerConfig: {},
+      action: 'log_activity',
+      actionConfig: { activityType: 'note', body: 'Deal was lost. Review and follow up.' },
+    },
+    {
+      name: 'New contact → Intro email task',
+      trigger: 'contact_created',
+      triggerConfig: {},
+      action: 'create_task',
+      actionConfig: { taskTitle: 'Send introduction email' },
+    },
+    {
+      name: 'Call logged → Follow up',
+      trigger: 'activity_logged',
+      triggerConfig: { activityType: 'call' },
+      action: 'create_task',
+      actionConfig: { taskTitle: 'Send follow-up email after call' },
+    },
+    {
+      name: 'Meeting logged → Notes',
+      trigger: 'activity_logged',
+      triggerConfig: { activityType: 'meeting' },
+      action: 'create_task',
+      actionConfig: { taskTitle: 'Write meeting notes and share with team' },
+    },
+  ];
+
+  let created = 0;
+  for (const wf of workflows) {
+    await createWorkflow(userId, accountId, wf);
+    created++;
+  }
+
+  logger.info({ userId, accountId, created }, 'Seeded CRM example workflows');
+  return { created };
+}
+
 // ─── Bulk Import ───────────────────────────────────────────────────────
 
 export async function bulkCreateContacts(
@@ -1539,6 +1649,78 @@ async function executeAction(
         const now = new Date();
         await db.update(crmDeals).set({ stageId: newStageId, updatedAt: now }).where(eq(crmDeals.id, dealId));
       }
+      break;
+    }
+    case 'add_tag': {
+      const tag = (actionConfig.tag as string)?.trim();
+      const dealId = context.dealId as string | undefined;
+      const contactId = context.contactId as string | undefined;
+      const companyId = context.companyId as string | undefined;
+      if (tag) {
+        const now = new Date();
+        if (dealId) {
+          const [deal] = await db.select().from(crmDeals).where(eq(crmDeals.id, dealId)).limit(1);
+          if (deal) {
+            const tags = Array.isArray(deal.tags) ? [...deal.tags] : [];
+            if (!tags.includes(tag)) {
+              tags.push(tag);
+              await db.update(crmDeals).set({ tags, updatedAt: now }).where(eq(crmDeals.id, dealId));
+            }
+          }
+        } else if (contactId) {
+          const [contact] = await db.select().from(crmContacts).where(eq(crmContacts.id, contactId)).limit(1);
+          if (contact) {
+            const tags = Array.isArray(contact.tags) ? [...contact.tags] : [];
+            if (!tags.includes(tag)) {
+              tags.push(tag);
+              await db.update(crmContacts).set({ tags, updatedAt: now }).where(eq(crmContacts.id, contactId));
+            }
+          }
+        } else if (companyId) {
+          const [company] = await db.select().from(crmCompanies).where(eq(crmCompanies.id, companyId)).limit(1);
+          if (company) {
+            const tags = Array.isArray(company.tags) ? [...company.tags] : [];
+            if (!tags.includes(tag)) {
+              tags.push(tag);
+              await db.update(crmCompanies).set({ tags, updatedAt: now }).where(eq(crmCompanies.id, companyId));
+            }
+          }
+        }
+      }
+      break;
+    }
+    case 'assign_user': {
+      const assignedUserId = actionConfig.assignedUserId as string | undefined;
+      const dealId = context.dealId as string | undefined;
+      if (dealId && assignedUserId) {
+        const now = new Date();
+        await db.update(crmDeals).set({ assignedUserId, updatedAt: now }).where(eq(crmDeals.id, dealId));
+      }
+      break;
+    }
+    case 'log_activity': {
+      const activityType = (actionConfig.activityType as string) || 'note';
+      const body = (actionConfig.body as string) || '';
+      const dealId = context.dealId as string | undefined;
+      const contactId = context.contactId as string | undefined;
+      const companyId = context.companyId as string | undefined;
+      const now = new Date();
+      await db.insert(crmActivities).values({
+        accountId,
+        userId,
+        type: activityType,
+        body,
+        dealId: dealId ?? null,
+        contactId: contactId ?? null,
+        companyId: companyId ?? null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      break;
+    }
+    case 'send_notification': {
+      const message = (actionConfig.message as string) || '';
+      logger.info({ message, context }, 'Workflow notification');
       break;
     }
   }

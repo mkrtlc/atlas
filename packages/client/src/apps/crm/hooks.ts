@@ -717,3 +717,16 @@ export function useSeedCrmData() {
     },
   });
 }
+
+export function useSeedExampleWorkflows() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/crm/workflows/seed');
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}

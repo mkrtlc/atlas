@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Plus, Trash2, Zap } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, Zap, Sparkles } from 'lucide-react';
 import {
   useWorkflows, useCreateWorkflow, useDeleteWorkflow, useToggleWorkflow,
+  useSeedExampleWorkflows,
   type CrmWorkflow, type CrmDealStage,
 } from '../hooks';
 import { Button } from '../../../components/ui/button';
@@ -26,6 +27,10 @@ const ACTION_OPTIONS = [
   { value: 'create_task', label: 'Create task' },
   { value: 'update_field', label: 'Update field' },
   { value: 'change_deal_stage', label: 'Change deal stage' },
+  { value: 'add_tag', label: 'Add tag' },
+  { value: 'assign_user', label: 'Assign user' },
+  { value: 'log_activity', label: 'Log activity' },
+  { value: 'send_notification', label: 'Send notification' },
 ];
 
 const ACTIVITY_TYPE_OPTIONS = [
@@ -84,6 +89,14 @@ function describeAction(workflow: CrmWorkflow, stages: CrmDealStage[]): string {
       const stageName = stages.find((s) => s.id === config.newStageId)?.name ?? 'unknown';
       return `Move deal to "${stageName}"`;
     }
+    case 'add_tag':
+      return `Add tag "${config.tag || ''}"`;
+    case 'assign_user':
+      return `Assign to user ${config.assignedUserId || 'unknown'}`;
+    case 'log_activity':
+      return `Log ${config.activityType || 'note'}: "${config.body || ''}"`;
+    case 'send_notification':
+      return `Send notification: "${config.message || ''}"`;
     default:
       return getActionLabel(workflow.action);
   }
@@ -116,6 +129,11 @@ function CreateWorkflowModal({
   const [fieldName, setFieldName] = useState('probability');
   const [fieldValue, setFieldValue] = useState('');
   const [newStageId, setNewStageId] = useState('');
+  const [tagValue, setTagValue] = useState('');
+  const [assignedUserId, setAssignedUserId] = useState('');
+  const [logActivityType, setLogActivityType] = useState('note');
+  const [logActivityBody, setLogActivityBody] = useState('');
+  const [notificationMessage, setNotificationMessage] = useState('');
 
   const stageOptions = [
     { value: '', label: 'Any stage' },
@@ -147,6 +165,19 @@ function CreateWorkflowModal({
     if (action === 'change_deal_stage') {
       actionConfig.newStageId = newStageId;
     }
+    if (action === 'add_tag') {
+      actionConfig.tag = tagValue || 'tag';
+    }
+    if (action === 'assign_user') {
+      actionConfig.assignedUserId = assignedUserId;
+    }
+    if (action === 'log_activity') {
+      actionConfig.activityType = logActivityType;
+      actionConfig.body = logActivityBody;
+    }
+    if (action === 'send_notification') {
+      actionConfig.message = notificationMessage;
+    }
 
     createWorkflow.mutate(
       { name: name.trim(), trigger, triggerConfig, action, actionConfig },
@@ -170,6 +201,11 @@ function CreateWorkflowModal({
     setFieldName('probability');
     setFieldValue('');
     setNewStageId('');
+    setTagValue('');
+    setAssignedUserId('');
+    setLogActivityType('note');
+    setLogActivityBody('');
+    setNotificationMessage('');
   };
 
   return (
@@ -278,6 +314,57 @@ function CreateWorkflowModal({
               />
             </div>
           )}
+
+          {action === 'add_tag' && (
+            <Input
+              label="Tag to add"
+              placeholder="e.g., customer"
+              value={tagValue}
+              onChange={(e) => setTagValue(e.target.value)}
+            />
+          )}
+
+          {action === 'assign_user' && (
+            <Input
+              label="User ID"
+              placeholder="Enter user ID to assign"
+              value={assignedUserId}
+              onChange={(e) => setAssignedUserId(e.target.value)}
+            />
+          )}
+
+          {action === 'log_activity' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+              <div>
+                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>Activity type</div>
+                <Select
+                  value={logActivityType}
+                  onChange={(val) => setLogActivityType(val)}
+                  options={[
+                    { value: 'note', label: 'Note' },
+                    { value: 'call', label: 'Call' },
+                    { value: 'meeting', label: 'Meeting' },
+                    { value: 'email', label: 'Email' },
+                  ]}
+                />
+              </div>
+              <Input
+                label="Activity body"
+                placeholder="e.g., Deal was lost. Review and follow up."
+                value={logActivityBody}
+                onChange={(e) => setLogActivityBody(e.target.value)}
+              />
+            </div>
+          )}
+
+          {action === 'send_notification' && (
+            <Input
+              label="Notification message"
+              placeholder="e.g., A deal was just won!"
+              value={notificationMessage}
+              onChange={(e) => setNotificationMessage(e.target.value)}
+            />
+          )}
         </div>
       </Modal.Body>
       <Modal.Footer>
@@ -304,9 +391,19 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
   const workflows = workflowsData?.workflows ?? [];
   const toggleWorkflow = useToggleWorkflow();
   const deleteWorkflow = useDeleteWorkflow();
+  const seedWorkflows = useSeedExampleWorkflows();
 
   const [showCreate, setShowCreate] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Auto-seed example workflows on first visit if none exist
+  const hasSeeded = useRef(false);
+  useEffect(() => {
+    if (!isLoading && workflows.length === 0 && !hasSeeded.current && !seedWorkflows.isPending) {
+      hasSeeded.current = true;
+      seedWorkflows.mutate();
+    }
+  }, [isLoading, workflows.length, seedWorkflows]);
 
   if (isLoading) {
     return (
@@ -359,6 +456,17 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
           </div>
           <div style={{ fontSize: 'var(--font-size-sm)', marginTop: 4 }}>
             Create your first automation to streamline your workflow
+          </div>
+          <div style={{ marginTop: 'var(--spacing-md)' }}>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Sparkles size={14} />}
+              onClick={() => seedWorkflows.mutate()}
+              disabled={seedWorkflows.isPending}
+            >
+              {seedWorkflows.isPending ? 'Seeding...' : 'Seed example automations'}
+            </Button>
           </div>
         </div>
       ) : (

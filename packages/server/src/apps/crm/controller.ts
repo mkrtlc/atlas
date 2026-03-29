@@ -869,6 +869,19 @@ export async function toggleWorkflow(req: Request, res: Response) {
   }
 }
 
+export async function seedExampleWorkflows(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    const result = await crmService.seedExampleWorkflows(userId, accountId);
+    res.json({ success: true, data: { message: 'Seeded example workflows', ...result } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to seed CRM example workflows');
+    res.status(500).json({ success: false, error: 'Failed to seed example workflows' });
+  }
+}
+
 // ─── Permissions ──────────────────────────────────────────────────
 
 export async function listPermissions(req: Request, res: Response) {

@@ -59,7 +59,7 @@ export interface CreateCrmActivityInput { type: CrmActivityType; body: string; d
 // ─── Workflow Automations ──────────────────────────────────────────
 
 export type CrmWorkflowTrigger = 'deal_stage_changed' | 'deal_created' | 'deal_won' | 'deal_lost' | 'contact_created' | 'activity_logged';
-export type CrmWorkflowAction = 'create_task' | 'update_field' | 'change_deal_stage';
+export type CrmWorkflowAction = 'create_task' | 'update_field' | 'change_deal_stage' | 'add_tag' | 'assign_user' | 'log_activity' | 'send_notification';
 
 export interface CrmWorkflow {
   id: string;
