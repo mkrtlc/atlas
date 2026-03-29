@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Briefcase, Users, Building2, Clock, Plus, Search, Settings2, X,
   ChevronRight, Trash2, Phone as PhoneIcon, Mail,
@@ -1720,6 +1721,7 @@ function ActivitiesListView({
 // ─── Main CRM Page ─────────────────────────────────────────────────
 
 export function CrmPage() {
+  const { t } = useTranslation();
   const { openSettings } = useUIStore();
 
   // Permissions
@@ -1905,16 +1907,16 @@ export function CrmPage() {
   // Section title
   const sectionTitle = useMemo(() => {
     switch (activeView) {
-      case 'dashboard': return 'Dashboard';
-      case 'pipeline': return 'Pipeline';
-      case 'deals': return 'All deals';
-      case 'contacts': return 'Contacts';
-      case 'companies': return 'Companies';
-      case 'activities': return 'Activities';
-      case 'automations': return 'Automations';
-      case 'permissions': return 'Permissions';
+      case 'dashboard': return t('crm.sidebar.dashboard');
+      case 'pipeline': return t('crm.sidebar.pipeline');
+      case 'deals': return t('crm.sidebar.deals');
+      case 'contacts': return t('crm.sidebar.contacts');
+      case 'companies': return t('crm.sidebar.companies');
+      case 'activities': return t('crm.sidebar.activities');
+      case 'automations': return t('crm.sidebar.automations');
+      case 'permissions': return t('crm.sidebar.permissions');
     }
-  }, [activeView]);
+  }, [activeView, t]);
 
   // Add button
   const handleAdd = () => {
@@ -2003,10 +2005,10 @@ export function CrmPage() {
       {/* Sidebar */}
       <AppSidebar
         storageKey="atlas_crm_sidebar"
-        title="CRM"
+        title={t('crm.title')}
         footer={
           <SidebarItem
-            label="Settings"
+            label={t('crm.sidebar.settings')}
             icon={<Settings2 size={14} />}
             onClick={() => openSettings('crm')}
           />
@@ -2014,21 +2016,21 @@ export function CrmPage() {
       >
         <SidebarSection>
           <SidebarItem
-            label="Dashboard"
+            label={t('crm.sidebar.dashboard')}
             icon={<BarChart3 size={14} />}
             iconColor="#f97316"
             isActive={activeView === 'dashboard'}
             onClick={() => setActiveView('dashboard')}
           />
           <SidebarItem
-            label="Pipeline"
+            label={t('crm.sidebar.pipeline')}
             icon={<LayoutGrid size={14} />}
             iconColor="#8b5cf6"
             isActive={activeView === 'pipeline'}
             onClick={() => setActiveView('pipeline')}
           />
           <SidebarItem
-            label="Deals"
+            label={t('crm.sidebar.deals')}
             icon={<List size={14} />}
             iconColor="#3b82f6"
             isActive={activeView === 'deals'}
@@ -2039,7 +2041,7 @@ export function CrmPage() {
 
         <SidebarSection>
           <SidebarItem
-            label="Contacts"
+            label={t('crm.sidebar.contacts')}
             icon={<Users size={14} />}
             iconColor="#10b981"
             isActive={activeView === 'contacts'}
@@ -2047,7 +2049,7 @@ export function CrmPage() {
             onClick={() => setActiveView('contacts')}
           />
           <SidebarItem
-            label="Companies"
+            label={t('crm.sidebar.companies')}
             icon={<Building2 size={14} />}
             iconColor="#06b6d4"
             isActive={activeView === 'companies'}
@@ -2059,7 +2061,7 @@ export function CrmPage() {
         <SidebarSection>
           {canAccess(myRole, 'activities', 'view') && (
             <SidebarItem
-              label="Activities"
+              label={t('crm.sidebar.activities')}
               icon={<Clock size={14} />}
               iconColor="#f59e0b"
               isActive={activeView === 'activities'}
@@ -2068,7 +2070,7 @@ export function CrmPage() {
           )}
           {canAccess(myRole, 'workflows', 'view') && (
             <SidebarItem
-              label="Automations"
+              label={t('crm.sidebar.automations')}
               icon={<Zap size={14} />}
               iconColor="#ef4444"
               isActive={activeView === 'automations'}
@@ -2077,7 +2079,7 @@ export function CrmPage() {
           )}
           {myRole === 'admin' && (
             <SidebarItem
-              label="Permissions"
+              label={t('crm.sidebar.permissions')}
               icon={<Shield size={14} />}
               iconColor="#6b7280"
               isActive={activeView === 'permissions'}

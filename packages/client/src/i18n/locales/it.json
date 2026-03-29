@@ -696,5 +696,104 @@
     "deleteSelected": "Elimina",
     "duplicateSelected": "Duplica",
     "clearSelection": "Cancella selezione"
+  },
+  "crm": {
+    "title": "CRM",
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "pipeline": "Pipeline",
+      "deals": "Trattative",
+      "contacts": "Contatti",
+      "companies": "Aziende",
+      "activities": "Attività",
+      "automations": "Automazioni",
+      "permissions": "Permessi",
+      "settings": "Impostazioni"
+    },
+    "dashboard": {
+      "totalPipeline": "Valore totale della pipeline",
+      "dealsWon": "Trattative vinte",
+      "winRate": "Tasso di successo",
+      "avgDealSize": "Dimensione media delle trattative",
+      "pipelineByStage": "Pipeline per fase",
+      "recentActivities": "Attività recenti",
+      "closingSoon": "Trattative in chiusura",
+      "topDeals": "Migliori trattative",
+      "thisMonth": "questo mese",
+      "noData": "Nessun dato disponibile"
+    },
+    "deals": {
+      "title": "Titolo",
+      "value": "Valore",
+      "stage": "Fase",
+      "contact": "Contatto",
+      "company": "Azienda",
+      "closeDate": "Data di chiusura",
+      "probability": "Probabilità",
+      "assignedTo": "Assegnato a",
+      "newDeal": "Nuova trattativa",
+      "markWon": "Vinta",
+      "markLost": "Persa",
+      "lostReason": "Motivo della perdita",
+      "noneAssigned": "Nessuno"
+    },
+    "contacts": {
+      "name": "Nome",
+      "email": "E-mail",
+      "phone": "Telefono",
+      "position": "Posizione",
+      "source": "Fonte",
+      "newContact": "Nuovo contatto"
+    },
+    "companies": {
+      "name": "Nome",
+      "domain": "Dominio",
+      "industry": "Settore",
+      "size": "Dimensione",
+      "address": "Indirizzo",
+      "newCompany": "Nuova azienda"
+    },
+    "activities": {
+      "logActivity": "Registra attività",
+      "note": "Nota",
+      "call": "Chiamata",
+      "meeting": "Riunione",
+      "email": "E-mail",
+      "noActivities": "Nessuna attività ancora"
+    },
+    "automations": {
+      "title": "Automazioni",
+      "newAutomation": "Nuova automazione",
+      "trigger": "Trigger",
+      "action": "Azione",
+      "active": "Attivo",
+      "inactive": "Inattivo",
+      "runs": "esecuzioni",
+      "seedExamples": "Carica automazioni di esempio",
+      "noAutomations": "Nessuna automazione configurata"
+    },
+    "permissions": {
+      "title": "Permessi",
+      "role": "Ruolo",
+      "recordAccess": "Accesso ai record",
+      "admin": "Amministratore",
+      "manager": "Manager",
+      "sales": "Commerciale",
+      "viewer": "Visualizzatore",
+      "allRecords": "Tutti i record",
+      "ownRecords": "Solo i propri record"
+    },
+    "actions": {
+      "create": "Crea",
+      "save": "Salva",
+      "cancel": "Annulla",
+      "delete": "Elimina",
+      "export": "Esporta",
+      "import": "Importa",
+      "search": "Cerca...",
+      "clearFilters": "Cancella filtri",
+      "addFilter": "Aggiungi filtro",
+      "saveView": "Salva vista"
+    }
   }
 }

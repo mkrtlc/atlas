@@ -696,5 +696,104 @@
     "deleteSelected": "Löschen",
     "duplicateSelected": "Duplizieren",
     "clearSelection": "Auswahl aufheben"
+  },
+  "crm": {
+    "title": "CRM",
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "pipeline": "Pipeline",
+      "deals": "Geschäfte",
+      "contacts": "Kontakte",
+      "companies": "Unternehmen",
+      "activities": "Aktivitäten",
+      "automations": "Automatisierungen",
+      "permissions": "Berechtigungen",
+      "settings": "Einstellungen"
+    },
+    "dashboard": {
+      "totalPipeline": "Gesamter Pipeline-Wert",
+      "dealsWon": "Gewonnene Geschäfte",
+      "winRate": "Gewinnrate",
+      "avgDealSize": "Durchschnittliche Geschäftsgröße",
+      "pipelineByStage": "Pipeline nach Phase",
+      "recentActivities": "Letzte Aktivitäten",
+      "closingSoon": "Bald abschließende Geschäfte",
+      "topDeals": "Top-Geschäfte",
+      "thisMonth": "diesen Monat",
+      "noData": "Noch keine Daten"
+    },
+    "deals": {
+      "title": "Titel",
+      "value": "Wert",
+      "stage": "Phase",
+      "contact": "Kontakt",
+      "company": "Unternehmen",
+      "closeDate": "Abschlussdatum",
+      "probability": "Wahrscheinlichkeit",
+      "assignedTo": "Zugewiesen an",
+      "newDeal": "Neues Geschäft",
+      "markWon": "Gewonnen",
+      "markLost": "Verloren",
+      "lostReason": "Verlustgrund",
+      "noneAssigned": "Keine"
+    },
+    "contacts": {
+      "name": "Name",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "position": "Position",
+      "source": "Quelle",
+      "newContact": "Neuer Kontakt"
+    },
+    "companies": {
+      "name": "Name",
+      "domain": "Domain",
+      "industry": "Branche",
+      "size": "Größe",
+      "address": "Adresse",
+      "newCompany": "Neues Unternehmen"
+    },
+    "activities": {
+      "logActivity": "Aktivität erfassen",
+      "note": "Notiz",
+      "call": "Anruf",
+      "meeting": "Besprechung",
+      "email": "E-Mail",
+      "noActivities": "Noch keine Aktivitäten"
+    },
+    "automations": {
+      "title": "Automatisierungen",
+      "newAutomation": "Neue Automatisierung",
+      "trigger": "Auslöser",
+      "action": "Aktion",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "runs": "Ausführungen",
+      "seedExamples": "Beispielautomatisierungen laden",
+      "noAutomations": "Keine Automatisierungen konfiguriert"
+    },
+    "permissions": {
+      "title": "Berechtigungen",
+      "role": "Rolle",
+      "recordAccess": "Datensatzzugriff",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "sales": "Vertrieb",
+      "viewer": "Betrachter",
+      "allRecords": "Alle Datensätze",
+      "ownRecords": "Nur eigene Datensätze"
+    },
+    "actions": {
+      "create": "Erstellen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "export": "Exportieren",
+      "import": "Importieren",
+      "search": "Suchen...",
+      "clearFilters": "Filter löschen",
+      "addFilter": "Filter hinzufügen",
+      "saveView": "Ansicht speichern"
+    }
   }
 }

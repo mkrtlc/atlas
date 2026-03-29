@@ -696,5 +696,104 @@
     "deleteSelected": "Sil",
     "duplicateSelected": "Çoğalt",
     "clearSelection": "Seçimi temizle"
+  },
+  "crm": {
+    "title": "CRM",
+    "sidebar": {
+      "dashboard": "Gösterge Paneli",
+      "pipeline": "Pipeline",
+      "deals": "Anlaşmalar",
+      "contacts": "Kişiler",
+      "companies": "Şirketler",
+      "activities": "Aktiviteler",
+      "automations": "Otomasyonlar",
+      "permissions": "Yetkiler",
+      "settings": "Ayarlar"
+    },
+    "dashboard": {
+      "totalPipeline": "Toplam pipeline değeri",
+      "dealsWon": "Kazanılan anlaşmalar",
+      "winRate": "Kazanma oranı",
+      "avgDealSize": "Ortalama anlaşma büyüklüğü",
+      "pipelineByStage": "Aşamalara göre pipeline",
+      "recentActivities": "Son aktiviteler",
+      "closingSoon": "Yakında kapanacak anlaşmalar",
+      "topDeals": "En büyük anlaşmalar",
+      "thisMonth": "bu ay",
+      "noData": "Henüz veri yok"
+    },
+    "deals": {
+      "title": "Başlık",
+      "value": "Değer",
+      "stage": "Aşama",
+      "contact": "Kişi",
+      "company": "Şirket",
+      "closeDate": "Kapanış tarihi",
+      "probability": "Olasılık",
+      "assignedTo": "Sorumlu",
+      "newDeal": "Yeni anlaşma",
+      "markWon": "Kazanıldı",
+      "markLost": "Kaybedildi",
+      "lostReason": "Kaybetme nedeni",
+      "noneAssigned": "Atanmadı"
+    },
+    "contacts": {
+      "name": "İsim",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "position": "Pozisyon",
+      "source": "Kaynak",
+      "newContact": "Yeni kişi"
+    },
+    "companies": {
+      "name": "İsim",
+      "domain": "Alan adı",
+      "industry": "Sektör",
+      "size": "Büyüklük",
+      "address": "Adres",
+      "newCompany": "Yeni şirket"
+    },
+    "activities": {
+      "logActivity": "Aktivite kaydet",
+      "note": "Not",
+      "call": "Arama",
+      "meeting": "Toplantı",
+      "email": "E-posta",
+      "noActivities": "Henüz aktivite yok"
+    },
+    "automations": {
+      "title": "Otomasyonlar",
+      "newAutomation": "Yeni otomasyon",
+      "trigger": "Tetikleyici",
+      "action": "Aksiyon",
+      "active": "Aktif",
+      "inactive": "Pasif",
+      "runs": "çalışma",
+      "seedExamples": "Örnek otomasyonları yükle",
+      "noAutomations": "Henüz otomasyon tanımlanmadı"
+    },
+    "permissions": {
+      "title": "Yetkiler",
+      "role": "Rol",
+      "recordAccess": "Kayıt erişimi",
+      "admin": "Yönetici",
+      "manager": "Müdür",
+      "sales": "Satışçı",
+      "viewer": "İzleyici",
+      "allRecords": "Tüm kayıtlar",
+      "ownRecords": "Sadece kendi kayıtları"
+    },
+    "actions": {
+      "create": "Oluştur",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "export": "Dışa aktar",
+      "import": "İçe aktar",
+      "search": "Ara...",
+      "clearFilters": "Filtreleri temizle",
+      "addFilter": "Filtre ekle",
+      "saveView": "Görünümü kaydet"
+    }
   }
 }

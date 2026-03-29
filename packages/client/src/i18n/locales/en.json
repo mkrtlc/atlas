@@ -737,5 +737,104 @@
     "deleteSelected": "Delete",
     "duplicateSelected": "Duplicate",
     "clearSelection": "Clear selection"
+  },
+  "crm": {
+    "title": "CRM",
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "pipeline": "Pipeline",
+      "deals": "Deals",
+      "contacts": "Contacts",
+      "companies": "Companies",
+      "activities": "Activities",
+      "automations": "Automations",
+      "permissions": "Permissions",
+      "settings": "Settings"
+    },
+    "dashboard": {
+      "totalPipeline": "Total pipeline value",
+      "dealsWon": "Deals won",
+      "winRate": "Win rate",
+      "avgDealSize": "Average deal size",
+      "pipelineByStage": "Pipeline by stage",
+      "recentActivities": "Recent activities",
+      "closingSoon": "Deals closing soon",
+      "topDeals": "Top deals",
+      "thisMonth": "this month",
+      "noData": "No data yet"
+    },
+    "deals": {
+      "title": "Title",
+      "value": "Value",
+      "stage": "Stage",
+      "contact": "Contact",
+      "company": "Company",
+      "closeDate": "Close date",
+      "probability": "Probability",
+      "assignedTo": "Assigned to",
+      "newDeal": "New deal",
+      "markWon": "Won",
+      "markLost": "Lost",
+      "lostReason": "Reason for losing",
+      "noneAssigned": "None"
+    },
+    "contacts": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "position": "Position",
+      "source": "Source",
+      "newContact": "New contact"
+    },
+    "companies": {
+      "name": "Name",
+      "domain": "Domain",
+      "industry": "Industry",
+      "size": "Size",
+      "address": "Address",
+      "newCompany": "New company"
+    },
+    "activities": {
+      "logActivity": "Log activity",
+      "note": "Note",
+      "call": "Call",
+      "meeting": "Meeting",
+      "email": "Email",
+      "noActivities": "No activities yet"
+    },
+    "automations": {
+      "title": "Automations",
+      "newAutomation": "New automation",
+      "trigger": "Trigger",
+      "action": "Action",
+      "active": "Active",
+      "inactive": "Inactive",
+      "runs": "runs",
+      "seedExamples": "Load example automations",
+      "noAutomations": "No automations configured"
+    },
+    "permissions": {
+      "title": "Permissions",
+      "role": "Role",
+      "recordAccess": "Record access",
+      "admin": "Admin",
+      "manager": "Manager",
+      "sales": "Sales",
+      "viewer": "Viewer",
+      "allRecords": "All records",
+      "ownRecords": "Own records only"
+    },
+    "actions": {
+      "create": "Create",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "export": "Export",
+      "import": "Import",
+      "search": "Search...",
+      "clearFilters": "Clear filters",
+      "addFilter": "Add filter",
+      "saveView": "Save view"
+    }
   }
 }
