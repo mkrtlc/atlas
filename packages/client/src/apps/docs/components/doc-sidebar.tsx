@@ -14,6 +14,8 @@ import {
   LayoutTemplate,
   Upload,
 } from 'lucide-react';
+import { Button } from '../../../components/ui/button';
+import { IconButton } from '../../../components/ui/icon-button';
 import {
   useDocumentList,
   useCreateDocument,
@@ -237,97 +239,37 @@ export function DocSidebar({ selectedId, onSelect, onNewFromTemplate, onImport }
         gap: 0,
       }}
     >
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
+        icon={<Plus size={14} />}
         onClick={handleNewPage}
         disabled={createDoc.isPending}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          width: '100%',
-          padding: '6px 8px',
-          background: 'transparent',
-          border: 'none',
-          borderRadius: 'var(--radius-sm)',
-          color: 'var(--color-text-tertiary)',
-          fontSize: 12,
-          fontFamily: 'var(--font-family)',
-          cursor: 'pointer',
-          transition: 'background 0.1s ease, color 0.1s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--color-surface-hover)';
-          e.currentTarget.style.color = 'var(--color-text-primary)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--color-text-tertiary)';
-        }}
+        style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--color-text-tertiary)' }}
       >
-        <Plus size={14} />
         New page
-      </button>
+      </Button>
       {onNewFromTemplate && (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<LayoutTemplate size={14} />}
           onClick={onNewFromTemplate}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            width: '100%',
-            padding: '6px 8px',
-            background: 'transparent',
-            border: 'none',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--color-text-tertiary)',
-            fontSize: 12,
-            fontFamily: 'var(--font-family)',
-            cursor: 'pointer',
-            transition: 'background 0.1s ease, color 0.1s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--color-surface-hover)';
-            e.currentTarget.style.color = 'var(--color-text-primary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--color-text-tertiary)';
-          }}
+          style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--color-text-tertiary)' }}
         >
-          <LayoutTemplate size={14} />
           From template
-        </button>
+        </Button>
       )}
       {onImport && (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Upload size={14} />}
           onClick={onImport}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            width: '100%',
-            padding: '6px 8px',
-            background: 'transparent',
-            border: 'none',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--color-text-tertiary)',
-            fontSize: 12,
-            fontFamily: 'var(--font-family)',
-            cursor: 'pointer',
-            transition: 'background 0.1s ease, color 0.1s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--color-surface-hover)';
-            e.currentTarget.style.color = 'var(--color-text-primary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--color-text-tertiary)';
-          }}
+          style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--color-text-tertiary)' }}
         >
-          <Upload size={14} />
           Import document
-        </button>
+        </Button>
       )}
     </div>
   ) : undefined;
@@ -633,34 +575,20 @@ function QuickLink({
   active?: boolean;
   badge?: number;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
+      icon={icon}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
         width: '100%',
-        padding: '4px 8px',
-        background: active
-          ? 'var(--color-surface-selected)'
-          : hovered
-            ? 'var(--color-surface-hover)'
-            : 'transparent',
-        border: 'none',
-        borderRadius: 'var(--radius-sm)',
+        justifyContent: 'flex-start',
         color: active ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+        background: active ? 'var(--color-surface-selected)' : 'transparent',
         fontSize: 13,
-        fontFamily: 'var(--font-family)',
-        cursor: 'pointer',
-        transition: 'background 0.1s ease',
-        textAlign: 'left',
       }}
     >
-      {icon}
       <span style={{ flex: 1 }}>{label}</span>
       {badge !== undefined && (
         <span
@@ -676,7 +604,7 @@ function QuickLink({
           {badge}
         </span>
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -693,33 +621,16 @@ function SidebarButton({
   tooltip?: string;
   disabled?: boolean;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
-    <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+    <IconButton
+      icon={icon}
+      label={tooltip ?? ''}
+      size={22}
+      tooltip={!!tooltip}
       disabled={disabled}
-      title={tooltip}
-      aria-label={tooltip}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        background: hovered ? 'var(--color-surface-hover)' : 'transparent',
-        border: 'none',
-        borderRadius: 'var(--radius-sm)',
-        color: 'var(--color-text-tertiary)',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
-        transition: 'background 0.1s ease',
-        flexShrink: 0,
-      }}
-    >
-      {icon}
-    </button>
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      style={{ opacity: disabled ? 0.4 : 1 }}
+    />
   );
 }
 
@@ -882,31 +793,21 @@ function TreeNode({
         }}
       >
         {/* Expand toggle */}
-        <button
+        <IconButton
+          icon={<ChevronRight size={12} />}
+          label={expanded ? 'Collapse' : 'Expand'}
+          size={20}
+          tooltip={false}
           onClick={(e) => {
             e.stopPropagation();
             setExpanded((v) => !v);
           }}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 20,
-            height: 20,
-            background: 'transparent',
-            border: 'none',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--color-text-tertiary)',
-            cursor: 'pointer',
             visibility: hasChildren ? 'visible' : 'hidden',
             transition: 'transform 0.12s ease',
             transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-            flexShrink: 0,
-            padding: 0,
           }}
-        >
-          <ChevronRight size={12} />
-        </button>
+        />
 
         {/* Icon */}
         <span
@@ -1065,31 +966,21 @@ function MenuButton({
   onClick: () => void;
   danger?: boolean;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
-    <button
+    <Button
+      variant={danger ? 'danger' : 'ghost'}
+      size="sm"
+      icon={icon}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
         width: '100%',
-        padding: '5px 8px',
-        background: hovered ? 'var(--color-surface-hover)' : 'transparent',
-        border: 'none',
-        borderRadius: 'var(--radius-sm)',
+        justifyContent: 'flex-start',
         color: danger ? 'var(--color-status-error)' : 'var(--color-text-secondary)',
-        fontSize: 13,
-        fontFamily: 'var(--font-family)',
-        cursor: 'pointer',
-        textAlign: 'left',
+        border: 'none',
       }}
     >
-      {icon}
       {label}
-    </button>
+    </Button>
   );
 }
 

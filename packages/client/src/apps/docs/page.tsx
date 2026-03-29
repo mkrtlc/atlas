@@ -15,6 +15,8 @@ import {
   MessageSquare,
   Upload,
 } from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { IconButton } from '../../components/ui/icon-button';
 import { DocSidebar } from './components/doc-sidebar';
 import { DocEditor } from './components/doc-editor';
 import {
@@ -1337,33 +1339,26 @@ function TopBar({
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: 0 }}>
         {breadcrumbs.map((crumb) => (
           <div key={crumb.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onNavigate(crumb.id)}
               style={{
-                background: 'transparent',
-                border: 'none',
                 color: 'var(--color-text-tertiary)',
                 fontSize: 12,
-                fontFamily: 'var(--font-family)',
-                cursor: 'pointer',
                 padding: '2px 4px',
-                borderRadius: 3,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 3,
+                height: 'auto',
                 maxWidth: 120,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               {crumb.icon && <span style={{ fontSize: 11 }}>{crumb.icon}</span>}
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {crumb.title || 'Untitled'}
               </span>
-            </button>
+            </Button>
             <ChevronRight size={10} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
           </div>
         ))}
@@ -1410,96 +1405,38 @@ function TopBar({
       )}
 
       {/* Comments toggle button */}
-      <button
+      <IconButton
+        icon={<MessageSquare size={14} />}
+        label="Comments"
+        size={26}
+        active={showComments}
         onClick={onToggleComments}
-        title="Comments"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 26,
-          height: 26,
-          background: showComments ? 'var(--color-surface-hover)' : 'transparent',
-          border: 'none',
-          borderRadius: 4,
-          color: showComments ? 'var(--color-primary)' : 'var(--color-text-tertiary)',
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => { if (!showComments) e.currentTarget.style.background = 'var(--color-surface-hover)'; }}
-        onMouseLeave={(e) => { if (!showComments) e.currentTarget.style.background = 'transparent'; }}
-      >
-        <MessageSquare size={14} />
-      </button>
+      />
 
       {/* Version history button */}
-      <button
+      <IconButton
+        icon={<History size={14} />}
+        label="Version history"
+        size={26}
         onClick={onShowVersionHistory}
-        title="Version history"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 26,
-          height: 26,
-          background: 'transparent',
-          border: 'none',
-          borderRadius: 4,
-          color: 'var(--color-text-tertiary)',
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-      >
-        <History size={14} />
-      </button>
+      />
 
       {/* Settings button */}
-      <button
+      <IconButton
+        icon={<Settings size={14} />}
+        label="Document settings"
+        size={26}
         onClick={onOpenSettings}
-        title="Document settings"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 26,
-          height: 26,
-          background: 'transparent',
-          border: 'none',
-          borderRadius: 4,
-          color: 'var(--color-text-tertiary)',
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-      >
-        <Settings size={14} />
-      </button>
+      />
 
       {/* Export button */}
       <div ref={exportRef} style={{ position: 'relative', flexShrink: 0 }}>
-        <button
+        <IconButton
+          icon={<Download size={14} />}
+          label="Export"
+          size={26}
           onClick={() => setShowExport(!showExport)}
-          title="Export"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 26,
-            height: 26,
-            background: 'transparent',
-            border: 'none',
-            borderRadius: 4,
-            color: 'var(--color-text-tertiary)',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-        >
-          <Download size={14} />
-        </button>
+        />
         {showExport && (
           <div
             style={{
@@ -1511,7 +1448,7 @@ function TopBar({
               minWidth: 160,
               background: 'var(--color-bg-elevated)',
               border: '1px solid var(--color-border-primary)',
-              borderRadius: 6,
+              borderRadius: 'var(--radius-md)',
               boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
               padding: 4,
               fontFamily: 'var(--font-family)',
@@ -1538,31 +1475,20 @@ function ExportBtn({
   onClick: () => void;
   icon?: React.ReactNode;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
+      icon={icon ?? <Download size={13} />}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
         width: '100%',
-        padding: '5px 10px',
-        background: hovered ? 'var(--color-surface-hover)' : 'transparent',
-        border: 'none',
-        borderRadius: 4,
+        justifyContent: 'flex-start',
         color: 'var(--color-text-secondary)',
-        fontSize: 13,
-        fontFamily: 'var(--font-family)',
-        cursor: 'pointer',
-        textAlign: 'left',
       }}
     >
-      {icon ?? <Download size={13} />}
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -1626,35 +1552,27 @@ function DocumentView({
             <img src={doc.coverImage} alt="" />
           )}
           <div className="doc-cover-image-actions">
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowCoverPicker(true)}
               style={{
-                padding: '4px 10px',
                 background: 'rgba(255,255,255,0.9)',
                 border: 'none',
-                borderRadius: 4,
                 fontSize: 12,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-family)',
               }}
             >
               Change cover
-            </button>
-            <button
+            </Button>
+            <IconButton
+              icon={<X size={12} />}
+              label="Remove cover"
+              size={26}
               onClick={() => onCoverChange(null)}
               style={{
-                padding: '4px 8px',
                 background: 'rgba(255,255,255,0.9)',
-                border: 'none',
-                borderRadius: 4,
-                fontSize: 12,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
               }}
-            >
-              <X size={12} />
-            </button>
+            />
           </div>
         </div>
       )}
@@ -1673,24 +1591,14 @@ function DocumentView({
         {/* Icon */}
         {doc.icon && (
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: 8 }}>
-            <button
+            <IconButton
+              icon={<span style={{ fontSize: 48, lineHeight: 1 }}>{doc.icon}</span>}
+              label="Change icon"
+              size={56}
+              tooltip
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              style={{
-                fontSize: 48,
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                lineHeight: 1,
-                borderRadius: 8,
-                transition: 'background 0.1s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              title="Change icon"
-            >
-              {doc.icon}
-            </button>
+              style={{ borderRadius: 8 }}
+            />
             {showEmojiPicker && (
               <EmojiPicker
                 onSelect={(emoji) => { onIconChange(emoji); setShowEmojiPicker(false); }}
@@ -2038,41 +1946,25 @@ function VersionHistoryPanel({
             Version history
           </span>
         </div>
-        <button
+        <IconButton
+          icon={<X size={14} />}
+          label="Close"
+          size={24}
           onClick={onClose}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 24, height: 24,
-            background: 'transparent', border: 'none', borderRadius: 4,
-            color: 'var(--color-text-tertiary)', cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-        >
-          <X size={14} />
-        </button>
+        />
       </div>
 
       {/* Save snapshot button */}
       <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--color-border-primary)' }}>
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => createVersion.mutate(documentId)}
           disabled={createVersion.isPending}
-          style={{
-            width: '100%',
-            padding: '6px 12px',
-            background: 'var(--color-accent-primary, #13715B)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            fontSize: 12,
-            fontFamily: 'var(--font-family)',
-            cursor: createVersion.isPending ? 'default' : 'pointer',
-            opacity: createVersion.isPending ? 0.6 : 1,
-          }}
+          style={{ width: '100%', opacity: createVersion.isPending ? 0.6 : 1 }}
         >
           {createVersion.isPending ? 'Saving...' : 'Save snapshot'}
-        </button>
+        </Button>
       </div>
 
       {/* Version list */}
@@ -2137,22 +2029,14 @@ function VersionRow({
         </div>
       </div>
       {hovered && (
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onRestore}
-          style={{
-            padding: '3px 8px',
-            background: 'transparent',
-            border: '1px solid var(--color-border-primary)',
-            borderRadius: 4,
-            fontSize: 11,
-            color: 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-family)',
-            whiteSpace: 'nowrap',
-          }}
+          style={{ fontSize: 11, height: 24, padding: '0 8px' }}
         >
           Restore
-        </button>
+        </Button>
       )}
     </div>
   );

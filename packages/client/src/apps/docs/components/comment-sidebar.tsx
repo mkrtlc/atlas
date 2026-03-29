@@ -7,6 +7,8 @@ import {
   useDeleteDocComment,
 } from '../hooks/use-doc-comments';
 import type { DocumentComment } from '@atlasmail/shared';
+import { Button } from '../../../components/ui/button';
+import { IconButton } from '../../../components/ui/icon-button';
 
 interface CommentSidebarProps {
   docId: string;
@@ -57,9 +59,7 @@ export function CommentSidebar({ docId, isOpen, onClose }: CommentSidebarProps) 
             <span className="text-xs text-gray-400">({activeComments.length})</span>
           )}
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 cursor-pointer">
-          <X className="w-4 h-4" />
-        </button>
+        <IconButton icon={<X className="w-4 h-4" />} label="Close" size={24} onClick={onClose} />
       </div>
 
       {/* New comment input */}
@@ -76,12 +76,9 @@ export function CommentSidebar({ docId, isOpen, onClose }: CommentSidebarProps) 
         />
         {newComment.trim() && (
           <div className="flex justify-end mt-1.5">
-            <button
-              onClick={handleSubmit}
-              className="px-2.5 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded cursor-pointer"
-            >
+            <Button variant="primary" size="sm" onClick={handleSubmit}>
               Comment
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -108,21 +105,20 @@ export function CommentSidebar({ docId, isOpen, onClose }: CommentSidebarProps) 
                 <span className="text-[10px] text-gray-400">{getRelativeTime(comment.createdAt)}</span>
                 <div className="flex items-center gap-1">
                   {!comment.isResolved && (
-                    <button
+                    <IconButton
+                      icon={<Check className="w-3.5 h-3.5" />}
+                      label="Resolve"
+                      size={22}
                       onClick={() => resolveComment.mutate({ commentId: comment.id, docId })}
-                      className="text-gray-300 hover:text-green-500 cursor-pointer"
-                      title="Resolve"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
+                    />
                   )}
-                  <button
+                  <IconButton
+                    icon={<Trash2 className="w-3.5 h-3.5" />}
+                    label="Delete"
+                    size={22}
+                    destructive
                     onClick={() => deleteComment.mutate({ commentId: comment.id, docId })}
-                    className="text-gray-300 hover:text-red-400 cursor-pointer"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  />
                 </div>
               </div>
             </div>
@@ -133,12 +129,14 @@ export function CommentSidebar({ docId, isOpen, onClose }: CommentSidebarProps) 
       {/* Show resolved toggle */}
       {resolvedComments.length > 0 && (
         <div className="px-3 py-2 border-t border-gray-100">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowResolved(!showResolved)}
-            className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+            style={{ fontSize: 12 }}
           >
             {showResolved ? 'Hide' : 'Show'} {resolvedComments.length} resolved
-          </button>
+          </Button>
         </div>
       )}
     </div>
