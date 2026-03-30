@@ -177,6 +177,6 @@ export const queryKeys = {
   },
   activityFeed: {
     all: ['activity-feed'] as const,
-    list: (page?: number) => ['activity-feed', 'list', page] as const,
+    list: (before?: string) => ['activity-feed', 'list', before] as const,
   },
 };

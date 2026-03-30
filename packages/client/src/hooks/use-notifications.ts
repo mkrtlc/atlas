@@ -37,7 +37,7 @@ export function useNotifications() {
     queryKey: queryKeys.notifications.list,
     queryFn: async () => {
       const { data } = await api.get('/notifications?limit=30');
-      return data as { items: Notification[]; unreadCount: number };
+      return data.data as { items: Notification[]; unreadCount: number };
     },
     staleTime: 15_000,
   });
@@ -48,7 +48,7 @@ export function useUnreadCount() {
     queryKey: queryKeys.notifications.unreadCount,
     queryFn: async () => {
       const { data } = await api.get('/notifications/unread-count');
-      return data as { count: number };
+      return data.data as { count: number };
     },
     refetchInterval: 30_000,
     staleTime: 10_000,
@@ -95,14 +95,14 @@ export function useDismissNotification() {
 // Activity feed hooks
 // ---------------------------------------------------------------------------
 
-export function useActivityFeed(page?: number) {
+export function useActivityFeed(before?: string) {
   return useQuery({
-    queryKey: queryKeys.activityFeed.list(page),
+    queryKey: queryKeys.activityFeed.list(before),
     queryFn: async () => {
       const params = new URLSearchParams({ limit: '20' });
-      if (page != null) params.set('page', String(page));
-      const { data } = await api.get(`/activity-feed?${params.toString()}`);
-      return data as { items: ActivityItem[]; hasMore: boolean };
+      if (before) params.set('before', before);
+      const { data } = await api.get(`/notifications/activity-feed?${params.toString()}`);
+      return data.data as { items: ActivityItem[]; hasMore: boolean };
     },
     staleTime: 30_000,
   });

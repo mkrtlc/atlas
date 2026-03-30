@@ -1,6 +1,6 @@
 import { db } from '../config/database';
 import { activityFeed, notifications, users, accounts, tenantMembers } from '../db/schema';
-import { eq, and, desc, lt, sql } from 'drizzle-orm';
+import { eq, and, desc, lt, sql, inArray } from 'drizzle-orm';
 import { logger } from '../utils/logger';
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -65,27 +65,38 @@ export async function emitAppEvent(event: AppEvent): Promise<void> {
     metadata: meta,
   });
 
-  // 2. Create notifications for specified users (skip the actor)
+  // 2. Create notifications for specified users (skip the actor) — batch insert
   if (event.notifyUserIds && event.notifyUserIds.length > 0) {
     const targetUserIds = event.notifyUserIds.filter((uid) => uid !== event.userId);
-
-    for (const targetUserId of targetUserIds) {
+    if (targetUserIds.length > 0) {
       try {
-        const accountId = await getAccountIdForUser(targetUserId);
-        if (!accountId) continue;
+        // Batch lookup all accountIds in one query
+        const accountRows = await db
+          .select({ userId: accounts.userId, id: accounts.id })
+          .from(accounts)
+          .where(inArray(accounts.userId, targetUserIds));
 
-        await db.insert(notifications).values({
-          userId: targetUserId,
-          accountId,
-          type: event.appId,
-          title: event.title,
-          body: null,
-          sourceType: event.appId,
-          sourceId: (meta.dealId ?? meta.employeeId ?? meta.documentId ?? meta.itemId ?? meta.id ?? null) as string | null,
-          isRead: false,
-        });
+        const accountMap = new Map(accountRows.map((r) => [r.userId, r.id]));
+        const sourceId = (meta.dealId ?? meta.employeeId ?? meta.documentId ?? meta.itemId ?? meta.id ?? null) as string | null;
+
+        const rows = targetUserIds
+          .filter((uid) => accountMap.has(uid))
+          .map((uid) => ({
+            userId: uid,
+            accountId: accountMap.get(uid)!,
+            type: event.appId,
+            title: event.title,
+            body: null,
+            sourceType: event.appId,
+            sourceId,
+            isRead: false,
+          }));
+
+        if (rows.length > 0) {
+          await db.insert(notifications).values(rows);
+        }
       } catch (err) {
-        logger.error({ err, targetUserId }, 'Failed to create notification for user');
+        logger.error({ err }, 'Failed to batch-create notifications');
       }
     }
   }

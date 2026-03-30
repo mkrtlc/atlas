@@ -5,35 +5,7 @@ import { Avatar } from '../ui/avatar';
 import { Chip } from '../ui/chip';
 import { Button } from '../ui/button';
 import { formatRelativeDate } from '../../lib/format';
-import { appRegistry } from '../../apps';
-
-// ---------------------------------------------------------------------------
-// App color / label helpers
-// ---------------------------------------------------------------------------
-
-const FALLBACK_APP_COLORS: Record<string, string> = {
-  docs: '#c4856c',
-  draw: '#e06c9f',
-  tasks: '#6366f1',
-  tables: '#2d8a6e',
-  drive: '#64748b',
-  crm: '#3b82f6',
-  sign: '#f59e0b',
-  hr: '#8b5cf6',
-  system: '#6b7280',
-};
-
-function getAppColor(appId: string): string {
-  const manifest = appRegistry.get(appId);
-  if (manifest) return manifest.color;
-  return FALLBACK_APP_COLORS[appId] ?? 'var(--color-text-tertiary)';
-}
-
-function getAppLabel(appId: string): string {
-  const manifest = appRegistry.get(appId);
-  if (manifest) return manifest.name;
-  return appId.charAt(0).toUpperCase() + appId.slice(1);
-}
+import { getAppColor, getAppLabel } from '../../lib/app-colors';
 
 // ---------------------------------------------------------------------------
 // Date grouping
@@ -77,10 +49,10 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ limit = 20, compact = false }: ActivityFeedProps) {
   const { t } = useTranslation();
-  const [page, setPage] = useState(0);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [filter, setFilter] = useState<AppFilter>('all');
 
-  const { data, isLoading } = useActivityFeed(page);
+  const { data, isLoading } = useActivityFeed(cursor);
 
   const items = data?.items ?? [];
   const hasMore = data?.hasMore ?? false;
@@ -205,7 +177,10 @@ export function ActivityFeed({ limit = 20, compact = false }: ActivityFeedProps)
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => {
+              const lastItem = items[items.length - 1];
+              if (lastItem) setCursor(lastItem.createdAt);
+            }}
           >
             {t('activity.loadMore')}
           </Button>

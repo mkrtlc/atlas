@@ -12,48 +12,13 @@ import {
   useDismissNotification,
 } from '../../hooks/use-notifications';
 import { formatRelativeDate } from '../../lib/format';
-import { appRegistry } from '../../apps';
-
-// ---------------------------------------------------------------------------
-// App color map — fallback when registry doesn't have the app
-// ---------------------------------------------------------------------------
-
-const FALLBACK_APP_COLORS: Record<string, string> = {
-  docs: '#c4856c',
-  draw: '#e06c9f',
-  tasks: '#6366f1',
-  tables: '#2d8a6e',
-  drive: '#64748b',
-  crm: '#3b82f6',
-  sign: '#f59e0b',
-  hr: '#8b5cf6',
-  system: '#6b7280',
-};
-
-function getAppColor(sourceType: string | null): string {
-  if (!sourceType) return 'var(--color-text-tertiary)';
-  const manifest = appRegistry.get(sourceType);
-  if (manifest) return manifest.color;
-  return FALLBACK_APP_COLORS[sourceType] ?? 'var(--color-text-tertiary)';
-}
-
-// ---------------------------------------------------------------------------
-// Source type to route mapping
-// ---------------------------------------------------------------------------
+import { getAppColor } from '../../lib/app-colors';
+import { appRegistry } from '../../config/app-registry';
 
 function getRouteForSource(sourceType: string | null): string | null {
   if (!sourceType) return null;
-  const routeMap: Record<string, string> = {
-    crm: '/crm',
-    sign: '/sign',
-    hr: '/hr',
-    tasks: '/tasks',
-    drive: '/drive',
-    docs: '/docs',
-    draw: '/draw',
-    tables: '/tables',
-  };
-  return routeMap[sourceType] ?? null;
+  const app = appRegistry.getAll().find((a) => a.id === sourceType);
+  return app?.routes[0]?.path ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -205,7 +170,7 @@ export function NotificationBell() {
             <div style={{ padding: '4px 0' }}>
               {notifications.map((n) => {
                 const isHovered = hoveredId === n.id;
-                const appColor = getAppColor(n.sourceType);
+                const appColor = n.sourceType ? getAppColor(n.sourceType) : 'var(--color-text-tertiary)';
 
                 return (
                   <div

@@ -7,12 +7,14 @@ const router = Router();
 
 router.use(authMiddleware);
 
+const MAX_LIMIT = 100;
+
 // GET /notifications
 router.get('/', async (req: Request, res: Response) => {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
-    const limit = parseInt(req.query.limit as string) || 50;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, MAX_LIMIT);
     const before = req.query.before as string | undefined;
 
     const data = await eventService.listNotifications(userId, accountId, limit, before);
@@ -37,6 +39,44 @@ router.get('/unread-count', async (req: Request, res: Response) => {
   }
 });
 
+// POST /notifications/read-all (must be before /:id routes)
+router.post('/read-all', async (req: Request, res: Response) => {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    await eventService.markAllNotificationsRead(userId, accountId);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to mark all notifications as read');
+    res.status(500).json({ success: false, error: 'Failed to mark all notifications as read' });
+  }
+});
+
+// GET /notifications/activity-feed (must be before /:id routes)
+router.get('/activity-feed', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.auth!.tenantId;
+    if (!tenantId) {
+      res.status(400).json({ success: false, error: 'Tenant context required' });
+      return;
+    }
+
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, MAX_LIMIT);
+    const before = req.query.before as string | undefined;
+    if (before && isNaN(new Date(before).getTime())) {
+      res.status(400).json({ success: false, error: 'Invalid before cursor' });
+      return;
+    }
+
+    const data = await eventService.listActivityFeed(tenantId, limit, before);
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list activity feed');
+    res.status(500).json({ success: false, error: 'Failed to list activity feed' });
+  }
+});
+
 // POST /notifications/:id/read
 router.post('/:id/read', async (req: Request, res: Response) => {
   try {
@@ -51,20 +91,6 @@ router.post('/:id/read', async (req: Request, res: Response) => {
   }
 });
 
-// POST /notifications/read-all
-router.post('/read-all', async (req: Request, res: Response) => {
-  try {
-    const userId = req.auth!.userId;
-    const accountId = req.auth!.accountId;
-
-    await eventService.markAllNotificationsRead(userId, accountId);
-    res.json({ success: true, data: null });
-  } catch (error) {
-    logger.error({ error }, 'Failed to mark all notifications as read');
-    res.status(500).json({ success: false, error: 'Failed to mark all notifications as read' });
-  }
-});
-
 // DELETE /notifications/:id
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
@@ -76,26 +102,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error({ error }, 'Failed to dismiss notification');
     res.status(500).json({ success: false, error: 'Failed to dismiss notification' });
-  }
-});
-
-// GET /activity-feed
-router.get('/activity-feed', async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.auth!.tenantId;
-    if (!tenantId) {
-      res.status(400).json({ success: false, error: 'Tenant context required' });
-      return;
-    }
-
-    const limit = parseInt(req.query.limit as string) || 50;
-    const before = req.query.before as string | undefined;
-
-    const data = await eventService.listActivityFeed(tenantId, limit, before);
-    res.json({ success: true, data });
-  } catch (error) {
-    logger.error({ error }, 'Failed to list activity feed');
-    res.status(500).json({ success: false, error: 'Failed to list activity feed' });
   }
 });
 
