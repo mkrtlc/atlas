@@ -25,8 +25,8 @@ RUN cd packages/shared && npx tsc --skipLibCheck
 # Build client (vite build handles its own TS compilation)
 RUN cd packages/client && npx vite build
 
-# Build server (tsc)
-RUN cd packages/server && npx tsc --skipLibCheck
+# Build server (tsc — increase heap for large type-heavy codebase)
+RUN cd packages/server && NODE_OPTIONS="--max-old-space-size=4096" npx tsc --skipLibCheck
 
 # ── Stage 2: Production ────────────────────────────────────────
 FROM node:20-alpine AS production
