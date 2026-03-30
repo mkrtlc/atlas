@@ -147,6 +147,7 @@ export async function generateQuickReplies(
   const model = createModel(config);
   const trimmedBody = lastEmailBody.slice(0, 3000);
 
+  // @ts-expect-error AI SDK type instantiation depth issue
   const { object } = await generateObject({
     model,
     system: `You are an email assistant. Generate 3-4 quick reply options for the email below.
