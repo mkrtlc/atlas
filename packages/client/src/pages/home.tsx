@@ -43,8 +43,8 @@ const BG_IMAGES = [
   'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80&auto=format&fit=crop',
   // Misty pine forest
   'https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80&auto=format&fit=crop',
-  // Japanese garden with cherry blossoms
-  'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=1920&q=80&auto=format&fit=crop',
+  // Desert landscape
+  '/desert-wallpaper.avif',
   // Waterfall in lush greenery
   'https://images.unsplash.com/photo-1432405972618-c6b0c1d50207?w=1920&q=80&auto=format&fit=crop',
 ];
