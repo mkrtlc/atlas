@@ -137,6 +137,7 @@ export async function listClients(userId: string, accountId: string, filters?: {
       updatedAt: projectClients.updatedAt,
       projectCount: sql<number>`(SELECT COUNT(*) FROM project_projects WHERE client_id = ${projectClients.id} AND is_archived = false)`.as('project_count'),
       totalBilled: sql<number>`COALESCE((SELECT SUM(amount) FROM project_invoices WHERE client_id = ${projectClients.id} AND status = 'paid' AND is_archived = false), 0)`.as('total_billed'),
+      outstandingAmount: sql<number>`COALESCE((SELECT SUM(amount) FROM project_invoices WHERE client_id = ${projectClients.id} AND status IN ('sent', 'viewed', 'overdue') AND is_archived = false), 0)`.as('outstanding_amount'),
     })
     .from(projectClients)
     .where(and(...conditions))
@@ -167,6 +168,7 @@ export async function getClient(userId: string, accountId: string, id: string) {
       updatedAt: projectClients.updatedAt,
       projectCount: sql<number>`(SELECT COUNT(*) FROM project_projects WHERE client_id = ${projectClients.id} AND is_archived = false)`.as('project_count'),
       totalBilled: sql<number>`COALESCE((SELECT SUM(amount) FROM project_invoices WHERE client_id = ${projectClients.id} AND status = 'paid' AND is_archived = false), 0)`.as('total_billed'),
+      outstandingAmount: sql<number>`COALESCE((SELECT SUM(amount) FROM project_invoices WHERE client_id = ${projectClients.id} AND status IN ('sent', 'viewed', 'overdue') AND is_archived = false), 0)`.as('outstanding_amount'),
     })
     .from(projectClients)
     .where(and(eq(projectClients.id, id), eq(projectClients.accountId, accountId)))
