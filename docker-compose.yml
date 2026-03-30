@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - atlas-pg-data:/var/lib/postgresql/data
+      - atlas-dev-pg-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d atlas"]
       interval: 5s
@@ -27,7 +27,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - atlas-redis-data:/data
+      - atlas-dev-redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -35,5 +35,5 @@ services:
       retries: 5
 
 volumes:
-  atlas-pg-data:
-  atlas-redis-data:
+  atlas-dev-pg-data:
+  atlas-dev-redis-data:
