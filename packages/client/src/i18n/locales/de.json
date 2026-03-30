@@ -1104,7 +1104,15 @@
     "teamCalendar": { "noLeaves": "Keine genehmigten Abwesenheiten fuer diesen Monat." },
     "leaveAppStatus": { "draft": "Entwurf", "pending": "Ausstehend", "approved": "Genehmigt", "rejected": "Abgelehnt", "cancelled": "Storniert" },
     "attendance": { "present": "Anwesend", "absent": "Abwesend", "halfDay": "Halber Tag", "remote": "Remote", "onLeave": "Im Urlaub", "markAllPresent": "Alle anwesend markieren" },
-    "lifecycle": { "title": "Zeitleiste", "addEvent": "Ereignis hinzufuegen", "empty": "Keine Lebenszyklus-Ereignisse.", "hired": "Eingestellt", "promoted": "Befoerdert", "transferred": "Versetzt", "resigned": "Gekuendigt", "terminated": "Ausgeschieden", "salaryChange": "Gehaltsaenderung", "roleChange": "Rollenaenderung", "other": "Sonstiges", "salarychange": "Gehaltsaenderung", "rolechange": "Rollenaenderung" }
+    "lifecycle": { "title": "Zeitleiste", "addEvent": "Ereignis hinzufuegen", "empty": "Keine Lebenszyklus-Ereignisse.", "hired": "Eingestellt", "promoted": "Befoerdert", "transferred": "Versetzt", "resigned": "Gekuendigt", "terminated": "Ausgeschieden", "salaryChange": "Gehaltsaenderung", "roleChange": "Rollenaenderung", "other": "Sonstiges", "salarychange": "Gehaltsaenderung", "rolechange": "Rollenaenderung" },
+    "settings": {
+      "general": "Allgemein",
+      "defaultView": "Standardansicht",
+      "defaultViewDesc": "Welcher Bereich beim Oeffnen von HR angezeigt wird",
+      "display": "Anzeige",
+      "showDepartmentInList": "Abteilung in Liste anzeigen",
+      "showDepartmentInListDesc": "Abteilungsspalte in der Mitarbeiterliste anzeigen"
+    }
   },
   "sign": {
     "title": "Unterschrift",

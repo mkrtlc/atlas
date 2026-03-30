@@ -3,6 +3,14 @@ import { hrAttendance, employees } from '../../db/schema';
 import { eq, and, asc, desc, sql, gte, lte } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 
+// ─── Helpers ──────────────────────────────────────────────────────
+
+function calcWorkingHours(checkIn: string, checkOut: string): number {
+  const [inH, inM] = checkIn.split(':').map(Number);
+  const [outH, outM] = checkOut.split(':').map(Number);
+  return Math.max(0, Math.round(((outH * 60 + outM) - (inH * 60 + inM)) / 60 * 100) / 100);
+}
+
 // ─── Attendance Tracking ──────────────────────────────────────────
 
 export async function markAttendance(accountId: string, input: {
@@ -13,13 +21,9 @@ export async function markAttendance(accountId: string, input: {
   const now = new Date();
 
   // Auto-calculate working hours
-  let workingHours: number | null = null;
-  if (input.checkInTime && input.checkOutTime) {
-    const [inH, inM] = input.checkInTime.split(':').map(Number);
-    const [outH, outM] = input.checkOutTime.split(':').map(Number);
-    workingHours = Math.round(((outH * 60 + outM) - (inH * 60 + inM)) / 60 * 100) / 100;
-    if (workingHours < 0) workingHours = 0;
-  }
+  const workingHours = (input.checkInTime && input.checkOutTime)
+    ? calcWorkingHours(input.checkInTime, input.checkOutTime)
+    : null;
 
   // Upsert - check if record exists for this employee+date
   const existing = await db.select().from(hrAttendance)
@@ -101,11 +105,7 @@ export async function updateAttendance(accountId: string, id: string, input: Par
 
   // Recalculate working hours if times are provided
   if (input.checkInTime !== undefined && input.checkOutTime !== undefined && input.checkInTime && input.checkOutTime) {
-    const [inH, inM] = input.checkInTime.split(':').map(Number);
-    const [outH, outM] = input.checkOutTime.split(':').map(Number);
-    let hours = Math.round(((outH * 60 + outM) - (inH * 60 + inM)) / 60 * 100) / 100;
-    if (hours < 0) hours = 0;
-    updates.workingHours = hours;
+    updates.workingHours = calcWorkingHours(input.checkInTime, input.checkOutTime);
   }
 
   const [updated] = await db.update(hrAttendance).set(updates)

@@ -1104,7 +1104,15 @@
     "teamCalendar": { "noLeaves": "Nessun permesso approvato per questo mese." },
     "leaveAppStatus": { "draft": "Bozza", "pending": "In attesa", "approved": "Approvato", "rejected": "Rifiutato", "cancelled": "Annullato" },
     "attendance": { "present": "Presente", "absent": "Assente", "halfDay": "Mezza giornata", "remote": "Da remoto", "onLeave": "In permesso", "markAllPresent": "Segna tutti presenti" },
-    "lifecycle": { "title": "Cronologia", "addEvent": "Aggiungi evento", "empty": "Nessun evento registrato.", "hired": "Assunto", "promoted": "Promosso", "transferred": "Trasferito", "resigned": "Dimesso", "terminated": "Cessato", "salaryChange": "Cambio stipendio", "roleChange": "Cambio ruolo", "other": "Altro evento", "salarychange": "Cambio stipendio", "rolechange": "Cambio ruolo" }
+    "lifecycle": { "title": "Cronologia", "addEvent": "Aggiungi evento", "empty": "Nessun evento registrato.", "hired": "Assunto", "promoted": "Promosso", "transferred": "Trasferito", "resigned": "Dimesso", "terminated": "Cessato", "salaryChange": "Cambio stipendio", "roleChange": "Cambio ruolo", "other": "Altro evento", "salarychange": "Cambio stipendio", "rolechange": "Cambio ruolo" },
+    "settings": {
+      "general": "Generale",
+      "defaultView": "Vista predefinita",
+      "defaultViewDesc": "Sezione da mostrare all'apertura di HR",
+      "display": "Visualizzazione",
+      "showDepartmentInList": "Mostra reparto nella lista",
+      "showDepartmentInListDesc": "Mostra la colonna reparto nella lista dipendenti"
+    }
   },
   "sign": {
     "title": "Firma",

@@ -1104,7 +1104,15 @@
     "teamCalendar": { "noLeaves": "Bu ay icin onaylanmis izin yok." },
     "leaveAppStatus": { "draft": "Taslak", "pending": "Beklemede", "approved": "Onaylandi", "rejected": "Reddedildi", "cancelled": "Iptal edildi" },
     "attendance": { "present": "Mevcut", "absent": "Devamsiz", "halfDay": "Yarim gun", "remote": "Uzaktan", "onLeave": "Izinli", "markAllPresent": "Tumunu mevcut isaretle" },
-    "lifecycle": { "title": "Zaman cizelgesi", "addEvent": "Olay ekle", "empty": "Kayitli yasam dongusu olayı yok.", "hired": "Ise alindi", "promoted": "Terfi etti", "transferred": "Transfer edildi", "resigned": "Istifa etti", "terminated": "Ayrildi", "salaryChange": "Maas degisikligi", "roleChange": "Rol degisikligi", "other": "Diger olay", "salarychange": "Maas degisikligi", "rolechange": "Rol degisikligi" }
+    "lifecycle": { "title": "Zaman cizelgesi", "addEvent": "Olay ekle", "empty": "Kayitli yasam dongusu olayı yok.", "hired": "Ise alindi", "promoted": "Terfi etti", "transferred": "Transfer edildi", "resigned": "Istifa etti", "terminated": "Ayrildi", "salaryChange": "Maas degisikligi", "roleChange": "Rol degisikligi", "other": "Diger olay", "salarychange": "Maas degisikligi", "rolechange": "Rol degisikligi" },
+    "settings": {
+      "general": "Genel",
+      "defaultView": "Varsayilan gorunum",
+      "defaultViewDesc": "IK acildiginda gosterilecek bolum",
+      "display": "Gorunum",
+      "showDepartmentInList": "Listede departmani goster",
+      "showDepartmentInListDesc": "Calisan listesinde departman sutununu goster"
+    }
   },
   "sign": {
     "title": "İmza",

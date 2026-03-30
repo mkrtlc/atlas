@@ -28,9 +28,10 @@ export async function listEmployees(req: Request, res: Response) {
 export async function getEmployee(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const id = req.params.id as string;
 
-    const employee = await hrService.getEmployee(userId, id);
+    const employee = await hrService.getEmployee(userId, accountId, id);
     if (!employee) {
       res.status(404).json({ success: false, error: 'Employee not found' });
       return;
@@ -163,6 +164,11 @@ export async function createDepartment(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
     const { name, headEmployeeId, color, description } = req.body;
 
+    if (!name?.trim()) {
+      res.status(400).json({ success: false, error: 'Name is required' });
+      return;
+    }
+
     const department = await hrService.createDepartment(userId, accountId, {
       name, headEmployeeId, color, description,
     });
@@ -238,6 +244,23 @@ export async function createTimeOffRequest(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
     const { employeeId, type, startDate, endDate, approverId, notes } = req.body;
+
+    if (!employeeId?.trim()) {
+      res.status(400).json({ success: false, error: 'Employee ID is required' });
+      return;
+    }
+    if (!type?.trim()) {
+      res.status(400).json({ success: false, error: 'Type is required' });
+      return;
+    }
+    if (!startDate?.trim()) {
+      res.status(400).json({ success: false, error: 'Start date is required' });
+      return;
+    }
+    if (!endDate?.trim()) {
+      res.status(400).json({ success: false, error: 'End date is required' });
+      return;
+    }
 
     const request = await hrService.createTimeOffRequest(userId, accountId, {
       employeeId, type, startDate, endDate, approverId, notes,

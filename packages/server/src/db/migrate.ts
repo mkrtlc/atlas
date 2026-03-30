@@ -1363,6 +1363,10 @@ export async function runMigrations() {
       // HR Lifecycle Events
       'CREATE INDEX IF NOT EXISTS idx_hr_lifecycle_employee_date ON hr_lifecycle_events(employee_id, event_date)',
       'CREATE INDEX IF NOT EXISTS idx_hr_lifecycle_account ON hr_lifecycle_events(account_id)',
+      // Additional HR composite indexes for common query patterns
+      'CREATE INDEX IF NOT EXISTS idx_employees_account_status ON employees(account_id, status)',
+      'CREATE INDEX IF NOT EXISTS idx_employees_account_dept ON employees(account_id, department_id)',
+      'CREATE INDEX IF NOT EXISTS idx_leave_balances_account_emp_year ON leave_balances(account_id, employee_id, year)',
     ];
 
     for (const idx of indexes) {

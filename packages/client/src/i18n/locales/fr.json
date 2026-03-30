@@ -1104,7 +1104,15 @@
     "teamCalendar": { "noLeaves": "Aucun conge approuve pour ce mois." },
     "leaveAppStatus": { "draft": "Brouillon", "pending": "En attente", "approved": "Approuve", "rejected": "Refuse", "cancelled": "Annule" },
     "attendance": { "present": "Present", "absent": "Absent", "halfDay": "Demi-journee", "remote": "Teletravail", "onLeave": "En conge", "markAllPresent": "Tous presents" },
-    "lifecycle": { "title": "Chronologie", "addEvent": "Ajouter un evenement", "empty": "Aucun evenement enregistre.", "hired": "Embauche", "promoted": "Promu", "transferred": "Transfere", "resigned": "Demissionne", "terminated": "Parti", "salaryChange": "Changement de salaire", "roleChange": "Changement de role", "other": "Autre evenement", "salarychange": "Changement de salaire", "rolechange": "Changement de role" }
+    "lifecycle": { "title": "Chronologie", "addEvent": "Ajouter un evenement", "empty": "Aucun evenement enregistre.", "hired": "Embauche", "promoted": "Promu", "transferred": "Transfere", "resigned": "Demissionne", "terminated": "Parti", "salaryChange": "Changement de salaire", "roleChange": "Changement de role", "other": "Autre evenement", "salarychange": "Changement de salaire", "rolechange": "Changement de role" },
+    "settings": {
+      "general": "General",
+      "defaultView": "Vue par defaut",
+      "defaultViewDesc": "Section a afficher a l'ouverture de RH",
+      "display": "Affichage",
+      "showDepartmentInList": "Afficher le departement dans la liste",
+      "showDepartmentInListDesc": "Afficher la colonne departement dans la liste des employes"
+    }
   },
   "sign": {
     "title": "Signature",

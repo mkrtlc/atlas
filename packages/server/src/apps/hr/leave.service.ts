@@ -4,6 +4,12 @@ import { eq, and, asc, desc, sql, gte, lte } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import { calculateWorkingDays } from './service';
 
+// ─── Helpers ──────────────────────────────────────────────────────
+
+function remainingBalance(b: { allocated: number; used: number; carried: number } | undefined): number {
+  return b ? b.allocated - b.used + b.carried : 0;
+}
+
 // ─── Leave Applications ───────────────────────────────────────────
 
 export async function listLeaveApplications(accountId: string, filters?: {
@@ -57,11 +63,10 @@ export async function createLeaveApplication(accountId: string, input: {
     .where(eq(hrLeaveTypes.id, input.leaveTypeId)).limit(1);
   if (!leaveType) throw new Error('Leave type not found');
 
-  // Get employee for calendar
-  const [emp] = await db.select().from(employees).where(eq(employees.id, input.employeeId)).limit(1);
-
   // Calculate total days excluding weekends and holidays
-  let totalDays = await calculateWorkingDays(accountId, input.startDate, input.endDate, (emp as any)?.holidayCalendarId ?? undefined);
+  // Note: employee-level holiday calendar assignment is not yet supported;
+  // pass undefined so the default calculation (weekdays only) is used.
+  let totalDays = await calculateWorkingDays(accountId, input.startDate, input.endDate, undefined);
 
   // Half-day adjustment
   if (input.halfDay && totalDays >= 1) {
@@ -76,7 +81,7 @@ export async function createLeaveApplication(accountId: string, input: {
       eq(leaveBalances.leaveType, leaveType.slug), eq(leaveBalances.year, currentYear),
     )).limit(1);
 
-  const balanceBefore = balance ? balance.allocated - balance.used + balance.carried : 0;
+  const balanceBefore = remainingBalance(balance);
 
   const [created] = await db.insert(hrLeaveApplications).values({
     accountId, employeeId: input.employeeId, leaveTypeId: input.leaveTypeId,
@@ -121,7 +126,7 @@ export async function submitLeaveApplication(accountId: string, id: string) {
       eq(leaveBalances.leaveType, leaveType.slug), eq(leaveBalances.year, currentYear),
     )).limit(1);
 
-  const remaining = balance ? balance.allocated - balance.used + balance.carried : 0;
+  const remaining = remainingBalance(balance);
   if (remaining < app.totalDays) {
     throw new Error(`Insufficient leave balance. Available: ${remaining}, Required: ${app.totalDays}`);
   }
@@ -209,7 +214,9 @@ export async function cancelLeaveApplication(accountId: string, id: string) {
 export async function getLeaveCalendar(accountId: string, month: string) {
   // month format: "2026-03"
   const startDate = `${month}-01`;
-  const endDate = `${month}-31`;
+  const [yearStr, monStr] = month.split('-');
+  const lastDay = new Date(Number(yearStr), Number(monStr), 0).getDate();
+  const endDate = `${month}-${String(lastDay).padStart(2, '0')}`;
 
   return db.select({
     id: hrLeaveApplications.id,

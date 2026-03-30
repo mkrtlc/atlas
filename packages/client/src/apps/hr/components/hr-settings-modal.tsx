@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   SettingsSection,
   SettingsRow,
@@ -11,26 +12,25 @@ import { useHrSettingsStore } from '../settings-store';
 // ---------------------------------------------------------------------------
 
 export function HrGeneralPanel() {
+  const { t } = useTranslation();
   const { defaultView, setDefaultView } = useHrSettingsStore();
 
   return (
-    <div>
-      <SettingsSection title="General">
-        <SettingsRow label="Default view" description="Which section to show when opening HR">
-          <SettingsSelect
-            value={defaultView}
-            options={[
-              { value: 'dashboard', label: 'Dashboard' },
-              { value: 'employees', label: 'Employees' },
-              { value: 'departments', label: 'Departments' },
-              { value: 'org-chart', label: 'Org chart' },
-              { value: 'time-off', label: 'Time off' },
-            ]}
-            onChange={setDefaultView}
-          />
-        </SettingsRow>
-      </SettingsSection>
-    </div>
+    <SettingsSection title={t('hr.settings.general')}>
+      <SettingsRow label={t('hr.settings.defaultView')} description={t('hr.settings.defaultViewDesc')}>
+        <SettingsSelect
+          value={defaultView}
+          options={[
+            { value: 'dashboard', label: t('hr.sidebar.dashboard') },
+            { value: 'employees', label: t('hr.sidebar.allEmployees') },
+            { value: 'departments', label: t('hr.sidebar.departments') },
+            { value: 'org-chart', label: t('hr.sidebar.orgChart') },
+            { value: 'time-off', label: t('hr.sidebar.timeOff') },
+          ]}
+          onChange={setDefaultView}
+        />
+      </SettingsRow>
+    </SettingsSection>
   );
 }
 
@@ -39,19 +39,18 @@ export function HrGeneralPanel() {
 // ---------------------------------------------------------------------------
 
 export function HrAppearancePanel() {
+  const { t } = useTranslation();
   const { showDepartmentInList, setShowDepartmentInList } = useHrSettingsStore();
 
   return (
-    <div>
-      <SettingsSection title="Display">
-        <SettingsRow label="Show department in list" description="Display department column in employee list">
-          <SettingsToggle
-            checked={showDepartmentInList}
-            onChange={setShowDepartmentInList}
-            label="Show department in list"
-          />
-        </SettingsRow>
-      </SettingsSection>
-    </div>
+    <SettingsSection title={t('hr.settings.display')}>
+      <SettingsRow label={t('hr.settings.showDepartmentInList')} description={t('hr.settings.showDepartmentInListDesc')}>
+        <SettingsToggle
+          checked={showDepartmentInList}
+          onChange={setShowDepartmentInList}
+          label={t('hr.settings.showDepartmentInList')}
+        />
+      </SettingsRow>
+    </SettingsSection>
   );
 }

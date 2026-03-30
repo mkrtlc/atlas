@@ -8,6 +8,8 @@ import {
 import { eq, and, asc, desc, sql, gte, lte } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 
+const UNASSIGNED_DEPT_COLOR = '#94a3b8';
+
 interface CreateEmployeeInput {
   name: string;
   email: string;
@@ -126,7 +128,7 @@ export async function listEmployees(userId: string, accountId: string, filters?:
     .orderBy(asc(employees.sortOrder), asc(employees.createdAt));
 }
 
-export async function getEmployee(userId: string, id: string) {
+export async function getEmployee(userId: string, accountId: string, id: string) {
   const [employee] = await db
     .select({
       id: employees.id,
@@ -163,7 +165,7 @@ export async function getEmployee(userId: string, id: string) {
     })
     .from(employees)
     .leftJoin(departments, eq(employees.departmentId, departments.id))
-    .where(and(eq(employees.id, id), eq(employees.userId, userId)))
+    .where(and(eq(employees.id, id), eq(employees.userId, userId), eq(employees.accountId, accountId)))
     .limit(1);
 
   return employee || null;
@@ -702,7 +704,7 @@ export async function getDashboardData(userId: string, accountId: string) {
   }
   const noDeptCount = allEmployees.filter((e) => !e.departmentId).length;
   if (noDeptCount > 0) {
-    departmentCounts.push({ name: 'Unassigned', color: '#94a3b8', count: noDeptCount });
+    departmentCounts.push({ name: 'Unassigned', color: UNASSIGNED_DEPT_COLOR, count: noDeptCount });
   }
 
   // Count by employment type
@@ -1252,23 +1254,23 @@ export async function calculateWorkingDays(accountId: string, startDate: string,
   const end = new Date(endDate);
 
   // Get holidays for the range
-  let holidays: string[] = [];
+  let holidaySet = new Set<string>();
   if (calendarId) {
     const hols = await db.select({ date: hrHolidays.date }).from(hrHolidays)
       .where(and(
         eq(hrHolidays.calendarId, calendarId), eq(hrHolidays.isArchived, false),
         gte(hrHolidays.date, startDate), lte(hrHolidays.date, endDate),
       ));
-    holidays = hols.map(h => h.date);
+    holidaySet = new Set(hols.map(h => h.date));
   }
 
-  // Count weekdays minus holidays
+  // Count weekdays minus holidays (Set provides O(1) lookups)
   let workingDays = 0;
   const current = new Date(start);
   while (current <= end) {
     const day = current.getDay();
     const dateStr = current.toISOString().slice(0, 10);
-    if (day !== 0 && day !== 6 && !holidays.includes(dateStr)) {
+    if (day !== 0 && day !== 6 && !holidaySet.has(dateStr)) {
       workingDays++;
     }
     current.setDate(current.getDate() + 1);
