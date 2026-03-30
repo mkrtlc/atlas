@@ -1523,6 +1523,40 @@
       "upload": "Upload first PDF"
     }
   },
+  "system": {
+    "title": "System",
+    "sidebar": {
+      "overview": "Overview",
+      "storage": "Storage"
+    },
+    "cpuUsage": "CPU usage",
+    "memoryUsage": "Memory usage",
+    "memoryUsed": "Memory used",
+    "diskUsage": "Disk usage",
+    "diskUsed": "Disk used",
+    "diskDetails": "Disk details",
+    "uptime": "Uptime",
+    "osInfo": "OS information",
+    "processInfo": "Process information",
+    "nodeInfo": "Node.js",
+    "nodeVersion": "Node version",
+    "cores": "cores",
+    "hostname": "Hostname",
+    "osType": "OS type",
+    "osRelease": "OS release",
+    "architecture": "Architecture",
+    "platform": "Platform",
+    "heapUsed": "Heap used",
+    "heapTotal": "Heap total",
+    "processUptime": "Process uptime",
+    "totalSpace": "Total space",
+    "usedSpace": "Used space",
+    "freeSpace": "Free space",
+    "usagePercent": "Usage",
+    "used": "used",
+    "noData": "No system data available",
+    "autoRefresh": "Auto-refreshing every 10s"
+  },
   "widgets": {
     "homeWidgets": "Home widgets",
     "homeWidgetsDesc": "Choose which widgets appear on your home screen",

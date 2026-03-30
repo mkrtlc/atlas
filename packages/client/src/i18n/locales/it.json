@@ -1241,6 +1241,40 @@
       "upload": "Carica il primo PDF"
     }
   },
+  "system": {
+    "title": "Sistema",
+    "sidebar": {
+      "overview": "Panoramica",
+      "storage": "Archiviazione"
+    },
+    "cpuUsage": "Utilizzo CPU",
+    "memoryUsage": "Utilizzo memoria",
+    "memoryUsed": "Memoria utilizzata",
+    "diskUsage": "Utilizzo disco",
+    "diskUsed": "Disco utilizzato",
+    "diskDetails": "Dettagli disco",
+    "uptime": "Tempo di attività",
+    "osInfo": "Informazioni OS",
+    "processInfo": "Informazioni processo",
+    "nodeInfo": "Node.js",
+    "nodeVersion": "Versione Node",
+    "cores": "core",
+    "hostname": "Nome host",
+    "osType": "Tipo OS",
+    "osRelease": "Versione OS",
+    "architecture": "Architettura",
+    "platform": "Piattaforma",
+    "heapUsed": "Heap utilizzato",
+    "heapTotal": "Heap totale",
+    "processUptime": "Tempo del processo",
+    "totalSpace": "Spazio totale",
+    "usedSpace": "Spazio utilizzato",
+    "freeSpace": "Spazio libero",
+    "usagePercent": "Utilizzo",
+    "used": "utilizzato",
+    "noData": "Nessun dato di sistema disponibile",
+    "autoRefresh": "Aggiornamento automatico ogni 10s"
+  },
   "widgets": {
     "homeWidgets": "Widget della home",
     "homeWidgetsDesc": "Scegli quali widget visualizzare nella schermata principale",

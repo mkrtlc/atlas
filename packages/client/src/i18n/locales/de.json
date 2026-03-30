@@ -1241,6 +1241,40 @@
       "upload": "Erstes PDF hochladen"
     }
   },
+  "system": {
+    "title": "System",
+    "sidebar": {
+      "overview": "Übersicht",
+      "storage": "Speicher"
+    },
+    "cpuUsage": "CPU-Auslastung",
+    "memoryUsage": "Speicherauslastung",
+    "memoryUsed": "Verwendeter Speicher",
+    "diskUsage": "Festplattenauslastung",
+    "diskUsed": "Verwendeter Speicherplatz",
+    "diskDetails": "Festplattendetails",
+    "uptime": "Betriebszeit",
+    "osInfo": "Betriebssystem-Informationen",
+    "processInfo": "Prozess-Informationen",
+    "nodeInfo": "Node.js",
+    "nodeVersion": "Node-Version",
+    "cores": "Kerne",
+    "hostname": "Hostname",
+    "osType": "BS-Typ",
+    "osRelease": "BS-Version",
+    "architecture": "Architektur",
+    "platform": "Plattform",
+    "heapUsed": "Heap verwendet",
+    "heapTotal": "Heap gesamt",
+    "processUptime": "Prozess-Betriebszeit",
+    "totalSpace": "Gesamtspeicher",
+    "usedSpace": "Belegt",
+    "freeSpace": "Frei",
+    "usagePercent": "Auslastung",
+    "used": "verwendet",
+    "noData": "Keine Systemdaten verfügbar",
+    "autoRefresh": "Automatische Aktualisierung alle 10s"
+  },
   "widgets": {
     "homeWidgets": "Start-Widgets",
     "homeWidgetsDesc": "Wählen Sie, welche Widgets auf Ihrem Startbildschirm angezeigt werden",

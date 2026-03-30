@@ -1241,6 +1241,40 @@
       "upload": "İlk PDF'i yükle"
     }
   },
+  "system": {
+    "title": "Sistem",
+    "sidebar": {
+      "overview": "Genel bakış",
+      "storage": "Depolama"
+    },
+    "cpuUsage": "CPU kullanımı",
+    "memoryUsage": "Bellek kullanımı",
+    "memoryUsed": "Kullanılan bellek",
+    "diskUsage": "Disk kullanımı",
+    "diskUsed": "Kullanılan disk",
+    "diskDetails": "Disk detayları",
+    "uptime": "Çalışma süresi",
+    "osInfo": "İşletim sistemi bilgisi",
+    "processInfo": "İşlem bilgisi",
+    "nodeInfo": "Node.js",
+    "nodeVersion": "Node sürümü",
+    "cores": "çekirdek",
+    "hostname": "Ana bilgisayar adı",
+    "osType": "İS türü",
+    "osRelease": "İS sürümü",
+    "architecture": "Mimari",
+    "platform": "Platform",
+    "heapUsed": "Kullanılan heap",
+    "heapTotal": "Toplam heap",
+    "processUptime": "İşlem çalışma süresi",
+    "totalSpace": "Toplam alan",
+    "usedSpace": "Kullanılan alan",
+    "freeSpace": "Boş alan",
+    "usagePercent": "Kullanım",
+    "used": "kullanılıyor",
+    "noData": "Sistem verisi mevcut değil",
+    "autoRefresh": "Her 10 saniyede otomatik yenileme"
+  },
   "widgets": {
     "homeWidgets": "Ana sayfa widget'ları",
     "homeWidgetsDesc": "Ana ekranda hangi widget'ların görüneceğini seçin",
