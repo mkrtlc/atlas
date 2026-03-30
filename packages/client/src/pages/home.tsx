@@ -772,7 +772,29 @@ export function HomePage() {
           padding: '0 24px',
         }}
       >
-        {/* Center content — Clock, greeting, widgets */}
+        {/* Top left greeting */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 24,
+            left: 32,
+            zIndex: 10,
+          }}
+        >
+          <span
+            style={{
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: 'var(--font-size-md)',
+              fontWeight: 'var(--font-weight-normal)' as CSSProperties['fontWeight'],
+              fontFamily: 'var(--font-family)',
+              textShadow: '0 1px 8px rgba(0,0,0,0.2)',
+            }}
+          >
+            {firstName ? `${t(greetingKey)}, ${firstName}` : t(greetingKey)}
+          </span>
+        </div>
+
+        {/* Center content — Clock, widgets */}
         <div
           style={{
             flex: 1,
@@ -787,11 +809,11 @@ export function HomePage() {
             width: '100%',
           }}
         >
-          {/* Clock */}
+          {/* Clock — responsive */}
           <span
             style={{
               color: '#fff',
-              fontSize: 72,
+              fontSize: 'clamp(48px, 8vw, 72px)',
               fontWeight: 300,
               lineHeight: 1,
               letterSpacing: '-1.5px',
@@ -801,89 +823,16 @@ export function HomePage() {
             {formatTime(now)}
           </span>
 
-          {/* Date (no weather) */}
+          {/* Date */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
-            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 20, fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'], letterSpacing: '0.01em' }}>
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 'clamp(14px, 2vw, 20px)', fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'], letterSpacing: '0.01em' }}>
               {formatDate(now)}
             </span>
           </div>
 
-          {/* Greeting */}
-          <h1
-            style={{
-              color: '#fff',
-              fontSize: 'clamp(24px, 5vw, 48px)',
-              fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
-              margin: '32px 0 0',
-              textShadow: '0 2px 30px rgba(0,0,0,0.25)',
-              lineHeight: 1.15,
-              letterSpacing: '-0.5px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {firstName ? `${t(greetingKey)}, ${firstName}` : t(greetingKey)}
-          </h1>
+          {/* Spacer before widgets */}
+          <div style={{ height: 'clamp(16px, 3vh, 40px)' }} />
 
-          {!firstName && (
-            <p
-              style={{
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: 18,
-                margin: '6px 0 0',
-                fontWeight: 'var(--font-weight-normal)' as CSSProperties['fontWeight'],
-                textShadow: '0 1px 8px rgba(0,0,0,0.2)',
-              }}
-            >
-              {t('home.whatToDo')}
-            </p>
-          )}
-
-          {/* Quick stats */}
-          {pendingTaskCount > 0 && (
-            <div
-              style={{
-                marginTop: 28,
-                display: 'flex',
-                gap: 12,
-                alignItems: 'stretch',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                  padding: '14px 20px',
-                  background: 'rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 14,
-                  textAlign: 'left',
-                  fontFamily: 'var(--font-family)',
-                  minWidth: 160,
-                }}
-              >
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'], textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
-                  {t('home.today')}
-                </span>
-                <button
-                  onClick={() => navigate(ROUTES.TASKS)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    fontFamily: 'var(--font-family)', outline: 'none',
-                  }}
-                >
-                  <CheckSquare size={15} color="rgba(255,255,255,0.6)" />
-                  <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 'var(--font-size-md)', fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'] }}>
-                    {t('home.pendingTasksFull', { count: pendingTaskCount })}
-                  </span>
-                  <ArrowRight size={13} color="rgba(255,255,255,0.3)" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Recent items */}
           {recentItems.length > 0 && (
@@ -941,9 +890,11 @@ export function HomePage() {
             <div
               style={{
                 marginTop: 24,
-                maxWidth: 600,
+                maxWidth: 492,
                 width: '100%',
                 padding: '16px 20px',
+                maxHeight: 160,
+                overflow: 'hidden',
                 background: 'rgba(255,255,255,0.08)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
