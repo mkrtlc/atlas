@@ -15,6 +15,7 @@ import {
   useSendInvoice, useMarkInvoicePaid, useWaiveInvoice, useDuplicateInvoice,
   useProjectSettings, useUpdateProjectSettings,
   type Project, type ProjectClient, type Invoice,
+  getInvoiceStatusVariant,
 } from './hooks';
 import { TimeTracker } from './components/time-tracker';
 import { ReportsView } from './components/reports-view';
@@ -58,18 +59,6 @@ function getProjectStatusColor(status: string): string {
     case 'completed': return 'var(--color-accent-primary)';
     case 'archived': return 'var(--color-text-tertiary)';
     default: return 'var(--color-text-tertiary)';
-  }
-}
-
-function getInvoiceStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' {
-  switch (status) {
-    case 'draft': return 'default';
-    case 'sent': return 'primary';
-    case 'viewed': return 'warning';
-    case 'paid': return 'success';
-    case 'overdue': return 'error';
-    case 'waived': return 'default';
-    default: return 'default';
   }
 }
 

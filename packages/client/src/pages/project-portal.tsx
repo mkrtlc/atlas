@@ -2,24 +2,10 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, FileText, DollarSign } from 'lucide-react';
-import { usePortalData, type PortalData } from '../apps/projects/hooks';
+import { usePortalData, getInvoiceStatusVariant, type PortalData } from '../apps/projects/hooks';
 import { Badge } from '../components/ui/badge';
 import { Skeleton } from '../components/ui/skeleton';
 import { formatCurrency, formatDate } from '../lib/format';
-
-// ─── Status badge variant ─────────────────────────────────────────
-
-function getInvoiceStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' {
-  switch (status) {
-    case 'draft': return 'default';
-    case 'sent': return 'primary';
-    case 'viewed': return 'warning';
-    case 'paid': return 'success';
-    case 'overdue': return 'error';
-    case 'waived': return 'default';
-    default: return 'default';
-  }
-}
 
 // ─── Invoice Row ──────────────────────────────────────────────────
 

@@ -9,6 +9,7 @@ const FALLBACK_APP_COLORS: Record<string, string> = {
   tasks: '#6366f1',
   docs: '#c4856c',
   draw: '#e06c9f',
+  projects: '#0ea5e9',
   platform: '#6b7280',
 };
 

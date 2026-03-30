@@ -758,6 +758,20 @@ export function useUpdateProjectSettings() {
   });
 }
 
+// ─── Shared Utilities ─────────────────────────────────────────────
+
+export function getInvoiceStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' {
+  switch (status) {
+    case 'draft': return 'default';
+    case 'sent': return 'primary';
+    case 'viewed': return 'warning';
+    case 'paid': return 'success';
+    case 'overdue': return 'error';
+    case 'waived': return 'default';
+    default: return 'default';
+  }
+}
+
 // ─── Portal (public, no auth) ─────────────────────────────────────
 
 export function usePortalData(token: string | undefined) {

@@ -262,8 +262,17 @@ export async function listProjectMembers(req: Request, res: Response) {
 
 export async function addProjectMember(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const projectId = req.params.projectId as string;
     const { userId: memberUserId, hourlyRate, role } = req.body;
+
+    // Verify the project belongs to the authenticated user's account
+    const project = await projectService.getProject(userId, accountId, projectId);
+    if (!project) {
+      res.status(404).json({ success: false, error: 'Project not found' });
+      return;
+    }
 
     if (!memberUserId) {
       res.status(400).json({ success: false, error: 'userId is required' });
@@ -280,8 +289,17 @@ export async function addProjectMember(req: Request, res: Response) {
 
 export async function removeProjectMember(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const projectId = req.params.projectId as string;
     const memberId = req.params.memberId as string;
+
+    // Verify the project belongs to the authenticated user's account
+    const project = await projectService.getProject(userId, accountId, projectId);
+    if (!project) {
+      res.status(404).json({ success: false, error: 'Project not found' });
+      return;
+    }
 
     await projectService.removeProjectMember(projectId, memberId);
     res.json({ success: true, data: null });
@@ -293,9 +311,18 @@ export async function removeProjectMember(req: Request, res: Response) {
 
 export async function updateProjectMemberRate(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const projectId = req.params.projectId as string;
     const memberId = req.params.memberId as string;
     const { hourlyRate } = req.body;
+
+    // Verify the project belongs to the authenticated user's account
+    const project = await projectService.getProject(userId, accountId, projectId);
+    if (!project) {
+      res.status(404).json({ success: false, error: 'Project not found' });
+      return;
+    }
 
     const member = await projectService.updateProjectMemberRate(projectId, memberId, hourlyRate ?? null);
     if (!member) {
@@ -393,7 +420,11 @@ export async function updateTimeEntry(req: Request, res: Response) {
     }
 
     res.json({ success: true, data: entry });
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Cannot edit a locked time entry') {
+      res.status(409).json({ success: false, error: error.message });
+      return;
+    }
     logger.error({ error }, 'Failed to update time entry');
     res.status(500).json({ success: false, error: 'Failed to update time entry' });
   }
@@ -647,7 +678,17 @@ export async function getNextInvoiceNumber(req: Request, res: Response) {
 
 export async function listLineItems(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const invoiceId = req.params.invoiceId as string;
+
+    // Verify the invoice belongs to the authenticated user's account
+    const invoice = await projectService.getInvoice(userId, accountId, invoiceId);
+    if (!invoice) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
+
     const lineItems = await projectService.listInvoiceLineItems(invoiceId);
     res.json({ success: true, data: { lineItems } });
   } catch (error) {
@@ -658,8 +699,17 @@ export async function listLineItems(req: Request, res: Response) {
 
 export async function createLineItem(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const invoiceId = req.params.invoiceId as string;
     const { timeEntryId, description, quantity, unitPrice, amount } = req.body;
+
+    // Verify the invoice belongs to the authenticated user's account
+    const invoice = await projectService.getInvoice(userId, accountId, invoiceId);
+    if (!invoice) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
 
     if (!description) {
       res.status(400).json({ success: false, error: 'description is required' });
@@ -679,8 +729,22 @@ export async function createLineItem(req: Request, res: Response) {
 
 export async function updateLineItem(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const id = req.params.id as string;
     const { description, quantity, unitPrice, amount } = req.body;
+
+    // Verify the line item's invoice belongs to the authenticated user's account
+    const existingLineItem = await projectService.getLineItemById(id);
+    if (!existingLineItem) {
+      res.status(404).json({ success: false, error: 'Line item not found' });
+      return;
+    }
+    const invoice = await projectService.getInvoice(userId, accountId, existingLineItem.invoiceId);
+    if (!invoice) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
 
     const lineItem = await projectService.updateLineItem(id, { description, quantity, unitPrice, amount });
     if (!lineItem) {
@@ -697,7 +761,22 @@ export async function updateLineItem(req: Request, res: Response) {
 
 export async function deleteLineItem(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
     const id = req.params.id as string;
+
+    // Verify the line item's invoice belongs to the authenticated user's account
+    const existingLineItem = await projectService.getLineItemById(id);
+    if (!existingLineItem) {
+      res.status(404).json({ success: false, error: 'Line item not found' });
+      return;
+    }
+    const invoice = await projectService.getInvoice(userId, accountId, existingLineItem.invoiceId);
+    if (!invoice) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
+
     await projectService.deleteLineItem(id);
     res.json({ success: true, data: null });
   } catch (error) {

@@ -232,15 +232,13 @@ export async function updateClient(userId: string, accountId: string, id: string
 
   const conditions = [eq(projectClients.id, id), eq(projectClients.accountId, accountId)];
 
-  await db.update(projectClients).set(updates).where(and(...conditions));
-
   const [updated] = await db
-    .select()
-    .from(projectClients)
+    .update(projectClients)
+    .set(updates)
     .where(and(...conditions))
-    .limit(1);
+    .returning();
 
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function deleteClient(userId: string, accountId: string, id: string) {
@@ -395,15 +393,13 @@ export async function updateProject(userId: string, accountId: string, id: strin
 
   const conditions = [eq(projectProjects.id, id), eq(projectProjects.accountId, accountId)];
 
-  await db.update(projectProjects).set(updates).where(and(...conditions));
-
   const [updated] = await db
-    .select()
-    .from(projectProjects)
+    .update(projectProjects)
+    .set(updates)
     .where(and(...conditions))
-    .limit(1);
+    .returning();
 
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function deleteProject(userId: string, accountId: string, id: string) {
@@ -598,6 +594,13 @@ export async function createTimeEntry(userId: string, accountId: string, input: 
 }
 
 export async function updateTimeEntry(userId: string, accountId: string, id: string, input: UpdateTimeEntryInput) {
+  // Check if the entry is locked before allowing edits
+  const existing = await getTimeEntry(userId, accountId, id);
+  if (!existing) return null;
+  if (existing.locked) {
+    throw new Error('Cannot edit a locked time entry');
+  }
+
   const now = new Date();
   const updates: Record<string, unknown> = { updatedAt: now };
 
@@ -616,13 +619,11 @@ export async function updateTimeEntry(userId: string, accountId: string, id: str
 
   const conditions = [eq(projectTimeEntries.id, id), eq(projectTimeEntries.accountId, accountId)];
 
-  await db.update(projectTimeEntries).set(updates).where(and(...conditions));
-
   const [updated] = await db
-    .select()
-    .from(projectTimeEntries)
+    .update(projectTimeEntries)
+    .set(updates)
     .where(and(...conditions))
-    .limit(1);
+    .returning();
 
   return updated || null;
 }
@@ -771,25 +772,26 @@ export async function getInvoice(userId: string, accountId: string, id: string) 
 }
 
 export async function getNextInvoiceNumber(accountId: string): Promise<string> {
-  let settings = await getSettings(accountId);
-  if (!settings) {
-    // Create default settings
-    const [created] = await db.insert(projectSettings).values({ accountId }).returning();
-    settings = created;
+  // Read the prefix first (needed for formatting)
+  const settings = await getSettings(accountId);
+  const prefix = settings?.invoicePrefix || 'INV';
+
+  // Atomically increment and return the number in a single query to avoid race conditions
+  const [updated] = await db
+    .update(projectSettings)
+    .set({ nextInvoiceNumber: sql`COALESCE(${projectSettings.nextInvoiceNumber}, 1) + 1`, updatedAt: new Date() })
+    .where(eq(projectSettings.accountId, accountId))
+    .returning({ num: projectSettings.nextInvoiceNumber });
+
+  if (!updated) {
+    // No settings row exists yet -- create one with nextInvoiceNumber = 2 (we use 1 now)
+    await db.insert(projectSettings).values({ accountId, nextInvoiceNumber: 2 }).onConflictDoNothing();
+    return `${prefix}-${String(1).padStart(3, '0')}`;
   }
 
-  const prefix = settings.invoicePrefix || 'INV';
-  const num = settings.nextInvoiceNumber || 1;
-  const padded = String(num).padStart(3, '0');
-  const invoiceNumber = `${prefix}-${padded}`;
-
-  // Increment next number
-  await db
-    .update(projectSettings)
-    .set({ nextInvoiceNumber: num + 1, updatedAt: new Date() })
-    .where(eq(projectSettings.accountId, accountId));
-
-  return invoiceNumber;
+  // updated.num is the value AFTER increment, so the number we use is num - 1
+  const num = updated.num - 1;
+  return `${prefix}-${String(num).padStart(3, '0')}`;
 }
 
 export async function createInvoice(userId: string, accountId: string, input: CreateInvoiceInput) {
@@ -842,15 +844,13 @@ export async function updateInvoice(userId: string, accountId: string, id: strin
 
   const conditions = [eq(projectInvoices.id, id), eq(projectInvoices.accountId, accountId)];
 
-  await db.update(projectInvoices).set(updates).where(and(...conditions));
-
   const [updated] = await db
-    .select()
-    .from(projectInvoices)
+    .update(projectInvoices)
+    .set(updates)
     .where(and(...conditions))
-    .limit(1);
+    .returning();
 
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function deleteInvoice(userId: string, accountId: string, id: string) {
@@ -876,18 +876,13 @@ export async function deleteInvoice(userId: string, accountId: string, id: strin
 
 export async function sendInvoice(userId: string, accountId: string, id: string) {
   const now = new Date();
-  await db
+  const [invoice] = await db
     .update(projectInvoices)
     .set({ status: 'sent', sentAt: now, updatedAt: now })
-    .where(and(eq(projectInvoices.id, id), eq(projectInvoices.accountId, accountId)));
-
-  const [invoice] = await db
-    .select()
-    .from(projectInvoices)
     .where(and(eq(projectInvoices.id, id), eq(projectInvoices.accountId, accountId)))
-    .limit(1);
+    .returning();
 
-  return invoice || null;
+  return invoice ?? null;
 }
 
 export async function markInvoiceViewed(accountId: string, id: string) {
@@ -904,18 +899,13 @@ export async function markInvoiceViewed(accountId: string, id: string) {
 
 export async function markInvoicePaid(userId: string, accountId: string, id: string) {
   const now = new Date();
-  await db
+  const [invoice] = await db
     .update(projectInvoices)
     .set({ status: 'paid', paidAt: now, updatedAt: now })
-    .where(and(eq(projectInvoices.id, id), eq(projectInvoices.accountId, accountId)));
-
-  const [invoice] = await db
-    .select()
-    .from(projectInvoices)
     .where(and(eq(projectInvoices.id, id), eq(projectInvoices.accountId, accountId)))
-    .limit(1);
+    .returning();
 
-  return invoice || null;
+  return invoice ?? null;
 }
 
 export async function duplicateInvoice(userId: string, accountId: string, id: string) {
@@ -945,10 +935,10 @@ export async function duplicateInvoice(userId: string, accountId: string, id: st
     })
     .returning();
 
-  // Duplicate line items (without time entry links)
+  // Duplicate line items in a single batch insert (without time entry links)
   if (existing.lineItems && existing.lineItems.length > 0) {
-    for (const li of existing.lineItems) {
-      await db.insert(projectInvoiceLineItems).values({
+    await db.insert(projectInvoiceLineItems).values(
+      existing.lineItems.map(li => ({
         invoiceId: newInvoice.id,
         description: li.description,
         quantity: li.quantity,
@@ -956,14 +946,24 @@ export async function duplicateInvoice(userId: string, accountId: string, id: st
         amount: li.amount,
         createdAt: now,
         updatedAt: now,
-      });
-    }
+      }))
+    );
   }
 
   return newInvoice;
 }
 
 // ─── Line Items ─────────────────────────────────────────────────────
+
+export async function getLineItemById(id: string) {
+  const [lineItem] = await db
+    .select()
+    .from(projectInvoiceLineItems)
+    .where(eq(projectInvoiceLineItems.id, id))
+    .limit(1);
+
+  return lineItem || null;
+}
 
 export async function listInvoiceLineItems(invoiceId: string) {
   return db
@@ -1001,18 +1001,13 @@ export async function updateLineItem(id: string, input: UpdateLineItemInput) {
   if (input.unitPrice !== undefined) updates.unitPrice = input.unitPrice;
   if (input.amount !== undefined) updates.amount = input.amount;
 
-  await db
+  const [updated] = await db
     .update(projectInvoiceLineItems)
     .set(updates)
-    .where(eq(projectInvoiceLineItems.id, id));
-
-  const [updated] = await db
-    .select()
-    .from(projectInvoiceLineItems)
     .where(eq(projectInvoiceLineItems.id, id))
-    .limit(1);
+    .returning();
 
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function deleteLineItem(id: string) {
@@ -1076,56 +1071,87 @@ export async function populateFromTimeEntries(
       lte(projectTimeEntries.workDate, endDate),
     ));
 
-  const createdLineItems = [];
   const now = new Date();
 
+  // Batch: collect all unique (projectId, userId) pairs for member rate lookup
+  const memberKeys = new Set<string>();
   for (const entry of entries) {
-    // Look up the member hourly rate or fall back to settings default
-    const [member] = await db
-      .select({ hourlyRate: projectMembers.hourlyRate })
-      .from(projectMembers)
-      .where(and(
-        eq(projectMembers.projectId, entry.projectId),
-        eq(projectMembers.userId, entry.userId),
-      ))
-      .limit(1);
+    memberKeys.add(`${entry.projectId}:${entry.userId}`);
+  }
+  const uniquePairs = [...memberKeys].map(k => { const [p, u] = k.split(':'); return { projectId: p, userId: u }; });
 
-    let rate = member?.hourlyRate ?? null;
-    if (rate === null) {
-      const settings = await getSettings(accountId);
-      rate = settings?.defaultHourlyRate ?? 0;
-    }
+  // Batch-query all relevant project members in one query
+  const allMembers = uniquePairs.length > 0
+    ? await db
+        .select({
+          projectId: projectMembers.projectId,
+          userId: projectMembers.userId,
+          hourlyRate: projectMembers.hourlyRate,
+        })
+        .from(projectMembers)
+        .where(sql`(${projectMembers.projectId}, ${projectMembers.userId}) IN (${sql.raw(
+          uniquePairs.map(p => `('${p.projectId}', '${p.userId}')`).join(', ')
+        )})`)
+    : [];
 
+  // Build O(1) lookup map
+  const memberRateMap = new Map<string, number | null>();
+  for (const m of allMembers) {
+    memberRateMap.set(`${m.projectId}:${m.userId}`, m.hourlyRate);
+  }
+
+  // Load settings once for the default rate fallback
+  const settings = await getSettings(accountId);
+  const defaultRate = settings?.defaultHourlyRate ?? 0;
+
+  // Prepare all line items for batch insert
+  const lineItemValues = entries.map(entry => {
+    const rate = memberRateMap.get(`${entry.projectId}:${entry.userId}`) ?? defaultRate;
     const hours = entry.durationMinutes / 60;
     const amount = hours * rate;
     const description = entry.taskDescription || entry.notes || `Time entry ${entry.workDate}`;
 
-    const [lineItem] = await db
-      .insert(projectInvoiceLineItems)
-      .values({
-        invoiceId,
-        timeEntryId: entry.id,
-        description,
-        quantity: hours,
-        unitPrice: rate,
-        amount,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+    return {
+      invoiceId,
+      timeEntryId: entry.id,
+      description,
+      quantity: hours,
+      unitPrice: rate,
+      amount,
+      createdAt: now,
+      updatedAt: now,
+    };
+  });
 
-    // Mark the time entry as billed and locked
+  // Batch insert all line items at once
+  const createdLineItems = lineItemValues.length > 0
+    ? await db.insert(projectInvoiceLineItems).values(lineItemValues).returning()
+    : [];
+
+  // Build a map from timeEntryId -> lineItemId for batch update
+  const entryToLineItem = new Map<string, string>();
+  for (const li of createdLineItems) {
+    if (li.timeEntryId) {
+      entryToLineItem.set(li.timeEntryId, li.id);
+    }
+  }
+
+  // Batch update: mark all time entries as billed and locked
+  const timeEntryIds = entries.map(e => e.id);
+  if (timeEntryIds.length > 0) {
+    // We need individual updates for invoiceLineItemId, but we can batch the billed/locked flags
     await db
       .update(projectTimeEntries)
-      .set({
-        billed: true,
-        locked: true,
-        invoiceLineItemId: lineItem.id,
-        updatedAt: now,
-      })
-      .where(eq(projectTimeEntries.id, entry.id));
+      .set({ billed: true, locked: true, updatedAt: now })
+      .where(inArray(projectTimeEntries.id, timeEntryIds));
 
-    createdLineItems.push(lineItem);
+    // Set invoiceLineItemId for each entry individually (different value per row)
+    for (const [entryId, lineItemId] of entryToLineItem) {
+      await db
+        .update(projectTimeEntries)
+        .set({ invoiceLineItemId: lineItemId })
+        .where(eq(projectTimeEntries.id, entryId));
+    }
   }
 
   // Update invoice total
@@ -1162,19 +1188,19 @@ export async function getTimeReport(userId: string, accountId: string, filters?:
   if (filters?.endDate) conditions.push(lte(projectTimeEntries.workDate, filters.endDate));
   if (filters?.projectId) conditions.push(eq(projectTimeEntries.projectId, filters.projectId));
 
-  // Total minutes
-  const [totals] = await db
-    .select({
+  // Run all independent report queries in parallel
+  const [totalsResult, byProject, byUser, byDay] = await Promise.all([
+    // Total minutes
+    db.select({
       totalMinutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('total_minutes'),
       billableMinutes: sql<number>`COALESCE(SUM(CASE WHEN ${projectTimeEntries.billable} THEN ${projectTimeEntries.durationMinutes} ELSE 0 END), 0)`.as('billable_minutes'),
       nonBillableMinutes: sql<number>`COALESCE(SUM(CASE WHEN NOT ${projectTimeEntries.billable} THEN ${projectTimeEntries.durationMinutes} ELSE 0 END), 0)`.as('non_billable_minutes'),
     })
     .from(projectTimeEntries)
-    .where(and(...conditions));
+    .where(and(...conditions)),
 
-  // By project
-  const byProject = await db
-    .select({
+    // By project
+    db.select({
       projectId: projectTimeEntries.projectId,
       projectName: projectProjects.name,
       minutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('minutes'),
@@ -1183,11 +1209,10 @@ export async function getTimeReport(userId: string, accountId: string, filters?:
     .from(projectTimeEntries)
     .innerJoin(projectProjects, eq(projectTimeEntries.projectId, projectProjects.id))
     .where(and(...conditions))
-    .groupBy(projectTimeEntries.projectId, projectProjects.name);
+    .groupBy(projectTimeEntries.projectId, projectProjects.name),
 
-  // By user
-  const byUser = await db
-    .select({
+    // By user
+    db.select({
       userId: projectTimeEntries.userId,
       userName: users.name,
       minutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('minutes'),
@@ -1196,18 +1221,20 @@ export async function getTimeReport(userId: string, accountId: string, filters?:
     .from(projectTimeEntries)
     .innerJoin(users, eq(projectTimeEntries.userId, users.id))
     .where(and(...conditions))
-    .groupBy(projectTimeEntries.userId, users.name);
+    .groupBy(projectTimeEntries.userId, users.name),
 
-  // By day
-  const byDay = await db
-    .select({
+    // By day
+    db.select({
       date: projectTimeEntries.workDate,
       minutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('minutes'),
     })
     .from(projectTimeEntries)
     .where(and(...conditions))
     .groupBy(projectTimeEntries.workDate)
-    .orderBy(asc(projectTimeEntries.workDate));
+    .orderBy(asc(projectTimeEntries.workDate)),
+  ]);
+
+  const totals = totalsResult[0];
 
   return {
     totalMinutes: Number(totals?.totalMinutes ?? 0),
@@ -1230,19 +1257,19 @@ export async function getRevenueReport(userId: string, accountId: string, filter
   if (filters?.startDate) conditions.push(gte(projectInvoices.issueDate, new Date(filters.startDate)));
   if (filters?.endDate) conditions.push(lte(projectInvoices.issueDate, new Date(filters.endDate)));
 
-  // Totals
-  const [totals] = await db
-    .select({
+  // Run all independent report queries in parallel
+  const [totalsResult, byMonth, byClient] = await Promise.all([
+    // Totals
+    db.select({
       totalInvoiced: sql<number>`COALESCE(SUM(${projectInvoices.amount}), 0)`.as('total_invoiced'),
       totalPaid: sql<number>`COALESCE(SUM(CASE WHEN ${projectInvoices.status} = 'paid' THEN ${projectInvoices.amount} ELSE 0 END), 0)`.as('total_paid'),
       totalOutstanding: sql<number>`COALESCE(SUM(CASE WHEN ${projectInvoices.status} IN ('sent', 'viewed', 'overdue') THEN ${projectInvoices.amount} ELSE 0 END), 0)`.as('total_outstanding'),
     })
     .from(projectInvoices)
-    .where(and(...conditions));
+    .where(and(...conditions)),
 
-  // By month
-  const byMonth = await db
-    .select({
+    // By month
+    db.select({
       month: sql<string>`TO_CHAR(${projectInvoices.issueDate}, 'YYYY-MM')`.as('month'),
       invoiced: sql<number>`COALESCE(SUM(${projectInvoices.amount}), 0)`.as('invoiced'),
       paid: sql<number>`COALESCE(SUM(CASE WHEN ${projectInvoices.status} = 'paid' THEN ${projectInvoices.amount} ELSE 0 END), 0)`.as('paid'),
@@ -1250,11 +1277,10 @@ export async function getRevenueReport(userId: string, accountId: string, filter
     .from(projectInvoices)
     .where(and(...conditions, sql`${projectInvoices.issueDate} IS NOT NULL`))
     .groupBy(sql`TO_CHAR(${projectInvoices.issueDate}, 'YYYY-MM')`)
-    .orderBy(sql`TO_CHAR(${projectInvoices.issueDate}, 'YYYY-MM')`);
+    .orderBy(sql`TO_CHAR(${projectInvoices.issueDate}, 'YYYY-MM')`),
 
-  // By client
-  const byClient = await db
-    .select({
+    // By client
+    db.select({
       clientId: projectInvoices.clientId,
       clientName: projectClients.name,
       invoiced: sql<number>`COALESCE(SUM(${projectInvoices.amount}), 0)`.as('invoiced'),
@@ -1263,7 +1289,10 @@ export async function getRevenueReport(userId: string, accountId: string, filter
     .from(projectInvoices)
     .leftJoin(projectClients, eq(projectInvoices.clientId, projectClients.id))
     .where(and(...conditions))
-    .groupBy(projectInvoices.clientId, projectClients.name);
+    .groupBy(projectInvoices.clientId, projectClients.name),
+  ]);
+
+  const totals = totalsResult[0];
 
   return {
     totalInvoiced: Number(totals?.totalInvoiced ?? 0),
@@ -1387,18 +1416,13 @@ export async function updateSettings(accountId: string, input: {
   if (input.companyLogo !== undefined) updates.companyLogo = input.companyLogo;
   if (input.nextInvoiceNumber !== undefined) updates.nextInvoiceNumber = input.nextInvoiceNumber;
 
-  await db
+  const [updated] = await db
     .update(projectSettings)
     .set(updates)
-    .where(eq(projectSettings.accountId, accountId));
-
-  const [updated] = await db
-    .select()
-    .from(projectSettings)
     .where(eq(projectSettings.accountId, accountId))
-    .limit(1);
+    .returning();
 
-  return updated;
+  return updated ?? null;
 }
 
 // ─── Portal (public, token-based) ───────────────────────────────────
@@ -1639,28 +1663,43 @@ export async function previewTimeEntryLineItems(
       lte(projectTimeEntries.workDate, endDate),
     ));
 
-  const lineItems = [];
+  // Batch: collect all unique (projectId, userId) pairs for member rate lookup
+  const memberKeys = new Set<string>();
   for (const entry of entries) {
-    const [member] = await db
-      .select({ hourlyRate: projectMembers.hourlyRate })
-      .from(projectMembers)
-      .where(and(
-        eq(projectMembers.projectId, entry.projectId),
-        eq(projectMembers.userId, entry.userId),
-      ))
-      .limit(1);
+    memberKeys.add(`${entry.projectId}:${entry.userId}`);
+  }
+  const uniquePairs = [...memberKeys].map(k => { const [p, u] = k.split(':'); return { projectId: p, userId: u }; });
 
-    let rate = member?.hourlyRate ?? null;
-    if (rate === null) {
-      const settings = await getSettings(accountId);
-      rate = settings?.defaultHourlyRate ?? 0;
-    }
+  // Batch-query all relevant project members in one query
+  const allMembers = uniquePairs.length > 0
+    ? await db
+        .select({
+          projectId: projectMembers.projectId,
+          userId: projectMembers.userId,
+          hourlyRate: projectMembers.hourlyRate,
+        })
+        .from(projectMembers)
+        .where(sql`(${projectMembers.projectId}, ${projectMembers.userId}) IN (${sql.raw(
+          uniquePairs.map(p => `('${p.projectId}', '${p.userId}')`).join(', ')
+        )})`)
+    : [];
 
+  // Build O(1) lookup map
+  const memberRateMap = new Map<string, number | null>();
+  for (const m of allMembers) {
+    memberRateMap.set(`${m.projectId}:${m.userId}`, m.hourlyRate);
+  }
+
+  // Load settings once for default rate fallback
+  const settings = await getSettings(accountId);
+  const defaultRate = settings?.defaultHourlyRate ?? 0;
+
+  const lineItems = entries.map(entry => {
+    const rate = memberRateMap.get(`${entry.projectId}:${entry.userId}`) ?? defaultRate;
     const hours = entry.durationMinutes / 60;
     const description = entry.taskDescription || entry.notes || `Time entry ${entry.workDate}`;
-
-    lineItems.push({ description, quantity: hours, unitPrice: rate });
-  }
+    return { description, quantity: hours, unitPrice: rate };
+  });
 
   return lineItems;
 }
@@ -1690,50 +1729,54 @@ export async function getWidgetData(accountId: string) {
   const weekStartStr = weekStart.toISOString().split('T')[0];
   const todayStr = now.toISOString().split('T')[0];
 
-  // Active projects count
-  const [projectCount] = await db
-    .select({ count: sql<number>`COUNT(*)`.as('count') })
-    .from(projectProjects)
-    .where(and(
-      eq(projectProjects.accountId, accountId),
-      eq(projectProjects.isArchived, false),
-      eq(projectProjects.status, 'active'),
-    ));
+  // Run all independent widget queries in parallel
+  const [projectCountResult, weekHoursResult, pendingInvoiceResult, overdueCountResult] = await Promise.all([
+    // Active projects count
+    db.select({ count: sql<number>`COUNT(*)`.as('count') })
+      .from(projectProjects)
+      .where(and(
+        eq(projectProjects.accountId, accountId),
+        eq(projectProjects.isArchived, false),
+        eq(projectProjects.status, 'active'),
+      )),
 
-  // Total tracked hours this week
-  const [weekHours] = await db
-    .select({
+    // Total tracked hours this week
+    db.select({
       totalMinutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('total_minutes'),
     })
-    .from(projectTimeEntries)
-    .where(and(
-      eq(projectTimeEntries.accountId, accountId),
-      eq(projectTimeEntries.isArchived, false),
-      gte(projectTimeEntries.workDate, weekStartStr),
-      lte(projectTimeEntries.workDate, todayStr),
-    ));
+      .from(projectTimeEntries)
+      .where(and(
+        eq(projectTimeEntries.accountId, accountId),
+        eq(projectTimeEntries.isArchived, false),
+        gte(projectTimeEntries.workDate, weekStartStr),
+        lte(projectTimeEntries.workDate, todayStr),
+      )),
 
-  // Pending invoice amount (sent + viewed + overdue)
-  const [pendingInvoice] = await db
-    .select({
+    // Pending invoice amount (sent + viewed + overdue)
+    db.select({
       amount: sql<number>`COALESCE(SUM(${projectInvoices.amount}), 0)`.as('amount'),
     })
-    .from(projectInvoices)
-    .where(and(
-      eq(projectInvoices.accountId, accountId),
-      eq(projectInvoices.isArchived, false),
-      sql`${projectInvoices.status} IN ('sent', 'viewed', 'overdue')`,
-    ));
+      .from(projectInvoices)
+      .where(and(
+        eq(projectInvoices.accountId, accountId),
+        eq(projectInvoices.isArchived, false),
+        sql`${projectInvoices.status} IN ('sent', 'viewed', 'overdue')`,
+      )),
 
-  // Overdue invoice count
-  const [overdueCount] = await db
-    .select({ count: sql<number>`COUNT(*)`.as('count') })
-    .from(projectInvoices)
-    .where(and(
-      eq(projectInvoices.accountId, accountId),
-      eq(projectInvoices.isArchived, false),
-      eq(projectInvoices.status, 'overdue'),
-    ));
+    // Overdue invoice count
+    db.select({ count: sql<number>`COUNT(*)`.as('count') })
+      .from(projectInvoices)
+      .where(and(
+        eq(projectInvoices.accountId, accountId),
+        eq(projectInvoices.isArchived, false),
+        eq(projectInvoices.status, 'overdue'),
+      )),
+  ]);
+
+  const projectCount = projectCountResult[0];
+  const weekHours = weekHoursResult[0];
+  const pendingInvoice = pendingInvoiceResult[0];
+  const overdueCount = overdueCountResult[0];
 
   return {
     activeProjects: Number(projectCount?.count ?? 0),

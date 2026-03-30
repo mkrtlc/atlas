@@ -136,7 +136,7 @@ export function TimeTracker() {
   const projects = projectsData?.projects ?? [];
 
   const { data: entriesData } = useTimeEntriesWeekly(currentWeekStart);
-  const entries = entriesData?.entries ?? [];
+  const entries = entriesData?.entries;
 
   const bulkSave = useBulkSaveTimeEntries();
   const copyLastWeek = useCopyLastWeek();
@@ -148,6 +148,7 @@ export function TimeTracker() {
 
   // Rebuild rows when entries change
   useEffect(() => {
+    if (!entries) return;
     const rowMap = new Map<string, GridRow>();
     entries.forEach((entry) => {
       if (!rowMap.has(entry.projectId)) {
