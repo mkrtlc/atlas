@@ -71,10 +71,16 @@ export async function updateEmployee(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const id = req.params.id as string;
-    const { name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags, sortOrder, isArchived } = req.body;
+    const {
+      name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags, sortOrder, isArchived,
+      dateOfBirth, gender, emergencyContactName, emergencyContactPhone, emergencyContactRelation,
+      employmentType, managerId, jobTitle, workLocation, salary, salaryCurrency, salaryPeriod,
+    } = req.body;
 
     const employee = await hrService.updateEmployee(userId, id, {
       name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags, sortOrder, isArchived,
+      dateOfBirth, gender, emergencyContactName, emergencyContactPhone, emergencyContactRelation,
+      employmentType, managerId, jobTitle, workLocation, salary, salaryCurrency, salaryPeriod,
     });
 
     if (!employee) {
@@ -276,6 +282,275 @@ export async function deleteTimeOffRequest(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to delete time-off request');
     res.status(500).json({ success: false, error: 'Failed to delete time-off request' });
+  }
+}
+
+// ─── Leave Balances ────────────────────────────────────────────────
+
+export async function getLeaveBalances(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const employeeId = req.params.id as string;
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+
+    const balances = await hrService.getLeaveBalances(accountId, employeeId, year);
+    res.json({ success: true, data: balances });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get leave balances');
+    res.status(500).json({ success: false, error: 'Failed to get leave balances' });
+  }
+}
+
+export async function allocateLeave(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const employeeId = req.params.id as string;
+    const { leaveType, year, days } = req.body;
+
+    if (!leaveType || !year || days == null) {
+      res.status(400).json({ success: false, error: 'leaveType, year, and days are required' });
+      return;
+    }
+
+    const balance = await hrService.allocateLeave(accountId, employeeId, leaveType, year, days);
+    res.json({ success: true, data: balance });
+  } catch (error) {
+    logger.error({ error }, 'Failed to allocate leave');
+    res.status(500).json({ success: false, error: 'Failed to allocate leave' });
+  }
+}
+
+export async function getLeaveBalancesSummary(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const balances = await hrService.getLeaveBalancesSummary(accountId);
+    res.json({ success: true, data: balances });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get leave balances summary');
+    res.status(500).json({ success: false, error: 'Failed to get leave balances summary' });
+  }
+}
+
+// ─── Dashboard ─────────────────────────────────────────────────────
+
+export async function getDashboard(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const data = await hrService.getDashboardData(userId, accountId);
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get HR dashboard');
+    res.status(500).json({ success: false, error: 'Failed to get HR dashboard' });
+  }
+}
+
+// ─── Onboarding Tasks ──────────────────────────────────────────────
+
+export async function listOnboardingTasks(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const employeeId = req.params.id as string;
+
+    const tasks = await hrService.listOnboardingTasks(accountId, employeeId);
+    res.json({ success: true, data: tasks });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list onboarding tasks');
+    res.status(500).json({ success: false, error: 'Failed to list onboarding tasks' });
+  }
+}
+
+export async function createOnboardingTask(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const employeeId = req.params.id as string;
+    const { title, description, category, dueDate } = req.body;
+
+    if (!title?.trim()) {
+      res.status(400).json({ success: false, error: 'Title is required' });
+      return;
+    }
+
+    const task = await hrService.createOnboardingTask(accountId, employeeId, {
+      title: title.trim(), description, category, dueDate,
+    });
+    res.json({ success: true, data: task });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create onboarding task');
+    res.status(500).json({ success: false, error: 'Failed to create onboarding task' });
+  }
+}
+
+export async function updateOnboardingTask(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const taskId = req.params.taskId as string;
+    const { title, description, category, dueDate, completed, completedBy, sortOrder, isArchived } = req.body;
+
+    const updates: Record<string, unknown> = {};
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
+    if (category !== undefined) updates.category = category;
+    if (dueDate !== undefined) updates.dueDate = dueDate;
+    if (completed !== undefined) {
+      updates.completedAt = completed ? new Date() : null;
+      updates.completedBy = completed ? completedBy || null : null;
+    }
+    if (sortOrder !== undefined) updates.sortOrder = sortOrder;
+    if (isArchived !== undefined) updates.isArchived = isArchived;
+
+    const task = await hrService.updateOnboardingTask(accountId, taskId, updates as any);
+    if (!task) {
+      res.status(404).json({ success: false, error: 'Task not found' });
+      return;
+    }
+    res.json({ success: true, data: task });
+  } catch (error) {
+    logger.error({ error }, 'Failed to update onboarding task');
+    res.status(500).json({ success: false, error: 'Failed to update onboarding task' });
+  }
+}
+
+export async function deleteOnboardingTask(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const taskId = req.params.taskId as string;
+
+    await hrService.deleteOnboardingTask(accountId, taskId);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to delete onboarding task');
+    res.status(500).json({ success: false, error: 'Failed to delete onboarding task' });
+  }
+}
+
+export async function createTasksFromTemplate(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const employeeId = req.params.id as string;
+    const { templateId } = req.body;
+
+    if (!templateId) {
+      res.status(400).json({ success: false, error: 'templateId is required' });
+      return;
+    }
+
+    const tasks = await hrService.createTasksFromTemplate(accountId, employeeId, templateId);
+    res.json({ success: true, data: tasks });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create tasks from template');
+    res.status(500).json({ success: false, error: 'Failed to create tasks from template' });
+  }
+}
+
+// ─── Onboarding Templates ──────────────────────────────────────────
+
+export async function listOnboardingTemplates(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const templates = await hrService.listOnboardingTemplates(accountId);
+    res.json({ success: true, data: templates });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list onboarding templates');
+    res.status(500).json({ success: false, error: 'Failed to list onboarding templates' });
+  }
+}
+
+export async function createOnboardingTemplate(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const { name, tasks } = req.body;
+
+    if (!name?.trim()) {
+      res.status(400).json({ success: false, error: 'Name is required' });
+      return;
+    }
+
+    const template = await hrService.createOnboardingTemplate(accountId, {
+      name: name.trim(), tasks: tasks || [],
+    });
+    res.json({ success: true, data: template });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create onboarding template');
+    res.status(500).json({ success: false, error: 'Failed to create onboarding template' });
+  }
+}
+
+// ─── Employee Documents ────────────────────────────────────────────
+
+export async function listEmployeeDocuments(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const employeeId = req.params.id as string;
+
+    const docs = await hrService.listEmployeeDocuments(accountId, employeeId);
+    res.json({ success: true, data: docs });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list employee documents');
+    res.status(500).json({ success: false, error: 'Failed to list employee documents' });
+  }
+}
+
+export async function uploadEmployeeDocument(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const userId = req.auth!.userId;
+    const employeeId = req.params.id as string;
+    const file = req.file;
+    const { type, expiresAt, notes } = req.body;
+
+    if (!file) {
+      res.status(400).json({ success: false, error: 'No file uploaded' });
+      return;
+    }
+
+    const doc = await hrService.createEmployeeDocument(accountId, {
+      employeeId,
+      name: file.originalname,
+      type: type || 'other',
+      storagePath: file.path,
+      mimeType: file.mimetype,
+      size: file.size,
+      expiresAt: expiresAt || null,
+      notes: notes || null,
+      uploadedBy: userId,
+    });
+
+    res.json({ success: true, data: doc });
+  } catch (error) {
+    logger.error({ error }, 'Failed to upload employee document');
+    res.status(500).json({ success: false, error: 'Failed to upload employee document' });
+  }
+}
+
+export async function deleteEmployeeDocument(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const docId = req.params.docId as string;
+
+    await hrService.deleteEmployeeDocument(accountId, docId);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to delete employee document');
+    res.status(500).json({ success: false, error: 'Failed to delete employee document' });
+  }
+}
+
+export async function downloadEmployeeDocument(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+    const docId = req.params.docId as string;
+
+    const doc = await hrService.getEmployeeDocument(accountId, docId);
+    if (!doc) {
+      res.status(404).json({ success: false, error: 'Document not found' });
+      return;
+    }
+
+    res.download(doc.storagePath, doc.name);
+  } catch (error) {
+    logger.error({ error }, 'Failed to download employee document');
+    res.status(500).json({ success: false, error: 'Failed to download employee document' });
   }
 }
 

@@ -656,6 +656,75 @@ export async function runMigrations() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      -- Extended employee fields (idempotent ALTERs)
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS date_of_birth TEXT;
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS emergency_contact_name VARCHAR(255);
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS emergency_contact_phone VARCHAR(50);
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS emergency_contact_relation VARCHAR(100);
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS employment_type VARCHAR(50) NOT NULL DEFAULT 'full-time';
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS manager_id UUID;
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS job_title VARCHAR(255);
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS work_location VARCHAR(255);
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS salary INTEGER;
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS salary_currency VARCHAR(10) NOT NULL DEFAULT 'USD';
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS salary_period VARCHAR(20) NOT NULL DEFAULT 'yearly';
+
+      CREATE TABLE IF NOT EXISTS leave_balances (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        leave_type VARCHAR(50) NOT NULL,
+        year INTEGER NOT NULL,
+        allocated INTEGER NOT NULL DEFAULT 0,
+        used INTEGER NOT NULL DEFAULT 0,
+        carried INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS onboarding_tasks (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        title VARCHAR(500) NOT NULL,
+        description TEXT,
+        category VARCHAR(100) NOT NULL DEFAULT 'general',
+        due_date TEXT,
+        completed_at TIMESTAMPTZ,
+        completed_by UUID,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS onboarding_templates (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        tasks JSONB NOT NULL DEFAULT '[]',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS employee_documents (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        name VARCHAR(500) NOT NULL,
+        type VARCHAR(100) NOT NULL DEFAULT 'other',
+        storage_path TEXT NOT NULL,
+        mime_type VARCHAR(100),
+        size INTEGER,
+        expires_at TEXT,
+        notes TEXT,
+        uploaded_by UUID NOT NULL,
+        is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
       CREATE TABLE IF NOT EXISTS time_off_requests (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -828,6 +897,13 @@ export async function runMigrations() {
     // Add decline_reason column to signing_tokens (idempotent)
     await client.query(`
       ALTER TABLE signing_tokens ADD COLUMN IF NOT EXISTS decline_reason TEXT;
+    `);
+
+    // Add format columns to user_settings (idempotent)
+    await client.query(`
+      ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS time_format TEXT NOT NULL DEFAULT '12h';
+      ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS number_format TEXT NOT NULL DEFAULT 'comma-period';
+      ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS calendar_start_day TEXT NOT NULL DEFAULT 'sunday';
     `);
 
     // ─── CRM tables ─────────────────────────────────────────────────
@@ -1089,6 +1165,17 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_time_off_employee ON time_off_requests(employee_id, status)',
       'CREATE INDEX IF NOT EXISTS idx_time_off_status ON time_off_requests(user_id, status, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_time_off_approver ON time_off_requests(approver_id)',
+      // Leave balances
+      'CREATE INDEX IF NOT EXISTS idx_leave_balances_employee_year ON leave_balances(employee_id, year)',
+      'CREATE INDEX IF NOT EXISTS idx_leave_balances_account ON leave_balances(account_id)',
+      // Onboarding tasks
+      'CREATE INDEX IF NOT EXISTS idx_onboarding_tasks_employee ON onboarding_tasks(employee_id, is_archived)',
+      'CREATE INDEX IF NOT EXISTS idx_onboarding_tasks_account ON onboarding_tasks(account_id)',
+      // Onboarding templates
+      'CREATE INDEX IF NOT EXISTS idx_onboarding_templates_account ON onboarding_templates(account_id)',
+      // Employee documents
+      'CREATE INDEX IF NOT EXISTS idx_employee_documents_employee ON employee_documents(employee_id, is_archived)',
+      'CREATE INDEX IF NOT EXISTS idx_employee_documents_account ON employee_documents(account_id)',
       // CRM Companies
       'CREATE INDEX IF NOT EXISTS idx_crm_companies_account ON crm_companies(account_id)',
       // CRM Contacts
@@ -1117,6 +1204,8 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_crm_notes_deal ON crm_notes(deal_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_notes_contact ON crm_notes(contact_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_notes_company ON crm_notes(company_id)',
+      // CRM Email/Calendar GIN indexes for JSONB containment queries
+      'CREATE INDEX IF NOT EXISTS idx_emails_from ON emails(from_address)',
     ];
 
     for (const idx of indexes) {
@@ -1152,6 +1241,13 @@ export async function runMigrations() {
         ON emails
         FOR EACH ROW
         EXECUTE FUNCTION emails_search_vector_update();
+    `);
+
+    // ─── GIN indexes for JSONB containment queries (CRM email/calendar) ──
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_emails_to_gin ON emails USING GIN (to_addresses);
+      CREATE INDEX IF NOT EXISTS idx_emails_cc_gin ON emails USING GIN (cc_addresses);
+      CREATE INDEX IF NOT EXISTS idx_cal_events_attendees_gin ON calendar_events USING GIN (attendees);
     `);
 
     logger.info('Database migrations completed');

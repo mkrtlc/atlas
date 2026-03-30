@@ -52,6 +52,12 @@ export const queryKeys = {
       list: (filters?: string) => ['hr', 'timeOff', 'list', filters] as const,
       detail: (id: string) => ['hr', 'timeOff', 'detail', id] as const,
     },
+    dashboard: ['hr', 'dashboard'] as const,
+    leaveBalances: (employeeId: string) => ['hr', 'leave-balances', employeeId] as const,
+    leaveBalancesSummary: ['hr', 'leave-balances', 'summary'] as const,
+    onboarding: (employeeId: string) => ['hr', 'onboarding', employeeId] as const,
+    onboardingTemplates: ['hr', 'onboarding-templates'] as const,
+    documents: (employeeId: string) => ['hr', 'documents', employeeId] as const,
   },
   tables: {
     all: ['tables'] as const,
@@ -128,5 +134,22 @@ export const queryKeys = {
       all: ['crm', 'permissions'] as const,
       me: ['crm', 'permissions', 'me'] as const,
     },
+    google: {
+      status: ['crm', 'google', 'status'] as const,
+    },
+    emails: {
+      byContact: (id: string) => ['crm', 'emails', 'contact', id] as const,
+      byDeal: (id: string) => ['crm', 'emails', 'deal', id] as const,
+      byCompany: (id: string) => ['crm', 'emails', 'company', id] as const,
+    },
+    events: {
+      byContact: (id: string) => ['crm', 'events', 'contact', id] as const,
+      byDeal: (id: string) => ['crm', 'events', 'deal', id] as const,
+    },
+  },
+  dataModel: {
+    all: ['data-model'] as const,
+    objects: ['data-model', 'objects'] as const,
+    objectFields: (appId: string, objectId: string) => ['data-model', 'fields', appId, objectId] as const,
   },
 };

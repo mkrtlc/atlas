@@ -797,7 +797,11 @@
       "total": "Total",
       "avg": "Avg",
       "changeStage": "Change stage",
-      "clearSelection": "Clear selection"
+      "clearSelection": "Clear selection",
+      "avgProbability": "Avg probability"
+    },
+    "fields": {
+      "manageFields": "Manage fields"
     },
     "contacts": {
       "name": "Name",
@@ -956,6 +960,248 @@
       "lost": "Lost",
       "days": "days",
       "deals": "deals"
+    },
+    "google": {
+      "connect": "Connect Google",
+      "disconnect": "Disconnect",
+      "connected": "Connected",
+      "syncNow": "Sync now",
+      "syncing": "Syncing...",
+      "notConfigured": "Google integration is not configured",
+      "redisRequired": "Redis required for sync"
+    },
+    "emails": {
+      "title": "Emails",
+      "compose": "Compose",
+      "noEmails": "No emails found",
+      "connectToView": "Connect Google account in settings to view emails",
+      "to": "To",
+      "subject": "Subject",
+      "message": "Message",
+      "send": "Send",
+      "sending": "Sending...",
+      "recipientRequired": "Recipient is required",
+      "subjectRequired": "Subject is required",
+      "sendFailed": "Failed to send email. Please try again.",
+      "recipientPlaceholder": "recipient@example.com",
+      "subjectPlaceholder": "Email subject",
+      "messagePlaceholder": "Write your message..."
+    },
+    "calendar": {
+      "title": "Calendar",
+      "schedule": "Schedule meeting",
+      "upcoming": "Upcoming",
+      "past": "Past events",
+      "noEvents": "No events found",
+      "connectToView": "Connect Google account in settings to view events",
+      "eventTitle": "Title",
+      "date": "Date",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "attendees": "Attendees",
+      "attendeesPlaceholder": "Comma-separated emails",
+      "location": "Location",
+      "description": "Description",
+      "optionalPlaceholder": "Optional",
+      "optionalNotes": "Optional notes",
+      "create": "Create",
+      "creating": "Creating...",
+      "titleRequired": "Title is required",
+      "dateRequired": "Date is required",
+      "createFailed": "Failed to create event. Please try again.",
+      "titlePlaceholder": "Meeting title"
+    }
+  },
+  "hr": {
+    "title": "HR",
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "allEmployees": "All employees",
+      "departments": "All departments",
+      "departmentsTitle": "Departments",
+      "department": "Department",
+      "orgChart": "Org chart",
+      "timeOff": "Time off",
+      "allDepartments": "All departments",
+      "settings": "Settings"
+    },
+    "status": {
+      "active": "Active",
+      "onLeave": "On leave",
+      "terminated": "Terminated"
+    },
+    "leaveType": {
+      "vacation": "Vacation",
+      "sick": "Sick leave",
+      "personal": "Personal"
+    },
+    "timeOffStatus": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "role": "Role",
+      "department": "Department",
+      "status": "Status",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "tags": "Tags",
+      "none": "None",
+      "selectDepartment": "Select department...",
+      "selectEmployee": "Select employee...",
+      "departmentName": "Department name",
+      "description": "Description",
+      "optionalDescription": "Optional description...",
+      "color": "Color",
+      "employee": "Employee",
+      "type": "Type",
+      "notes": "Notes",
+      "optionalNotes": "Optional notes...",
+      "dateOfBirth": "Date of birth",
+      "gender": "Gender",
+      "emergencyContact": "Emergency contact",
+      "contactName": "Contact name",
+      "contactPhone": "Contact phone",
+      "contactRelation": "Relationship",
+      "employmentType": "Employment type",
+      "jobTitle": "Job title",
+      "jobTitlePlaceholder": "e.g. Senior Engineer",
+      "workLocation": "Work location",
+      "workLocationPlaceholder": "e.g. Remote, New York",
+      "manager": "Manager",
+      "salary": "Salary",
+      "currency": "Currency",
+      "period": "Period"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "nonBinary": "Non-binary",
+      "preferNotToSay": "Prefer not to say"
+    },
+    "employmentType": {
+      "fullTime": "Full-time",
+      "partTime": "Part-time",
+      "contract": "Contract"
+    },
+    "period": {
+      "yearly": "Yearly",
+      "monthly": "Monthly",
+      "hourly": "Hourly"
+    },
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "department": "Department",
+      "status": "Status",
+      "started": "Started",
+      "employee": "Employee",
+      "type": "Type",
+      "dates": "Dates",
+      "notes": "Notes",
+      "actions": "Actions"
+    },
+    "actions": {
+      "addEmployee": "Add employee",
+      "addEmployeeSubtitle": "Create a new employee record",
+      "deleteEmployee": "Delete employee",
+      "editDepartment": "Edit department",
+      "deleteDepartment": "Delete department",
+      "addDepartment": "Add department",
+      "addDepartmentSubtitle": "Create a new department",
+      "requestTimeOff": "Request time off",
+      "requestTimeOffSubtitle": "Submit a time off request",
+      "submitRequest": "Submit request",
+      "approve": "Approve",
+      "reject": "Reject",
+      "search": "Search",
+      "searchPlaceholder": "Search employees..."
+    },
+    "detail": {
+      "title": "Employee detail"
+    },
+    "tabs": {
+      "details": "Details",
+      "onboarding": "Onboarding",
+      "documents": "Documents"
+    },
+    "sections": {
+      "personal": "Personal",
+      "employment": "Employment",
+      "compensation": "Compensation",
+      "timeOffRequests": "Time off requests"
+    },
+    "employees": {
+      "noMatch": "No matching employees",
+      "noMatchDesc": "Try a different search term.",
+      "empty": "No employees yet",
+      "emptyDesc": "Add your first employee to get started."
+    },
+    "departments": {
+      "empty": "No departments yet",
+      "emptyDesc": "Create departments to organize your team.",
+      "noHead": "No head assigned",
+      "member": "member",
+      "members": "members"
+    },
+    "timeOff": {
+      "empty": "No time off requests",
+      "emptyDesc": "Time off requests will appear here."
+    },
+    "dashboard": {
+      "totalEmployees": "Total employees",
+      "onLeave": "On leave",
+      "pendingRequests": "Pending requests",
+      "recentHires": "Recent hires",
+      "recentHiresTitle": "Recent hires",
+      "noRecentHires": "No recent hires in the last 30 days.",
+      "byDepartment": "By department",
+      "tenureDistribution": "Tenure distribution",
+      "upcomingBirthdays": "Upcoming birthdays",
+      "noBirthdays": "No upcoming birthdays in the next 30 days."
+    },
+    "orgChart": {
+      "organization": "Organization",
+      "employees": "employees",
+      "unassigned": "Unassigned",
+      "empty": "No org chart data",
+      "emptyDesc": "Add departments and employees to see the org chart."
+    },
+    "leaveBalance": {
+      "title": "Leave balance",
+      "allocate": "Allocate",
+      "days": "Days",
+      "allocated": "allocated",
+      "used": "used",
+      "remaining": "remaining",
+      "noBalances": "No leave balances set for this year."
+    },
+    "onboarding": {
+      "title": "Onboarding",
+      "addTask": "Add task",
+      "applyTemplate": "Apply template",
+      "completed": "completed",
+      "taskTitle": "Task title",
+      "noTasks": "No onboarding tasks yet."
+    },
+    "documents": {
+      "title": "Documents",
+      "upload": "Upload",
+      "download": "Download",
+      "noDocuments": "No documents uploaded yet.",
+      "types": {
+        "contract": "Contract",
+        "certificate": "Certificate",
+        "id": "ID",
+        "resume": "Resume",
+        "policy": "Policy",
+        "other": "Other"
+      }
     }
   },
   "sign": {

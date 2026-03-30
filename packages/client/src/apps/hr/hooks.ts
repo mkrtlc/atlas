@@ -16,6 +16,20 @@ export interface HrEmployee {
   avatarUrl: string | null;
   tags: string[];
   notes: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  emergencyContactRelation: string | null;
+  employmentType: string;
+  managerId: string | null;
+  jobTitle: string | null;
+  workLocation: string | null;
+  salary: number | null;
+  salaryCurrency: string;
+  salaryPeriod: string;
+  departmentName?: string | null;
+  departmentColor?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +65,61 @@ export interface HrCounts {
   terminatedEmployees: number;
   pendingTimeOff: number;
   departments: number;
+}
+
+export interface LeaveBalance {
+  id: string;
+  employeeId: string;
+  leaveType: string;
+  year: number;
+  allocated: number;
+  used: number;
+  carried: number;
+}
+
+export interface OnboardingTask {
+  id: string;
+  employeeId: string;
+  title: string;
+  description: string | null;
+  category: string;
+  dueDate: string | null;
+  completedAt: string | null;
+  completedBy: string | null;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface OnboardingTemplate {
+  id: string;
+  name: string;
+  tasks: Array<{ title: string; description?: string; category: string }>;
+}
+
+export interface EmployeeDocument {
+  id: string;
+  employeeId: string;
+  name: string;
+  type: string;
+  storagePath: string;
+  mimeType: string | null;
+  size: number | null;
+  expiresAt: string | null;
+  notes: string | null;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+export interface HrDashboardData {
+  totalHeadcount: number;
+  statusCounts: Record<string, number>;
+  departmentCounts: { name: string; color: string; count: number }[];
+  typeCounts: Record<string, number>;
+  upcomingBirthdays: { id: string; name: string; dateOfBirth: string; avatarUrl: string | null }[];
+  pendingRequests: number;
+  approvedDaysThisMonth: number;
+  recentHires: { id: string; name: string; startDate: string; role: string; avatarUrl: string | null }[];
+  tenure: Record<string, number>;
 }
 
 // ─── Employee Queries ──────────────────────────────────────────────
@@ -247,6 +316,173 @@ export function useDeleteTimeOff() {
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/hr/time-off/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });
+    },
+  });
+}
+
+// ─── Dashboard ─────────────────────────────────────────────────────
+
+export function useHrDashboard(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.hr.dashboard,
+    queryFn: async () => {
+      const { data } = await api.get('/hr/dashboard');
+      return data.data as HrDashboardData;
+    },
+    staleTime: 30_000,
+    enabled: options?.enabled,
+  });
+}
+
+// ─── Leave Balances ────────────────────────────────────────────────
+
+export function useLeaveBalances(employeeId: string | undefined, year?: number) {
+  return useQuery({
+    queryKey: queryKeys.hr.leaveBalances(employeeId!),
+    queryFn: async () => {
+      const params = year ? `?year=${year}` : '';
+      const { data } = await api.get(`/hr/${employeeId}/leave-balances${params}`);
+      return data.data as LeaveBalance[];
+    },
+    enabled: !!employeeId,
+    staleTime: 15_000,
+  });
+}
+
+export function useAllocateLeave() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, ...input }: { employeeId: string; leaveType: string; year: number; days: number }) => {
+      const { data } = await api.post(`/hr/${employeeId}/leave-balances`, input);
+      return data.data as LeaveBalance;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });
+    },
+  });
+}
+
+// ─── Onboarding ────────────────────────────────────────────────────
+
+export function useOnboardingTasks(employeeId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.hr.onboarding(employeeId!),
+    queryFn: async () => {
+      const { data } = await api.get(`/hr/${employeeId}/onboarding`);
+      return data.data as OnboardingTask[];
+    },
+    enabled: !!employeeId,
+    staleTime: 15_000,
+  });
+}
+
+export function useCreateOnboardingTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, ...input }: { employeeId: string; title: string; description?: string; category?: string; dueDate?: string }) => {
+      const { data } = await api.post(`/hr/${employeeId}/onboarding`, input);
+      return data.data as OnboardingTask;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });
+    },
+  });
+}
+
+export function useUpdateOnboardingTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ taskId, ...input }: { taskId: string; completed?: boolean; title?: string; description?: string; isArchived?: boolean }) => {
+      const { data } = await api.patch(`/hr/onboarding/${taskId}`, input);
+      return data.data as OnboardingTask;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });
+    },
+  });
+}
+
+export function useDeleteOnboardingTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      await api.delete(`/hr/onboarding/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });
+    },
+  });
+}
+
+export function useApplyOnboardingTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, templateId }: { employeeId: string; templateId: string }) => {
+      const { data } = await api.post(`/hr/${employeeId}/onboarding/from-template`, { templateId });
+      return data.data as OnboardingTask[];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });
+    },
+  });
+}
+
+export function useOnboardingTemplates() {
+  return useQuery({
+    queryKey: queryKeys.hr.onboardingTemplates,
+    queryFn: async () => {
+      const { data } = await api.get('/hr/onboarding-templates');
+      return data.data as OnboardingTemplate[];
+    },
+    staleTime: 60_000,
+  });
+}
+
+// ─── Employee Documents ────────────────────────────────────────────
+
+export function useEmployeeDocuments(employeeId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.hr.documents(employeeId!),
+    queryFn: async () => {
+      const { data } = await api.get(`/hr/${employeeId}/documents`);
+      return data.data as EmployeeDocument[];
+    },
+    enabled: !!employeeId,
+    staleTime: 15_000,
+  });
+}
+
+export function useUploadEmployeeDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, file, type, expiresAt, notes }: {
+      employeeId: string; file: File; type?: string; expiresAt?: string; notes?: string;
+    }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (type) formData.append('type', type);
+      if (expiresAt) formData.append('expiresAt', expiresAt);
+      if (notes) formData.append('notes', notes);
+
+      const { data } = await api.post(`/hr/${employeeId}/documents`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data.data as EmployeeDocument;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });
+    },
+  });
+}
+
+export function useDeleteEmployeeDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (docId: string) => {
+      await api.delete(`/hr/documents/${docId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.hr.all });

@@ -165,6 +165,9 @@ export const userSettings = pgTable('user_settings', {
   dateFormat: text('date_format').notNull().default('MM/DD/YYYY'),
   currencySymbol: text('currency_symbol').notNull().default('$'),
   timezone: text('timezone').notNull().default(''),
+  timeFormat: text('time_format').notNull().default('12h'),
+  numberFormat: text('number_format').notNull().default('comma-period'),
+  calendarStartDay: text('calendar_start_day').notNull().default('sunday'),
   // Tables settings
   tablesDefaultView: text('tables_default_view').notNull().default('grid'),
   tablesDefaultSort: text('tables_default_sort').notNull().default('none'),
@@ -863,6 +866,18 @@ export const employees = pgTable('employees', {
   avatarUrl: text('avatar_url'),
   status: text('status').notNull().default('active'),
   tags: jsonb('tags').$type<string[]>().notNull().default([]),
+  dateOfBirth: text('date_of_birth'),
+  gender: varchar('gender', { length: 20 }),
+  emergencyContactName: varchar('emergency_contact_name', { length: 255 }),
+  emergencyContactPhone: varchar('emergency_contact_phone', { length: 50 }),
+  emergencyContactRelation: varchar('emergency_contact_relation', { length: 100 }),
+  employmentType: varchar('employment_type', { length: 50 }).notNull().default('full-time'),
+  managerId: uuid('manager_id'),
+  jobTitle: varchar('job_title', { length: 255 }),
+  workLocation: varchar('work_location', { length: 255 }),
+  salary: integer('salary'),
+  salaryCurrency: varchar('salary_currency', { length: 10 }).notNull().default('USD'),
+  salaryPeriod: varchar('salary_period', { length: 20 }).notNull().default('yearly'),
   sortOrder: integer('sort_order').notNull().default(0),
   isArchived: boolean('is_archived').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -871,6 +886,80 @@ export const employees = pgTable('employees', {
   userStatusIdx: index('idx_employees_user_status').on(table.userId, table.status, table.isArchived),
   departmentIdx: index('idx_employees_department').on(table.departmentId, table.sortOrder),
   accountIdx: index('idx_employees_account').on(table.accountId, table.isArchived),
+}));
+
+// ─── HR: Leave Balances ──────────────────────────────────────────
+
+export const leaveBalances = pgTable('leave_balances', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  employeeId: uuid('employee_id').notNull().references(() => employees.id, { onDelete: 'cascade' }),
+  leaveType: varchar('leave_type', { length: 50 }).notNull(),
+  year: integer('year').notNull(),
+  allocated: integer('allocated').notNull().default(0),
+  used: integer('used').notNull().default(0),
+  carried: integer('carried').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  employeeYearIdx: index('idx_leave_balances_employee_year').on(table.employeeId, table.year),
+  accountIdx: index('idx_leave_balances_account').on(table.accountId),
+}));
+
+// ─── HR: Onboarding Tasks ───────────────────────────────────────
+
+export const onboardingTasks = pgTable('onboarding_tasks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  employeeId: uuid('employee_id').notNull().references(() => employees.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 100 }).notNull().default('general'),
+  dueDate: text('due_date'),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  completedBy: uuid('completed_by'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isArchived: boolean('is_archived').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  employeeIdx: index('idx_onboarding_tasks_employee').on(table.employeeId, table.isArchived),
+  accountIdx: index('idx_onboarding_tasks_account').on(table.accountId),
+}));
+
+// ─── HR: Onboarding Templates ───────────────────────────────────
+
+export const onboardingTemplates = pgTable('onboarding_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  tasks: jsonb('tasks').$type<Array<{ title: string; description?: string; category: string }>>().notNull().default([]),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  accountIdx: index('idx_onboarding_templates_account').on(table.accountId),
+}));
+
+// ─── HR: Employee Documents ─────────────────────────────────────
+
+export const employeeDocuments = pgTable('employee_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  employeeId: uuid('employee_id').notNull().references(() => employees.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 500 }).notNull(),
+  type: varchar('type', { length: 100 }).notNull().default('other'),
+  storagePath: text('storage_path').notNull(),
+  mimeType: varchar('mime_type', { length: 100 }),
+  size: integer('size'),
+  expiresAt: text('expires_at'),
+  notes: text('notes'),
+  uploadedBy: uuid('uploaded_by').notNull(),
+  isArchived: boolean('is_archived').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  employeeIdx: index('idx_employee_documents_employee').on(table.employeeId, table.isArchived),
+  accountIdx: index('idx_employee_documents_account').on(table.accountId),
 }));
 
 // ─── HR: Time-Off Requests ────────────────────────────────────────

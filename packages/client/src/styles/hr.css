@@ -161,3 +161,25 @@
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
 }
+
+/* ─── Section title ───────────────────────────────────────────── */
+
+.hr-section-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--font-family);
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+/* ─── Field label ─────────────────────────────────────────────── */
+
+.hr-field-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family);
+}
