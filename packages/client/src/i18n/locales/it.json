@@ -1240,5 +1240,15 @@
       "h3Desc": "Segui l'avanzamento delle firme e scarica le copie firmate",
       "upload": "Carica il primo PDF"
     }
+  },
+  "widgets": {
+    "homeWidgets": "Widget della home",
+    "homeWidgetsDesc": "Scegli quali widget visualizzare nella schermata principale",
+    "appWidgets": "Widget delle app",
+    "appWidgetsDesc": "Widget forniti dalle tue applicazioni",
+    "customize": "Personalizza",
+    "addWidget": "Aggiungi widget",
+    "removeWidget": "Rimuovi widget",
+    "noWidgets": "Nessun widget attivo"
   }
 }

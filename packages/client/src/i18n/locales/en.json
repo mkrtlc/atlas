@@ -1522,5 +1522,15 @@
       "h3Desc": "Monitor signing progress and download signed copies",
       "upload": "Upload first PDF"
     }
+  },
+  "widgets": {
+    "homeWidgets": "Home widgets",
+    "homeWidgetsDesc": "Choose which widgets appear on your home screen",
+    "appWidgets": "App widgets",
+    "appWidgetsDesc": "Widgets provided by your apps",
+    "customize": "Customize",
+    "addWidget": "Add widget",
+    "removeWidget": "Remove widget",
+    "noWidgets": "No widgets enabled"
   }
 }

@@ -1240,5 +1240,15 @@
       "h3Desc": "Überwachen Sie den Unterschriftfortschritt und laden Sie unterschriebene Kopien herunter",
       "upload": "Erstes PDF hochladen"
     }
+  },
+  "widgets": {
+    "homeWidgets": "Start-Widgets",
+    "homeWidgetsDesc": "Wählen Sie, welche Widgets auf Ihrem Startbildschirm angezeigt werden",
+    "appWidgets": "App-Widgets",
+    "appWidgetsDesc": "Von Ihren Apps bereitgestellte Widgets",
+    "customize": "Anpassen",
+    "addWidget": "Widget hinzufügen",
+    "removeWidget": "Widget entfernen",
+    "noWidgets": "Keine Widgets aktiviert"
   }
 }

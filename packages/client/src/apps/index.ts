@@ -7,6 +7,7 @@ import { tablesManifest } from './tables/manifest';
 import { tasksManifest } from './tasks/manifest';
 import { docsManifest } from './docs/manifest';
 import { drawManifest } from './draw/manifest';
+import { systemManifest } from './system/manifest';
 
 appRegistry.register(crmManifest);
 appRegistry.register(hrManifest);
@@ -16,5 +17,6 @@ appRegistry.register(tablesManifest);
 appRegistry.register(tasksManifest);
 appRegistry.register(docsManifest);
 appRegistry.register(drawManifest);
+appRegistry.register(systemManifest);
 
 export { appRegistry };

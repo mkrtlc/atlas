@@ -1240,5 +1240,15 @@
       "h3Desc": "İmza ilerlemesini izleyin ve imzalı kopyaları indirin",
       "upload": "İlk PDF'i yükle"
     }
+  },
+  "widgets": {
+    "homeWidgets": "Ana sayfa widget'ları",
+    "homeWidgetsDesc": "Ana ekranda hangi widget'ların görüneceğini seçin",
+    "appWidgets": "Uygulama widget'ları",
+    "appWidgetsDesc": "Uygulamalarınızın sağladığı widget'lar",
+    "customize": "Özelleştir",
+    "addWidget": "Widget ekle",
+    "removeWidget": "Widget kaldır",
+    "noWidgets": "Etkin widget yok"
   }
 }

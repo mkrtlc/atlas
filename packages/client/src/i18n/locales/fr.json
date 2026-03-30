@@ -1240,5 +1240,15 @@
       "h3Desc": "Surveillez la progression des signatures et téléchargez les copies signées",
       "upload": "Télécharger le premier PDF"
     }
+  },
+  "widgets": {
+    "homeWidgets": "Widgets d'accueil",
+    "homeWidgetsDesc": "Choisissez les widgets affichés sur votre écran d'accueil",
+    "appWidgets": "Widgets d'applications",
+    "appWidgetsDesc": "Widgets fournis par vos applications",
+    "customize": "Personnaliser",
+    "addWidget": "Ajouter un widget",
+    "removeWidget": "Supprimer le widget",
+    "noWidgets": "Aucun widget activé"
   }
 }
