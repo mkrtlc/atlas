@@ -1,75 +1,39 @@
-# Atlas Platform — Local Dev Environment
+# Atlas — Development
 # Usage: docker compose up -d
-#
-# Services:
-#   - postgres (5433 on host, 5432 internal): Platform DB + per-app databases
-#   - redis (6379): BullMQ + app addon
-#   - traefik (80, 8080): Reverse proxy with Docker provider
-#
-# App containers created by the install flow auto-join the atlas-net network
-# and are discovered by Traefik via Docker labels.
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: postgres
+    container_name: atlas-postgres
     restart: unless-stopped
     ports:
-      - "5433:5432"
+      - "5432:5432"
     environment:
-      POSTGRES_DB: atlas_platform
-      POSTGRES_USER: atlas
-      POSTGRES_PASSWORD: atlas_dev_password
+      POSTGRES_DB: atlas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - atlas-pg-data:/var/lib/postgresql/data
-    networks:
-      - atlas-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas_platform"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atlas"]
       interval: 5s
       timeout: 3s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: atlas-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - atlas-redis-data:/data
-    networks:
-      - atlas-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  traefik:
-    image: traefik:v2.11
-    container_name: traefik
-    restart: unless-stopped
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=atlas-net"
-      - "--entrypoints.web.address=:80"
-      - "--log.level=INFO"
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - /Users/gorkemcetin/.docker/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - atlas-net
-
 volumes:
   atlas-pg-data:
   atlas-redis-data:
-
-networks:
-  atlas-net:
-    name: atlas-net
-    driver: bridge

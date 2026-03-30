@@ -19,9 +19,6 @@ COPY packages/shared packages/shared
 COPY packages/server packages/server
 COPY packages/client packages/client
 
-# Copy app manifests for catalog seeding
-COPY apps apps
-
 # Build shared types first (other packages depend on it)
 RUN cd packages/shared && npx tsc
 
@@ -54,9 +51,6 @@ COPY --from=builder /app/packages/shared/dist packages/shared/dist
 COPY --from=builder /app/packages/server/dist packages/server/dist
 COPY --from=builder /app/packages/client/dist packages/client/dist
 
-# Copy app manifests for catalog seeding at startup
-COPY apps apps
-
 # Create persistent data directories
 RUN mkdir -p /app/data /app/packages/server/uploads
 
@@ -66,6 +60,8 @@ RUN chown -R atlas:atlas /app
 USER atlas
 
 ENV NODE_ENV=production
+ENV CLIENT_PUBLIC_URL=http://localhost:3001
+ENV CORS_ORIGINS=http://localhost:3001
 EXPOSE 3001
 
 # Health check against the existing /api/v1/health endpoint

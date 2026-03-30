@@ -22,7 +22,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('Atlas <noreply@atlas.so>'),
-  CLIENT_PUBLIC_URL: z.string().url().default('http://localhost:5180'),
+  CLIENT_PUBLIC_URL: z.string().url().default('http://localhost:3001'),
 
   // ─── Google OAuth (for CRM email/calendar sync) ───────────────────────
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -30,7 +30,7 @@ const envSchema = z.object({
   GOOGLE_REDIRECT_URI: z.string().url().optional(),
 
   // ─── CORS ─────────────────────────────────────────────────────────────────
-  CORS_ORIGINS: z.string().default('http://localhost:5180'),
+  CORS_ORIGINS: z.string().default('http://localhost:3001'),
 });
 
 export const env = envSchema.parse(process.env);

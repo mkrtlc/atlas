@@ -3,14 +3,13 @@ node_modules
 .gitignore
 .env
 .env.*
-!.env.production.example
+!.env.example
 *.db
 data/
 packages/server/uploads/
 packages/server/data/
+packages/desktop/
 dist/
 .claude/
 .turbo/
 .vscode/
-*.md
-LICENSE
