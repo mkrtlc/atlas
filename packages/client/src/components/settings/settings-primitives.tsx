@@ -319,7 +319,7 @@ export function SettingsSelect<T extends string | number>({
     <div style={{ position: 'relative' }}>
       <Button
         variant="secondary"
-        size="md"
+        size="sm"
         onClick={() => setOpen(!open)}
         onBlur={() => {
           setTimeout(() => setOpen(false), 150);
