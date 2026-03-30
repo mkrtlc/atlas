@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Cpu } from 'lucide-react';
 import { useSystemMetrics } from '../hooks';
 import type { AppWidgetProps } from '../../../config/app-manifest.client';
 
@@ -8,13 +9,11 @@ function gaugeColor(percent: number): string {
   return '#10b981';
 }
 
-export function CpuWidget({ width, height }: AppWidgetProps) {
+export function CpuWidget(_props: AppWidgetProps) {
   const { t } = useTranslation();
   const { data: metrics } = useSystemMetrics();
   const usage = metrics?.cpu.usage ?? 0;
   const color = gaugeColor(usage);
-  const size = Math.min(width, height) * 0.5;
-  const strokeWidth = 6;
 
   return (
     <div
@@ -23,48 +22,47 @@ export function CpuWidget({ width, height }: AppWidgetProps) {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        padding: 12,
+        padding: 'var(--spacing-lg)',
+        gap: 'var(--spacing-sm)',
+        fontFamily: 'var(--font-family)',
       }}
     >
-      <div
-        style={{
-          position: 'relative',
-          width: size,
-          height: size,
-          borderRadius: '50%',
-          background: `conic-gradient(${color} ${usage * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: size - strokeWidth * 2,
-            height: size - strokeWidth * 2,
-            borderRadius: '50%',
-            background: 'rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <span style={{ fontSize: 16, fontWeight: 700, color }}>
-            {usage.toFixed(0)}%
-          </span>
-        </div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+        <Cpu size={14} style={{ color: 'var(--color-text-tertiary)' }} />
+        <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)' }}>
+          {t('system.cpuUsage')}
+        </span>
       </div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-        {t('system.cpuUsage')}
+
+      {/* Big number */}
+      <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', lineHeight: 1 }}>
+        {usage.toFixed(0)}%
       </div>
-      {metrics && (
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
-          {metrics.cpu.cores} {t('system.cores')}
+
+      {/* Progress bar */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 'var(--spacing-xs)' }}>
+        <div style={{
+          height: 8,
+          background: 'var(--color-bg-tertiary)',
+          borderRadius: 'var(--radius-sm)',
+          overflow: 'hidden',
+          border: '1px solid var(--color-border-secondary)',
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${Math.min(100, usage)}%`,
+            background: color,
+            borderRadius: 'var(--radius-sm)',
+            transition: 'width 0.5s ease',
+          }} />
         </div>
-      )}
+        {metrics && (
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+            {metrics.cpu.model.split(' ').slice(0, 3).join(' ')} · {metrics.cpu.cores} {t('system.cores')}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
