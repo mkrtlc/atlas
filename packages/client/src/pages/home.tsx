@@ -1047,7 +1047,7 @@ export function HomePage() {
         </div>
 
         {/* Dock pet */}
-        <DockPet pet={(userSettings?.homeDockPet as PetType) || 'cat'} bottomOffset={82} dockRef={dockRef} />
+        <DockPet pet={(userSettings?.homeDockPet as PetType) || 'cat'} bottomOffset={84} dockRef={dockRef} />
 
         {/* Bottom dock bar */}
         <nav

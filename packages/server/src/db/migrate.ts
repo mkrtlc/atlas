@@ -921,6 +921,7 @@ export async function runMigrations() {
     await client.query(`
       ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS app_widgets JSONB;
       ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS home_show_seconds BOOLEAN NOT NULL DEFAULT FALSE;
+      ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS home_dock_pet VARCHAR(20) NOT NULL DEFAULT 'cat';
     `);
 
     // ─── CRM tables ─────────────────────────────────────────────────

@@ -243,6 +243,7 @@ export const userSettings = pgTable('user_settings', {
   homeBgValue: text('home_bg_value'),
   homeShowSeconds: boolean('home_show_seconds').notNull().default(false),
   homeEnabledWidgets: jsonb('home_enabled_widgets').$type<string[] | null>(),
+  homeDockPet: varchar('home_dock_pet', { length: 20 }).notNull().default('cat'),
   appWidgets: jsonb('app_widgets').$type<Record<string, { enabledIds: string[]; order: string[] }> | null>(),
   recentItems: jsonb('recent_items').$type<string[]>().notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

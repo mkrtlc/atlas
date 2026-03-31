@@ -4,14 +4,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 // Pet sprites config
 // ---------------------------------------------------------------------------
 
-export type PetType = 'cat' | 'fox' | 'dragon' | 'rabbit' | 'unicorn' | 'none';
+export type PetType = 'cat' | 'fox' | 'dragon' | 'unicorn' | 'none';
 
 export const PET_OPTIONS: { id: PetType; label: string }[] = [
   { id: 'none', label: 'None' },
   { id: 'cat', label: 'Cat' },
   { id: 'fox', label: 'Fox' },
   { id: 'dragon', label: 'Dragon' },
-  { id: 'rabbit', label: 'Rabbit' },
   { id: 'unicorn', label: 'Unicorn' },
 ];
 
@@ -27,7 +26,6 @@ const PET_CONFIG: Record<Exclude<PetType, 'none'>, PetAnimConfig> = {
   cat: { walkFrames: 6, sitFrames: 10, lickFrames: 12, hasLick: true, hasSit: true },
   fox: { walkFrames: 8, sitFrames: 0, lickFrames: 0, hasLick: false, hasSit: false },
   dragon: { walkFrames: 8, sitFrames: 0, lickFrames: 0, hasLick: false, hasSit: false },
-  rabbit: { walkFrames: 8, sitFrames: 0, lickFrames: 0, hasLick: false, hasSit: false },
   unicorn: { walkFrames: 8, sitFrames: 0, lickFrames: 0, hasLick: false, hasSit: false },
 };
 
