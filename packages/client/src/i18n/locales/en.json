@@ -1238,6 +1238,9 @@
       "search": "Search",
       "searchPlaceholder": "Search employees..."
     },
+    "confirm": {
+      "deleteEmployee": "Are you sure you want to delete {{name}}? This action cannot be undone."
+    },
     "detail": {
       "title": "Employee detail"
     },

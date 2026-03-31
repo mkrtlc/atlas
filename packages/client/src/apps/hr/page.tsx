@@ -47,6 +47,7 @@ import { ColumnHeader } from '../../components/ui/column-header';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
 import { StatusDot } from '../../components/ui/status-dot';
 import { ContentArea } from '../../components/ui/content-area';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { useUIStore } from '../../stores/ui-store';
 import { useHrSettingsStore } from './settings-store';
 import { StatCard } from '../../components/ui/stat-card';
@@ -760,6 +761,7 @@ function EmployeeDetailPanel({
   const deleteEmployee = useDeleteEmployee();
   const roleRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     setStatus(employee.status);
@@ -803,10 +805,19 @@ function EmployeeDetailPanel({
       }}>
         <span className="hr-section-title" style={{ margin: 0 }}>{t('hr.detail.title')}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <IconButton icon={<Trash2 size={14} />} label={t('hr.actions.deleteEmployee')} size={28} destructive onClick={handleDelete} />
+          <IconButton icon={<Trash2 size={14} />} label={t('hr.actions.deleteEmployee')} size={28} destructive onClick={() => setShowDeleteConfirm(true)} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('hr.actions.deleteEmployee')}
+        description={t('hr.confirm.deleteEmployee', { name: employee.name })}
+        confirmLabel={t('common.delete')}
+        onConfirm={handleDelete}
+      />
 
       <SmartButtonBar appId="hr" recordId={employee.id} />
 

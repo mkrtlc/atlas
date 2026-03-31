@@ -148,16 +148,16 @@ export function OrgMembersPage() {
         <div style={{ display: 'flex', gap: 8 }}>
           <Button
             variant="secondary"
-            size="md"
-            icon={<Mail size={14} />}
+            size="sm"
+            icon={<Mail size={13} />}
             onClick={() => setShowInviteModal(true)}
           >
             Invite
           </Button>
           <Button
             variant="primary"
-            size="md"
-            icon={<UserPlus size={14} />}
+            size="sm"
+            icon={<UserPlus size={13} />}
             onClick={() => setShowAddModal(true)}
           >
             Add user
