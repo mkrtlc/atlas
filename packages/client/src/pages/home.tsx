@@ -32,16 +32,16 @@ const BG_IMAGES = [
   'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1920&q=80&auto=format&fit=crop',
   // Mountain range with golden hour light
   'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80&auto=format&fit=crop',
-  // Foggy valley at dawn
-  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80&auto=format&fit=crop',
+  // Dark forest
+  'https://images.unsplash.com/photo-1518818419601-72c8673f5852?w=1920&q=80&auto=format&fit=crop',
   // Autumn forest with golden foliage
   'https://images.unsplash.com/photo-1507041957456-9c397ce39c97?w=1920&q=80&auto=format&fit=crop',
   // Lavender field at sunset
   'https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=1920&q=80&auto=format&fit=crop',
   // Northern lights over snowy landscape
   'https://images.unsplash.com/photo-1483347756197-71ef80e95f73?w=1920&q=80&auto=format&fit=crop',
-  // Starry night sky
-  'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1920&q=80&auto=format&fit=crop',
+  // Night mountains
+  'https://images.unsplash.com/photo-1475274047050-1d0c55b0b264?w=1920&q=80&auto=format&fit=crop',
   // Misty pine forest
   'https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80&auto=format&fit=crop',
   // Desert landscape
@@ -353,8 +353,8 @@ function getGreetingKey(hour: number): string {
   return 'home.goodEvening';
 }
 
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatTime(date: Date, showSeconds = false): string {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', ...(showSeconds ? { second: '2-digit' } : {}) });
 }
 
 // ─── Stylish Flip Clock ──────────────────────────────────────────────
@@ -391,10 +391,17 @@ function ClockDigit({ digit, prevDigit }: { digit: string; prevDigit: string }) 
         position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
         background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
       }} />
+      {/* Bottom half slightly darker */}
+      <span style={{
+        position: 'absolute', top: '50%', left: 0, right: 0, bottom: 0,
+        background: 'rgba(0,0,0,0.08)',
+        borderRadius: '0 0 clamp(6px, 1vw, 10px) clamp(6px, 1vw, 10px)',
+        pointerEvents: 'none',
+      }} />
       {/* Center divider line */}
       <span style={{
         position: 'absolute', top: '50%', left: 0, right: 0, height: 1,
-        background: 'rgba(0,0,0,0.2)',
+        background: 'rgba(0,0,0,0.25)',
       }} />
       {digit}
     </span>
@@ -434,8 +441,8 @@ function ClockSeparator() {
   );
 }
 
-function StylishClock({ time }: { time: Date }) {
-  const timeStr = formatTime(time);
+function StylishClock({ time, showSeconds = false }: { time: Date; showSeconds?: boolean }) {
+  const timeStr = formatTime(time, showSeconds);
   const prevTimeRef = useRef(timeStr);
   const prevTime = prevTimeRef.current;
 
@@ -938,7 +945,7 @@ export function HomePage() {
           }}
         >
           {/* Clock — stylish flip digits */}
-          <StylishClock time={now} />
+          <StylishClock time={now} showSeconds={!!userSettings?.homeShowSeconds} />
 
           {/* Date */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>

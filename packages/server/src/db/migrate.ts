@@ -920,6 +920,7 @@ export async function runMigrations() {
     // Add app_widgets column to user_settings (idempotent)
     await client.query(`
       ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS app_widgets JSONB;
+      ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS home_show_seconds BOOLEAN NOT NULL DEFAULT FALSE;
     `);
 
     // ─── CRM tables ─────────────────────────────────────────────────

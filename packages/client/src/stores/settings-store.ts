@@ -183,12 +183,12 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   aiThreadSummary: true,
   aiTranslation: true,
   // Format defaults
-  dateFormat: 'MM/DD/YYYY',
+  dateFormat: 'DD/MM/YYYY',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   currencySymbol: '$',
   timeFormat: '12h',
   numberFormat: 'comma-period',
-  calendarStartDay: 'sunday',
+  calendarStartDay: 'monday',
   _hydrated: false,
   setTheme: (theme) => { set({ theme }); persistToServer('theme', theme); },
   setColorTheme: (colorTheme) => { set({ colorTheme }); persistToServer('colorTheme', colorTheme); },
@@ -282,6 +282,13 @@ export function useSettingsSync() {
   useEffect(() => {
     if (serverSettings && !hydrated) {
       hydrateFromServer(serverSettings);
+      // Auto-detect timezone on first use (server stores empty string by default)
+      if (!serverSettings.timezone) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz) {
+          api.put('/settings', { timezone: tz }).catch(() => {});
+        }
+      }
     }
   }, [serverSettings, hydrated, hydrateFromServer]);
 }

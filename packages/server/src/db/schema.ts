@@ -162,12 +162,12 @@ export const userSettings = pgTable('user_settings', {
   tasksDefaultSort: text('tasks_default_sort').notNull().default('manual'),
   tasksViewMode: text('tasks_view_mode').notNull().default('list'),
   // Global settings
-  dateFormat: text('date_format').notNull().default('MM/DD/YYYY'),
+  dateFormat: text('date_format').notNull().default('DD/MM/YYYY'),
   currencySymbol: text('currency_symbol').notNull().default('$'),
   timezone: text('timezone').notNull().default(''),
   timeFormat: text('time_format').notNull().default('12h'),
   numberFormat: text('number_format').notNull().default('comma-period'),
-  calendarStartDay: text('calendar_start_day').notNull().default('sunday'),
+  calendarStartDay: text('calendar_start_day').notNull().default('monday'),
   // Tables settings
   tablesDefaultView: text('tables_default_view').notNull().default('grid'),
   tablesDefaultSort: text('tables_default_sort').notNull().default('none'),
@@ -241,6 +241,7 @@ export const userSettings = pgTable('user_settings', {
   // Home
   homeBgType: text('home_bg_type').notNull().default('unsplash'),
   homeBgValue: text('home_bg_value'),
+  homeShowSeconds: boolean('home_show_seconds').notNull().default(false),
   homeEnabledWidgets: jsonb('home_enabled_widgets').$type<string[] | null>(),
   appWidgets: jsonb('app_widgets').$type<Record<string, { enabledIds: string[]; order: string[] }> | null>(),
   recentItems: jsonb('recent_items').$type<string[]>().notNull().default([]),
