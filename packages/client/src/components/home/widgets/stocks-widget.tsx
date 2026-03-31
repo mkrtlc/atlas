@@ -41,7 +41,7 @@ function StocksWidgetComponent({ width, height }: WidgetProps) {
             gap: 8,
           }}
         >
-          <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: 'var(--color-text-inverse)', minWidth: 60 }}>
+          <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: 'rgba(255,255,255,0.95)', minWidth: 60 }}>
             {q.symbol}
           </span>
           <span style={{ fontSize: 'var(--font-size-lg)', color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums' }}>

@@ -50,7 +50,7 @@ function WeatherWidgetComponent({ width, height }: WidgetProps) {
         try {
           const { latitude, longitude } = pos.coords;
           const res = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=4`
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=3`
           );
           const json = await res.json();
           const days: ForecastDay[] = json.daily.time.map((date: string, i: number) => ({
@@ -112,7 +112,7 @@ function WeatherWidgetComponent({ width, height }: WidgetProps) {
           </span>
           <span style={{ fontSize: 'var(--font-size-2xl)', lineHeight: 1 }}>{getWeatherEmoji(d.code)}</span>
           <div style={{ display: 'flex', gap: 4, fontSize: 'var(--font-size-md)', fontWeight: 500 }}>
-            <span style={{ color: 'var(--color-text-inverse)' }}>{d.high}°</span>
+            <span style={{ color: 'rgba(255,255,255,0.9)' }}>{d.high}°</span>
             <span style={{ color: 'rgba(255,255,255,0.45)' }}>{d.low}°</span>
           </div>
         </div>
@@ -123,8 +123,8 @@ function WeatherWidgetComponent({ width, height }: WidgetProps) {
 
 export const weatherWidget: WidgetDefinition = {
   id: 'weather',
-  name: '4-day forecast',
-  description: 'Weather forecast for the next 4 days based on your location',
+  name: '3-day forecast',
+  description: 'Weather forecast for the next 3 days based on your location',
   icon: CloudSun,
   defaultEnabled: true,
   component: WeatherWidgetComponent,

@@ -29,7 +29,7 @@ export const useUIStore = create<UIState>((set) => ({
   toggleCommandPalette: () => set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
   toggleShortcutHelp: () => set((s) => ({ shortcutHelpOpen: !s.shortcutHelpOpen })),
   setSearchFocused: (focused) => set({ searchFocused: focused }),
-  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen, settingsApp: s.settingsOpen ? null : s.settingsApp, settingsPanel: s.settingsOpen ? null : s.settingsPanel })),
+  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   openSettings: (app, panel) => set({ settingsOpen: true, settingsApp: app ?? null, settingsPanel: panel ?? null }),
-  closeSettings: () => set({ settingsOpen: false, settingsApp: null, settingsPanel: null }),
+  closeSettings: () => set({ settingsOpen: false }),
 }));

@@ -825,8 +825,9 @@ export function HomePage() {
       {/* Background images with ken burns + parallax + crossfade */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         {backgroundStyle ? (
-          /* Custom background (solid / gradient / custom image) */
+          /* Custom background (solid / gradient / selected photo) */
           <div
+            className={backgroundStyle.backgroundImage ? 'home-bg-image' : undefined}
             style={{
               position: 'absolute',
               inset: '-20px',
@@ -1053,7 +1054,7 @@ export function HomePage() {
           onMouseLeave={handleDockMouseLeave}
           style={{
             position: 'absolute',
-            bottom: 8,
+            bottom: 20,
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 50,
