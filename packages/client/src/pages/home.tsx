@@ -643,10 +643,10 @@ export function HomePage() {
     const RANGE = 160;
     const items = dock.querySelectorAll<HTMLElement>('.dock-item');
     items.forEach((item) => {
+      item.classList.remove('dock-resetting');
       const rect = item.getBoundingClientRect();
       const itemCenterX = rect.left + rect.width / 2;
       const distance = Math.abs(mouseX - itemCenterX);
-      // Parabolic falloff (like real macOS) — smoother than linear
       const normalized = Math.min(distance / RANGE, 1);
       const scale = Math.max(0, 1 - normalized * normalized);
       const size = BASE + (MAX - BASE) * scale;
@@ -662,6 +662,7 @@ export function HomePage() {
     if (!dock) return;
     const items = dock.querySelectorAll<HTMLElement>('.dock-item');
     items.forEach((item) => {
+      item.classList.add('dock-resetting');
       item.style.removeProperty('--dock-w');
       item.style.removeProperty('--dock-h');
       item.style.removeProperty('--dock-mt');
