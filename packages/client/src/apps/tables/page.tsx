@@ -1267,7 +1267,7 @@ function KanbanCard({
 
   const style: React.CSSProperties = {
     ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : {}),
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0 : 1,
   };
 
   return (
@@ -3674,9 +3674,16 @@ export function TablesPage() {
                           />
                         ))}
                     </div>
-                    <DragOverlay>
+                    <DragOverlay dropAnimation={null}>
                       {draggedRow ? (
-                        <div className="tables-kanban-card drag-overlay">
+                        <div
+                          className="tables-kanban-card"
+                          style={{
+                            transform: 'rotate(3deg)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                            cursor: 'grabbing',
+                          }}
+                        >
                           <div className="tables-kanban-card-title">
                             {(() => {
                               const titleCol = localColumns.find((c) => c.type === 'text' && c.id !== effectiveKanbanCol?.id);
