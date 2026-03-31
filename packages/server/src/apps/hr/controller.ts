@@ -4,6 +4,7 @@ import * as leaveService from './leave.service';
 import * as attendanceService from './attendance.service';
 import { logger } from '../../utils/logger';
 import { emitAppEvent } from '../../services/event.service';
+import { getAppPermission, canAccess } from '../../services/app-permissions.service';
 
 // ─── Widget ─────────────────────────────────────────────────────────
 
@@ -11,6 +12,13 @@ export async function getWidgetData(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await hrService.getWidgetData(userId, accountId);
     res.json({ success: true, data });
   } catch (error) {
@@ -25,6 +33,13 @@ export async function listEmployees(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const { status, departmentId, includeArchived } = req.query;
 
     const employees = await hrService.listEmployees(userId, accountId, {
@@ -44,6 +59,13 @@ export async function getEmployee(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const id = req.params.id as string;
 
     const employee = await hrService.getEmployee(userId, accountId, id);
@@ -63,6 +85,13 @@ export async function createEmployee(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags } = req.body;
 
     if (!name?.trim()) {
@@ -99,6 +128,13 @@ export async function createEmployee(req: Request, res: Response) {
 export async function updateEmployee(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const id = req.params.id as string;
     const {
       name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags, sortOrder, isArchived,
@@ -127,6 +163,13 @@ export async function updateEmployee(req: Request, res: Response) {
 export async function deleteEmployee(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     const id = req.params.id as string;
 
     await hrService.deleteEmployee(userId, id);
@@ -141,6 +184,13 @@ export async function searchEmployees(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const query = (req.query.q as string) || '';
 
     if (!query.trim()) {
@@ -160,6 +210,13 @@ export async function getEmployeeCounts(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const counts = await hrService.getEmployeeCounts(userId, accountId);
     res.json({ success: true, data: counts });
   } catch (error) {
@@ -174,6 +231,13 @@ export async function listDepartments(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const includeArchived = req.query.includeArchived === 'true';
 
     const depts = await hrService.listDepartments(userId, accountId, includeArchived);
@@ -188,6 +252,13 @@ export async function createDepartment(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { name, headEmployeeId, color, description } = req.body;
 
     if (!name?.trim()) {
@@ -210,6 +281,13 @@ export async function updateDepartment(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const id = req.params.id as string;
     const { name, headEmployeeId, color, description, sortOrder, isArchived } = req.body;
 
@@ -233,6 +311,13 @@ export async function deleteDepartment(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     const id = req.params.id as string;
 
     await hrService.deleteDepartment(userId, accountId, id);
@@ -249,6 +334,13 @@ export async function listTimeOffRequests(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const { employeeId, status, type, includeArchived } = req.query;
 
     const requests = await hrService.listTimeOffRequests(userId, accountId, {
@@ -269,6 +361,13 @@ export async function createTimeOffRequest(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { employeeId, type, startDate, endDate, approverId, notes } = req.body;
 
     if (!employeeId?.trim()) {
@@ -303,6 +402,13 @@ export async function updateTimeOffRequest(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const id = req.params.id as string;
     const { type, startDate, endDate, status, approverId, notes, sortOrder, isArchived } = req.body;
 
@@ -326,6 +432,13 @@ export async function deleteTimeOffRequest(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     const id = req.params.id as string;
 
     await hrService.deleteTimeOffRequest(userId, accountId, id);
@@ -341,6 +454,13 @@ export async function deleteTimeOffRequest(req: Request, res: Response) {
 export async function getLeaveBalances(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
 
@@ -355,6 +475,13 @@ export async function getLeaveBalances(req: Request, res: Response) {
 export async function allocateLeave(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
     const { leaveType, year, days } = req.body;
 
@@ -374,6 +501,13 @@ export async function allocateLeave(req: Request, res: Response) {
 export async function getLeaveBalancesSummary(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const balances = await hrService.getLeaveBalancesSummary(accountId);
     res.json({ success: true, data: balances });
   } catch (error) {
@@ -388,6 +522,13 @@ export async function getDashboard(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await hrService.getDashboardData(userId, accountId);
     res.json({ success: true, data });
   } catch (error) {
@@ -401,6 +542,13 @@ export async function getDashboard(req: Request, res: Response) {
 export async function listOnboardingTasks(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
 
     const tasks = await hrService.listOnboardingTasks(accountId, employeeId);
@@ -414,6 +562,13 @@ export async function listOnboardingTasks(req: Request, res: Response) {
 export async function createOnboardingTask(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
     const { title, description, category, dueDate } = req.body;
 
@@ -435,6 +590,13 @@ export async function createOnboardingTask(req: Request, res: Response) {
 export async function updateOnboardingTask(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const taskId = req.params.taskId as string;
     const { title, description, category, dueDate, completed, completedBy, sortOrder, isArchived } = req.body;
 
@@ -465,6 +627,13 @@ export async function updateOnboardingTask(req: Request, res: Response) {
 export async function deleteOnboardingTask(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     const taskId = req.params.taskId as string;
 
     await hrService.deleteOnboardingTask(accountId, taskId);
@@ -478,6 +647,13 @@ export async function deleteOnboardingTask(req: Request, res: Response) {
 export async function createTasksFromTemplate(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
     const { templateId } = req.body;
 
@@ -499,6 +675,13 @@ export async function createTasksFromTemplate(req: Request, res: Response) {
 export async function listOnboardingTemplates(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const templates = await hrService.listOnboardingTemplates(accountId);
     res.json({ success: true, data: templates });
   } catch (error) {
@@ -510,6 +693,13 @@ export async function listOnboardingTemplates(req: Request, res: Response) {
 export async function createOnboardingTemplate(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { name, tasks } = req.body;
 
     if (!name?.trim()) {
@@ -532,6 +722,13 @@ export async function createOnboardingTemplate(req: Request, res: Response) {
 export async function listEmployeeDocuments(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
 
     const docs = await hrService.listEmployeeDocuments(accountId, employeeId);
@@ -546,6 +743,13 @@ export async function uploadEmployeeDocument(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
     const file = req.file;
     const { type, expiresAt, notes } = req.body;
@@ -577,6 +781,13 @@ export async function uploadEmployeeDocument(req: Request, res: Response) {
 export async function deleteEmployeeDocument(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     const docId = req.params.docId as string;
 
     await hrService.deleteEmployeeDocument(accountId, docId);
@@ -590,6 +801,13 @@ export async function deleteEmployeeDocument(req: Request, res: Response) {
 export async function downloadEmployeeDocument(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const docId = req.params.docId as string;
 
     const doc = await hrService.getEmployeeDocument(accountId, docId);
@@ -610,6 +828,13 @@ export async function downloadEmployeeDocument(req: Request, res: Response) {
 export async function listLeaveTypes(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const includeInactive = req.query.includeInactive === 'true';
     const data = await hrService.listLeaveTypes(accountId, includeInactive);
     res.json({ success: true, data });
@@ -622,6 +847,13 @@ export async function listLeaveTypes(req: Request, res: Response) {
 export async function createLeaveType(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { name, slug, color, defaultDaysPerYear, maxCarryForward, requiresApproval, isPaid } = req.body;
     if (!name?.trim() || !slug?.trim()) {
       res.status(400).json({ success: false, error: 'Name and slug are required' });
@@ -640,6 +872,13 @@ export async function createLeaveType(req: Request, res: Response) {
 export async function updateLeaveType(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const id = req.params.id as string;
     const data = await hrService.updateLeaveType(accountId, id, req.body);
     if (!data) { res.status(404).json({ success: false, error: 'Leave type not found' }); return; }
@@ -653,6 +892,13 @@ export async function updateLeaveType(req: Request, res: Response) {
 export async function deleteLeaveType(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     await hrService.deleteLeaveType(accountId, req.params.id as string);
     res.json({ success: true, data: null });
   } catch (error) {
@@ -666,6 +912,13 @@ export async function deleteLeaveType(req: Request, res: Response) {
 export async function listLeavePolicies(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await hrService.listLeavePolicies(accountId);
     res.json({ success: true, data });
   } catch (error) {
@@ -677,6 +930,13 @@ export async function listLeavePolicies(req: Request, res: Response) {
 export async function createLeavePolicy(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { name, description, isDefault, allocations } = req.body;
     if (!name?.trim()) { res.status(400).json({ success: false, error: 'Name is required' }); return; }
     const data = await hrService.createLeavePolicy(accountId, {
@@ -692,6 +952,13 @@ export async function createLeavePolicy(req: Request, res: Response) {
 export async function updateLeavePolicy(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const data = await hrService.updateLeavePolicy(accountId, req.params.id as string, req.body);
     if (!data) { res.status(404).json({ success: false, error: 'Leave policy not found' }); return; }
     res.json({ success: true, data });
@@ -704,6 +971,13 @@ export async function updateLeavePolicy(req: Request, res: Response) {
 export async function deleteLeavePolicy(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     await hrService.deleteLeavePolicy(accountId, req.params.id as string);
     res.json({ success: true, data: null });
   } catch (error) {
@@ -715,6 +989,13 @@ export async function deleteLeavePolicy(req: Request, res: Response) {
 export async function assignPolicyToEmployee(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
     const { policyId, effectiveFrom } = req.body;
     if (!policyId) { res.status(400).json({ success: false, error: 'policyId is required' }); return; }
@@ -729,6 +1010,13 @@ export async function assignPolicyToEmployee(req: Request, res: Response) {
 export async function getEmployeePolicy(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await hrService.getEmployeePolicy(accountId, req.params.id as string);
     res.json({ success: true, data });
   } catch (error) {
@@ -742,6 +1030,13 @@ export async function getEmployeePolicy(req: Request, res: Response) {
 export async function listHolidayCalendars(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await hrService.listHolidayCalendars(accountId);
     res.json({ success: true, data });
   } catch (error) {
@@ -753,6 +1048,13 @@ export async function listHolidayCalendars(req: Request, res: Response) {
 export async function createHolidayCalendar(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { name, year, description, isDefault } = req.body;
     if (!name?.trim() || !year) { res.status(400).json({ success: false, error: 'Name and year are required' }); return; }
     const data = await hrService.createHolidayCalendar(accountId, { name: name.trim(), year, description, isDefault });
@@ -766,6 +1068,13 @@ export async function createHolidayCalendar(req: Request, res: Response) {
 export async function updateHolidayCalendar(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const data = await hrService.updateHolidayCalendar(accountId, req.params.id as string, req.body);
     if (!data) { res.status(404).json({ success: false, error: 'Holiday calendar not found' }); return; }
     res.json({ success: true, data });
@@ -778,6 +1087,13 @@ export async function updateHolidayCalendar(req: Request, res: Response) {
 export async function deleteHolidayCalendar(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     await hrService.deleteHolidayCalendar(accountId, req.params.id as string);
     res.json({ success: true, data: null });
   } catch (error) {
@@ -789,6 +1105,13 @@ export async function deleteHolidayCalendar(req: Request, res: Response) {
 export async function listHolidays(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await hrService.listHolidays(accountId, req.params.id as string);
     res.json({ success: true, data });
   } catch (error) {
@@ -800,6 +1123,13 @@ export async function listHolidays(req: Request, res: Response) {
 export async function createHoliday(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { calendarId, name, date, description, type, isRecurring } = req.body;
     if (!calendarId || !name?.trim() || !date) {
       res.status(400).json({ success: false, error: 'calendarId, name, and date are required' });
@@ -816,6 +1146,13 @@ export async function createHoliday(req: Request, res: Response) {
 export async function updateHoliday(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const data = await hrService.updateHoliday(accountId, req.params.id as string, req.body);
     if (!data) { res.status(404).json({ success: false, error: 'Holiday not found' }); return; }
     res.json({ success: true, data });
@@ -828,6 +1165,13 @@ export async function updateHoliday(req: Request, res: Response) {
 export async function deleteHoliday(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     await hrService.deleteHoliday(accountId, req.params.id as string);
     res.json({ success: true, data: null });
   } catch (error) {
@@ -839,6 +1183,13 @@ export async function deleteHoliday(req: Request, res: Response) {
 export async function getWorkingDays(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const { start, end, calendarId } = req.query;
     if (!start || !end) { res.status(400).json({ success: false, error: 'start and end are required' }); return; }
     const days = await hrService.calculateWorkingDays(accountId, start as string, end as string, calendarId as string | undefined);
@@ -854,6 +1205,13 @@ export async function getWorkingDays(req: Request, res: Response) {
 export async function listLeaveApplications(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const { employeeId, status, startDate, endDate } = req.query;
     const data = await leaveService.listLeaveApplications(accountId, {
       employeeId: employeeId as string | undefined,
@@ -871,6 +1229,13 @@ export async function listLeaveApplications(req: Request, res: Response) {
 export async function createLeaveApplication(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { employeeId, leaveTypeId, startDate, endDate, halfDay, halfDayDate, reason } = req.body;
     if (!employeeId || !leaveTypeId || !startDate || !endDate) {
       res.status(400).json({ success: false, error: 'employeeId, leaveTypeId, startDate, endDate are required' });
@@ -901,6 +1266,13 @@ export async function createLeaveApplication(req: Request, res: Response) {
 export async function updateLeaveApplication(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const data = await leaveService.updateLeaveApplication(accountId, req.params.id as string, req.body);
     if (!data) { res.status(404).json({ success: false, error: 'Leave application not found or not in draft' }); return; }
     res.json({ success: true, data });
@@ -913,6 +1285,13 @@ export async function updateLeaveApplication(req: Request, res: Response) {
 export async function submitLeaveApplication(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const data = await leaveService.submitLeaveApplication(accountId, req.params.id as string);
     if (!data) { res.status(400).json({ success: false, error: 'Cannot submit this application' }); return; }
     res.json({ success: true, data });
@@ -926,6 +1305,13 @@ export async function approveLeaveApplication(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const { comment } = req.body;
     const data = await leaveService.approveLeaveApplication(accountId, req.params.id as string, userId, comment);
     if (!data) { res.status(400).json({ success: false, error: 'Cannot approve this application' }); return; }
@@ -952,6 +1338,13 @@ export async function rejectLeaveApplication(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const { comment } = req.body;
     const data = await leaveService.rejectLeaveApplication(accountId, req.params.id as string, userId, comment);
     if (!data) { res.status(400).json({ success: false, error: 'Cannot reject this application' }); return; }
@@ -977,6 +1370,13 @@ export async function rejectLeaveApplication(req: Request, res: Response) {
 export async function cancelLeaveApplication(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const data = await leaveService.cancelLeaveApplication(accountId, req.params.id as string);
     if (!data) { res.status(400).json({ success: false, error: 'Cannot cancel this application' }); return; }
     res.json({ success: true, data });
@@ -990,6 +1390,13 @@ export async function getPendingApprovals(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await leaveService.getPendingApprovals(accountId, userId);
     res.json({ success: true, data });
   } catch (error) {
@@ -1001,6 +1408,13 @@ export async function getPendingApprovals(req: Request, res: Response) {
 export async function getLeaveCalendar(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
     const data = await leaveService.getLeaveCalendar(accountId, month);
     res.json({ success: true, data });
@@ -1015,6 +1429,13 @@ export async function getLeaveCalendar(req: Request, res: Response) {
 export async function listAttendance(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const { employeeId, date, startDate, endDate, status } = req.query;
     const data = await attendanceService.listAttendance(accountId, {
       employeeId: employeeId as string | undefined,
@@ -1034,6 +1455,13 @@ export async function markAttendance(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { employeeId, date, status, checkInTime, checkOutTime, notes } = req.body;
     if (!employeeId || !date || !status) {
       res.status(400).json({ success: false, error: 'employeeId, date, and status are required' });
@@ -1053,6 +1481,13 @@ export async function bulkMarkAttendance(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const { employeeIds, date, status } = req.body;
     if (!employeeIds?.length || !date || !status) {
       res.status(400).json({ success: false, error: 'employeeIds, date, and status are required' });
@@ -1071,6 +1506,13 @@ export async function bulkMarkAttendance(req: Request, res: Response) {
 export async function updateAttendanceRecord(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+      return;
+    }
+
     const data = await attendanceService.updateAttendance(accountId, req.params.id as string, req.body);
     if (!data) { res.status(404).json({ success: false, error: 'Attendance record not found' }); return; }
     res.json({ success: true, data });
@@ -1083,6 +1525,13 @@ export async function updateAttendanceRecord(req: Request, res: Response) {
 export async function getAttendanceToday(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await attendanceService.getTodaySummary(accountId);
     res.json({ success: true, data });
   } catch (error) {
@@ -1094,6 +1543,13 @@ export async function getAttendanceToday(req: Request, res: Response) {
 export async function getAttendanceReport(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
     const data = await attendanceService.getMonthlyReport(accountId, month);
     res.json({ success: true, data });
@@ -1106,6 +1562,13 @@ export async function getAttendanceReport(req: Request, res: Response) {
 export async function getEmployeeAttendance(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const month = (req.query.month as string) || undefined;
     const data = await attendanceService.getEmployeeAttendance(accountId, req.params.id as string, month);
     res.json({ success: true, data });
@@ -1120,6 +1583,13 @@ export async function getEmployeeAttendance(req: Request, res: Response) {
 export async function getLifecycleTimeline(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view HR data' });
+      return;
+    }
+
     const data = await hrService.getLifecycleTimeline(accountId, req.params.id as string);
     res.json({ success: true, data });
   } catch (error) {
@@ -1132,6 +1602,13 @@ export async function createLifecycleEventHandler(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
     const userId = req.auth!.userId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
     const employeeId = req.params.id as string;
     const { eventType, eventDate, effectiveDate, fromValue, toValue, fromDepartmentId, toDepartmentId, notes } = req.body;
     if (!eventType || !eventDate) {
@@ -1152,6 +1629,13 @@ export async function createLifecycleEventHandler(req: Request, res: Response) {
 export async function deleteLifecycleEvent(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+      return;
+    }
+
     await hrService.deleteLifecycleEvent(accountId, req.params.id as string);
     res.json({ success: true, data: null });
   } catch (error) {

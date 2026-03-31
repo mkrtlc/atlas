@@ -2,11 +2,18 @@ import type { Request, Response } from 'express';
 import * as taskService from './service';
 import { logger } from '../../utils/logger';
 import { emitAppEvent } from '../../services/event.service';
+import { getAppPermission, canAccess } from '../../services/app-permissions.service';
 
 // ─── Widget ─────────────────────────────────────────────────────────
 
 export async function getWidgetData(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const data = await taskService.getWidgetData(userId);
     res.json({ success: true, data });
@@ -20,6 +27,12 @@ export async function getWidgetData(req: Request, res: Response) {
 
 export async function listTasks(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const { status, when, projectId, includeArchived } = req.query;
 
@@ -39,6 +52,12 @@ export async function listTasks(req: Request, res: Response) {
 
 export async function getTask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
 
@@ -57,6 +76,12 @@ export async function getTask(req: Request, res: Response) {
 
 export async function createTask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
     const { title, notes, description, icon, type, headingId, projectId, when, priority, dueDate, tags, recurrenceRule } = req.body;
@@ -74,6 +99,12 @@ export async function createTask(req: Request, res: Response) {
 
 export async function updateTask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
     const { title, notes, description, icon, type, headingId, projectId, status, when, priority, dueDate, tags, recurrenceRule, sortOrder, isArchived } = req.body;
@@ -108,6 +139,12 @@ export async function updateTask(req: Request, res: Response) {
 
 export async function deleteTask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
 
@@ -121,6 +158,12 @@ export async function deleteTask(req: Request, res: Response) {
 
 export async function restoreTask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
 
@@ -139,6 +182,12 @@ export async function restoreTask(req: Request, res: Response) {
 
 export async function reorderTasks(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to reorder tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const { taskIds } = req.body;
 
@@ -157,6 +206,12 @@ export async function reorderTasks(req: Request, res: Response) {
 
 export async function searchTasks(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const query = (req.query.q as string) || '';
 
@@ -175,6 +230,12 @@ export async function searchTasks(req: Request, res: Response) {
 
 export async function getTaskCounts(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const counts = await taskService.getTaskCounts(userId);
     res.json({ success: true, data: counts });
@@ -188,6 +249,12 @@ export async function getTaskCounts(req: Request, res: Response) {
 
 export async function listProjects(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view projects' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const includeArchived = req.query.includeArchived === 'true';
 
@@ -201,6 +268,12 @@ export async function listProjects(req: Request, res: Response) {
 
 export async function createProject(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create projects' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
     const { title, color, description, icon } = req.body;
@@ -215,6 +288,12 @@ export async function createProject(req: Request, res: Response) {
 
 export async function updateProject(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update projects' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const projectId = req.params.id as string;
     const { title, color, description, icon, sortOrder, isArchived } = req.body;
@@ -237,6 +316,12 @@ export async function updateProject(req: Request, res: Response) {
 
 export async function deleteProject(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete projects' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const projectId = req.params.id as string;
 
@@ -327,6 +412,12 @@ export async function seedSampleTasks(req: Request, res: Response) {
 
 export async function listSubtasks(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view subtasks' });
+      return;
+    }
+
     const taskId = req.params.id as string;
     const subtasks = await taskService.listSubtasks(taskId);
     res.json({ success: true, data: subtasks });
@@ -338,6 +429,12 @@ export async function listSubtasks(req: Request, res: Response) {
 
 export async function createSubtask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create subtasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
     const { title } = req.body;
@@ -351,6 +448,12 @@ export async function createSubtask(req: Request, res: Response) {
 
 export async function updateSubtask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update subtasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const subtaskId = req.params.subtaskId as string;
     const { title, isCompleted } = req.body;
@@ -365,6 +468,12 @@ export async function updateSubtask(req: Request, res: Response) {
 
 export async function deleteSubtask(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete subtasks' });
+      return;
+    }
+
     await taskService.deleteSubtask(req.params.subtaskId as string);
     res.json({ success: true, data: null });
   } catch (error) {
@@ -375,6 +484,12 @@ export async function deleteSubtask(req: Request, res: Response) {
 
 export async function reorderSubtasks(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to reorder subtasks' });
+      return;
+    }
+
     const taskId = req.params.id as string;
     const { subtaskIds } = req.body;
     await taskService.reorderSubtasks(taskId, subtaskIds);
@@ -389,6 +504,12 @@ export async function reorderSubtasks(req: Request, res: Response) {
 
 export async function listActivities(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view activities' });
+      return;
+    }
+
     const taskId = req.params.id as string;
     const activities = await taskService.listActivities(taskId);
     res.json({ success: true, data: activities });
@@ -402,6 +523,12 @@ export async function listActivities(req: Request, res: Response) {
 
 export async function listTemplates(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view templates' });
+      return;
+    }
+
     const templates = await taskService.listTemplates(req.auth!.userId);
     res.json({ success: true, data: templates });
   } catch (error) {
@@ -412,6 +539,12 @@ export async function listTemplates(req: Request, res: Response) {
 
 export async function createTemplate(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create templates' });
+      return;
+    }
+
     const template = await taskService.createTemplate(req.auth!.userId, req.auth!.accountId, req.body);
     res.json({ success: true, data: template });
   } catch (error) {
@@ -422,6 +555,12 @@ export async function createTemplate(req: Request, res: Response) {
 
 export async function updateTemplate(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update templates' });
+      return;
+    }
+
     const template = await taskService.updateTemplate(req.auth!.userId, req.params.templateId as string, req.body);
     if (!template) { res.status(404).json({ success: false, error: 'Template not found' }); return; }
     res.json({ success: true, data: template });
@@ -433,6 +572,12 @@ export async function updateTemplate(req: Request, res: Response) {
 
 export async function deleteTemplate(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'delete')) {
+      res.status(403).json({ success: false, error: 'No permission to delete templates' });
+      return;
+    }
+
     await taskService.deleteTemplate(req.auth!.userId, req.params.templateId as string);
     res.json({ success: true, data: null });
   } catch (error) {
@@ -443,6 +588,12 @@ export async function deleteTemplate(req: Request, res: Response) {
 
 export async function createTaskFromTemplate(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create tasks' });
+      return;
+    }
+
     const task = await taskService.createTaskFromTemplate(req.auth!.userId, req.auth!.accountId, req.params.templateId as string);
     if (!task) { res.status(404).json({ success: false, error: 'Template not found' }); return; }
     res.json({ success: true, data: task });
@@ -456,6 +607,12 @@ export async function createTaskFromTemplate(req: Request, res: Response) {
 
 export async function createTaskFromEmail(req: Request, res: Response) {
   try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create tasks' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
     const { emailId, subject, snippet } = req.body;

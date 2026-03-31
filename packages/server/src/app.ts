@@ -7,6 +7,7 @@ import shareRoutes from './routes/share.routes';
 import { errorHandler } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 import { authMiddleware } from './middleware/auth';
+import { auditMiddleware } from './middleware/audit';
 import { env } from './config/env';
 
 export function createApp() {
@@ -63,6 +64,7 @@ export function createApp() {
   // Serve uploaded files (auth via query token)
   app.use('/api/v1/uploads', authMiddleware, express.static(path.join(__dirname, '../uploads')));
 
+  app.use('/api/v1', auditMiddleware);
   app.use('/api/v1', apiLimiter);
   app.use('/api/v1', routes);
   app.use(errorHandler);
