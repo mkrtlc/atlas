@@ -8,6 +8,7 @@ import { accounts, users, passwordResetTokens } from '../db/schema';
 import { logger } from '../utils/logger';
 import { hashPassword, verifyPassword, validatePasswordStrength } from '../utils/password';
 import * as tenantService from '../services/platform/tenant.service';
+import { sendEmail } from '../services/email.service';
 import { isGoogleConfigured, getAuthUrl, exchangeCode, createOAuth2Client } from '../services/google-auth';
 import { encrypt, decrypt } from '../utils/crypto';
 import { env } from '../config/env';
@@ -359,8 +360,15 @@ export async function forgotPassword(req: Request, res: Response) {
       expiresAt,
     });
 
-    // TODO: Send password reset email when SMTP is configured
-    logger.info({ email, token }, 'Password reset token generated');
+    // Send password reset email (silently fails if SMTP not configured)
+    const resetUrl = `${env.CLIENT_PUBLIC_URL}/reset-password?token=${token}`;
+    await sendEmail({
+      to: email,
+      subject: 'Atlas — Password reset',
+      text: `You requested a password reset. Click this link to reset your password:\n\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can ignore this email.`,
+      html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset your password</a></p><p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>`,
+    });
+    logger.info({ email }, 'Password reset token generated');
 
     res.json({ success: true, message: 'If an account exists with that email, a reset link has been sent.' });
   } catch (error) {

@@ -7,6 +7,8 @@ import * as authService from '../auth.service';
 import { logger } from '../../utils/logger';
 import { getTenantById } from './tenant.service';
 import type { TenantMemberRole } from '@atlasmail/shared';
+import { env } from '../../config/env';
+import { sendEmail } from '../email.service';
 
 export async function createTenantUser(
   tenantId: string,
@@ -129,8 +131,16 @@ export async function inviteUser(tenantId: string, email: string, role: TenantMe
 
   logger.info({ tenantId, email, invitationId: invitation.id }, 'User invited to tenant');
 
-  // TODO: Send invitation email when SMTP is configured
-  logger.info({ email, tenantId, token }, 'Invitation created (email sending not yet configured)');
+  // Send invitation email (silently fails if SMTP not configured)
+  const tenant = await getTenantById(tenantId);
+  const inviteUrl = `${env.CLIENT_PUBLIC_URL}/invite/${token}`;
+  await sendEmail({
+    to: email,
+    subject: `You've been invited to ${tenant?.name || 'Atlas'}`,
+    text: `You've been invited to join ${tenant?.name || 'Atlas'}.\n\nClick this link to accept:\n${inviteUrl}\n\nThis invitation expires in 7 days.`,
+    html: `<p>You've been invited to join <strong>${tenant?.name || 'Atlas'}</strong>.</p><p><a href="${inviteUrl}">Accept invitation</a></p><p>This invitation expires in 7 days.</p>`,
+  });
+  logger.info({ email, tenantId }, 'Invitation created');
 
   return invitation;
 }
