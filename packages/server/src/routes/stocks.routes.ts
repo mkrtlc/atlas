@@ -17,7 +17,7 @@ interface StockQuote {
   changePercent: number;
 }
 
-const SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
+const SYMBOLS = ['AAPL', 'GOOGL', 'MSFT'];
 
 async function fetchQuotes(): Promise<StockQuote[]> {
   // Use Yahoo Finance v8 API (no key required, server-side only)

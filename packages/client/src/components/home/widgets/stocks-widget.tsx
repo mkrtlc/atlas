@@ -58,7 +58,7 @@ function StocksWidgetComponent({ width, height }: WidgetProps) {
 
   return (
     <div style={{ width, height, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '14px 20px', gap: 10 }}>
-      {quotes.slice(0, 5).map((q) => (
+      {quotes.slice(0, 3).map((q) => (
         <div key={q.symbol} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: 'rgba(255,255,255,0.95)', minWidth: 60 }}>
             {q.symbol}
