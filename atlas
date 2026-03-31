@@ -460,34 +460,33 @@ cmd_reset_password() {
   fi
 
   # Run password reset inside the Atlas container
+  # Pass credentials via env vars to prevent injection
   info "Updating password in database..."
-  docker exec atlas node -e "
-    const bcrypt = require('bcryptjs');
-    const { Pool } = require('pg');
-
+  docker exec -e RESET_EMAIL="$email" -e RESET_PASSWORD="$new_password" atlas node -e '
+    const bcrypt = require("bcryptjs");
+    const { Pool } = require("pg");
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
     (async () => {
       try {
-        const hash = await bcrypt.hash('${new_password}', 12);
+        const hash = await bcrypt.hash(process.env.RESET_PASSWORD, 12);
         const result = await pool.query(
-          'UPDATE users SET password_hash = \$1, updated_at = NOW() WHERE email = \$2 RETURNING id, email',
-          [hash, '${email}']
+          "UPDATE accounts SET password_hash = \$1, updated_at = NOW() WHERE email = \$2 RETURNING id, email",
+          [hash, process.env.RESET_EMAIL]
         );
         if (result.rowCount === 0) {
-          console.error('USER_NOT_FOUND');
+          console.error("USER_NOT_FOUND");
           process.exit(1);
         }
-        console.log('PASSWORD_RESET_OK');
+        console.log("PASSWORD_RESET_OK");
         process.exit(0);
       } catch (err) {
-        console.error('ERROR:' + err.message);
+        console.error("ERROR:" + err.message);
         process.exit(1);
       } finally {
         await pool.end();
       }
     })();
-  " 2>&1 | while IFS= read -r line; do
+  ' 2>&1 | while IFS= read -r line; do
     case "$line" in
       PASSWORD_RESET_OK)
         ;;

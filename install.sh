@@ -298,7 +298,7 @@ download_file() {
   fi
 }
 
-for FILE in docker-compose.production.yml docker-compose.https.yml Dockerfile; do
+for FILE in docker-compose.production.yml docker-compose.https.yml; do
   if [[ ! -f "$FILE" ]] || [[ "$IS_UPGRADE" == false ]]; then
     info "Downloading ${FILE}..."
     download_file "${REPO_BASE}/${FILE}" "$FILE" || fail "Failed to download ${FILE}"
@@ -308,17 +308,13 @@ for FILE in docker-compose.production.yml docker-compose.https.yml Dockerfile; d
   fi
 done
 
-# Download compose files if not present
-for FILE in docker-compose.production.yml docker-compose.https.yml; do
-  if [[ ! -f "${FILE}" ]]; then
-    info "Downloading ${FILE}..."
-    if command_exists curl; then
-      curl -fsSL "https://raw.githubusercontent.com/gorkem-bwl/Atlas/main/${FILE}" -o "${FILE}"
-    else
-      wget -qO "${FILE}" "https://raw.githubusercontent.com/gorkem-bwl/Atlas/main/${FILE}"
-    fi
-  fi
-done
+# Download atlas CLI tool
+if [[ ! -f "atlas" ]]; then
+  info "Downloading Atlas CLI..."
+  download_file "${REPO_BASE}/atlas" "atlas" || warn "Could not download atlas CLI"
+  chmod +x atlas 2>/dev/null
+  success "Atlas CLI downloaded"
+fi
 
 # ── Pull images ──────────────────────────────────────────────────────────────
 
