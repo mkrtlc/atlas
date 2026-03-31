@@ -255,6 +255,20 @@ export async function voidDocument(req: Request, res: Response) {
   }
 }
 
+// POST /api/sign/seed
+export async function seedSampleData(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    const result = await signService.seedSampleData(userId, accountId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error({ error }, 'Failed to seed sign sample data');
+    res.status(500).json({ success: false, error: 'Failed to seed sign sample data' });
+  }
+}
+
 // ─── Field CRUD ─────────────────────────────────────────────────────
 
 // GET /api/sign/:id/fields

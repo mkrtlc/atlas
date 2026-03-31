@@ -9,6 +9,9 @@ router.get('/', documentController.listDocuments);
 router.post('/', documentController.createDocument);
 router.get('/search', documentController.searchDocuments);
 
+// Seed sample data
+router.post('/seed', documentController.seedSampleData);
+
 // Import (must be before /:id to avoid route conflicts)
 router.post('/import', documentController.importDocument);
 

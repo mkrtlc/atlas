@@ -729,6 +729,20 @@ export async function createLinkedSpreadsheet(req: Request, res: Response) {
   }
 }
 
+// POST /api/drive/seed
+export async function seedSampleData(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    const result = await driveService.seedSampleData(userId, accountId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error({ error }, 'Failed to seed drive sample data');
+    res.status(500).json({ success: false, error: 'Failed to seed drive sample data' });
+  }
+}
+
 // GET /api/drive/:id/preview — return text content for previewable files
 const MAX_PREVIEW_BYTES = 512 * 1024; // 512KB max preview
 const PREVIEWABLE_MIMES = [

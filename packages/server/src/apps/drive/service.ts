@@ -336,6 +336,28 @@ export async function seedSampleFolder(_userId: string, _accountId: string) {
   // No-op — sample data removed
 }
 
+// ─── Seed sample data (called from setup wizard) ────────────────────
+
+export async function seedSampleData(userId: string, accountId: string) {
+  // Idempotency guard — skip if folders already exist
+  const existing = await db.select({ id: driveItems.id }).from(driveItems)
+    .where(and(eq(driveItems.userId, userId), eq(driveItems.type, 'folder')))
+    .limit(1);
+  if (existing.length > 0) return { skipped: true };
+
+  // Create top-level folders
+  await createFolder(userId, accountId, { name: 'Documents' });
+  await createFolder(userId, accountId, { name: 'Marketing' });
+  await createFolder(userId, accountId, { name: 'HR' });
+  const crm = await createFolder(userId, accountId, { name: 'CRM' });
+
+  // Create subfolder inside CRM
+  await createFolder(userId, accountId, { name: 'Proposals', parentId: crm.id });
+
+  logger.info({ userId }, 'Drive sample folders seeded');
+  return { seeded: true };
+}
+
 // ─── List all folders (for move modal) ───────────────────────────────
 
 export async function listFolders(userId: string) {

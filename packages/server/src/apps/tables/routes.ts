@@ -8,6 +8,10 @@ router.use(authMiddleware);
 router.get('/', tableController.listSpreadsheets);
 router.post('/', tableController.createSpreadsheet);
 router.get('/search', tableController.searchSpreadsheets);
+
+// Seed sample data
+router.post('/seed', tableController.seedSampleData);
+
 router.get('/:id', tableController.getSpreadsheet);
 router.patch('/:id', tableController.updateSpreadsheet);
 router.delete('/:id', tableController.deleteSpreadsheet);

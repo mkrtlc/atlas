@@ -231,6 +231,21 @@ export async function restoreVersion(req: Request, res: Response) {
   }
 }
 
+// ─── Seed sample data ───────────────────────────────────────────────
+
+export async function seedSampleData(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    const result = await documentService.seedSampleDocuments(userId, accountId);
+    res.json({ success: true, data: { message: 'Seeded Docs sample data', ...result } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to seed Docs sample data');
+    res.status(500).json({ success: false, error: 'Failed to seed Docs sample data' });
+  }
+}
+
 // ─── Comments ────────────────────────────────────────────────────────
 
 export async function listComments(req: Request, res: Response) {

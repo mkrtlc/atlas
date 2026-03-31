@@ -202,6 +202,11 @@ export function SetupPage({ preview = false }: { preview?: boolean }) {
         { label: 'HRM', url: '/hr/seed' },
         { label: 'Tasks', url: '/tasks/seed' },
         { label: 'Projects', url: '/projects/seed' },
+        { label: 'Tables', url: '/tables/seed' },
+        { label: 'Drive', url: '/drive/seed' },
+        { label: 'Docs', url: '/docs/seed' },
+        { label: 'Draw', url: '/drawings/seed' },
+        { label: 'Sign', url: '/sign/seed' },
       ];
 
       for (let i = 0; i < seedSteps.length; i++) {

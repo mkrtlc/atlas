@@ -134,6 +134,20 @@ export async function restoreSpreadsheet(req: Request, res: Response) {
   }
 }
 
+// POST /api/tables/seed
+export async function seedSampleData(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    const result = await tableService.seedSampleSpreadsheets(userId, accountId);
+    res.json({ success: true, data: { message: 'Seeded Tables sample data', ...result } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to seed Tables sample data');
+    res.status(500).json({ success: false, error: 'Failed to seed Tables sample data' });
+  }
+}
+
 // GET /api/tables/search?q=...
 export async function searchSpreadsheets(req: Request, res: Response) {
   try {

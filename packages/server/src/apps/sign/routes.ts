@@ -34,6 +34,9 @@ router.use(authMiddleware);
 // ─── Widget (lightweight summary for home dashboard) ────────────────
 router.get('/widget', signController.getWidgetData);
 
+// ─── Seed ──────────────────────────────────────────────────────────
+router.post('/seed', signController.seedSampleData);
+
 // ─── Documents ──────────────────────────────────────────────────────
 router.get('/', signController.listDocuments);
 router.post('/', signController.createDocument);

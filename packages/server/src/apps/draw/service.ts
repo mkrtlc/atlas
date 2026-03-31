@@ -51,25 +51,37 @@ export async function seedSampleDrawings(userId: string, accountId: string) {
     .where(eq(drawings.userId, userId))
     .limit(1);
 
-  if (existing.length > 0) return; // User already has drawings
+  if (existing.length > 0) return { skipped: true }; // User already has drawings
 
   const now = new Date();
+  const emptyCanvas = {
+    elements: [],
+    appState: { viewBackgroundColor: '#ffffff' },
+    files: {},
+  };
 
   await db.insert(drawings).values({
     accountId,
     userId,
-    title: 'Getting started',
-    content: {
-      elements: [],
-      appState: { viewBackgroundColor: '#ffffff' },
-      files: {},
-    },
+    title: 'Architecture diagram',
+    content: emptyCanvas,
     sortOrder: 0,
     createdAt: now,
     updatedAt: now,
   });
 
-  logger.info({ userId }, 'Seeded sample drawing');
+  await db.insert(drawings).values({
+    accountId,
+    userId,
+    title: 'Brainstorm board',
+    content: emptyCanvas,
+    sortOrder: 1,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  logger.info({ userId }, 'Seeded sample drawings');
+  return { drawings: 2 };
 }
 
 // ─── Create a new drawing ────────────────────────────────────────────

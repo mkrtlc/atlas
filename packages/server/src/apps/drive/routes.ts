@@ -57,6 +57,7 @@ router.get('/by-type', driveController.listItemsByType);
 router.post('/batch/delete', driveController.batchDelete);
 router.post('/batch/move', driveController.batchMove);
 router.post('/batch/favourite', driveController.batchFavourite);
+router.post('/seed', driveController.seedSampleData);
 router.post('/create-document', driveController.createLinkedDocument);
 router.post('/create-drawing', driveController.createLinkedDrawing);
 router.post('/create-spreadsheet', driveController.createLinkedSpreadsheet);

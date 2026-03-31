@@ -90,7 +90,7 @@ export async function seedSampleDocuments(userId: string, accountId: string) {
     )
     .limit(1);
 
-  if (meaningful.length > 0) return; // Already has real documents
+  if (meaningful.length > 0) return { skipped: true }; // Already has real documents
 
   // Delete any leftover empty "Untitled" docs so we can start fresh
   await db.delete(documents).where(eq(documents.userId, userId));
@@ -548,6 +548,7 @@ export async function seedSampleDocuments(userId: string, accountId: string) {
   });
 
   logger.info({ userId, accountId }, 'Seeded sample documents');
+  return { documents: 13 };
 }
 
 // ─── Get a single document with full content ─────────────────────────

@@ -5,6 +5,7 @@ import { authMiddleware } from '../../middleware/auth';
 const router = Router();
 router.use(authMiddleware);
 
+router.post('/seed', drawingController.seedSampleData);
 router.get('/', drawingController.listDrawings);
 router.post('/', drawingController.createDrawing);
 router.get('/search', drawingController.searchDrawings);

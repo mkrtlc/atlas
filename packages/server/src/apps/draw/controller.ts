@@ -2,6 +2,20 @@ import type { Request, Response } from 'express';
 import * as drawingService from './service';
 import { logger } from '../../utils/logger';
 
+// POST /api/drawings/seed
+export async function seedSampleData(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+
+    const result = await drawingService.seedSampleDrawings(userId, accountId);
+    res.json({ success: true, data: { message: 'Seeded Draw sample data', ...result } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to seed Draw sample data');
+    res.status(500).json({ success: false, error: 'Failed to seed Draw sample data' });
+  }
+}
+
 // GET /api/drawings
 export async function listDrawings(req: Request, res: Response) {
   try {
