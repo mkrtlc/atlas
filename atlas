@@ -1,0 +1,756 @@
+#!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────────────────────
+# Atlas CLI — Management tool for self-hosted Atlas
+#
+# Usage:
+#   atlas <command> [options]
+#
+# Install:
+#   sudo cp atlas /usr/local/bin/atlas
+# ──────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+# ── Version ──────────────────────────────────────────────────────────────────
+
+ATLAS_CLI_VERSION="1.0.0"
+
+# ── Colors & symbols ─────────────────────────────────────────────────────────
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+CHECK="${GREEN}✓${NC}"
+CROSS="${RED}✗${NC}"
+ARROW="${BLUE}→${NC}"
+WARN="${YELLOW}!${NC}"
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+info()    { echo -e "  ${ARROW} $1"; }
+success() { echo -e "  ${CHECK} $1"; }
+warn()    { echo -e "  ${WARN} $1"; }
+fail()    { echo -e "  ${CROSS} $1"; exit 1; }
+
+header() {
+  echo ""
+  echo -e "${BOLD}${CYAN}$1${NC}"
+  echo -e "${DIM}$(printf '%.0s─' $(seq 1 60))${NC}"
+}
+
+# ── Find Atlas installation directory ────────────────────────────────────────
+
+find_atlas_dir() {
+  # 1. ATLAS_DIR environment variable
+  if [[ -n "${ATLAS_DIR:-}" ]] && [[ -f "${ATLAS_DIR}/docker-compose.production.yml" ]]; then
+    echo "$ATLAS_DIR"
+    return 0
+  fi
+
+  # 2. Current directory
+  if [[ -f "./docker-compose.production.yml" ]] && grep -q "atlas" "./docker-compose.production.yml" 2>/dev/null; then
+    echo "$(pwd)"
+    return 0
+  fi
+
+  # 3. Common installation paths
+  for dir in \
+    "$HOME/atlas" \
+    "/opt/atlas" \
+    "/srv/atlas" \
+    "$HOME/Atlas" \
+    "/root/atlas"; do
+    if [[ -f "${dir}/docker-compose.production.yml" ]]; then
+      echo "$dir"
+      return 0
+    fi
+  done
+
+  # 4. Parent directory (if run from a subdirectory)
+  if [[ -f "../docker-compose.production.yml" ]] && grep -q "atlas" "../docker-compose.production.yml" 2>/dev/null; then
+    echo "$(cd .. && pwd)"
+    return 0
+  fi
+
+  return 1
+}
+
+ATLAS_DIR=$(find_atlas_dir) || fail "Cannot find Atlas installation. Set ATLAS_DIR or run from the Atlas directory.
+
+  Looked in:
+    - \$ATLAS_DIR environment variable
+    - Current directory ($(pwd))
+    - ~/atlas, /opt/atlas, /srv/atlas
+
+  Run the installer first:
+    curl -fsSL https://raw.githubusercontent.com/gorkem-bwl/Atlas/main/install.sh | bash"
+
+cd "$ATLAS_DIR"
+
+# ── Docker Compose helper ───────────────────────────────────────────────────
+
+compose_cmd() {
+  local files="-f docker-compose.production.yml"
+
+  # Include HTTPS compose if domain is configured and not localhost
+  if [[ -f ".env" ]]; then
+    local domain
+    domain=$(grep -E "^ATLAS_DOMAIN=" .env 2>/dev/null | cut -d'=' -f2 || echo "localhost")
+    if [[ "$domain" != "localhost" ]] && [[ -f "docker-compose.https.yml" ]]; then
+      files="$files -f docker-compose.https.yml"
+    fi
+  fi
+
+  docker compose $files "$@"
+}
+
+# ── Commands ─────────────────────────────────────────────────────────────────
+
+cmd_start() {
+  header "Starting Atlas"
+  info "Starting all services..."
+  compose_cmd up -d
+  success "All services started"
+  echo ""
+  cmd_status_brief
+}
+
+cmd_stop() {
+  header "Stopping Atlas"
+  info "Stopping all services..."
+  compose_cmd down
+  success "All services stopped"
+}
+
+cmd_restart() {
+  header "Restarting Atlas"
+  info "Restarting all services..."
+  compose_cmd down
+  compose_cmd up -d
+  success "All services restarted"
+  echo ""
+  cmd_status_brief
+}
+
+cmd_status_brief() {
+  # Get the public URL from .env
+  local url="http://localhost:3001"
+  if [[ -f ".env" ]]; then
+    local client_url
+    client_url=$(grep -E "^CLIENT_PUBLIC_URL=" .env 2>/dev/null | cut -d'=' -f2 || echo "")
+    if [[ -n "$client_url" ]]; then
+      url="$client_url"
+    fi
+  fi
+
+  # Health check
+  if curl -sf "http://localhost:3001/api/v1/health" >/dev/null 2>&1; then
+    success "Atlas is healthy at ${BOLD}${url}${NC}"
+  else
+    warn "Atlas is not responding yet. It may still be starting."
+  fi
+}
+
+cmd_status() {
+  header "Atlas service status"
+
+  # Show running containers
+  echo ""
+  compose_cmd ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || \
+    compose_cmd ps
+  echo ""
+
+  # Health checks
+  header "Health checks"
+
+  # Atlas app
+  if curl -sf "http://localhost:3001/api/v1/health" >/dev/null 2>&1; then
+    local health_response
+    health_response=$(curl -sf "http://localhost:3001/api/v1/health" 2>/dev/null || echo "{}")
+    success "Atlas API: healthy"
+    if command -v jq >/dev/null 2>&1; then
+      echo -e "    ${DIM}$(echo "$health_response" | jq -c '.' 2>/dev/null || echo "$health_response")${NC}"
+    fi
+  else
+    echo -e "  ${CROSS} Atlas API: not responding"
+  fi
+
+  # PostgreSQL
+  if docker exec atlas-postgres pg_isready -U atlas -d atlas >/dev/null 2>&1; then
+    success "PostgreSQL: accepting connections"
+  else
+    echo -e "  ${CROSS} PostgreSQL: not ready"
+  fi
+
+  # Redis
+  if docker exec atlas-redis redis-cli ping >/dev/null 2>&1; then
+    success "Redis: responding"
+  else
+    echo -e "  ${CROSS} Redis: not responding"
+  fi
+
+  # Caddy (if configured)
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "atlas-caddy"; then
+    success "Caddy: running"
+  fi
+
+  # Disk usage
+  header "Disk usage"
+  docker system df --format "table {{.Type}}\t{{.TotalCount}}\t{{.Size}}\t{{.Reclaimable}}" 2>/dev/null || \
+    docker system df 2>/dev/null || true
+
+  # URL
+  echo ""
+  local url="http://localhost:3001"
+  if [[ -f ".env" ]]; then
+    local client_url
+    client_url=$(grep -E "^CLIENT_PUBLIC_URL=" .env 2>/dev/null | cut -d'=' -f2 || echo "")
+    if [[ -n "$client_url" ]]; then
+      url="$client_url"
+    fi
+  fi
+  echo -e "  ${BOLD}URL:${NC} ${url}"
+  echo ""
+}
+
+cmd_logs() {
+  local service="${1:-}"
+  local follow="${ATLAS_LOGS_FOLLOW:---follow}"
+
+  if [[ -n "$service" ]]; then
+    info "Tailing logs for ${service}..."
+    compose_cmd logs $follow --tail=100 "$service"
+  else
+    info "Tailing all logs (Ctrl+C to stop)..."
+    compose_cmd logs $follow --tail=100
+  fi
+}
+
+cmd_update() {
+  header "Updating Atlas"
+
+  # Check for updates by pulling latest source
+  info "Downloading latest version..."
+
+  local REPO_BASE="https://raw.githubusercontent.com/gorkem-bwl/Atlas/main"
+
+  # Download latest compose files
+  for FILE in docker-compose.production.yml docker-compose.https.yml Dockerfile; do
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL "${REPO_BASE}/${FILE}" -o "${FILE}.new" 2>/dev/null && \
+        mv "${FILE}.new" "$FILE" || rm -f "${FILE}.new"
+    elif command -v wget >/dev/null 2>&1; then
+      wget -qO "${FILE}.new" "${REPO_BASE}/${FILE}" 2>/dev/null && \
+        mv "${FILE}.new" "$FILE" || rm -f "${FILE}.new"
+    fi
+  done
+  success "Configuration files updated"
+
+  # Pull latest image from GHCR
+  info "Pulling latest Atlas image..."
+  docker compose -f docker-compose.production.yml pull
+  success "Image updated (ghcr.io/gorkem-bwl/atlas:latest)"
+
+  # Restart
+  info "Restarting services..."
+  compose_cmd down
+  compose_cmd up -d
+  success "Services restarted"
+
+  # Wait for health
+  local max_wait=60
+  local elapsed=0
+  while [[ $elapsed -lt $max_wait ]]; do
+    if curl -sf "http://localhost:3001/api/v1/health" >/dev/null 2>&1; then
+      success "Atlas is healthy after update"
+      break
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+
+  if [[ $elapsed -ge $max_wait ]]; then
+    warn "Atlas did not become healthy within ${max_wait}s. Check logs: atlas logs"
+  fi
+
+  echo ""
+  success "Update complete!"
+}
+
+cmd_backup() {
+  header "Backing up Atlas database"
+
+  local backup_dir="${ATLAS_DIR}/atlas-data/backups"
+  mkdir -p "$backup_dir"
+
+  local timestamp
+  timestamp=$(date +%Y%m%d_%H%M%S)
+  local backup_file="${backup_dir}/atlas_${timestamp}.sql.gz"
+
+  info "Creating database backup..."
+
+  # Get database password from .env
+  local pg_password="atlas"
+  if [[ -f ".env" ]]; then
+    pg_password=$(grep -E "^POSTGRES_PASSWORD=" .env 2>/dev/null | cut -d'=' -f2 || echo "atlas")
+  fi
+
+  # Run pg_dump inside the postgres container
+  docker exec atlas-postgres pg_dump \
+    -U atlas \
+    -d atlas \
+    --format=plain \
+    --no-owner \
+    --no-privileges \
+    2>/dev/null | gzip > "$backup_file"
+
+  if [[ ${PIPESTATUS[0]} -ne 0 ]] || [[ ! -s "$backup_file" ]]; then
+    rm -f "$backup_file"
+    fail "Backup failed. Make sure PostgreSQL is running: atlas status"
+  fi
+
+  local size
+  size=$(du -h "$backup_file" | cut -f1)
+  success "Backup created: ${backup_file} (${size})"
+
+  # Cleanup old backups (retain 7 days)
+  info "Cleaning up backups older than 7 days..."
+  local deleted=0
+  while IFS= read -r old_backup; do
+    if [[ -n "$old_backup" ]]; then
+      rm -f "$old_backup"
+      deleted=$((deleted + 1))
+    fi
+  done < <(find "$backup_dir" -name "atlas_*.sql.gz" -mtime +7 -type f 2>/dev/null)
+
+  if [[ $deleted -gt 0 ]]; then
+    success "Removed ${deleted} old backup(s)"
+  else
+    success "No old backups to remove"
+  fi
+
+  # List recent backups
+  echo ""
+  info "Recent backups:"
+  ls -lh "$backup_dir"/atlas_*.sql.gz 2>/dev/null | tail -5 | while IFS= read -r line; do
+    echo -e "    ${DIM}${line}${NC}"
+  done
+  echo ""
+}
+
+cmd_restore() {
+  local backup_file="${1:-}"
+
+  if [[ -z "$backup_file" ]]; then
+    fail "Usage: atlas restore <backup-file>
+
+  Example:
+    atlas restore atlas-data/backups/atlas_20240115_120000.sql.gz
+
+  Available backups:"
+    ls -lh "${ATLAS_DIR}/atlas-data/backups"/atlas_*.sql.gz 2>/dev/null | while IFS= read -r line; do
+      echo -e "    ${DIM}${line}${NC}"
+    done
+    exit 1
+  fi
+
+  # Resolve relative paths
+  if [[ ! "$backup_file" = /* ]]; then
+    backup_file="${ATLAS_DIR}/${backup_file}"
+  fi
+
+  if [[ ! -f "$backup_file" ]]; then
+    fail "Backup file not found: ${backup_file}"
+  fi
+
+  header "Restoring Atlas database"
+
+  warn "This will REPLACE the current database with the backup."
+  echo -ne "  ${ARROW} Type ${BOLD}yes${NC} to confirm: "
+  read -r confirm
+  if [[ "$confirm" != "yes" ]]; then
+    info "Restore cancelled."
+    exit 0
+  fi
+
+  # Stop Atlas to prevent writes during restore
+  info "Stopping Atlas to prevent writes..."
+  docker stop atlas 2>/dev/null || true
+
+  # Make sure Postgres is running
+  if ! docker exec atlas-postgres pg_isready -U atlas -d atlas >/dev/null 2>&1; then
+    info "Starting PostgreSQL..."
+    docker start atlas-postgres 2>/dev/null || compose_cmd up -d postgres
+    sleep 3
+  fi
+
+  info "Restoring from: ${backup_file}"
+
+  # Drop and recreate the database
+  docker exec atlas-postgres psql -U atlas -d postgres -c "DROP DATABASE IF EXISTS atlas;" 2>/dev/null
+  docker exec atlas-postgres psql -U atlas -d postgres -c "CREATE DATABASE atlas OWNER atlas;" 2>/dev/null
+
+  # Restore the backup
+  if [[ "$backup_file" == *.gz ]]; then
+    gunzip -c "$backup_file" | docker exec -i atlas-postgres psql -U atlas -d atlas 2>/dev/null
+  else
+    docker exec -i atlas-postgres psql -U atlas -d atlas < "$backup_file" 2>/dev/null
+  fi
+
+  if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    warn "Restore completed with warnings (this is usually fine for a fresh restore)"
+  else
+    success "Database restored successfully"
+  fi
+
+  # Restart all services
+  info "Restarting Atlas..."
+  compose_cmd up -d
+  success "Atlas restarted"
+
+  # Wait for health
+  local max_wait=30
+  local elapsed=0
+  while [[ $elapsed -lt $max_wait ]]; do
+    if curl -sf "http://localhost:3001/api/v1/health" >/dev/null 2>&1; then
+      success "Atlas is healthy after restore"
+      break
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+
+  echo ""
+  success "Restore complete!"
+}
+
+cmd_reset_password() {
+  local email="${1:-}"
+
+  if [[ -z "$email" ]]; then
+    fail "Usage: atlas reset-password <email>
+
+  Example:
+    atlas reset-password admin@example.com"
+  fi
+
+  header "Reset password"
+
+  info "Resetting password for: ${email}"
+  echo -ne "  ${ARROW} New password (min 8 characters): "
+  read -rs new_password
+  echo ""
+
+  if [[ ${#new_password} -lt 8 ]]; then
+    fail "Password must be at least 8 characters."
+  fi
+
+  echo -ne "  ${ARROW} Confirm password: "
+  read -rs confirm_password
+  echo ""
+
+  if [[ "$new_password" != "$confirm_password" ]]; then
+    fail "Passwords do not match."
+  fi
+
+  # Run password reset inside the Atlas container
+  info "Updating password in database..."
+  docker exec atlas node -e "
+    const bcrypt = require('bcryptjs');
+    const { Pool } = require('pg');
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+    (async () => {
+      try {
+        const hash = await bcrypt.hash('${new_password}', 12);
+        const result = await pool.query(
+          'UPDATE users SET password_hash = \$1, updated_at = NOW() WHERE email = \$2 RETURNING id, email',
+          [hash, '${email}']
+        );
+        if (result.rowCount === 0) {
+          console.error('USER_NOT_FOUND');
+          process.exit(1);
+        }
+        console.log('PASSWORD_RESET_OK');
+        process.exit(0);
+      } catch (err) {
+        console.error('ERROR:' + err.message);
+        process.exit(1);
+      } finally {
+        await pool.end();
+      }
+    })();
+  " 2>&1 | while IFS= read -r line; do
+    case "$line" in
+      PASSWORD_RESET_OK)
+        ;;
+      USER_NOT_FOUND)
+        echo -e "  ${CROSS} No user found with email: ${email}"
+        exit 1
+        ;;
+      ERROR:*)
+        echo -e "  ${CROSS} ${line}"
+        exit 1
+        ;;
+    esac
+  done
+
+  if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+    success "Password reset for ${email}"
+    info "The user can now log in with their new password."
+  else
+    fail "Password reset failed. Make sure Atlas is running and the email exists."
+  fi
+}
+
+cmd_configure() {
+  header "Atlas configuration"
+
+  if [[ ! -f ".env" ]]; then
+    fail "No .env file found. Run the installer first:
+    curl -fsSL https://raw.githubusercontent.com/gorkem-bwl/Atlas/main/install.sh | bash"
+  fi
+
+  # Load current values
+  local current_domain current_email
+  current_domain=$(grep -E "^ATLAS_DOMAIN=" .env 2>/dev/null | cut -d'=' -f2 || echo "localhost")
+  current_email=$(grep -E "^ATLAS_ADMIN_EMAIL=" .env 2>/dev/null | cut -d'=' -f2 || echo "")
+
+  echo ""
+  echo -e "  ${BOLD}Current configuration:${NC}"
+  echo -e "    Domain: ${current_domain}"
+  echo -e "    Admin:  ${current_email}"
+  echo ""
+
+  # Domain
+  echo -ne "  ${ARROW} Domain [${DIM}${current_domain}${NC}]: "
+  read -r new_domain
+  new_domain="${new_domain:-$current_domain}"
+
+  # Admin email
+  echo -ne "  ${ARROW} Admin email [${DIM}${current_email}${NC}]: "
+  read -r new_email
+  new_email="${new_email:-$current_email}"
+
+  # Database password
+  echo -ne "  ${ARROW} Change database password? [${DIM}n${NC}]: "
+  read -r change_db_pw
+  local new_db_pw=""
+  if [[ "$change_db_pw" =~ ^[yY] ]]; then
+    echo -ne "  ${ARROW} New database password: "
+    read -rs new_db_pw
+    echo ""
+  fi
+
+  # Regenerate secrets?
+  echo -ne "  ${ARROW} Regenerate JWT secrets? [${DIM}n${NC}]: "
+  read -r regen_secrets
+
+  # Apply changes
+  info "Applying configuration changes..."
+
+  # Update domain
+  if [[ "$new_domain" != "$current_domain" ]]; then
+    sed -i.bak "s|^ATLAS_DOMAIN=.*|ATLAS_DOMAIN=${new_domain}|" .env
+
+    if [[ "$new_domain" == "localhost" ]]; then
+      sed -i.bak "s|^SERVER_PUBLIC_URL=.*|SERVER_PUBLIC_URL=http://localhost:3001|" .env
+      sed -i.bak "s|^CLIENT_PUBLIC_URL=.*|CLIENT_PUBLIC_URL=http://localhost:3001|" .env
+      sed -i.bak "s|^CORS_ORIGINS=.*|CORS_ORIGINS=http://localhost:3001|" .env
+    else
+      sed -i.bak "s|^SERVER_PUBLIC_URL=.*|SERVER_PUBLIC_URL=https://${new_domain}|" .env
+      sed -i.bak "s|^CLIENT_PUBLIC_URL=.*|CLIENT_PUBLIC_URL=https://${new_domain}|" .env
+      sed -i.bak "s|^CORS_ORIGINS=.*|CORS_ORIGINS=https://${new_domain}|" .env
+    fi
+    success "Domain updated to ${new_domain}"
+  fi
+
+  # Update email
+  if [[ "$new_email" != "$current_email" ]]; then
+    sed -i.bak "s|^ATLAS_ADMIN_EMAIL=.*|ATLAS_ADMIN_EMAIL=${new_email}|" .env
+    success "Admin email updated"
+  fi
+
+  # Update database password
+  if [[ -n "$new_db_pw" ]]; then
+    sed -i.bak "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${new_db_pw}|" .env
+    success "Database password updated"
+    warn "You must restart Atlas for the password change to take effect."
+    warn "Note: Changing the DB password requires recreating the PostgreSQL container."
+  fi
+
+  # Regenerate secrets
+  if [[ "$regen_secrets" =~ ^[yY] ]]; then
+    local new_jwt new_refresh new_token
+    new_jwt=$(openssl rand -hex 32)
+    new_refresh=$(openssl rand -hex 32)
+    new_token=$(openssl rand -hex 32)
+    sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=${new_jwt}|" .env
+    sed -i.bak "s|^JWT_REFRESH_SECRET=.*|JWT_REFRESH_SECRET=${new_refresh}|" .env
+    sed -i.bak "s|^TOKEN_ENCRYPTION_KEY=.*|TOKEN_ENCRYPTION_KEY=${new_token}|" .env
+    success "JWT secrets regenerated"
+    warn "All users will be logged out after restart."
+  fi
+
+  # Clean up sed backup files
+  rm -f .env.bak
+
+  echo ""
+  echo -ne "  ${ARROW} Restart Atlas now to apply changes? [${DIM}y${NC}]: "
+  read -r do_restart
+  do_restart="${do_restart:-y}"
+
+  if [[ "$do_restart" =~ ^[yY] ]]; then
+    cmd_restart
+  else
+    warn "Changes will take effect after restart. Run: atlas restart"
+  fi
+}
+
+cmd_version() {
+  echo ""
+  echo -e "  ${BOLD}Atlas CLI${NC} v${ATLAS_CLI_VERSION}"
+  echo -e "  ${DIM}Install directory: ${ATLAS_DIR}${NC}"
+
+  # Show container image info
+  local atlas_image
+  atlas_image=$(docker inspect atlas --format '{{.Config.Image}}' 2>/dev/null || echo "not running")
+  local atlas_created
+  atlas_created=$(docker inspect atlas --format '{{.Created}}' 2>/dev/null | cut -dT -f1 || echo "unknown")
+
+  echo ""
+  echo -e "  ${BOLD}Services:${NC}"
+  echo -e "    Atlas:      ${atlas_created}"
+  echo -e "    PostgreSQL: $(docker exec atlas-postgres psql --version 2>/dev/null | head -1 || echo 'not running')"
+  echo -e "    Redis:      $(docker exec atlas-redis redis-server --version 2>/dev/null | grep -oP 'v=\K[\d.]+' || echo 'not running')"
+
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "atlas-caddy"; then
+    echo -e "    Caddy:      $(docker exec atlas-caddy caddy version 2>/dev/null || echo 'running')"
+  fi
+  echo ""
+}
+
+cmd_uninstall() {
+  header "Uninstall Atlas"
+
+  echo ""
+  warn "This will stop all Atlas services and remove containers."
+  echo -e "  ${DIM}Your data (database, uploads, backups) will be preserved in Docker volumes.${NC}"
+  echo ""
+  echo -ne "  ${ARROW} Type ${BOLD}uninstall${NC} to confirm: "
+  read -r confirm
+
+  if [[ "$confirm" != "uninstall" ]]; then
+    info "Uninstall cancelled."
+    exit 0
+  fi
+
+  info "Stopping all services..."
+  compose_cmd down
+  success "Services stopped"
+
+  info "Removing containers..."
+  docker rm -f atlas atlas-postgres atlas-redis atlas-caddy 2>/dev/null || true
+  success "Containers removed"
+
+  # Remove CLI if installed globally
+  if [[ -f /usr/local/bin/atlas ]]; then
+    echo -ne "  ${ARROW} Remove /usr/local/bin/atlas? [${DIM}y${NC}]: "
+    read -r remove_cli
+    remove_cli="${remove_cli:-y}"
+    if [[ "$remove_cli" =~ ^[yY] ]]; then
+      if [[ -w /usr/local/bin ]]; then
+        rm -f /usr/local/bin/atlas
+      else
+        sudo rm -f /usr/local/bin/atlas 2>/dev/null || warn "Could not remove /usr/local/bin/atlas. Remove it manually."
+      fi
+      success "CLI removed"
+    fi
+  fi
+
+  echo ""
+  success "Atlas has been uninstalled."
+  echo ""
+  echo -e "  ${DIM}Your data is preserved in Docker volumes. To remove everything:${NC}"
+  echo -e "    docker volume rm atlas-pg-data atlas-redis-data atlas-uploads atlas-caddy-data atlas-caddy-config"
+  echo ""
+  echo -e "  ${DIM}To remove the installation directory:${NC}"
+  echo -e "    rm -rf ${ATLAS_DIR}"
+  echo ""
+  echo -e "  ${DIM}To reinstall:${NC}"
+  echo -e "    curl -fsSL https://raw.githubusercontent.com/gorkem-bwl/Atlas/main/install.sh | bash"
+  echo ""
+}
+
+cmd_help() {
+  echo ""
+  echo -e "${BOLD}Atlas CLI${NC} v${ATLAS_CLI_VERSION}"
+  echo ""
+  echo -e "${BOLD}Usage:${NC}"
+  echo "  atlas <command> [options]"
+  echo ""
+  echo -e "${BOLD}Commands:${NC}"
+  echo -e "  ${GREEN}start${NC}                    Start all services"
+  echo -e "  ${GREEN}stop${NC}                     Stop all services"
+  echo -e "  ${GREEN}restart${NC}                  Restart all services"
+  echo -e "  ${GREEN}status${NC}                   Show service status and health"
+  echo -e "  ${GREEN}logs${NC} [service]           Tail logs (default: all services)"
+  echo -e "  ${GREEN}update${NC}                   Pull latest version and restart"
+  echo -e "  ${GREEN}backup${NC}                   Create a database backup"
+  echo -e "  ${GREEN}restore${NC} <file>           Restore database from backup"
+  echo -e "  ${GREEN}reset-password${NC} <email>   Reset a user's password"
+  echo -e "  ${GREEN}configure${NC}                Re-run interactive configuration"
+  echo -e "  ${GREEN}version${NC}                  Show version information"
+  echo -e "  ${GREEN}uninstall${NC}                Stop services, remove containers (keep data)"
+  echo ""
+  echo -e "${BOLD}Services:${NC}"
+  echo "  atlas, postgres, redis, caddy"
+  echo ""
+  echo -e "${BOLD}Examples:${NC}"
+  echo "  atlas start                        # Start Atlas"
+  echo "  atlas logs atlas                   # View Atlas app logs"
+  echo "  atlas backup                       # Create database backup"
+  echo "  atlas restore atlas-data/backups/atlas_20240115_120000.sql.gz"
+  echo "  atlas reset-password admin@co.com  # Reset user password"
+  echo ""
+  echo -e "${BOLD}Environment variables:${NC}"
+  echo "  ATLAS_DIR             Override install directory detection"
+  echo "  ATLAS_LOGS_FOLLOW     Set to empty to disable log following"
+  echo ""
+  echo -e "${DIM}Documentation: https://github.com/gorkem-bwl/Atlas${NC}"
+  echo ""
+}
+
+# ── Command router ───────────────────────────────────────────────────────────
+
+COMMAND="${1:-help}"
+shift 2>/dev/null || true
+
+case "$COMMAND" in
+  start)          cmd_start ;;
+  stop)           cmd_stop ;;
+  restart)        cmd_restart ;;
+  status)         cmd_status ;;
+  logs)           cmd_logs "$@" ;;
+  update)         cmd_update ;;
+  backup)         cmd_backup ;;
+  restore)        cmd_restore "$@" ;;
+  reset-password) cmd_reset_password "$@" ;;
+  configure)      cmd_configure ;;
+  version|--version|-v) cmd_version ;;
+  uninstall)      cmd_uninstall ;;
+  help|--help|-h) cmd_help ;;
+  *)
+    echo -e "  ${CROSS} Unknown command: ${COMMAND}"
+    echo ""
+    cmd_help
+    exit 1
+    ;;
+esac
