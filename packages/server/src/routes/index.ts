@@ -11,6 +11,7 @@ import searchRoutes from './search.routes';
 import dataModelRoutes from './data-model.routes';
 import notificationsRoutes from './notifications.routes';
 import appPermissionsRoutes from './app-permissions.routes';
+import stocksRoutes from './stocks.routes';
 import { adminLimiter } from '../middleware/rate-limit';
 import { serverAppRegistry } from '../apps';
 
@@ -29,6 +30,7 @@ router.use('/search', searchRoutes);
 router.use('/data-model', dataModelRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/permissions', appPermissionsRoutes);
+router.use('/stocks', stocksRoutes);
 
 // App routes mounted dynamically from registry
 serverAppRegistry.mountAll(router);
