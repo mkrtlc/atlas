@@ -18,3 +18,6 @@ out/
 packages/server/data/
 packages/server/uploads/
 certs/
+e2e/.auth/
+test-results/
+playwright-report/
