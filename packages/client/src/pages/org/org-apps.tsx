@@ -1,3 +1,4 @@
+import { useState, type CSSProperties } from 'react';
 import { useAuthStore } from '../../stores/auth-store';
 import { useMyTenants } from '../../hooks/use-platform';
 import { useTenantAppsAdmin, useToggleTenantApp } from '../../hooks/use-tenant-app-admin';
@@ -5,6 +6,22 @@ import { appRegistry } from '../../apps';
 import { LayoutGrid } from 'lucide-react';
 import { Chip } from '../../components/ui/chip';
 import { Skeleton } from '../../components/ui/skeleton';
+
+// ---------------------------------------------------------------------------
+// App descriptions
+// ---------------------------------------------------------------------------
+
+const APP_DESCRIPTIONS: Record<string, string> = {
+  crm: 'Manage deals, contacts, and companies. Track your sales pipeline and close more business.',
+  hr: 'Employee management, departments, org charts, time-off tracking, and attendance.',
+  sign: 'Create, send, and track documents for e-signature. Collect signatures securely.',
+  drive: 'Store, organize, and share files. Preview documents, images, and media.',
+  tables: 'Spreadsheets with formulas, sorting, filtering, and data import/export.',
+  tasks: 'Task management with projects, due dates, priorities, and multiple views.',
+  docs: 'Rich text documents with real-time editing, templates, and collaboration.',
+  draw: 'Whiteboard and diagramming tool for sketches, flowcharts, and visual ideas.',
+  projects: 'Time tracking, invoicing, and project management for client work.',
+};
 
 // ---------------------------------------------------------------------------
 // OrgAppsPage
@@ -28,19 +45,11 @@ export function OrgAppsPage() {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)', maxWidth: 720 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)', maxWidth: 900 }}>
         <Skeleton width={140} height={24} borderRadius="var(--radius-sm)" />
-        <div style={{
-          background: 'var(--color-bg-primary)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--color-border-primary)',
-          padding: 'var(--spacing-md)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--spacing-sm)',
-        }}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} width="100%" height={48} borderRadius="var(--radius-sm)" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--spacing-md)' }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} width="100%" height={140} borderRadius="var(--radius-lg)" />
           ))}
         </div>
       </div>
@@ -48,16 +57,12 @@ export function OrgAppsPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)', maxWidth: 720 }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--spacing-xs)',
-      }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)', maxWidth: 900 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
         <LayoutGrid size={15} style={{ color: 'var(--color-text-tertiary)' }} />
         <span style={{
           fontSize: 'var(--font-size-md)',
-          fontWeight: 'var(--font-weight-semibold)',
+          fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
           color: 'var(--color-text-primary)',
         }}>
           Apps
@@ -68,86 +73,147 @@ export function OrgAppsPage() {
       </div>
 
       <div style={{
-        background: 'var(--color-bg-primary)',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--color-border-primary)',
-        overflow: 'hidden',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+        gap: 'var(--spacing-md)',
       }}>
-        {allApps.map((app, i) => {
+        {allApps.map((app) => {
           const isEnabled = enabledSet.has(app.id);
           return (
-            <div
+            <AppCard
               key={app.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--spacing-md)',
-                padding: 'var(--spacing-md) var(--spacing-lg)',
-                borderBottom: i < allApps.length - 1 ? '1px solid var(--color-border-secondary)' : 'none',
-              }}
-            >
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 'var(--radius-sm)',
-                  background: app.color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <app.icon size={16} color="#fff" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>
-                  {app.name}
-                </div>
-                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
-                  {app.category}
-                </div>
-              </div>
-              <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  role="switch"
-                  aria-label={`${isEnabled ? 'Disable' : 'Enable'} ${app.name}`}
-                  aria-checked={isEnabled}
-                  checked={isEnabled}
-                  disabled={toggleMutation.isPending}
-                  onChange={() => toggleMutation.mutate({ appId: app.id, enable: !isEnabled })}
-                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
-                />
-                <div
-                  style={{
-                    width: 36,
-                    height: 20,
-                    borderRadius: 10,
-                    background: isEnabled ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)',
-                    border: `1px solid ${isEnabled ? 'var(--color-accent-primary)' : 'var(--color-border-primary)'}`,
-                    transition: 'background 0.2s, border-color 0.2s',
-                    position: 'relative',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: 'var(--color-bg-primary)',
-                      position: 'absolute',
-                      top: 1,
-                      left: isEnabled ? 17 : 1,
-                      transition: 'left 0.2s',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
-                    }}
-                  />
-                </div>
-              </label>
-            </div>
+              app={app}
+              description={APP_DESCRIPTIONS[app.id] || app.category}
+              isEnabled={isEnabled}
+              isPending={toggleMutation.isPending}
+              onToggle={() => toggleMutation.mutate({ appId: app.id, enable: !isEnabled })}
+            />
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AppCard
+// ---------------------------------------------------------------------------
+
+function AppCard({
+  app,
+  description,
+  isEnabled,
+  isPending,
+  onToggle,
+}: {
+  app: { id: string; name: string; icon: React.ComponentType<{ size?: number; color?: string }>; color: string; category: string };
+  description: string;
+  isEnabled: boolean;
+  isPending: boolean;
+  onToggle: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const Icon = app.icon;
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--spacing-md)',
+        padding: 'var(--spacing-lg)',
+        background: hovered ? 'var(--color-surface-hover)' : 'var(--color-bg-primary)',
+        border: `1px solid ${isEnabled ? app.color + '44' : 'var(--color-border-primary)'}`,
+        borderRadius: 'var(--radius-lg)',
+        transition: 'background 0.15s, border-color 0.15s',
+      }}
+    >
+      {/* Header: icon + toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 'var(--radius-md)',
+              background: app.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={18} color="#fff" />
+          </div>
+          <div>
+            <div style={{
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+              color: 'var(--color-text-primary)',
+              fontFamily: 'var(--font-family)',
+            }}>
+              {app.name}
+            </div>
+            <div style={{
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-tertiary)',
+              fontFamily: 'var(--font-family)',
+              textTransform: 'capitalize',
+            }}>
+              {app.category}
+            </div>
+          </div>
+        </div>
+
+        <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            role="switch"
+            aria-label={`${isEnabled ? 'Disable' : 'Enable'} ${app.name}`}
+            aria-checked={isEnabled}
+            checked={isEnabled}
+            disabled={isPending}
+            onChange={onToggle}
+            style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+          />
+          <div
+            style={{
+              width: 36,
+              height: 20,
+              borderRadius: 10,
+              background: isEnabled ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)',
+              border: `1px solid ${isEnabled ? 'var(--color-accent-primary)' : 'var(--color-border-primary)'}`,
+              transition: 'background 0.2s, border-color 0.2s',
+              position: 'relative',
+            }}
+          >
+            <div
+              style={{
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                background: 'var(--color-bg-primary)',
+                position: 'absolute',
+                top: 1,
+                left: isEnabled ? 17 : 1,
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+              }}
+            />
+          </div>
+        </label>
+      </div>
+
+      {/* Description */}
+      <div style={{
+        fontSize: 'var(--font-size-sm)',
+        color: 'var(--color-text-secondary)',
+        fontFamily: 'var(--font-family)',
+        lineHeight: 'var(--line-height-normal)',
+      }}>
+        {description}
       </div>
     </div>
   );
