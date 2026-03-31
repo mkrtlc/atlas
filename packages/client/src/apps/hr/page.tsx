@@ -49,6 +49,7 @@ import { StatusDot } from '../../components/ui/status-dot';
 import { ContentArea } from '../../components/ui/content-area';
 import { useUIStore } from '../../stores/ui-store';
 import { useHrSettingsStore } from './settings-store';
+import { StatCard } from '../../components/ui/stat-card';
 import { formatDate } from '../../lib/format';
 import '../../styles/hr.css';
 
@@ -1154,35 +1155,16 @@ function DashboardView() {
     );
   }
 
-  const kpis = [
-    { label: t('hr.dashboard.totalEmployees'), value: data.totalHeadcount, icon: <Users size={18} />, color: 'var(--color-accent-primary)' },
-    { label: t('hr.dashboard.onLeave'), value: data.statusCounts['on-leave'] || 0, icon: <CalendarDays size={18} />, color: 'var(--color-warning)' },
-    { label: t('hr.dashboard.pendingRequests'), value: data.pendingRequests, icon: <Clock size={18} />, color: 'var(--color-error)' },
-    { label: t('hr.dashboard.recentHires'), value: data.recentHires.length, icon: <Plus size={18} />, color: 'var(--color-success)' },
-  ];
-
   const maxDeptCount = Math.max(...data.departmentCounts.map((d) => d.count), 1);
 
   return (
     <div style={{ padding: 'var(--spacing-lg)', overflow: 'auto', flex: 1 }}>
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xl)' }}>
-        {kpis.map((kpi, i) => (
-          <div key={i} style={{
-            padding: 'var(--spacing-lg)', borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--color-border-primary)', background: 'var(--color-bg-primary)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
-              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-                {kpi.label}
-              </span>
-              <div style={{ color: kpi.color }}>{kpi.icon}</div>
-            </div>
-            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-              {kpi.value}
-            </div>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xl)' }}>
+        <StatCard label={t('hr.dashboard.totalEmployees')} value={String(data.totalHeadcount)} icon={Users} color="var(--color-accent-primary)" />
+        <StatCard label={t('hr.dashboard.onLeave')} value={String(data.statusCounts['on-leave'] || 0)} icon={CalendarDays} color="var(--color-warning)" />
+        <StatCard label={t('hr.dashboard.pendingRequests')} value={String(data.pendingRequests)} icon={Clock} color="var(--color-error)" />
+        <StatCard label={t('hr.dashboard.recentHires')} value={String(data.recentHires.length)} icon={Plus} color="var(--color-success)" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
