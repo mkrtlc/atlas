@@ -10,7 +10,7 @@
   "defaultCredentials": { "username": "admin", "password": "umami" },
   "services": {
     "app": {
-      "image": "ghcr.io/umami-software/umami:latest",
+      "image": "ghcr.io/umami-software/umami:postgresql-latest",
       "port": 3000,
       "healthCheck": "/api/heartbeat",
       "env": {
