@@ -1504,6 +1504,10 @@ function EmployeesListView({
 }) {
   const { t } = useTranslation();
   const showDept = useHrSettingsStore((s) => s.showDepartmentInList);
+  const deleteEmployee = useDeleteEmployee();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return employees;
     const q = searchQuery.toLowerCase();
@@ -1514,6 +1518,34 @@ function EmployeesListView({
         e.role.toLowerCase().includes(q),
     );
   }, [employees, searchQuery]);
+
+  const allSelected = filtered.length > 0 && selected.size === filtered.length;
+  const someSelected = selected.size > 0 && !allSelected;
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map(e => e.id)));
+    }
+  };
+
+  const toggleOne = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selected);
+    for (const id of ids) {
+      await deleteEmployee.mutateAsync(id);
+    }
+    setSelected(new Set());
+    setShowDeleteConfirm(false);
+  };
 
   if (filtered.length === 0) {
     if (searchQuery) {
@@ -1543,59 +1575,118 @@ function EmployeesListView({
   }
 
   return (
-    <div style={{ flex: 1, overflow: 'auto' }}>
-      {/* Table header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
-        padding: '8px var(--spacing-lg)', borderBottom: '1px solid var(--color-border-secondary)',
-        fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)',
-        color: 'var(--color-text-tertiary)', textTransform: 'uppercase',
-        letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
-      }}>
-        <span style={{ width: 220, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.name')} icon={<User size={12} />} /></span>
-        <span style={{ width: 180, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.email')} icon={<Mail size={12} />} /></span>
-        <span style={{ width: 140, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.role')} icon={<Briefcase size={12} />} /></span>
-        {showDept && <span style={{ width: 120, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.department')} icon={<Building2 size={12} />} /></span>}
-        <span style={{ width: 80, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.status')} icon={<Tag size={12} />} /></span>
-        <span style={{ flex: 1 }}><ColumnHeader label={t('hr.columns.started')} icon={<CalendarDays size={12} />} /></span>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)',
+          padding: '6px var(--spacing-lg)',
+          background: 'var(--color-bg-secondary)',
+          borderBottom: '1px solid var(--color-border-secondary)',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+            {t('hr.employees.selected', { count: selected.size })}
+          </span>
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<Trash2 size={13} />}
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deleteEmployee.isPending}
+          >
+            {t('hr.actions.deleteEmployee')}
+          </Button>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* Table header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
+          padding: '8px var(--spacing-lg)', borderBottom: '1px solid var(--color-border-secondary)',
+          fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)',
+          color: 'var(--color-text-tertiary)', textTransform: 'uppercase',
+          letterSpacing: '0.04em', fontFamily: 'var(--font-family)', flexShrink: 0,
+        }}>
+          <span style={{ width: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <input
+              type="checkbox"
+              checked={allSelected}
+              ref={(el) => { if (el) el.indeterminate = someSelected; }}
+              onChange={toggleAll}
+              style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--color-accent-primary)' }}
+            />
+          </span>
+          <span style={{ width: 200, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.name')} icon={<User size={12} />} /></span>
+          <span style={{ width: 180, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.email')} icon={<Mail size={12} />} /></span>
+          <span style={{ width: 140, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.role')} icon={<Briefcase size={12} />} /></span>
+          {showDept && <span style={{ width: 120, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.department')} icon={<Building2 size={12} />} /></span>}
+          <span style={{ width: 80, flexShrink: 0 }}><ColumnHeader label={t('hr.columns.status')} icon={<Tag size={12} />} /></span>
+          <span style={{ flex: 1 }}><ColumnHeader label={t('hr.columns.started')} icon={<CalendarDays size={12} />} /></span>
+        </div>
+
+        {filtered.map((emp) => {
+          const dept = emp.departmentId ? departments.find((d) => d.id === emp.departmentId) : null;
+          const isChecked = selected.has(emp.id);
+          return (
+            <div key={emp.id} className={`hr-employee-row${selectedId === emp.id ? ' selected' : ''}`} onClick={() => onSelect(emp.id)}>
+              <span
+                style={{ width: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={(e) => { e.stopPropagation(); toggleOne(emp.id); }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleOne(emp.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--color-accent-primary)' }}
+                />
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', width: 200, flexShrink: 0 }}>
+                <Avatar name={emp.name} size={28} />
+                <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {emp.name}
+                </span>
+              </div>
+              <span style={{ width: 180, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {emp.email}
+              </span>
+              <span style={{ width: 140, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {emp.role}
+              </span>
+              {showDept && (
+                <span style={{ width: 120, flexShrink: 0 }}>
+                  {dept ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--font-size-xs)', fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)' }}>
+                      <StatusDot color={dept.color} size={8} />
+                      {dept.name}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>-</span>
+                  )}
+                </span>
+              )}
+              <span style={{ width: 80, flexShrink: 0 }}>{getStatusBadge(emp.status, t)}</span>
+              <span style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                {formatDate(emp.startDate)}
+              </span>
+              {selectedId === emp.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+            </div>
+          );
+        })}
       </div>
 
-      {filtered.map((emp) => {
-        const dept = emp.departmentId ? departments.find((d) => d.id === emp.departmentId) : null;
-        return (
-          <div key={emp.id} className={`hr-employee-row${selectedId === emp.id ? ' selected' : ''}`} onClick={() => onSelect(emp.id)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', width: 220, flexShrink: 0 }}>
-              <Avatar name={emp.name} size={28} />
-              <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {emp.name}
-              </span>
-            </div>
-            <span style={{ width: 180, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {emp.email}
-            </span>
-            <span style={{ width: 140, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {emp.role}
-            </span>
-            {showDept && (
-              <span style={{ width: 120, flexShrink: 0 }}>
-                {dept ? (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--font-size-xs)', fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)' }}>
-                    <StatusDot color={dept.color} size={8} />
-                    {dept.name}
-                  </span>
-                ) : (
-                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>-</span>
-                )}
-              </span>
-            )}
-            <span style={{ width: 80, flexShrink: 0 }}>{getStatusBadge(emp.status, t)}</span>
-            <span style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-              {formatDate(emp.startDate)}
-            </span>
-            {selectedId === emp.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
-          </div>
-        );
-      })}
+      {/* Bulk delete confirmation */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('hr.actions.deleteEmployee')}
+        description={t('hr.employees.bulkDeleteDesc', { count: selected.size })}
+        confirmLabel={t('hr.actions.deleteEmployee')}
+        onConfirm={handleBulkDelete}
+        destructive
+      />
     </div>
   );
 }

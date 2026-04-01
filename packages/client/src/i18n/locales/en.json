@@ -1282,7 +1282,9 @@
       "noMatch": "No matching employees",
       "noMatchDesc": "Try a different search term.",
       "empty": "No employees yet",
-      "emptyDesc": "Add your first employee to get started."
+      "emptyDesc": "Add your first employee to get started.",
+      "selected": "{{count}} selected",
+      "bulkDeleteDesc": "Are you sure you want to delete {{count}} employee(s)? This action cannot be undone."
     },
     "departments": {
       "empty": "No departments yet",

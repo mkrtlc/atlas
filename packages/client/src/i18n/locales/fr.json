@@ -1252,7 +1252,9 @@
       "noMatch": "Aucun employe correspondant",
       "noMatchDesc": "Essayez un autre terme de recherche.",
       "empty": "Pas encore d'employes",
-      "emptyDesc": "Ajoutez votre premier employe pour commencer."
+      "emptyDesc": "Ajoutez votre premier employe pour commencer.",
+      "selected": "{{count}} sélectionné(s)",
+      "bulkDeleteDesc": "Voulez-vous vraiment supprimer {{count}} employé(s) ? Cette action est irréversible."
     },
     "departments": {
       "empty": "Pas encore de departements",

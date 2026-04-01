@@ -1252,7 +1252,9 @@
       "noMatch": "Nessun dipendente corrispondente",
       "noMatchDesc": "Prova un termine di ricerca diverso.",
       "empty": "Nessun dipendente ancora",
-      "emptyDesc": "Aggiungi il tuo primo dipendente per iniziare."
+      "emptyDesc": "Aggiungi il tuo primo dipendente per iniziare.",
+      "selected": "{{count}} selezionati",
+      "bulkDeleteDesc": "Sei sicuro di voler eliminare {{count}} dipendente/i? Questa azione non può essere annullata."
     },
     "departments": {
       "empty": "Nessun reparto ancora",

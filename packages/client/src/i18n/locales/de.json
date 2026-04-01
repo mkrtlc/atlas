@@ -1252,7 +1252,9 @@
       "noMatch": "Keine passenden Mitarbeiter",
       "noMatchDesc": "Versuchen Sie einen anderen Suchbegriff.",
       "empty": "Noch keine Mitarbeiter",
-      "emptyDesc": "Fuegen Sie Ihren ersten Mitarbeiter hinzu."
+      "emptyDesc": "Fuegen Sie Ihren ersten Mitarbeiter hinzu.",
+      "selected": "{{count}} ausgewählt",
+      "bulkDeleteDesc": "Möchten Sie {{count}} Mitarbeiter wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
     },
     "departments": {
       "empty": "Noch keine Abteilungen",

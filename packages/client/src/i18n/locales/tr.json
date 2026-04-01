@@ -1252,7 +1252,9 @@
       "noMatch": "Eşleşen çalışan yok",
       "noMatchDesc": "Farklı bir arama terimi deneyin.",
       "empty": "Henüz çalışan yok",
-      "emptyDesc": "Başlamak için ilk çalışanınızı ekleyin."
+      "emptyDesc": "Başlamak için ilk çalışanınızı ekleyin.",
+      "selected": "{{count}} seçildi",
+      "bulkDeleteDesc": "{{count}} çalışanı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
     },
     "departments": {
       "empty": "Henüz departman yok",

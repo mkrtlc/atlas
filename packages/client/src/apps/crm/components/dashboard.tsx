@@ -7,6 +7,7 @@ import {
 import { useDashboard, type CrmDashboard, type CrmDeal, type CrmActivity } from '../hooks';
 import { formatCurrencyCompact, formatDate } from '../../../lib/format';
 import { Skeleton } from '../../../components/ui/skeleton';
+import { StatCard } from '../../../components/ui/stat-card';
 import { ColumnHeader } from '../../../components/ui/column-header';
 
 function getActivityIcon(type: string) {
@@ -50,34 +51,7 @@ function daysUntil(dateStr: string | null): string {
   return `${days} days`;
 }
 
-// ─── KPI Cards ────────────────────────────────────────────────────
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  subtitle,
-  iconColor,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  subtitle: string;
-  iconColor?: string;
-}) {
-  return (
-    <div className="crm-kpi-card">
-      <div className="crm-kpi-card-icon" style={{ color: iconColor }}>
-        {icon}
-      </div>
-      <div className="crm-kpi-card-content">
-        <span className="crm-kpi-card-label">{label}</span>
-        <span className="crm-kpi-card-value">{value}</span>
-        <span className="crm-kpi-card-subtitle">{subtitle}</span>
-      </div>
-    </div>
-  );
-}
+// KPI cards use the shared StatCard component
 
 // ─── Pipeline Bar Chart ───────────────────────────────────────────
 
@@ -271,34 +245,34 @@ export function CrmDashboard() {
   return (
     <div className="crm-dashboard">
       {/* KPI Cards */}
-      <div className="crm-kpi-row">
-        <KpiCard
-          icon={<DollarSign size={18} />}
-          iconColor="var(--color-accent-primary)"
+      <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)', flexWrap: 'wrap' }}>
+        <StatCard
           label="Total pipeline value"
           value={formatCurrencyCompact(dashboard.totalPipelineValue)}
           subtitle={`${dashboard.dealCount} active deal${dashboard.dealCount !== 1 ? 's' : ''}`}
+          color="var(--color-accent-primary)"
+          icon={DollarSign}
         />
-        <KpiCard
-          icon={<Trophy size={18} />}
-          iconColor="var(--color-success)"
+        <StatCard
           label="Deals won this month"
           value={`${dashboard.dealsWonCount}`}
           subtitle={`${formatCurrencyCompact(dashboard.dealsWonValue)} revenue`}
+          color="var(--color-success)"
+          icon={Trophy}
         />
-        <KpiCard
-          icon={<Target size={18} />}
-          iconColor="var(--color-warning)"
+        <StatCard
           label="Win rate"
           value={`${dashboard.winRate}%`}
           subtitle={`${dashboard.dealsWonCount}W / ${dashboard.dealsLostCount}L this month`}
+          color="var(--color-warning)"
+          icon={Target}
         />
-        <KpiCard
-          icon={<TrendingUp size={18} />}
-          iconColor="#6366f1"
+        <StatCard
           label="Average deal size"
           value={formatCurrencyCompact(dashboard.averageDealSize)}
           subtitle="Across active deals"
+          color="#6366f1"
+          icon={TrendingUp}
         />
       </div>
 
