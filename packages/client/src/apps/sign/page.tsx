@@ -507,49 +507,49 @@ export function SignPage() {
             label={t('sign.sidebar.allDocuments')}
             icon={<FileText size={15} />}
             iconColor="#8b5cf6"
-            isActive={filterStatus === 'all'}
+            isActive={view !== 'templates' && filterStatus === 'all'}
             count={counts.all}
-            onClick={() => { setFilterStatus('all'); if (view === 'editor') handleBackToList(); }}
+            onClick={() => { setFilterStatus('all'); setView('list'); setSelectedDocId(null); }}
           />
           <SidebarItem
             label={t('sign.sidebar.pending')}
             icon={<Clock size={15} />}
             iconColor="#f59e0b"
-            isActive={filterStatus === 'pending'}
+            isActive={view !== 'templates' && filterStatus === 'pending'}
             count={counts.pending}
-            onClick={() => { setFilterStatus('pending'); if (view === 'editor') handleBackToList(); }}
+            onClick={() => { setFilterStatus('pending'); setView('list'); setSelectedDocId(null); }}
           />
           <SidebarItem
             label={t('sign.sidebar.signed')}
             icon={<CheckCircle size={15} />}
             iconColor="#10b981"
-            isActive={filterStatus === 'signed'}
+            isActive={view !== 'templates' && filterStatus === 'signed'}
             count={counts.signed}
-            onClick={() => { setFilterStatus('signed'); if (view === 'editor') handleBackToList(); }}
+            onClick={() => { setFilterStatus('signed'); setView('list'); setSelectedDocId(null); }}
           />
           <SidebarItem
             label={t('sign.sidebar.draft')}
             icon={<FilePen size={15} />}
             iconColor="#64748b"
-            isActive={filterStatus === 'draft'}
+            isActive={view !== 'templates' && filterStatus === 'draft'}
             count={counts.draft}
-            onClick={() => { setFilterStatus('draft'); if (view === 'editor') handleBackToList(); }}
+            onClick={() => { setFilterStatus('draft'); setView('list'); setSelectedDocId(null); }}
           />
           <SidebarItem
             label={t('sign.sidebar.expired')}
             icon={<AlertTriangle size={15} />}
             iconColor="#ef4444"
-            isActive={filterStatus === 'expired'}
+            isActive={view !== 'templates' && filterStatus === 'expired'}
             count={counts.expired}
-            onClick={() => { setFilterStatus('expired'); if (view === 'editor') handleBackToList(); }}
+            onClick={() => { setFilterStatus('expired'); setView('list'); setSelectedDocId(null); }}
           />
           <SidebarItem
             label={t('sign.sidebar.voided')}
             icon={<Ban size={15} />}
             iconColor="#ef4444"
-            isActive={filterStatus === 'voided'}
+            isActive={view !== 'templates' && filterStatus === 'voided'}
             count={counts.voided}
-            onClick={() => { setFilterStatus('voided'); if (view === 'editor') handleBackToList(); }}
+            onClick={() => { setFilterStatus('voided'); setView('list'); setSelectedDocId(null); }}
           />
         </SidebarSection>
         <SidebarSection>
