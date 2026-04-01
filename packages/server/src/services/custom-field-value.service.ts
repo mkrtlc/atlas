@@ -80,21 +80,14 @@ export async function upsertValues(
 ) {
   if (values.length === 0) return;
 
+  const now = new Date();
   for (const { fieldDefinitionId, value } of values) {
     await db
       .insert(customFieldValues)
-      .values({
-        accountId,
-        fieldDefinitionId,
-        recordId,
-        value,
-      })
+      .values({ accountId, fieldDefinitionId, recordId, value })
       .onConflictDoUpdate({
         target: [customFieldValues.recordId, customFieldValues.fieldDefinitionId],
-        set: {
-          value,
-          updatedAt: new Date(),
-        },
+        set: { value, updatedAt: now },
       });
   }
 }

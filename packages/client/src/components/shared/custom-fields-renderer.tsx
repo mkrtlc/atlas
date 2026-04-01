@@ -23,25 +23,20 @@ export function CustomFieldsRenderer({ appId, recordType, recordId }: CustomFiel
 
   // Local form state keyed by field definition ID
   const [localValues, setLocalValues] = useState<Record<string, unknown>>({});
-  const initializedRef = useRef(false);
+  const localValuesRef = useRef(localValues);
+  localValuesRef.current = localValues;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync server values into local state when data loads
+  // Sync server values into local state when data loads or record changes
   useEffect(() => {
-    if (fields && !initializedRef.current) {
+    if (fields) {
       const vals: Record<string, unknown> = {};
       for (const f of fields) {
         vals[f.id] = f.value ?? getDefaultValue(f.fieldType);
       }
       setLocalValues(vals);
-      initializedRef.current = true;
     }
   }, [fields]);
-
-  // Reset when record changes
-  useEffect(() => {
-    initializedRef.current = false;
-  }, [recordId]);
 
   const handleChange = useCallback((fieldId: string, value: unknown) => {
     setLocalValues(prev => ({ ...prev, [fieldId]: value }));
@@ -49,40 +44,44 @@ export function CustomFieldsRenderer({ appId, recordType, recordId }: CustomFiel
     // Debounced auto-save
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setLocalValues(current => {
-        const values = Object.entries(current).map(([fId, v]) => ({
-          fieldDefinitionId: fId,
-          value: v,
-        }));
-        saveMutation.mutate(values);
-        return current;
-      });
+      const values = Object.entries(localValuesRef.current).map(([fId, v]) => ({
+        fieldDefinitionId: fId,
+        value: v,
+      }));
+      saveMutation.mutate(values);
     }, 800);
   }, [saveMutation]);
 
-  // Cleanup debounce on unmount
+  // Cleanup debounce on unmount or record change
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, []);
+  }, [recordId]);
 
   if (!fields || fields.length === 0) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-      <span
-        style={{
-          fontSize: 'var(--font-size-xs)',
-          fontWeight: 500,
-          color: 'var(--color-text-tertiary)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          fontFamily: 'var(--font-family)',
-        }}
-      >
-        {t('customFields.sectionTitle')}
-      </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span
+          style={{
+            fontSize: 'var(--font-size-xs)',
+            fontWeight: 500,
+            color: 'var(--color-text-tertiary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-family)',
+          }}
+        >
+          {t('customFields.sectionTitle')}
+        </span>
+        {saveMutation.isError && (
+          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-error)', fontFamily: 'var(--font-family)' }}>
+            {t('common.saveFailed')}
+          </span>
+        )}
+      </div>
       {fields.map(field => (
         <FieldInput
           key={field.id}
