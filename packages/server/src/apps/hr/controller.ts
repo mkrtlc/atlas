@@ -165,8 +165,8 @@ export async function deleteEmployee(req: Request, res: Response) {
     const userId = req.auth!.userId;
 
     const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -313,8 +313,8 @@ export async function deleteDepartment(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -434,8 +434,8 @@ export async function deleteTimeOffRequest(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -629,8 +629,8 @@ export async function deleteOnboardingTask(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -783,8 +783,8 @@ export async function deleteEmployeeDocument(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -894,8 +894,8 @@ export async function deleteLeaveType(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -973,8 +973,8 @@ export async function deleteLeavePolicy(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -1089,8 +1089,8 @@ export async function deleteHolidayCalendar(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -1167,8 +1167,8 @@ export async function deleteHoliday(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -1631,8 +1631,8 @@ export async function deleteLifecycleEvent(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
 
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 

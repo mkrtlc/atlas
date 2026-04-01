@@ -140,8 +140,8 @@ export async function updateTask(req: Request, res: Response) {
 export async function deleteTask(req: Request, res: Response) {
   try {
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete tasks' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -317,8 +317,8 @@ export async function updateProject(req: Request, res: Response) {
 export async function deleteProject(req: Request, res: Response) {
   try {
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete projects' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -469,8 +469,8 @@ export async function updateSubtask(req: Request, res: Response) {
 export async function deleteSubtask(req: Request, res: Response) {
   try {
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete subtasks' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 
@@ -573,8 +573,8 @@ export async function updateTemplate(req: Request, res: Response) {
 export async function deleteTemplate(req: Request, res: Response) {
   try {
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete templates' });
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
       return;
     }
 

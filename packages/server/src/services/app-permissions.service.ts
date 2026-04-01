@@ -4,19 +4,21 @@ import { eq, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { logger } from '../utils/logger';
 
-export type AppRole = 'admin' | 'editor' | 'viewer';
-export type AppOperation = 'view' | 'create' | 'update' | 'delete';
+export type AppRole = 'admin' | 'manager' | 'editor' | 'viewer';
+export type AppOperation = 'view' | 'create' | 'update' | 'delete' | 'delete_own';
 export type AppRecordAccess = 'all' | 'own';
 
 const ROLE_MATRIX: Record<AppRole, Set<AppOperation>> = {
-  admin: new Set(['view', 'create', 'update', 'delete']),
-  editor: new Set(['view', 'create', 'update']),
+  admin: new Set(['view', 'create', 'update', 'delete', 'delete_own']),
+  manager: new Set(['view', 'create', 'update', 'delete', 'delete_own']),
+  editor: new Set(['view', 'create', 'update', 'delete_own']),
   viewer: new Set(['view']),
 };
 
 export interface ResolvedAppPermission {
   role: AppRole;
   recordAccess: AppRecordAccess;
+  entityPermissions?: Record<string, string[]> | null;
 }
 
 export async function getAppPermission(
@@ -34,7 +36,11 @@ export async function getAppPermission(
       )).limit(1);
 
     if (perm) {
-      return { role: perm.role as AppRole, recordAccess: perm.recordAccess as AppRecordAccess };
+      return {
+        role: perm.role as AppRole,
+        recordAccess: perm.recordAccess as AppRecordAccess,
+        entityPermissions: perm.entityPermissions ?? null,
+      };
     }
 
     // 2. Derive from tenant role
@@ -54,6 +60,20 @@ export async function getAppPermission(
 
 export function canAccess(role: AppRole, operation: AppOperation): boolean {
   return ROLE_MATRIX[role]?.has(operation) ?? false;
+}
+
+export function canAccessEntity(
+  role: AppRole,
+  entity: string,
+  operation: AppOperation,
+  entityPermissions?: Record<string, string[]> | null
+): boolean {
+  // If entity-level overrides exist, use them
+  if (entityPermissions && entity in entityPermissions) {
+    return entityPermissions[entity].includes(operation);
+  }
+  // Fall back to role matrix
+  return canAccess(role, operation);
 }
 
 export function getRecordFilter(recordAccess: AppRecordAccess, userIdColumn: any, currentUserId: string) {

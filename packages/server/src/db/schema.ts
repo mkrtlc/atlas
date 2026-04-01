@@ -1549,6 +1549,7 @@ export const appPermissions = pgTable('app_permissions', {
   appId: varchar('app_id', { length: 50 }).notNull(),
   role: varchar('role', { length: 20 }).notNull().default('editor'),
   recordAccess: varchar('record_access', { length: 20 }).notNull().default('all'),
+  entityPermissions: jsonb('entity_permissions').$type<Record<string, string[]> | null>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({

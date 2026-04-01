@@ -1630,11 +1630,49 @@ export async function runMigrations() {
         app_id VARCHAR(50) NOT NULL,
         role VARCHAR(20) NOT NULL DEFAULT 'editor',
         record_access VARCHAR(20) NOT NULL DEFAULT 'all',
+        entity_permissions JSONB,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
       CREATE UNIQUE INDEX IF NOT EXISTS idx_app_permissions_unique ON app_permissions (tenant_id, user_id, app_id);
     `);
+
+    // Add entity_permissions column if table already existed before this migration
+    await client.query(`
+      ALTER TABLE app_permissions ADD COLUMN IF NOT EXISTS entity_permissions JSONB;
+    `);
+
+    // ─── Migrate CRM permissions into app_permissions ─────────────────
+    try {
+      await client.query(`
+        INSERT INTO app_permissions (tenant_id, user_id, app_id, role, record_access, entity_permissions)
+        SELECT
+          (SELECT tenant_id FROM tenant_members WHERE user_id = cp.user_id LIMIT 1),
+          cp.user_id,
+          'crm',
+          CASE cp.role
+            WHEN 'admin' THEN 'admin'
+            WHEN 'manager' THEN 'manager'
+            WHEN 'sales' THEN 'editor'
+            WHEN 'viewer' THEN 'viewer'
+            ELSE 'editor'
+          END,
+          cp.record_access,
+          CASE cp.role
+            WHEN 'sales' THEN '{"companies": ["view"], "workflows": []}'::jsonb
+            ELSE NULL
+          END
+        FROM crm_permissions cp
+        WHERE NOT EXISTS (
+          SELECT 1 FROM app_permissions ap
+          WHERE ap.user_id = cp.user_id AND ap.app_id = 'crm'
+        );
+      `);
+      logger.info('Migrated CRM permissions to app_permissions');
+    } catch (err) {
+      // crm_permissions table might not exist on fresh installs — safe to ignore
+      logger.info('Skipped CRM permission migration (crm_permissions table may not exist)');
+    }
 
     logger.info('Database migrations completed');
   } finally {

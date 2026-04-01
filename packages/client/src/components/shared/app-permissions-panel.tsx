@@ -26,6 +26,7 @@ interface AppPermissionsPanelProps {
 
 const ROLE_OPTIONS = [
   { value: 'admin', label: 'Admin' },
+  { value: 'manager', label: 'Manager' },
   { value: 'editor', label: 'Editor' },
   { value: 'viewer', label: 'Viewer' },
 ];
@@ -37,13 +38,15 @@ const ACCESS_OPTIONS = [
 
 const ROLE_COLORS: Record<AppRole, string> = {
   admin: '#16a34a',
+  manager: '#d97706',
   editor: '#2563eb',
   viewer: '#6b7280',
 };
 
 const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   admin: 'Full access to all features and settings',
-  editor: 'Create, edit, and delete records',
+  manager: 'Full access including deleting any record',
+  editor: 'Create, edit, and delete own records',
   viewer: 'Read-only access to all records',
 };
 
@@ -51,7 +54,7 @@ const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
 
 function RoleCards() {
   const { t } = useTranslation();
-  const roles: AppRole[] = ['admin', 'editor', 'viewer'];
+  const roles: AppRole[] = ['admin', 'manager', 'editor', 'viewer'];
   return (
     <div style={{
       display: 'grid',
