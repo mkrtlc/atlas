@@ -134,7 +134,7 @@ export async function createTask(userId: string, accountId: string, input: Creat
       dueDate: input.dueDate ?? null,
       tags: input.tags ?? [],
       recurrenceRule: input.recurrenceRule ?? null,
-      assigneeId: input.assigneeId ?? null,
+      assigneeId: input.assigneeId || null,
       sourceEmailId: (input as any).sourceEmailId ?? null,
       sourceEmailSubject: (input as any).sourceEmailSubject ?? null,
       sortOrder,
@@ -171,7 +171,15 @@ export async function updateTask(userId: string, taskId: string, input: UpdateTa
   if (input.dueDate !== undefined) updates.dueDate = input.dueDate;
   if (input.tags !== undefined) updates.tags = input.tags;
   if (input.recurrenceRule !== undefined) updates.recurrenceRule = input.recurrenceRule;
-  if (input.assigneeId !== undefined) updates.assigneeId = input.assigneeId;
+  if (input.assigneeId !== undefined) {
+    if (input.assigneeId) {
+      const [assignee] = await db.select({ id: users.id }).from(users)
+        .where(eq(users.id, input.assigneeId))
+        .limit(1);
+      if (!assignee) { throw new Error('Assignee user not found'); }
+    }
+    updates.assigneeId = input.assigneeId;
+  }
   if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder;
   if (input.isArchived !== undefined) updates.isArchived = input.isArchived;
   if ((input as any).sourceEmailId !== undefined) updates.sourceEmailId = (input as any).sourceEmailId;
