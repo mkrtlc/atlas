@@ -468,7 +468,7 @@ function AppCard({
           position: 'relative',
           background: 'var(--gradient-card-subtle)',
           border: '1px solid',
-          borderColor: hovered ? app.color + '55' : (isInstalled ? app.color + '33' : 'var(--color-border-primary)'),
+          borderColor: hovered ? app.color + '44' : 'var(--color-border-primary)',
           boxShadow: hovered ? `0 0 0 1px ${app.color}22` : 'none',
           borderRadius: 'var(--radius-lg)',
           padding: 'var(--spacing-xl)',
