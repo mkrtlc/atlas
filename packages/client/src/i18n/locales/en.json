@@ -450,6 +450,11 @@
   "docs": {
     "title": "Write",
     "search": "Search",
+    "deleted": "Document moved to trash",
+    "restored": "Document restored",
+    "deleteConfirmTitle": "Delete document",
+    "deleteConfirmDesc": "This will move the document to trash. You can restore it with Shift+Z.",
+    "deleteConfirmAction": "Delete",
     "recentlyViewed": "Recently viewed",
     "favorites": "Favorites",
     "trash": "Trash",

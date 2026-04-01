@@ -423,6 +423,11 @@
   "docs": {
     "title": "Write",
     "search": "Cerca",
+    "deleted": "Documento spostato nel cestino",
+    "restored": "Documento ripristinato",
+    "deleteConfirmTitle": "Elimina documento",
+    "deleteConfirmDesc": "Il documento verrà spostato nel cestino. Puoi ripristinarlo con Shift+Z.",
+    "deleteConfirmAction": "Elimina",
     "recentlyViewed": "Visualizzati di recente",
     "favorites": "Preferiti",
     "trash": "Cestino",

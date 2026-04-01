@@ -423,6 +423,11 @@
   "docs": {
     "title": "Write",
     "search": "Rechercher",
+    "deleted": "Document déplacé dans la corbeille",
+    "restored": "Document restauré",
+    "deleteConfirmTitle": "Supprimer le document",
+    "deleteConfirmDesc": "Le document sera déplacé dans la corbeille. Utilisez Shift+Z pour le restaurer.",
+    "deleteConfirmAction": "Supprimer",
     "recentlyViewed": "Consultés récemment",
     "favorites": "Favoris",
     "trash": "Corbeille",

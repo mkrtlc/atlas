@@ -423,6 +423,11 @@
   "docs": {
     "title": "Write",
     "search": "Suchen",
+    "deleted": "Dokument in den Papierkorb verschoben",
+    "restored": "Dokument wiederhergestellt",
+    "deleteConfirmTitle": "Dokument löschen",
+    "deleteConfirmDesc": "Das Dokument wird in den Papierkorb verschoben. Mit Shift+Z können Sie es wiederherstellen.",
+    "deleteConfirmAction": "Löschen",
     "recentlyViewed": "Zuletzt angesehen",
     "favorites": "Favoriten",
     "trash": "Papierkorb",

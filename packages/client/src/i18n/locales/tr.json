@@ -423,6 +423,11 @@
   "docs": {
     "title": "Write",
     "search": "Ara",
+    "deleted": "Belge çöp kutusuna taşındı",
+    "restored": "Belge geri yüklendi",
+    "deleteConfirmTitle": "Belgeyi sil",
+    "deleteConfirmDesc": "Bu belge çöp kutusuna taşınacak. Shift+Z ile geri yükleyebilirsiniz.",
+    "deleteConfirmAction": "Sil",
     "recentlyViewed": "Son görüntülenen",
     "favorites": "Favoriler",
     "trash": "Çöp kutusu",

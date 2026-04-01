@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   ChevronRight,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
+import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import {
   useDocumentList,
   useCreateDocument,
@@ -25,6 +27,7 @@ import {
   useMoveDocument,
 } from '../hooks';
 import { useDocSettingsStore } from '../settings-store';
+import { useToastStore } from '../../../stores/toast-store';
 import type { DocumentTreeNode } from '@atlasmail/shared';
 import { AppSidebar } from '../../../components/layout/app-sidebar';
 
@@ -139,12 +142,49 @@ export function DocSidebar({ selectedId, onSelect, onNewFromTemplate, onImport }
     [createDoc, onSelect],
   );
 
+  const { addToast } = useToastStore();
+  const { t } = useTranslation();
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const lastDeletedRef = useRef<string | null>(null);
+
   const handleDelete = useCallback(
     (id: string) => {
-      deleteDoc.mutate(id);
+      setDeleteConfirmId(id);
     },
-    [deleteDoc],
+    [],
   );
+
+  const confirmDelete = useCallback(() => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    lastDeletedRef.current = id;
+    deleteDoc.mutate(id, {
+      onSuccess: () => {
+        addToast({ type: 'success', message: t('docs.deleted') });
+        if (selectedId === id) onSelect('');
+      },
+    });
+    setDeleteConfirmId(null);
+  }, [deleteConfirmId, deleteDoc, addToast, t, selectedId, onSelect]);
+
+  // Shift+Z to restore last deleted
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.shiftKey && e.key === 'Z' && lastDeletedRef.current) {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+        e.preventDefault();
+        restoreDoc.mutate(lastDeletedRef.current, {
+          onSuccess: () => {
+            addToast({ type: 'success', message: t('docs.restored') });
+            lastDeletedRef.current = null;
+          },
+        });
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [restoreDoc, addToast, t]);
 
   const handleRestore = useCallback(
     (id: string) => {
@@ -275,6 +315,7 @@ export function DocSidebar({ selectedId, onSelect, onNewFromTemplate, onImport }
   ) : undefined;
 
   return (
+    <>
     <AppSidebar
       storageKey="atlas_docs_sidebar"
       title="Write"
@@ -445,6 +486,17 @@ export function DocSidebar({ selectedId, onSelect, onNewFromTemplate, onImport }
         )}
       </div>
     </AppSidebar>
+
+    <ConfirmDialog
+      open={!!deleteConfirmId}
+      onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}
+      title={t('docs.deleteConfirmTitle')}
+      description={t('docs.deleteConfirmDesc')}
+      confirmLabel={t('docs.deleteConfirmAction')}
+      destructive
+      onConfirm={confirmDelete}
+    />
+    </>
   );
 }
 
