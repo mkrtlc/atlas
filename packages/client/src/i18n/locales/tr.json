@@ -1174,6 +1174,7 @@
       "selectUser": "Kullanıcı seçin...",
       "shareAction": "Paylaş",
       "shareSuccess": "Başarıyla paylaşıldı",
+      "shared": "Başkalarıyla paylaşıldı",
       "revokeSuccess": "Paylaşım iptal edildi",
       "publicLink": "Herkese açık bağlantı",
       "changePermission": "İzni değiştir",

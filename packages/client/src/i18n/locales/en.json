@@ -1201,6 +1201,7 @@
       "selectUser": "Select a user...",
       "shareAction": "Share",
       "shareSuccess": "Shared successfully",
+      "shared": "Shared with others",
       "revokeSuccess": "Share revoked",
       "publicLink": "Public link",
       "changePermission": "Change permission",

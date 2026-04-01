@@ -59,7 +59,17 @@ export async function listItems(userId: string, parentId: string | null, include
   }
 
   const items = await db
-    .select()
+    .select({
+      id: driveItems.id, accountId: driveItems.accountId, userId: driveItems.userId,
+      name: driveItems.name, type: driveItems.type, mimeType: driveItems.mimeType,
+      size: driveItems.size, parentId: driveItems.parentId, storagePath: driveItems.storagePath,
+      icon: driveItems.icon, linkedResourceType: driveItems.linkedResourceType,
+      linkedResourceId: driveItems.linkedResourceId, isFavourite: driveItems.isFavourite,
+      isArchived: driveItems.isArchived, tags: driveItems.tags, sortOrder: driveItems.sortOrder,
+      createdAt: driveItems.createdAt, updatedAt: driveItems.updatedAt,
+      shareCount: sql<number>`COALESCE((SELECT COUNT(*) FROM drive_item_shares WHERE drive_item_id = ${driveItems.id}), 0)`.as('share_count'),
+      hasShareLink: sql<boolean>`EXISTS(SELECT 1 FROM drive_share_links WHERE drive_item_id = ${driveItems.id})`.as('has_share_link'),
+    })
     .from(driveItems)
     .where(and(...conditions))
     .orderBy(...sortClauses);

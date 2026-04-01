@@ -2040,6 +2040,13 @@ export function DrivePage() {
                       {item.isFavourite && (
                         <Star size={12} fill="var(--color-star, #f59e0b)" color="var(--color-star, #f59e0b)" />
                       )}
+                      {((item as any).shareCount > 0 || (item as any).hasShareLink) && (
+                        <Tooltip content={t('drive.sharing.shared')}>
+                          <span style={{ display: 'inline-flex', color: 'var(--color-text-tertiary)' }}>
+                            <Users size={12} />
+                          </span>
+                        </Tooltip>
+                      )}
                       {renderTags(item)}
                     </div>
                     {sidebarView === 'shared' && (() => {
@@ -2148,6 +2155,9 @@ export function DrivePage() {
                     )}
                     <span className="drive-grid-card-meta">
                       {item.type === 'file' ? formatBytes(item.size) : `${formatRelativeDate(item.updatedAt)}`}
+                      {((item as any).shareCount > 0 || (item as any).hasShareLink) && (
+                        <span style={{ marginLeft: 4, color: 'var(--color-text-tertiary)' }}><Users size={10} /></span>
+                      )}
                     </span>
                     {sidebarView === 'shared' && (() => {
                       const sharedItem = item as DriveItem & { sharePermission?: string; sharedBy?: string };
@@ -2526,7 +2536,7 @@ export function DrivePage() {
                   </div>
                   {/* Comment list */}
                   {commentsData && commentsData.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', maxHeight: 220, overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', maxHeight: 220, overflowY: 'auto', paddingRight: 'var(--spacing-xs)' }}>
                       {commentsData.map((c) => (
                         <div key={c.id} style={{ display: 'flex', gap: 'var(--spacing-sm)', padding: 'var(--spacing-xs) 0', alignItems: 'flex-start' }}>
                           <Avatar name={c.userName} size={22} />
@@ -3024,6 +3034,7 @@ export function DrivePage() {
                         </span>
                         <Select
                           value={share.permission}
+                          size="sm"
                           onChange={(v) => {
                             if (shareModalItem) {
                               shareItem.mutate({ itemId: shareModalItem.id, userId: share.sharedWithUserId, permission: v });
