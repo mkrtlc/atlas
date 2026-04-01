@@ -689,10 +689,23 @@ export async function updateDeal(userId: string, accountId: string, id: string, 
     .set(updates)
     .where(and(...updateConditions));
 
-  // Fire workflow trigger if stage changed
+  // Fire workflow trigger + log activity if stage changed
   if (input.stageId !== undefined && oldStageId && oldStageId !== input.stageId) {
     executeWorkflows(accountId, userId, 'deal_stage_changed', {
       dealId: id, fromStage: oldStageId, toStage: input.stageId,
+    }).catch(() => {});
+
+    // Auto-log stage change activity
+    const [oldStage, newStage] = await Promise.all([
+      db.select({ name: crmDealStages.name }).from(crmDealStages).where(eq(crmDealStages.id, oldStageId)).limit(1),
+      db.select({ name: crmDealStages.name }).from(crmDealStages).where(eq(crmDealStages.id, input.stageId)).limit(1),
+    ]);
+    const fromName = oldStage[0]?.name ?? 'Unknown';
+    const toName = newStage[0]?.name ?? 'Unknown';
+    createActivity(userId, accountId, {
+      type: 'stage_change',
+      body: `Stage changed from ${fromName} to ${toName}`,
+      dealId: id,
     }).catch(() => {});
   }
 
@@ -714,8 +727,9 @@ export async function markDealWon(userId: string, accountId: string, id: string,
     .set({ wonAt: now, lostAt: null, lostReason: null, probability: 100, updatedAt: now })
     .where(and(...conditions));
 
-  // Fire workflow trigger
+  // Fire workflow trigger + log activity
   executeWorkflows(accountId, userId, 'deal_won', { dealId: id }).catch(() => {});
+  createActivity(userId, accountId, { type: 'deal_won', body: 'Deal marked as won', dealId: id }).catch(() => {});
 
   return getDeal(userId, accountId, id, recordAccess);
 }
@@ -731,8 +745,9 @@ export async function markDealLost(userId: string, accountId: string, id: string
     .set({ lostAt: now, wonAt: null, lostReason: reason ?? null, probability: 0, updatedAt: now })
     .where(and(...conditions));
 
-  // Fire workflow trigger
+  // Fire workflow trigger + log activity
   executeWorkflows(accountId, userId, 'deal_lost', { dealId: id }).catch(() => {});
+  createActivity(userId, accountId, { type: 'deal_lost', body: reason ? `Deal lost: ${reason}` : 'Deal marked as lost', dealId: id }).catch(() => {});
 
   return getDeal(userId, accountId, id, recordAccess);
 }

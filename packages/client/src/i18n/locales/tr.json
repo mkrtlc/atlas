@@ -877,7 +877,10 @@
       "email": "E-posta",
       "noActivities": "Henüz aktivite yok",
       "editActivity": "Aktiviteyi düzenle",
-      "deleteActivity": "Aktiviteyi sil"
+      "deleteActivity": "Aktiviteyi sil",
+      "stageChange": "Aşama değişikliği",
+      "dealWon": "Anlaşma kazanıldı",
+      "dealLost": "Anlaşma kaybedildi"
     },
     "automations": {
       "title": "Otomasyonlar",

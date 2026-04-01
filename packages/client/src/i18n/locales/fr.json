@@ -877,7 +877,10 @@
       "email": "E-mail",
       "noActivities": "Pas encore d'activités",
       "editActivity": "Modifier l'activité",
-      "deleteActivity": "Supprimer l'activité"
+      "deleteActivity": "Supprimer l'activité",
+      "stageChange": "Changement d'étape",
+      "dealWon": "Affaire gagnée",
+      "dealLost": "Affaire perdue"
     },
     "automations": {
       "title": "Automatisations",

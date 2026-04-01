@@ -279,6 +279,9 @@ function getActivityIcon(type: string) {
     case 'call': return <PhoneCall size={14} />;
     case 'email': return <Mail size={14} />;
     case 'meeting': return <CalendarDays size={14} />;
+    case 'stage_change': return <Target size={14} />;
+    case 'deal_won': return <Trophy size={14} />;
+    case 'deal_lost': return <XCircle size={14} />;
     default: return <StickyNote size={14} />;
   }
 }
@@ -288,6 +291,9 @@ function getActivityLabel(type: string, t: (key: string) => string): string {
     case 'call': return t('crm.activities.call');
     case 'email': return t('crm.activities.email');
     case 'meeting': return t('crm.activities.meeting');
+    case 'stage_change': return t('crm.activities.stageChange');
+    case 'deal_won': return t('crm.activities.dealWon');
+    case 'deal_lost': return t('crm.activities.dealLost');
     default: return t('crm.activities.note');
   }
 }

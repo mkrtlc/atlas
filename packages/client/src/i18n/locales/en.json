@@ -904,7 +904,10 @@
       "email": "Email",
       "noActivities": "No activities yet",
       "editActivity": "Edit activity",
-      "deleteActivity": "Delete activity"
+      "deleteActivity": "Delete activity",
+      "stageChange": "Stage change",
+      "dealWon": "Deal won",
+      "dealLost": "Deal lost"
     },
     "automations": {
       "title": "Automations",

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  DollarSign, Trophy, Target, TrendingUp,
+  DollarSign, Trophy, Target, TrendingUp, XCircle,
   CalendarDays, PhoneCall, Mail, StickyNote, Users as UsersIcon,
   Briefcase, Building2, Tag,
 } from 'lucide-react';
@@ -15,6 +15,9 @@ function getActivityIcon(type: string) {
     case 'call': return <PhoneCall size={13} />;
     case 'email': return <Mail size={13} />;
     case 'meeting': return <UsersIcon size={13} />;
+    case 'stage_change': return <Target size={13} />;
+    case 'deal_won': return <Trophy size={13} />;
+    case 'deal_lost': return <XCircle size={13} />;
     default: return <StickyNote size={13} />;
   }
 }
@@ -25,6 +28,9 @@ function getActivityLabel(type: string): string {
     case 'email': return 'Email';
     case 'meeting': return 'Meeting';
     case 'note': return 'Note';
+    case 'stage_change': return 'Stage change';
+    case 'deal_won': return 'Deal won';
+    case 'deal_lost': return 'Deal lost';
     default: return type;
   }
 }
