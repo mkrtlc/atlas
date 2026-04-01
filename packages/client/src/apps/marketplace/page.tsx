@@ -415,6 +415,7 @@ function AppCard({
   const isStopped = status === 'stopped';
   const isFailed = status === 'failed';
   const isInstalling = status === 'installing' || deployMutation.isPending;
+  const isCompatible = app.platformCompatible !== false;
 
   const handleDeploy = () => {
     deployMutation.mutate({ appId: app.id });
@@ -512,7 +513,7 @@ function AppCard({
           }}
         >
           {/* Not installed: Deploy button */}
-          {!isInstalled && !isInstalling && isAdmin && (
+          {!isInstalled && !isInstalling && isAdmin && isCompatible && (
             <Button
               variant="primary"
               size="sm"
@@ -523,8 +524,21 @@ function AppCard({
             </Button>
           )}
 
+          {/* Not compatible with this platform */}
+          {!isInstalled && !isInstalling && !isCompatible && (
+            <span
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-text-tertiary)',
+                fontFamily: 'var(--font-family)',
+              }}
+            >
+              {t('marketplace.platformIncompatible')}
+            </span>
+          )}
+
           {/* Not installed, not admin */}
-          {!isInstalled && !isInstalling && !isAdmin && (
+          {!isInstalled && !isInstalling && !isAdmin && isCompatible && (
             <span
               style={{
                 fontSize: 'var(--font-size-sm)',

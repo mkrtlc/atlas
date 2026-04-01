@@ -10,6 +10,9 @@
   "services": {
     "app": {
       "image": "mattermost/mattermost-team-edition:10.11",
+      "platformImages": {
+        "linux/arm64": "ghcr.io/supersunho/docker-mattermost/mattermost:latest-team"
+      },
       "port": 8065,
       "healthCheck": "/api/v4/system/ping",
       "env": {

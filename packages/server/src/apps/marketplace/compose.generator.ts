@@ -1,4 +1,27 @@
-import type { MarketplaceManifest } from './types';
+import os from 'node:os';
+import type { MarketplaceManifest, MarketplaceServiceDef } from './types';
+
+/**
+ * Get the Docker platform string for this host (e.g. linux/amd64, linux/arm64).
+ */
+export function getHostPlatform(): string {
+  const arch = os.arch(); // 'arm64', 'x64', etc.
+  const platformArch = arch === 'x64' ? 'amd64' : arch === 'arm64' ? 'arm64' : arch;
+  return `linux/${platformArch}`;
+}
+
+/**
+ * Resolve the correct Docker image for a service based on host platform.
+ * Uses platformImages override if available, otherwise falls back to the default image.
+ */
+function resolveImage(service: MarketplaceServiceDef): string {
+  if (service.platformImages) {
+    const platform = getHostPlatform();
+    const override = service.platformImages[platform];
+    if (override) return override;
+  }
+  return service.image;
+}
 
 /**
  * Generates a docker-compose.yml string from a marketplace app manifest.
@@ -27,7 +50,7 @@ export function generateComposeFile(
 
   for (const [serviceName, service] of Object.entries(manifest.services)) {
     lines.push(`  ${serviceName}:`);
-    lines.push(`    image: ${service.image}`);
+    lines.push(`    image: ${resolveImage(service)}`);
 
     // Custom entrypoint
     if (service.entrypoint) {

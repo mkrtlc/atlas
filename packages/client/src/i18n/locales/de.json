@@ -2028,6 +2028,7 @@
     "noApps": "Keine Apps verfügbar",
     "loadError": "Marktplatz-Katalog konnte nicht geladen werden",
     "adminRequired": "Administratorzugriff zum Bereitstellen erforderlich",
+    "platformIncompatible": "Für diese Plattform nicht verfügbar",
     "startupWaiting": "{{name}} wird gestartet...",
     "startupWaitingDesc": "Die App wird hochgefahren. Dies dauert normalerweise 30–60 Sekunden.",
     "startupReady": "{{name}} ist bereit!",

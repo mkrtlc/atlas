@@ -24,6 +24,7 @@ export interface MarketplaceCatalogItem {
   status?: string | null;
   assignedPort?: number | null;
   updateAvailable?: boolean;
+  platformCompatible?: boolean;
 }
 
 export interface MarketplaceInstalledApp {

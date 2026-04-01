@@ -2014,6 +2014,7 @@
     "noApps": "Nessuna app disponibile",
     "loadError": "Impossibile caricare il catalogo",
     "adminRequired": "Accesso amministratore richiesto per la distribuzione",
+    "platformIncompatible": "Non disponibile per questa piattaforma",
     "startupWaiting": "Avvio di {{name}}...",
     "startupWaitingDesc": "L'app si sta avviando. Di solito ci vogliono 30–60 secondi.",
     "startupReady": "{{name}} è pronto!",

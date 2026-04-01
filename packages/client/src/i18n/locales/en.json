@@ -2045,6 +2045,7 @@
     "noApps": "No apps available",
     "loadError": "Failed to load marketplace catalog",
     "adminRequired": "Admin access required to deploy",
+    "platformIncompatible": "Not available for this platform",
     "startupWaiting": "Starting {{name}}...",
     "startupWaitingDesc": "The app is booting up. This usually takes 30–60 seconds.",
     "startupReady": "{{name}} is ready!",

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
 import * as service from './service';
 import * as dockerService from './docker.service';
-import { generateComposeFile } from './compose.generator';
+import { generateComposeFile, getHostPlatform } from './compose.generator';
 import { checkForUpdates } from './update-checker';
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -32,8 +32,18 @@ export async function getCatalog(req: Request, res: Response) {
 
     const installedMap = new Map(installed.map(app => [app.appId, app]));
 
+    const hostPlatform = getHostPlatform();
+
     const items = catalog.map(manifest => {
       const record = installedMap.get(manifest.id);
+      // Check if the app supports this platform
+      const hasPlatformOverride = Object.values(manifest.services).some(
+        s => s.platformImages?.[hostPlatform],
+      );
+      const platformCompatible = !manifest.supportedPlatforms
+        || manifest.supportedPlatforms.includes(hostPlatform)
+        || hasPlatformOverride;
+
       return {
         id: manifest.id,
         name: manifest.name,
@@ -50,10 +60,11 @@ export async function getCatalog(req: Request, res: Response) {
         status: record?.status ?? null,
         assignedPort: record?.assignedPort ?? null,
         updateAvailable: record ? (record.latestDigest != null && record.imageDigest !== record.latestDigest) : false,
+        platformCompatible,
       };
     });
 
-    res.json({ success: true, data: { items, dockerAvailable } });
+    res.json({ success: true, data: { items, dockerAvailable, hostPlatform } });
   } catch (error) {
     logger.error({ error }, 'Failed to get marketplace catalog');
     res.status(500).json({ success: false, error: 'Failed to get marketplace catalog' });

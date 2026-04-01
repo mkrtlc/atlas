@@ -4,6 +4,8 @@
 
 export interface MarketplaceServiceDef {
   image: string;
+  /** Platform-specific image overrides. Key is `linux/amd64` or `linux/arm64`. */
+  platformImages?: Record<string, string>;
   port?: number;
   healthCheck?: string;
   env?: Record<string, string>;
@@ -30,6 +32,8 @@ export interface MarketplaceManifest {
     required?: boolean;
     default?: string;
   }>;
+  /** Platforms this app supports. If omitted, assumes all platforms. */
+  supportedPlatforms?: string[];
   resources: {
     minRam: string;
     estimatedDisk: string;

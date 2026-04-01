@@ -2028,6 +2028,7 @@
     "noApps": "Aucune application disponible",
     "loadError": "Impossible de charger le catalogue",
     "adminRequired": "Accès administrateur requis pour déployer",
+    "platformIncompatible": "Non disponible pour cette plateforme",
     "startupWaiting": "Démarrage de {{name}}...",
     "startupWaitingDesc": "L'application démarre. Cela prend généralement 30 à 60 secondes.",
     "startupReady": "{{name}} est prêt !",
