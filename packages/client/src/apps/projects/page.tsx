@@ -235,8 +235,8 @@ function QuickTimeLog({ projects }: { projects: Project[] }) {
   return (
     <div className="projects-dashboard-card">
       <h3 className="projects-dashboard-card-title">{t('projects.dashboard.quickTimeLog')}</h3>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--spacing-sm)', padding: '0 var(--spacing-sm) var(--spacing-sm)' }}>
-        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--spacing-sm)', padding: 'var(--spacing-sm) var(--spacing-md) var(--spacing-md)' }}>
+        <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
           <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
             {t('projects.timeTracking.project')}
           </label>
@@ -266,7 +266,7 @@ function QuickTimeLog({ projects }: { projects: Project[] }) {
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t('projects.dashboard.whatDidYouWorkOn')}
           size="sm"
-          style={{ flex: 3 }}
+          style={{ flex: 2 }}
         />
         <Button
           variant="primary"

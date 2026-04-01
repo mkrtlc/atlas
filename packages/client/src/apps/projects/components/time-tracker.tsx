@@ -48,18 +48,47 @@ function formatElapsed(seconds: number): string {
 
 // ─── Running Timer ────────────────────────────────────────────────
 
+const TIMER_STORAGE_KEY = 'atlas_projects_timer';
+
+interface TimerState {
+  isRunning: boolean;
+  startedAt: number; // timestamp when timer started
+  projectId: string;
+}
+
+function saveTimerState(state: TimerState | null) {
+  if (state) {
+    localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
+  } else {
+    localStorage.removeItem(TIMER_STORAGE_KEY);
+  }
+}
+
+function loadTimerState(): TimerState | null {
+  try {
+    const raw = localStorage.getItem(TIMER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 function RunningTimer({ projects }: { projects: Project[] }) {
   const { t } = useTranslation();
-  const [isRunning, setIsRunning] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const saved = useRef(loadTimerState());
+  const [isRunning, setIsRunning] = useState(saved.current?.isRunning ?? false);
+  const [elapsed, setElapsed] = useState(() => {
+    if (saved.current?.isRunning && saved.current.startedAt) {
+      return Math.floor((Date.now() - saved.current.startedAt) / 1000);
+    }
+    return 0;
+  });
+  const [selectedProjectId, setSelectedProjectId] = useState(saved.current?.projectId ?? '');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTimeRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(saved.current?.startedAt ?? 0);
   const createTimeEntry = useCreateTimeEntry();
 
   useEffect(() => {
     if (isRunning) {
-      startTimeRef.current = Date.now() - elapsed * 1000;
+      if (!startTimeRef.current) startTimeRef.current = Date.now() - elapsed * 1000;
       intervalRef.current = setInterval(() => {
         setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
@@ -83,6 +112,8 @@ function RunningTimer({ projects }: { projects: Project[] }) {
       });
     }
     setElapsed(0);
+    startTimeRef.current = 0;
+    saveTimerState(null);
   };
 
   return (
@@ -108,7 +139,11 @@ function RunningTimer({ projects }: { projects: Project[] }) {
           size="sm"
           icon={<Play size={14} />}
           onClick={() => {
-            if (selectedProjectId) setIsRunning(true);
+            if (selectedProjectId) {
+              startTimeRef.current = Date.now();
+              saveTimerState({ isRunning: true, startedAt: startTimeRef.current, projectId: selectedProjectId });
+              setIsRunning(true);
+            }
           }}
           disabled={!selectedProjectId}
         >
