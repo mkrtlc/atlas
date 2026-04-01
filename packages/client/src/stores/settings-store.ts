@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import i18n from '../i18n';
 import { api } from '../lib/api-client';
 import { queryKeys } from '../config/query-keys';
+import { useToastStore } from './toast-store';
 import type { ThemeMode, Density, ColorThemeId } from '@atlasmail/shared';
 
 export type FontFamilyId = 'inter' | 'geist' | 'system' | 'roboto' | 'open-sans' | 'lato';
@@ -64,9 +65,11 @@ const FROM_SERVER: Record<string, string> = Object.fromEntries(
   Object.entries(TO_SERVER).map(([local, server]) => [server, local])
 );
 
-// Persist to server (fire-and-forget)
+// Persist to server with error feedback
 function persistToServer(serverKey: string, value: unknown) {
-  api.put('/settings', { [serverKey]: value }).catch(() => {});
+  api.put('/settings', { [serverKey]: value }).catch(() => {
+    useToastStore.getState().addToast({ type: 'error', message: 'Failed to save setting' });
+  });
 }
 
 export const useSettingsStore = create<SettingsState>()((set) => ({
@@ -151,7 +154,9 @@ export function useSettingsSync() {
       if (!serverSettings.timezone) {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (tz) {
-          api.put('/settings', { timezone: tz }).catch(() => {});
+          api.put('/settings', { timezone: tz }).catch(() => {
+            useToastStore.getState().addToast({ type: 'error', message: 'Failed to save timezone' });
+          });
         }
       }
     }

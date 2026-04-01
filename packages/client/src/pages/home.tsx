@@ -268,40 +268,57 @@ function useWeather() {
       } catch { /* ignore */ }
     }
 
-    if (!navigator.geolocation) return;
+    async function fetchWeather(latitude: number, longitude: number) {
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`
+      );
+      const json = await res.json();
+      const current = json.current;
+      const wmoCode = current.weather_code as number;
+      const { desc, icon } = mapWMOCode(wmoCode);
+
+      let city = '';
+      try {
+        const geoRes = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        const geoJson = await geoRes.json();
+        city = geoJson.city || geoJson.locality || '';
+      } catch { /* ignore */ }
+
+      const data: WeatherData = {
+        temp: Math.round(current.temperature_2m),
+        description: desc,
+        icon,
+        city,
+      };
+      setWeather(data);
+      localStorage.setItem('atlasmail_weather', JSON.stringify({ data, ts: Date.now() }));
+    }
+
+    // IP-based fallback when geolocation is unavailable or denied
+    async function fetchViaIP() {
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        const json = await res.json();
+        if (json.latitude && json.longitude) {
+          await fetchWeather(json.latitude, json.longitude);
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (!navigator.geolocation) {
+      fetchViaIP();
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`
-          );
-          const json = await res.json();
-          const current = json.current;
-          const wmoCode = current.weather_code as number;
-          const { desc, icon } = mapWMOCode(wmoCode);
-
-          let city = '';
-          try {
-            const geoRes = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-            );
-            const geoJson = await geoRes.json();
-            city = geoJson.city || geoJson.locality || '';
-          } catch { /* ignore */ }
-
-          const data: WeatherData = {
-            temp: Math.round(current.temperature_2m),
-            description: desc,
-            icon,
-            city,
-          };
-          setWeather(data);
-          localStorage.setItem('atlasmail_weather', JSON.stringify({ data, ts: Date.now() }));
+          await fetchWeather(pos.coords.latitude, pos.coords.longitude);
         } catch { /* ignore */ }
       },
-      () => { /* permission denied */ },
+      () => { fetchViaIP(); },
       { timeout: 5000 },
     );
   }, []);
