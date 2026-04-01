@@ -934,6 +934,39 @@ export async function runMigrations() {
       ALTER TABLE signing_tokens ADD COLUMN IF NOT EXISTS decline_reason TEXT;
     `);
 
+    // ─── Signature audit log ────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS sign_audit_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        document_id UUID NOT NULL REFERENCES signature_documents(id) ON DELETE CASCADE,
+        action VARCHAR(100) NOT NULL,
+        actor_email VARCHAR(255),
+        actor_name VARCHAR(255),
+        ip_address VARCHAR(100),
+        user_agent TEXT,
+        metadata JSONB NOT NULL DEFAULT '{}',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    // ─── Signature templates ────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS sign_templates (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        account_id UUID NOT NULL,
+        user_id UUID NOT NULL,
+        title VARCHAR(500) NOT NULL,
+        file_name VARCHAR(500) NOT NULL,
+        storage_path TEXT NOT NULL,
+        page_count INTEGER NOT NULL DEFAULT 1,
+        fields JSONB NOT NULL DEFAULT '[]',
+        is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
     // Add format columns to user_settings (idempotent)
     await client.query(`
       ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS time_format TEXT NOT NULL DEFAULT '12h';
@@ -1499,6 +1532,10 @@ export async function runMigrations() {
       // Signing tokens
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_signing_tokens_token ON signing_tokens(token)',
       'CREATE INDEX IF NOT EXISTS idx_signing_tokens_document ON signing_tokens(document_id)',
+      // Sign audit log
+      'CREATE INDEX IF NOT EXISTS idx_sign_audit_document ON sign_audit_log(document_id)',
+      // Sign templates
+      'CREATE INDEX IF NOT EXISTS idx_sign_templates_account ON sign_templates(account_id)',
       // Departments
       'CREATE INDEX IF NOT EXISTS idx_departments_user ON departments(user_id, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_departments_account ON departments(account_id, is_archived)',

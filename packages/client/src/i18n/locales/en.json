@@ -1500,7 +1500,9 @@
       "signed": "Signed",
       "draft": "Draft",
       "expired": "Expired",
-      "voided": "Voided"
+      "voided": "Voided",
+      "templates": "Templates",
+      "auditLog": "Audit log"
     },
     "status": {
       "pending": "Pending",
@@ -1640,6 +1642,28 @@
       "h3Title": "Track completion",
       "h3Desc": "Monitor signing progress and download signed copies",
       "upload": "Upload first PDF"
+    },
+    "audit": {
+      "title": "Audit log",
+      "documentCreated": "Document created",
+      "linkCreated": "Signing link created for {{email}}",
+      "documentViewed": "Document viewed by {{email}}",
+      "fieldSigned": "Field signed by {{email}}",
+      "documentCompleted": "Document completed — all signatures collected",
+      "documentVoided": "Document voided",
+      "documentDeclined": "Signing declined by {{email}}",
+      "noEvents": "No events yet"
+    },
+    "templates": {
+      "title": "Templates",
+      "empty": "No templates yet",
+      "emptyDesc": "Save a configured document as a template to reuse it.",
+      "create": "Create template",
+      "useTemplate": "Use template",
+      "saveAsTemplate": "Save as template",
+      "deleteTemplate": "Delete template",
+      "fieldCount": "{{count}} fields",
+      "createdFrom": "Created from template"
     }
   },
   "system": {

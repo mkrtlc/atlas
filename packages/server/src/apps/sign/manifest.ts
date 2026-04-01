@@ -82,6 +82,6 @@ export const signServerManifest: ServerAppManifest = {
   version: '1.0.0',
   router: signRouter,
   routePrefix: '/sign',
-  tables: ['signature_documents', 'signature_fields', 'signing_tokens'],
+  tables: ['signature_documents', 'signature_fields', 'signing_tokens', 'sign_audit_log', 'sign_templates'],
   objects,
 };

@@ -1465,7 +1465,9 @@
       "signed": "Signé",
       "draft": "Brouillon",
       "expired": "Expiré",
-      "voided": "Annulé"
+      "voided": "Annulé",
+      "templates": "Modèles",
+      "auditLog": "Journal d'audit"
     },
     "status": {
       "pending": "En attente",
@@ -1605,6 +1607,28 @@
       "h3Title": "Suivez la progression",
       "h3Desc": "Surveillez la progression des signatures et téléchargez les copies signées",
       "upload": "Télécharger le premier PDF"
+    },
+    "audit": {
+      "title": "Journal d'audit",
+      "documentCreated": "Document créé",
+      "linkCreated": "Lien de signature créé pour {{email}}",
+      "documentViewed": "Document consulté par {{email}}",
+      "fieldSigned": "Champ signé par {{email}}",
+      "documentCompleted": "Document terminé — toutes les signatures collectées",
+      "documentVoided": "Document annulé",
+      "documentDeclined": "Signature refusée par {{email}}",
+      "noEvents": "Aucun événement pour le moment"
+    },
+    "templates": {
+      "title": "Modèles",
+      "empty": "Aucun modèle pour le moment",
+      "emptyDesc": "Enregistrez un document configuré comme modèle pour le réutiliser.",
+      "create": "Créer un modèle",
+      "useTemplate": "Utiliser le modèle",
+      "saveAsTemplate": "Enregistrer comme modèle",
+      "deleteTemplate": "Supprimer le modèle",
+      "fieldCount": "{{count}} champs",
+      "createdFrom": "Créé à partir d'un modèle"
     }
   },
   "system": {

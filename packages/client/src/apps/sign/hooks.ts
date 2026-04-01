@@ -5,6 +5,8 @@ import type {
   SignatureDocument,
   SignatureField,
   SigningToken,
+  SignAuditLogEntry,
+  SignTemplate,
 } from '@atlasmail/shared';
 import axios from 'axios';
 import { config } from '../../config/env';
@@ -170,6 +172,88 @@ export function useVoidDocument(docId: string | undefined) {
     onSuccess: (doc) => {
       queryClient.setQueryData(queryKeys.sign.detail(doc.id), doc);
       queryClient.invalidateQueries({ queryKey: queryKeys.sign.all });
+    },
+  });
+}
+
+// ─── Audit Log ──────────────────────────────────────────────────────
+
+export function useAuditLog(docId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sign.audit(docId!),
+    queryFn: async () => {
+      const { data } = await api.get(`/sign/${docId}/audit`);
+      return data.data.entries as SignAuditLogEntry[];
+    },
+    enabled: !!docId,
+    staleTime: 10_000,
+  });
+}
+
+// ─── Templates ──────────────────────────────────────────────────────
+
+export function useTemplates() {
+  return useQuery({
+    queryKey: queryKeys.sign.templates,
+    queryFn: async () => {
+      const { data } = await api.get('/sign/templates');
+      return data.data.templates as SignTemplate[];
+    },
+    staleTime: 10_000,
+  });
+}
+
+export function useCreateTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { title: string; fileName: string; storagePath: string; pageCount?: number; fields?: SignTemplate['fields'] }) => {
+      const { data } = await api.post('/sign/templates', input);
+      return data.data as SignTemplate;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sign.templates });
+    },
+  });
+}
+
+export function useCreateFromTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ templateId, title }: { templateId: string; title?: string }) => {
+      const { data } = await api.post(`/sign/templates/${templateId}/use`, { title });
+      return data.data as SignatureDocument;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sign.all });
+    },
+  });
+}
+
+export function useSaveAsTemplate(docId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input?: { title?: string }) => {
+      const { data } = await api.post(`/sign/${docId}/save-as-template`, input ?? {});
+      return data.data as SignTemplate;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sign.templates });
+    },
+  });
+}
+
+export function useDeleteTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (templateId: string) => {
+      await api.delete(`/sign/templates/${templateId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sign.templates });
     },
   });
 }

@@ -1465,7 +1465,9 @@
       "signed": "İmzalandı",
       "draft": "Taslak",
       "expired": "Süresi doldu",
-      "voided": "İptal edildi"
+      "voided": "İptal edildi",
+      "templates": "Şablonlar",
+      "auditLog": "Denetim günlüğü"
     },
     "status": {
       "pending": "Bekliyor",
@@ -1605,6 +1607,28 @@
       "h3Title": "Tamamlanmayı takip edin",
       "h3Desc": "İmza ilerlemesini izleyin ve imzalı kopyaları indirin",
       "upload": "İlk PDF'i yükle"
+    },
+    "audit": {
+      "title": "Denetim günlüğü",
+      "documentCreated": "Belge oluşturuldu",
+      "linkCreated": "{{email}} için imza bağlantısı oluşturuldu",
+      "documentViewed": "Belge {{email}} tarafından görüntülendi",
+      "fieldSigned": "Alan {{email}} tarafından imzalandı",
+      "documentCompleted": "Belge tamamlandı — tüm imzalar toplandı",
+      "documentVoided": "Belge iptal edildi",
+      "documentDeclined": "İmzalama {{email}} tarafından reddedildi",
+      "noEvents": "Henüz olay yok"
+    },
+    "templates": {
+      "title": "Şablonlar",
+      "empty": "Henüz şablon yok",
+      "emptyDesc": "Yapılandırılmış bir belgeyi yeniden kullanmak için şablon olarak kaydedin.",
+      "create": "Şablon oluştur",
+      "useTemplate": "Şablonu kullan",
+      "saveAsTemplate": "Şablon olarak kaydet",
+      "deleteTemplate": "Şablonu sil",
+      "fieldCount": "{{count}} alan",
+      "createdFrom": "Şablondan oluşturuldu"
     }
   },
   "system": {

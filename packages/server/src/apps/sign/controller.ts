@@ -641,6 +641,142 @@ export async function declineByToken(req: Request, res: Response) {
   }
 }
 
+// GET /api/sign/:id/audit
+export async function getAuditLog(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'sign');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view sign documents' });
+      return;
+    }
+
+    const documentId = req.params.id as string;
+    const entries = await signService.getAuditLog(documentId);
+    res.json({ success: true, data: { entries } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get audit log');
+    res.status(500).json({ success: false, error: 'Failed to get audit log' });
+  }
+}
+
+// ─── Template CRUD ──────────────────────────────────────────────────
+
+// GET /api/sign/templates
+export async function listTemplates(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'sign');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view sign templates' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const templates = await signService.listTemplates(userId, accountId);
+    res.json({ success: true, data: { templates } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list sign templates');
+    res.status(500).json({ success: false, error: 'Failed to list sign templates' });
+  }
+}
+
+// POST /api/sign/templates
+export async function createTemplate(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'sign');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create sign templates' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const { title, fileName, storagePath, pageCount, fields } = req.body;
+
+    if (!title || !fileName || !storagePath) {
+      res.status(400).json({ success: false, error: 'title, fileName, and storagePath are required' });
+      return;
+    }
+
+    const template = await signService.createTemplate(userId, accountId, {
+      title,
+      fileName,
+      storagePath,
+      pageCount,
+      fields,
+    });
+    res.json({ success: true, data: template });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create sign template');
+    res.status(500).json({ success: false, error: 'Failed to create sign template' });
+  }
+}
+
+// POST /api/sign/templates/:id/use
+export async function useTemplate(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'sign');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create sign documents' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const templateId = req.params.id as string;
+    const { title } = req.body;
+
+    const doc = await signService.createDocumentFromTemplate(userId, accountId, templateId, title);
+    res.json({ success: true, data: doc });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create document from template');
+    res.status(500).json({ success: false, error: 'Failed to create document from template' });
+  }
+}
+
+// POST /api/sign/documents/:id/save-as-template
+export async function saveAsTemplate(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'sign');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create sign templates' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const documentId = req.params.id as string;
+    const { title } = req.body;
+
+    const template = await signService.saveAsTemplate(userId, accountId, documentId, title);
+    res.json({ success: true, data: template });
+  } catch (error) {
+    logger.error({ error }, 'Failed to save document as template');
+    res.status(500).json({ success: false, error: 'Failed to save document as template' });
+  }
+}
+
+// DELETE /api/sign/templates/:id
+export async function deleteTemplate(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'sign');
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete sign templates' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const templateId = req.params.id as string;
+
+    await signService.deleteTemplate(userId, accountId, templateId);
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to delete sign template');
+    res.status(500).json({ success: false, error: 'Failed to delete sign template' });
+  }
+}
+
 // GET /api/sign/public/:token/view — stream PDF for public signers
 export async function viewPDFByToken(req: Request, res: Response) {
   try {

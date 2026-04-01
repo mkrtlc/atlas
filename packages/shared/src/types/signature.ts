@@ -78,3 +78,44 @@ export interface CreateSigningTokenInput {
   signerName?: string;
   expiresInDays?: number;
 }
+
+// ─── Audit Log ─────────────────────────────────────────────────────
+
+export interface SignAuditLogEntry {
+  id: string;
+  documentId: string;
+  action: string;
+  actorEmail: string | null;
+  actorName: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+// ─── Templates ─────────────────────────────────────────────────────
+
+export interface SignTemplate {
+  id: string;
+  accountId: string;
+  userId: string;
+  title: string;
+  fileName: string;
+  storagePath: string;
+  pageCount: number;
+  fields: Array<{
+    type: string;
+    pageNumber: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    signerEmail: string | null;
+    label: string | null;
+    required: boolean;
+  }>;
+  isArchived: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}

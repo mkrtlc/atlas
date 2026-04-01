@@ -1465,7 +1465,9 @@
       "signed": "Firmato",
       "draft": "Bozza",
       "expired": "Scaduto",
-      "voided": "Annullato"
+      "voided": "Annullato",
+      "templates": "Modelli",
+      "auditLog": "Registro audit"
     },
     "status": {
       "pending": "In attesa",
@@ -1605,6 +1607,28 @@
       "h3Title": "Monitora il completamento",
       "h3Desc": "Segui l'avanzamento delle firme e scarica le copie firmate",
       "upload": "Carica il primo PDF"
+    },
+    "audit": {
+      "title": "Registro audit",
+      "documentCreated": "Documento creato",
+      "linkCreated": "Link di firma creato per {{email}}",
+      "documentViewed": "Documento visualizzato da {{email}}",
+      "fieldSigned": "Campo firmato da {{email}}",
+      "documentCompleted": "Documento completato — tutte le firme raccolte",
+      "documentVoided": "Documento annullato",
+      "documentDeclined": "Firma rifiutata da {{email}}",
+      "noEvents": "Nessun evento ancora"
+    },
+    "templates": {
+      "title": "Modelli",
+      "empty": "Nessun modello ancora",
+      "emptyDesc": "Salva un documento configurato come modello per riutilizzarlo.",
+      "create": "Crea modello",
+      "useTemplate": "Usa modello",
+      "saveAsTemplate": "Salva come modello",
+      "deleteTemplate": "Elimina modello",
+      "fieldCount": "{{count}} campi",
+      "createdFrom": "Creato da modello"
     }
   },
   "system": {

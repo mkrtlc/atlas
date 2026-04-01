@@ -1,13 +1,70 @@
 import { db } from '../../config/database';
-import { signatureDocuments, signatureFields, signingTokens } from '../../db/schema';
+import { signatureDocuments, signatureFields, signingTokens, signAuditLog, signTemplates, users } from '../../db/schema';
 import { eq, and, asc, desc, sql, inArray } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
+import { env } from '../../config/env';
 import crypto from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, copyFile } from 'node:fs/promises';
 import path from 'node:path';
 import { PDFDocument } from 'pdf-lib';
+import { sendSigningInviteEmail, sendDocumentCompletedEmail } from './email';
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
+
+// ─── Audit Log ──────────────────────────────────────────────────────
+
+export async function logAuditEvent(data: {
+  documentId: string;
+  action: string;
+  actorEmail?: string;
+  actorName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    await db.insert(signAuditLog).values({
+      documentId: data.documentId,
+      action: data.action,
+      actorEmail: data.actorEmail ?? null,
+      actorName: data.actorName ?? null,
+      ipAddress: data.ipAddress ?? null,
+      userAgent: data.userAgent ?? null,
+      metadata: data.metadata ?? {},
+    });
+  } catch (error) {
+    // Audit logging should never block the main flow
+    logger.warn({ error, action: data.action, documentId: data.documentId }, 'Failed to log audit event');
+  }
+}
+
+export async function getAuditLog(documentId: string) {
+  return db
+    .select()
+    .from(signAuditLog)
+    .where(eq(signAuditLog.documentId, documentId))
+    .orderBy(desc(signAuditLog.createdAt));
+}
+
+// ─── Helper: get user name by userId ─────────────────────────────────
+
+async function getUserName(userId: string): Promise<string> {
+  const [user] = await db
+    .select({ name: users.name, email: users.email })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return user?.name || user?.email || 'Unknown';
+}
+
+async function getUserEmail(userId: string): Promise<string> {
+  const [user] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return user?.email || '';
+}
 
 // ─── Documents ──────────────────────────────────────────────────────
 
@@ -116,6 +173,18 @@ export async function createDocument(
     .returning();
 
   logger.info({ userId, documentId: created.id }, 'Signature document created');
+
+  // Audit: document.created
+  const creatorEmail = await getUserEmail(userId);
+  const creatorName = await getUserName(userId);
+  logAuditEvent({
+    documentId: created.id,
+    action: 'document.created',
+    actorEmail: creatorEmail,
+    actorName: creatorName,
+    metadata: { title: data.title },
+  }).catch(() => {});
+
   return created;
 }
 
@@ -293,6 +362,36 @@ export async function createSigningToken(
     .returning();
 
   logger.info({ tokenId: created.id, documentId, email }, 'Signing token created');
+
+  // Audit: signing_link.created
+  logAuditEvent({
+    documentId,
+    action: 'signing_link.created',
+    actorEmail: email,
+    actorName: name ?? undefined,
+    metadata: { email, name, expiresAt: expiresAt.toISOString() },
+  }).catch(() => {});
+
+  // Email: send signing invite
+  const [doc] = await db
+    .select({ title: signatureDocuments.title, userId: signatureDocuments.userId })
+    .from(signatureDocuments)
+    .where(eq(signatureDocuments.id, documentId))
+    .limit(1);
+
+  if (doc) {
+    const senderName = await getUserName(doc.userId);
+    const clientUrl = env.CLIENT_PUBLIC_URL || 'http://localhost:5180';
+    sendSigningInviteEmail({
+      to: email,
+      signerName: name ?? undefined,
+      documentTitle: doc.title,
+      senderName,
+      signingLink: `${clientUrl}/sign/${token}`,
+      expiresAt,
+    }).catch(() => {});
+  }
+
   return created;
 }
 
@@ -312,6 +411,17 @@ export async function getSigningToken(token: string) {
     .where(eq(signatureDocuments.id, row.documentId))
     .limit(1);
 
+  // Audit: document.viewed (when a signer views the document)
+  if (row.status === 'pending') {
+    logAuditEvent({
+      documentId: row.documentId,
+      action: 'document.viewed',
+      actorEmail: row.signerEmail,
+      actorName: row.signerName ?? undefined,
+      metadata: { tokenId: row.id },
+    }).catch(() => {});
+  }
+
   return { token: row, document: doc || null };
 }
 
@@ -327,28 +437,78 @@ export async function listSigningTokens(documentId: string) {
 
 export async function signField(fieldId: string, signatureData: string) {
   const now = new Date();
-  return updateField(fieldId, {
+  const result = await updateField(fieldId, {
     signatureData,
     signedAt: now,
   });
+
+  // Audit: document.signed
+  if (result) {
+    logAuditEvent({
+      documentId: result.documentId,
+      action: 'document.signed',
+      actorEmail: result.signerEmail ?? undefined,
+      metadata: { fieldId, fieldType: result.type, label: result.label },
+    }).catch(() => {});
+  }
+
+  return result;
 }
 
 export async function completeSigningToken(tokenId: string) {
   const now = new Date();
+
+  // Fetch the token before updating to get the signer info
+  const [tokenRow] = await db
+    .select()
+    .from(signingTokens)
+    .where(eq(signingTokens.id, tokenId))
+    .limit(1);
+
   await db
     .update(signingTokens)
     .set({ status: 'signed', signedAt: now, updatedAt: now })
     .where(eq(signingTokens.id, tokenId));
   logger.info({ tokenId }, 'Signing token marked as signed');
+
+  // Audit: token completed
+  if (tokenRow) {
+    logAuditEvent({
+      documentId: tokenRow.documentId,
+      action: 'signing_token.completed',
+      actorEmail: tokenRow.signerEmail,
+      actorName: tokenRow.signerName ?? undefined,
+      metadata: { tokenId },
+    }).catch(() => {});
+  }
 }
 
 export async function declineSigningToken(tokenId: string, reason: string | null) {
   const now = new Date();
+
+  // Fetch the token to get signer info
+  const [tokenRow] = await db
+    .select()
+    .from(signingTokens)
+    .where(eq(signingTokens.id, tokenId))
+    .limit(1);
+
   await db
     .update(signingTokens)
     .set({ status: 'declined', declineReason: reason, updatedAt: now })
     .where(eq(signingTokens.id, tokenId));
   logger.info({ tokenId, reason }, 'Signing token declined');
+
+  // Audit: document.declined
+  if (tokenRow) {
+    logAuditEvent({
+      documentId: tokenRow.documentId,
+      action: 'document.declined',
+      actorEmail: tokenRow.signerEmail,
+      actorName: tokenRow.signerName ?? undefined,
+      metadata: { tokenId, reason },
+    }).catch(() => {});
+  }
 }
 
 export async function voidDocument(userId: string, documentId: string) {
@@ -377,6 +537,17 @@ export async function voidDocument(userId: string, documentId: string) {
     );
 
   logger.info({ userId, documentId }, 'Signature document voided');
+
+  // Audit: document.voided
+  const voiderEmail = await getUserEmail(userId);
+  const voiderName = await getUserName(userId);
+  logAuditEvent({
+    documentId,
+    action: 'document.voided',
+    actorEmail: voiderEmail,
+    actorName: voiderName,
+  }).catch(() => {});
+
   return getDocument(userId, documentId);
 }
 
@@ -402,6 +573,45 @@ export async function checkDocumentComplete(documentId: string) {
       .set({ status: 'signed', completedAt: now, updatedAt: now })
       .where(eq(signatureDocuments.id, documentId));
     logger.info({ documentId }, 'Signature document marked as completed');
+
+    // Audit: document.completed
+    logAuditEvent({
+      documentId,
+      action: 'document.completed',
+      metadata: { fieldCount: fields.length },
+    }).catch(() => {});
+
+    // Email: notify all signers + document owner that the document is complete
+    const [doc] = await db
+      .select({ title: signatureDocuments.title, userId: signatureDocuments.userId })
+      .from(signatureDocuments)
+      .where(eq(signatureDocuments.id, documentId))
+      .limit(1);
+
+    if (doc) {
+      // Get all signer emails
+      const tokens = await db
+        .select({ signerEmail: signingTokens.signerEmail })
+        .from(signingTokens)
+        .where(eq(signingTokens.documentId, documentId));
+
+      const recipientEmails = new Set<string>();
+      for (const t of tokens) {
+        recipientEmails.add(t.signerEmail);
+      }
+
+      // Add the document owner email
+      const ownerEmail = await getUserEmail(doc.userId);
+      if (ownerEmail) recipientEmails.add(ownerEmail);
+
+      for (const email of recipientEmails) {
+        sendDocumentCompletedEmail({
+          to: email,
+          documentTitle: doc.title,
+        }).catch(() => {});
+      }
+    }
+
     return true;
   }
 
@@ -461,6 +671,193 @@ export async function generateSignedPDF(documentId: string, storagePath: string)
 
   const signedBytes = await pdfDoc.save();
   return Buffer.from(signedBytes);
+}
+
+// ─── Templates ──────────────────────────────────────────────────────
+
+export async function listTemplates(userId: string, accountId: string) {
+  return db
+    .select()
+    .from(signTemplates)
+    .where(
+      and(
+        eq(signTemplates.accountId, accountId),
+        eq(signTemplates.isArchived, false),
+      ),
+    )
+    .orderBy(desc(signTemplates.updatedAt));
+}
+
+export async function createTemplate(
+  userId: string,
+  accountId: string,
+  data: {
+    title: string;
+    fileName: string;
+    storagePath: string;
+    pageCount?: number;
+    fields?: Array<{
+      type: string;
+      pageNumber: number;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      signerEmail: string | null;
+      label: string | null;
+      required: boolean;
+    }>;
+  },
+) {
+  const now = new Date();
+  const [created] = await db
+    .insert(signTemplates)
+    .values({
+      accountId,
+      userId,
+      title: data.title,
+      fileName: data.fileName,
+      storagePath: data.storagePath,
+      pageCount: data.pageCount ?? 1,
+      fields: data.fields ?? [],
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  logger.info({ userId, templateId: created.id }, 'Sign template created');
+  return created;
+}
+
+export async function saveAsTemplate(
+  userId: string,
+  accountId: string,
+  documentId: string,
+  title?: string,
+) {
+  // Get the document
+  const [doc] = await db
+    .select()
+    .from(signatureDocuments)
+    .where(
+      and(
+        eq(signatureDocuments.id, documentId),
+        eq(signatureDocuments.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (!doc) throw new Error('Document not found');
+
+  // Get the fields
+  const fields = await db
+    .select()
+    .from(signatureFields)
+    .where(eq(signatureFields.documentId, documentId));
+
+  // Copy the file
+  const ext = path.extname(doc.storagePath);
+  const newFileName = `tpl_${userId}_${Date.now()}${ext}`;
+  const srcPath = path.join(UPLOADS_DIR, doc.storagePath);
+  const dstPath = path.join(UPLOADS_DIR, newFileName);
+
+  try {
+    await copyFile(srcPath, dstPath);
+  } catch (err) {
+    logger.warn({ err }, 'Failed to copy file for template — using same path');
+  }
+
+  // Create the template
+  return createTemplate(userId, accountId, {
+    title: title || `${doc.title} (template)`,
+    fileName: doc.fileName,
+    storagePath: newFileName,
+    pageCount: doc.pageCount,
+    fields: fields.map((f) => ({
+      type: f.type,
+      pageNumber: f.pageNumber,
+      x: f.x,
+      y: f.y,
+      width: f.width,
+      height: f.height,
+      signerEmail: f.signerEmail,
+      label: f.label,
+      required: f.required,
+    })),
+  });
+}
+
+export async function createDocumentFromTemplate(
+  userId: string,
+  accountId: string,
+  templateId: string,
+  title?: string,
+) {
+  // Get the template
+  const [tpl] = await db
+    .select()
+    .from(signTemplates)
+    .where(
+      and(
+        eq(signTemplates.id, templateId),
+        eq(signTemplates.accountId, accountId),
+      ),
+    )
+    .limit(1);
+
+  if (!tpl) throw new Error('Template not found');
+
+  // Copy the file
+  const ext = path.extname(tpl.storagePath);
+  const newFileName = `sign_${userId}_${Date.now()}${ext}`;
+  const srcPath = path.join(UPLOADS_DIR, tpl.storagePath);
+  const dstPath = path.join(UPLOADS_DIR, newFileName);
+
+  try {
+    await copyFile(srcPath, dstPath);
+  } catch (err) {
+    logger.warn({ err }, 'Failed to copy template file — using same path');
+  }
+
+  // Create the document
+  const doc = await createDocument(userId, accountId, {
+    title: title || tpl.title,
+    fileName: tpl.fileName,
+    storagePath: newFileName,
+    pageCount: tpl.pageCount,
+  });
+
+  // Create the fields
+  for (const f of tpl.fields) {
+    await createField({
+      documentId: doc.id,
+      type: f.type,
+      pageNumber: f.pageNumber,
+      x: f.x,
+      y: f.y,
+      width: f.width,
+      height: f.height,
+      signerEmail: f.signerEmail ?? undefined,
+      label: f.label ?? undefined,
+      required: f.required,
+    });
+  }
+
+  return doc;
+}
+
+export async function deleteTemplate(userId: string, accountId: string, templateId: string) {
+  const now = new Date();
+  await db
+    .update(signTemplates)
+    .set({ isArchived: true, updatedAt: now })
+    .where(
+      and(
+        eq(signTemplates.id, templateId),
+        eq(signTemplates.accountId, accountId),
+      ),
+    );
+  logger.info({ userId, templateId }, 'Sign template archived');
 }
 
 // ─── Seed sample data (called from setup wizard) ────────────────────

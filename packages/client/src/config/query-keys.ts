@@ -120,6 +120,8 @@ export const queryKeys = {
     detail: (id: string) => ['sign', 'detail', id] as const,
     fields: (docId: string) => ['sign', 'fields', docId] as const,
     tokens: (docId: string) => ['sign', 'tokens', docId] as const,
+    audit: (docId: string) => ['sign', 'audit', docId] as const,
+    templates: ['sign', 'templates'] as const,
   },
   crm: {
     all: ['crm'] as const,

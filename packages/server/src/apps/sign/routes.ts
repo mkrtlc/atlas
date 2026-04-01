@@ -37,6 +37,12 @@ router.get('/widget', signController.getWidgetData);
 // ─── Seed ──────────────────────────────────────────────────────────
 router.post('/seed', signController.seedSampleData);
 
+// ─── Templates ─────────────────────────────────────────────────────
+router.get('/templates', signController.listTemplates);
+router.post('/templates', signController.createTemplate);
+router.post('/templates/:id/use', signController.useTemplate);
+router.delete('/templates/:id', signController.deleteTemplate);
+
 // ─── Documents ──────────────────────────────────────────────────────
 router.get('/', signController.listDocuments);
 router.post('/', signController.createDocument);
@@ -47,6 +53,8 @@ router.delete('/:id', signController.deleteDocument);
 router.get('/:id/view', signController.viewPDF);
 router.get('/:id/download', signController.downloadPDF);
 router.post('/:id/void', signController.voidDocument);
+router.get('/:id/audit', signController.getAuditLog);
+router.post('/:id/save-as-template', signController.saveAsTemplate);
 
 // ─── Fields ─────────────────────────────────────────────────────────
 router.get('/:id/fields', signController.listFields);

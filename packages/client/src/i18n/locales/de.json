@@ -1465,7 +1465,9 @@
       "signed": "Unterschrieben",
       "draft": "Entwurf",
       "expired": "Abgelaufen",
-      "voided": "Ungültig"
+      "voided": "Ungültig",
+      "templates": "Vorlagen",
+      "auditLog": "Protokoll"
     },
     "status": {
       "pending": "Ausstehend",
@@ -1605,6 +1607,28 @@
       "h3Title": "Fortschritt verfolgen",
       "h3Desc": "Überwachen Sie den Unterschriftfortschritt und laden Sie unterschriebene Kopien herunter",
       "upload": "Erstes PDF hochladen"
+    },
+    "audit": {
+      "title": "Protokoll",
+      "documentCreated": "Dokument erstellt",
+      "linkCreated": "Unterschriftslink für {{email}} erstellt",
+      "documentViewed": "Dokument von {{email}} angesehen",
+      "fieldSigned": "Feld von {{email}} unterschrieben",
+      "documentCompleted": "Dokument abgeschlossen — alle Unterschriften gesammelt",
+      "documentVoided": "Dokument ungültig gemacht",
+      "documentDeclined": "Unterschrift von {{email}} abgelehnt",
+      "noEvents": "Noch keine Ereignisse"
+    },
+    "templates": {
+      "title": "Vorlagen",
+      "empty": "Noch keine Vorlagen",
+      "emptyDesc": "Speichern Sie ein konfiguriertes Dokument als Vorlage, um es wiederzuverwenden.",
+      "create": "Vorlage erstellen",
+      "useTemplate": "Vorlage verwenden",
+      "saveAsTemplate": "Als Vorlage speichern",
+      "deleteTemplate": "Vorlage löschen",
+      "fieldCount": "{{count}} Felder",
+      "createdFrom": "Aus Vorlage erstellt"
     }
   },
   "system": {

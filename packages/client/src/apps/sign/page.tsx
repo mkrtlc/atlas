@@ -26,6 +26,10 @@ import {
   Pencil,
   Tag,
   Search,
+  History,
+  BookTemplate,
+  Play,
+  BookmarkPlus,
 } from 'lucide-react';
 import { ColumnHeader } from '../../components/ui/column-header';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
@@ -58,9 +62,14 @@ import {
   useCreateSigningLink,
   useSigningLinks,
   useVoidDocument,
+  useAuditLog,
+  useTemplates,
+  useCreateFromTemplate,
+  useSaveAsTemplate,
+  useDeleteTemplate,
 } from './hooks';
 import { config } from '../../config/env';
-import type { SignatureDocument, SignatureFieldType, SignatureField } from '@atlasmail/shared';
+import type { SignatureDocument, SignatureFieldType, SignatureField, SignAuditLogEntry } from '@atlasmail/shared';
 import { formatDate } from '../../lib/format';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { Chip } from '../../components/ui/chip';
@@ -88,11 +97,36 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
   voided: 'var(--color-error)',
 };
 
+// ─── Audit action label helper ──────────────────────────────────────
+
+function getAuditActionLabel(entry: SignAuditLogEntry, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  switch (entry.action) {
+    case 'document.created':
+      return t('sign.audit.documentCreated');
+    case 'signing_link.created':
+      return t('sign.audit.linkCreated', { email: entry.actorEmail ?? '' });
+    case 'document.viewed':
+      return t('sign.audit.documentViewed', { email: entry.actorEmail ?? '' });
+    case 'document.signed':
+      return t('sign.audit.fieldSigned', { email: entry.actorEmail ?? '' });
+    case 'document.completed':
+      return t('sign.audit.documentCompleted');
+    case 'document.voided':
+      return t('sign.audit.documentVoided');
+    case 'document.declined':
+      return t('sign.audit.documentDeclined', { email: entry.actorEmail ?? '' });
+    case 'signing_token.completed':
+      return t('sign.audit.fieldSigned', { email: entry.actorEmail ?? '' });
+    default:
+      return entry.action;
+  }
+}
+
 // ─── Main page ──────────────────────────────────────────────────────
 
 export function SignPage() {
   const { t } = useTranslation();
-  const [view, setView] = useState<'list' | 'editor'>('list');
+  const [view, setView] = useState<'list' | 'editor' | 'templates' | 'audit'>('list');
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,6 +164,9 @@ export function SignPage() {
   // Tags
   const [addingTag, setAddingTag] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
+  // Template delete
+  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
+  const [deleteTemplateOpen, setDeleteTemplateOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,6 +175,8 @@ export function SignPage() {
   const { data: selectedDoc } = useSignDocument(selectedDocId ?? undefined);
   const { data: fields } = useSignFields(selectedDocId ?? undefined);
   const { data: signingLinks } = useSigningLinks(selectedDocId ?? undefined);
+  const { data: auditEntries } = useAuditLog(selectedDocId ?? undefined);
+  const { data: templates, isLoading: templatesLoading } = useTemplates();
 
   // Mutations
   const createDoc = useCreateSignDoc();
@@ -148,6 +187,9 @@ export function SignPage() {
   const deleteField = useDeleteField(selectedDocId ?? undefined);
   const createSigningLink = useCreateSigningLink(selectedDocId ?? undefined);
   const voidDoc = useVoidDocument(selectedDocId ?? undefined);
+  const createFromTemplate = useCreateFromTemplate();
+  const saveAsTemplate = useSaveAsTemplate(selectedDocId ?? undefined);
+  const deleteTemplate = useDeleteTemplate();
 
   // ─── Handlers ───────────────────────────────────────────────────
 
@@ -502,11 +544,26 @@ export function SignPage() {
             onClick={() => { setFilterStatus('voided'); if (view === 'editor') handleBackToList(); }}
           />
         </SidebarSection>
+        <SidebarSection>
+          <SidebarItem
+            label={t('sign.sidebar.templates')}
+            icon={<BookTemplate size={15} />}
+            iconColor="#8b5cf6"
+            isActive={view === 'templates'}
+            count={templates?.length ?? 0}
+            onClick={() => { setView('templates'); setSelectedDocId(null); }}
+          />
+        </SidebarSection>
       </AppSidebar>
 
       {/* Main content */}
       <ContentArea
-        title={filterStatus === 'all' ? t('sign.sidebar.allDocuments') : t(`sign.status.${filterStatus}`)}
+        title={
+          view === 'templates' ? t('sign.templates.title')
+            : view === 'audit' ? t('sign.audit.title')
+            : filterStatus === 'all' ? t('sign.sidebar.allDocuments')
+            : t(`sign.status.${filterStatus}`)
+        }
         actions={
           view === 'list' ? (
             <Button variant="primary" size="sm" icon={<Upload size={14} />} onClick={handleUpload}>
@@ -709,6 +766,22 @@ export function SignPage() {
                 </Badge>
               </div>
               <div className="sign-toolbar-right">
+                <IconButton
+                  icon={<History size={14} />}
+                  label={t('sign.audit.title')}
+                  size={28}
+                  onClick={() => setView('audit')}
+                />
+                <IconButton
+                  icon={<BookmarkPlus size={14} />}
+                  label={t('sign.templates.saveAsTemplate')}
+                  size={28}
+                  onClick={async () => {
+                    try {
+                      await saveAsTemplate.mutateAsync({});
+                    } catch { /* handled by RQ */ }
+                  }}
+                />
                 <IconButton
                   icon={<Users size={14} />}
                   label={t('sign.editor.manageSigners')}
@@ -954,6 +1027,136 @@ export function SignPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Templates view */}
+        {view === 'templates' && (
+          <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-lg)' }}>
+            {templatesLoading ? (
+              <div className="sign-empty">{t('common.loading')}</div>
+            ) : !templates || templates.length === 0 ? (
+              <FeatureEmptyState
+                illustration="documents"
+                title={t('sign.templates.empty')}
+                description={t('sign.templates.emptyDesc')}
+                highlights={[]}
+              />
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--spacing-lg)' }}>
+                {templates.map((tpl) => (
+                  <div
+                    key={tpl.id}
+                    style={{
+                      border: '1px solid var(--color-border-primary)',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: 'var(--spacing-lg)',
+                      background: 'var(--color-bg-primary)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'var(--spacing-sm)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                      <BookTemplate size={16} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                      <span style={{ fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'], fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {tpl.title}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                      <span>{tpl.pageCount} {t('sign.list.pages').toLowerCase()}</span>
+                      <span>&middot;</span>
+                      <span>{t('sign.templates.fieldCount', { count: tpl.fields.length })}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-sm)' }}>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={<Play size={13} />}
+                        onClick={async () => {
+                          try {
+                            const doc = await createFromTemplate.mutateAsync({ templateId: tpl.id });
+                            setSelectedDocId(doc.id);
+                            setView('editor');
+                          } catch { /* handled by RQ */ }
+                        }}
+                        disabled={createFromTemplate.isPending}
+                      >
+                        {t('sign.templates.useTemplate')}
+                      </Button>
+                      <IconButton
+                        icon={<Trash2 size={14} />}
+                        label={t('sign.templates.deleteTemplate')}
+                        size={28}
+                        destructive
+                        onClick={() => { setDeleteTemplateId(tpl.id); setDeleteTemplateOpen(true); }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Audit log view (shown in editor) */}
+        {view === 'audit' && selectedDocId && (
+          <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-lg)' }}>
+            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+              <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={() => setView('editor')}>
+                {t('sign.editor.back')}
+              </Button>
+            </div>
+            {!auditEntries || auditEntries.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                {t('sign.audit.noEvents')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, maxWidth: 640 }}>
+                {auditEntries.map((entry, idx) => (
+                  <div
+                    key={entry.id}
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--spacing-md)',
+                      padding: 'var(--spacing-md) 0',
+                      borderBottom: idx < auditEntries.length - 1 ? '1px solid var(--color-border-secondary)' : undefined,
+                    }}
+                  >
+                    <div style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: 'var(--color-bg-tertiary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {entry.action === 'document.created' && <FileText size={13} style={{ color: '#8b5cf6' }} />}
+                      {entry.action === 'signing_link.created' && <Link2 size={13} style={{ color: '#f59e0b' }} />}
+                      {entry.action === 'document.viewed' && <FileText size={13} style={{ color: '#6b7280' }} />}
+                      {entry.action === 'document.signed' && <PenTool size={13} style={{ color: '#10b981' }} />}
+                      {entry.action === 'signing_token.completed' && <CheckCircle size={13} style={{ color: '#10b981' }} />}
+                      {entry.action === 'document.completed' && <CheckCircle size={13} style={{ color: '#10b981' }} />}
+                      {entry.action === 'document.voided' && <Ban size={13} style={{ color: '#ef4444' }} />}
+                      {entry.action === 'document.declined' && <AlertTriangle size={13} style={{ color: '#ef4444' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
+                        {getAuditActionLabel(entry, t)}
+                      </div>
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                        {formatDate(entry.createdAt)}
+                        {entry.actorEmail && (
+                          <span> &middot; {entry.actorEmail}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </ContentArea>
 
@@ -1235,6 +1438,21 @@ export function SignPage() {
         confirmLabel={t('sign.editor.voidDocument')}
         destructive
         onConfirm={handleVoidDocument}
+      />
+
+      {/* Template delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteTemplateOpen}
+        onOpenChange={setDeleteTemplateOpen}
+        title={t('sign.templates.deleteTemplate')}
+        description={t('sign.editor.deleteConfirm')}
+        confirmLabel={t('common.delete')}
+        destructive
+        onConfirm={async () => {
+          if (!deleteTemplateId) return;
+          await deleteTemplate.mutateAsync(deleteTemplateId);
+          setDeleteTemplateId(null);
+        }}
       />
     </div>
   );

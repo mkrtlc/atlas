@@ -881,6 +881,49 @@ export const signingTokens = pgTable('signing_tokens', {
   documentIdx: index('idx_signing_tokens_document').on(table.documentId),
 }));
 
+// ─── Signature: Audit Log ──────────────────────────────────────────
+export const signAuditLog = pgTable('sign_audit_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  documentId: uuid('document_id').notNull().references(() => signatureDocuments.id, { onDelete: 'cascade' }),
+  action: varchar('action', { length: 100 }).notNull(),
+  actorEmail: varchar('actor_email', { length: 255 }),
+  actorName: varchar('actor_name', { length: 255 }),
+  ipAddress: varchar('ip_address', { length: 100 }),
+  userAgent: text('user_agent'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  documentIdx: index('idx_sign_audit_document').on(table.documentId),
+}));
+
+// ─── Signature: Templates ─────────────────────────────────────────
+export const signTemplates = pgTable('sign_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  title: varchar('title', { length: 500 }).notNull(),
+  fileName: varchar('file_name', { length: 500 }).notNull(),
+  storagePath: text('storage_path').notNull(),
+  pageCount: integer('page_count').notNull().default(1),
+  fields: jsonb('fields').$type<Array<{
+    type: string;
+    pageNumber: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    signerEmail: string | null;
+    label: string | null;
+    required: boolean;
+  }>>().notNull().default([]),
+  isArchived: boolean('is_archived').notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  accountIdx: index('idx_sign_templates_account').on(table.accountId),
+}));
+
 // ─── HR: Departments ──────────────────────────────────────────────
 
 export const departments = pgTable('departments', {
