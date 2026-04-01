@@ -645,6 +645,16 @@
       "logbookDesc": "Completed tasks will appear here",
       "projectTitle": "No tasks in this project",
       "projectDesc": "Add tasks to get started"
+    },
+    "assignee": "Assignee",
+    "assignedToMe": "Assigned to me",
+    "unassigned": "Unassigned",
+    "comments": {
+      "title": "Comments",
+      "add": "Add comment",
+      "placeholder": "Write a comment...",
+      "empty": "No comments yet",
+      "delete": "Delete comment"
     }
   },
   "errors": {

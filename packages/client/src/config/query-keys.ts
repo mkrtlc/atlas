@@ -40,6 +40,7 @@ export const queryKeys = {
     projects: ['tasks', 'projects'] as const,
     subtasks: (taskId: string) => ['tasks', 'subtasks', taskId] as const,
     activities: (taskId: string) => ['tasks', 'activities', taskId] as const,
+    comments: (taskId: string) => ['tasks', 'comments', taskId] as const,
     templates: ['tasks', 'templates'] as const,
   },
   hr: {

@@ -1,5 +1,5 @@
 import { db } from '../../config/database';
-import { tasks, taskProjects, subtasks, taskActivities, taskTemplates } from '../../db/schema';
+import { tasks, taskProjects, subtasks, taskActivities, taskTemplates, taskComments, users } from '../../db/schema';
 import { eq, and, asc, desc, sql, isNull, gte, lte } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import type {
@@ -60,6 +60,7 @@ export async function listTasks(userId: string, filters?: {
   status?: string;
   when?: string;
   projectId?: string | null;
+  assigneeId?: string;
   includeArchived?: boolean;
 }) {
   const conditions = [eq(tasks.userId, userId)];
@@ -84,6 +85,9 @@ export async function listTasks(userId: string, filters?: {
     } else {
       conditions.push(eq(tasks.projectId, filters.projectId));
     }
+  }
+  if (filters?.assigneeId) {
+    conditions.push(eq(tasks.assigneeId, filters.assigneeId));
   }
 
   return db
@@ -130,6 +134,7 @@ export async function createTask(userId: string, accountId: string, input: Creat
       dueDate: input.dueDate ?? null,
       tags: input.tags ?? [],
       recurrenceRule: input.recurrenceRule ?? null,
+      assigneeId: input.assigneeId ?? null,
       sourceEmailId: (input as any).sourceEmailId ?? null,
       sourceEmailSubject: (input as any).sourceEmailSubject ?? null,
       sortOrder,
@@ -166,6 +171,7 @@ export async function updateTask(userId: string, taskId: string, input: UpdateTa
   if (input.dueDate !== undefined) updates.dueDate = input.dueDate;
   if (input.tags !== undefined) updates.tags = input.tags;
   if (input.recurrenceRule !== undefined) updates.recurrenceRule = input.recurrenceRule;
+  if (input.assigneeId !== undefined) updates.assigneeId = input.assigneeId;
   if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder;
   if (input.isArchived !== undefined) updates.isArchived = input.isArchived;
   if ((input as any).sourceEmailId !== undefined) updates.sourceEmailId = (input as any).sourceEmailId;
@@ -406,6 +412,20 @@ export async function getTaskCounts(userId: string) {
     );
   counts.upcoming = tasksWithDueDate.length;
 
+  // Assigned to me
+  const assignedToMe = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(
+      and(
+        eq(tasks.userId, userId),
+        eq(tasks.isArchived, false),
+        eq(tasks.status, 'todo'),
+        eq(tasks.assigneeId, userId),
+      ),
+    );
+  (counts as any).assignedToMe = assignedToMe.length;
+
   return counts;
 }
 
@@ -587,4 +607,75 @@ export async function getWidgetData(userId: string) {
     completedThisWeek: Number(completedAgg?.count ?? 0),
     total: Number(totalAgg?.count ?? 0),
   };
+}
+
+// ─── Task Comments ──────────────────────────────────────────────────
+
+export async function listComments(taskId: string) {
+  return db
+    .select({
+      id: taskComments.id,
+      taskId: taskComments.taskId,
+      accountId: taskComments.accountId,
+      userId: taskComments.userId,
+      body: taskComments.body,
+      userName: users.name,
+      userEmail: users.email,
+      createdAt: taskComments.createdAt,
+      updatedAt: taskComments.updatedAt,
+    })
+    .from(taskComments)
+    .leftJoin(users, eq(taskComments.userId, users.id))
+    .where(eq(taskComments.taskId, taskId))
+    .orderBy(asc(taskComments.createdAt));
+}
+
+export async function createComment(userId: string, accountId: string, taskId: string, body: string) {
+  const now = new Date();
+  const [created] = await db
+    .insert(taskComments)
+    .values({
+      taskId,
+      accountId,
+      userId,
+      body,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  // Return with user info joined
+  const [result] = await db
+    .select({
+      id: taskComments.id,
+      taskId: taskComments.taskId,
+      accountId: taskComments.accountId,
+      userId: taskComments.userId,
+      body: taskComments.body,
+      userName: users.name,
+      userEmail: users.email,
+      createdAt: taskComments.createdAt,
+      updatedAt: taskComments.updatedAt,
+    })
+    .from(taskComments)
+    .leftJoin(users, eq(taskComments.userId, users.id))
+    .where(eq(taskComments.id, created.id))
+    .limit(1);
+
+  return result;
+}
+
+export async function deleteComment(userId: string, commentId: string) {
+  // Only the author can delete
+  const [comment] = await db
+    .select()
+    .from(taskComments)
+    .where(eq(taskComments.id, commentId))
+    .limit(1);
+
+  if (!comment) return false;
+  if (comment.userId !== userId) return false;
+
+  await db.delete(taskComments).where(eq(taskComments.id, commentId));
+  return true;
 }

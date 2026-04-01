@@ -4,7 +4,7 @@ import {
   Archive, BookOpen, Check, Trash2, X, ChevronRight, ChevronDown,
   Hash, CircleDot, MoreHorizontal, Moon, Sun, GripVertical,
   Clock, FileText, Filter, Tag, CheckCircle2, Settings2,
-  Repeat, LayoutList, LayoutGrid,
+  Repeat, LayoutList, LayoutGrid, User, MessageSquare, Send,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,11 +15,12 @@ import {
   useReorderTasks,
   useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask,
   useTaskActivities,
+  useTaskComments, useCreateComment, useDeleteComment,
 } from './hooks';
 import { TaskNotesEditor } from './components/task-notes-editor';
 import { queryKeys } from '../../config/query-keys';
 import { api } from '../../lib/api-client';
-import type { Task, TaskProject, TaskWhen, RecurrenceRule } from '@atlasmail/shared';
+import type { Task, TaskProject, TaskWhen, RecurrenceRule, TenantUser } from '@atlasmail/shared';
 import { AppSidebar } from '../../components/layout/app-sidebar';
 import { ContentArea } from '../../components/ui/content-area';
 import { ListToolbar } from '../../components/ui/list-toolbar';
@@ -28,10 +29,14 @@ import { TasksSettingsModal } from './components/tasks-settings-modal';
 import { KanbanBoard } from './components/kanban-board';
 import { useTasksSettingsStore } from './settings-store';
 import { useUIStore } from '../../stores/ui-store';
+import { useAuthStore } from '../../stores/auth-store';
 import { useMyAppPermission } from '../../hooks/use-app-permissions';
+import { useTenantUsers } from '../../hooks/use-platform';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { Avatar } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
+import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
@@ -40,7 +45,7 @@ import '../../styles/tasks.css';
 
 // ─── Navigation sections (Things 3 inspired) ────────────────────────
 
-type NavSection = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | `project:${string}` | `tag:${string}`;
+type NavSection = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'assignedToMe' | `project:${string}` | `tag:${string}`;
 
 interface NavItem {
   id: NavSection;
@@ -151,6 +156,7 @@ function TaskItem({
   onComplete,
   onTitleSave,
   projects,
+  members,
   showWhenBadge,
   showProject = true,
   showDueDate = true,
@@ -170,6 +176,7 @@ function TaskItem({
   onComplete: () => void;
   onTitleSave: (title: string) => void;
   projects: TaskProject[];
+  members?: TenantUser[];
   showWhenBadge: boolean;
   showProject?: boolean;
   showDueDate?: boolean;
@@ -343,6 +350,16 @@ function TaskItem({
           </div>
         )}
       </div>
+
+      {/* Assignee avatar */}
+      {task.assigneeId && members && (() => {
+        const assignee = members.find(m => m.userId === task.assigneeId);
+        return assignee ? (
+          <span title={assignee.name || assignee.email} style={{ flexShrink: 0 }}>
+            <Avatar name={assignee.name} email={assignee.email} size={20} />
+          </span>
+        ) : null;
+      })()}
 
       {/* Notes indicator (respects settings) */}
       {tasksSettings.showNotesIndicator && (task.description || task.notes) && (
@@ -751,15 +768,178 @@ function ActivitySection({ taskId }: { taskId: string }) {
   );
 }
 
+// ─── Comment Section ────────────────────────────────────────────────
+
+function CommentSection({ taskId }: { taskId: string }) {
+  const { t } = useTranslation();
+  const { account } = useAuthStore();
+  const { data: comments = [] } = useTaskComments(taskId);
+  const createComment = useCreateComment();
+  const deleteComment = useDeleteComment();
+  const [newComment, setNewComment] = useState('');
+
+  const handleSubmit = () => {
+    const body = newComment.trim();
+    if (!body) return;
+    createComment.mutate({ taskId, body });
+    setNewComment('');
+  };
+
+  function getRelativeTime(dateStr: string): string {
+    const now = Date.now();
+    const then = new Date(dateStr).getTime();
+    const diff = now - then;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  return (
+    <div style={{
+      padding: 'var(--spacing-lg)',
+      borderTop: '1px solid var(--color-border-secondary)',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--spacing-xs)',
+        marginBottom: 'var(--spacing-md)',
+      }}>
+        <MessageSquare size={13} color="var(--color-text-tertiary)" />
+        <span style={{
+          fontSize: 'var(--font-size-xs)',
+          fontWeight: 'var(--font-weight-medium)' as any,
+          color: 'var(--color-text-tertiary)',
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.05em',
+        }}>
+          {t('tasks.comments.title')} {comments.length > 0 && `(${comments.length})`}
+        </span>
+      </div>
+
+      {/* Comment list */}
+      {comments.length === 0 && (
+        <div style={{
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-text-tertiary)',
+          padding: 'var(--spacing-sm) 0',
+        }}>
+          {t('tasks.comments.empty')}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+        {comments.map((comment) => (
+          <div key={comment.id} className="group" style={{
+            display: 'flex',
+            gap: 'var(--spacing-sm)',
+            alignItems: 'flex-start',
+          }}>
+            <Avatar
+              name={comment.userName}
+              email={comment.userEmail ?? undefined}
+              size={24}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--spacing-sm)',
+              }}>
+                <span style={{
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 'var(--font-weight-medium)' as any,
+                  color: 'var(--color-text-primary)',
+                }}>
+                  {comment.userName || comment.userEmail || 'Unknown'}
+                </span>
+                <span style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-tertiary)',
+                }}>
+                  {getRelativeTime(comment.createdAt)}
+                </span>
+                {account && comment.userId === account.userId && (
+                  <IconButton
+                    icon={<Trash2 size={11} />}
+                    label={t('tasks.comments.delete')}
+                    size={20}
+                    destructive
+                    tooltip={false}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => deleteComment.mutate({ commentId: comment.id, taskId })}
+                  />
+                )}
+              </div>
+              <div style={{
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.5,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>
+                {comment.body}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add comment input */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--spacing-sm)',
+        marginTop: 'var(--spacing-md)',
+      }}>
+        <input
+          style={{
+            flex: 1,
+            fontSize: 'var(--font-size-sm)',
+            fontFamily: 'var(--font-family)',
+            padding: '6px var(--spacing-sm)',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--color-bg-tertiary)',
+            color: 'var(--color-text-primary)',
+            outline: 'none',
+          }}
+          value={newComment}
+          onChange={e => setNewComment(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          placeholder={t('tasks.comments.placeholder')}
+        />
+        <IconButton
+          icon={<Send size={14} />}
+          label={t('tasks.comments.add')}
+          size={28}
+          onClick={handleSubmit}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Task Detail Panel ──────────────────────────────────────────────
 
 function TaskDetailPanel({
   task,
   projects,
+  members,
   onClose,
 }: {
   task: Task;
   projects: TaskProject[];
+  members?: TenantUser[];
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -961,6 +1141,35 @@ function TaskDetailPanel({
               </span>
             </div>
           )}
+
+          {/* Assignee */}
+          {members && members.length > 0 && (
+            <div className="task-detail-field">
+              <span className="task-detail-label">{t('tasks.assignee')}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                <Select
+                  value={task.assigneeId || ''}
+                  onChange={(v) => {
+                    updateTask.mutate({ id: task.id, assigneeId: v || null });
+                  }}
+                  options={[
+                    { value: '', label: t('tasks.unassigned') },
+                    ...members.map(m => ({
+                      value: m.userId,
+                      label: m.name || m.email,
+                    })),
+                  ]}
+                  size="sm"
+                />
+                {task.assigneeId && (() => {
+                  const assignee = members.find(m => m.userId === task.assigneeId);
+                  return assignee ? (
+                    <Avatar name={assignee.name} email={assignee.email} size={22} />
+                  ) : null;
+                })()}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Subtasks */}
@@ -976,6 +1185,9 @@ function TaskDetailPanel({
             placeholder="Add notes..."
           />
         </div>
+
+        {/* Comments */}
+        <CommentSection taskId={task.id} />
 
         {/* Activity log */}
         <ActivitySection taskId={task.id} />
@@ -1069,6 +1281,11 @@ export function TasksPage() {
   const canCreate = !tasksPerm || tasksPerm.role === 'admin' || tasksPerm.role === 'editor';
   const canDelete = !tasksPerm || tasksPerm.role === 'admin';
 
+  // Current user & tenant members
+  const { account, tenantId } = useAuthStore();
+  const currentUserId = account?.userId;
+  const { data: tenantMembers } = useTenantUsers(tenantId ?? undefined);
+
   // Settings
   const { openSettings } = useUIStore();
   const tasksSettings = useTasksSettingsStore();
@@ -1117,6 +1334,9 @@ export function TasksPage() {
     if (activeSection === 'someday') return { when: 'someday', status: 'todo' };
     if (activeSection === 'logbook') return { status: 'completed' };
     if (activeSection === 'upcoming') return { status: 'todo' };
+    if (activeSection === 'assignedToMe' && currentUserId) {
+      return { status: 'todo', assigneeId: currentUserId };
+    }
     if (activeSection.startsWith('project:')) {
       return { projectId: activeSection.replace('project:', ''), status: 'todo' };
     }
@@ -1124,7 +1344,7 @@ export function TasksPage() {
       return { status: 'todo' }; // fetch all todo tasks, filter by tag client-side
     }
     return {};
-  }, [activeSection]);
+  }, [activeSection, currentUserId]);
 
   const { data: tasksData, isLoading } = useTaskList(taskFilters);
   const allTasks = tasksData?.tasks ?? [];
@@ -1453,6 +1673,9 @@ export function TasksPage() {
     if (activeSection.startsWith('tag:')) {
       return `#${activeSection.replace('tag:', '')}`;
     }
+    if (activeSection === 'assignedToMe') {
+      return t('tasks.assignedToMe');
+    }
     const nav = NAV_ITEMS.find(n => n.id === activeSection);
     return nav ? t(nav.labelKey) : '';
   }, [activeSection, t]);
@@ -1465,6 +1688,7 @@ export function TasksPage() {
     anytime: counts?.anytime ?? 0,
     someday: counts?.someday ?? 0,
     logbook: counts?.logbook ?? 0,
+    assignedToMe: (counts as any)?.assignedToMe ?? 0,
   }), [counts]);
 
   const handleNewProject = () => {
@@ -1499,6 +1723,7 @@ export function TasksPage() {
       onComplete={() => handleComplete(task.id)}
       onTitleSave={(title) => updateTask.mutate({ id: task.id, title })}
       projects={projects}
+      members={tenantMembers}
       showWhenBadge={showWhenBadges}
       showProject={showProjectInList}
       showDueDate={showDueDateInList}
@@ -1538,6 +1763,19 @@ export function TasksPage() {
               )}
             </button>
           ))}
+          {/* Assigned to me */}
+          <button
+            className={`task-nav-item${activeSection === 'assignedToMe' ? ' active' : ''}`}
+            onClick={() => { setActiveSection('assignedToMe'); setSelectedTaskId(null); }}
+          >
+            <User size={16} color="#8b5cf6" strokeWidth={1.8} />
+            <span style={{ flex: 1 }}>{t('tasks.assignedToMe')}</span>
+            {navCounts.assignedToMe > 0 && (
+              <span className="task-nav-count">
+                {navCounts.assignedToMe}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Projects section */}
@@ -1753,6 +1991,7 @@ export function TasksPage() {
                 <TaskDetailPanel
                   task={selectedTask}
                   projects={projects}
+                  members={tenantMembers}
                   onClose={() => setSelectedTaskId(null)}
                 />
               )}
@@ -1901,6 +2140,7 @@ export function TasksPage() {
                 <TaskDetailPanel
                   task={selectedTask}
                   projects={projects}
+                  members={tenantMembers}
                   onClose={() => setSelectedTaskId(null)}
                 />
               )}

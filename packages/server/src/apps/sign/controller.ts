@@ -455,12 +455,15 @@ export async function createSigningToken(req: Request, res: Response) {
     }
 
     const documentId = req.params.id as string;
-    const { email, name, expiresInDays, signingOrder } = req.body;
+    const { email, name, expiresInDays, signingOrder, role } = req.body;
 
     if (!email) {
       res.status(400).json({ success: false, error: 'email is required' });
       return;
     }
+
+    const validRoles = ['signer', 'viewer', 'approver', 'cc'];
+    const tokenRole = validRoles.includes(role) ? role : 'signer';
 
     const token = await signService.createSigningToken(
       documentId,
@@ -468,6 +471,7 @@ export async function createSigningToken(req: Request, res: Response) {
       name || null,
       expiresInDays || 30,
       typeof signingOrder === 'number' ? signingOrder : 0,
+      tokenRole,
     );
 
     if (req.auth!.tenantId) {
@@ -541,6 +545,7 @@ export async function getByToken(req: Request, res: Response) {
           signerEmail: result.token.signerEmail,
           signerName: result.token.signerName,
           status: result.token.status,
+          role: result.token.role ?? 'signer',
           signingOrder: result.token.signingOrder,
           expiresAt: result.token.expiresAt,
         },

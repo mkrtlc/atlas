@@ -18,6 +18,9 @@ router.delete('/templates/:templateId', taskController.deleteTemplate);
 router.post('/from-email', taskController.createTaskFromEmail);
 router.post('/from-template/:templateId', taskController.createTaskFromTemplate);
 
+// Comment standalone routes (must be before /:id to avoid route conflicts)
+router.delete('/comments/:commentId', taskController.deleteComment);
+
 // Subtask standalone routes (must be before /:id to avoid route conflicts)
 router.patch('/subtasks/:subtaskId', taskController.updateSubtask);
 router.delete('/subtasks/:subtaskId', taskController.deleteSubtask);
@@ -46,6 +49,10 @@ router.delete('/projects/:id', taskController.deleteProject);
 router.get('/:id/subtasks', taskController.listSubtasks);
 router.post('/:id/subtasks', taskController.createSubtask);
 router.patch('/:id/subtasks/reorder', taskController.reorderSubtasks);
+
+// Comments (nested under task)
+router.get('/:taskId/comments', taskController.listComments);
+router.post('/:taskId/comments', taskController.createComment);
 
 // Activities
 router.get('/:id/activities', taskController.listActivities);

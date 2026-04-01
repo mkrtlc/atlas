@@ -5,7 +5,7 @@ import type {
   Task, TaskProject,
   CreateTaskInput, UpdateTaskInput,
   CreateProjectInput, UpdateProjectInput,
-  Subtask, TaskActivity, TaskTemplate,
+  Subtask, TaskActivity, TaskTemplate, TaskComment,
   CreateTaskTemplateInput, UpdateTaskTemplateInput,
 } from '@atlasmail/shared';
 
@@ -18,6 +18,7 @@ export function useTaskList(filters?: {
   status?: string;
   when?: string;
   projectId?: string | null;
+  assigneeId?: string;
   includeArchived?: boolean;
 }, options?: { enabled?: boolean }) {
   const filterKey = filters ? JSON.stringify(filters) : '';
@@ -28,6 +29,7 @@ export function useTaskList(filters?: {
       if (filters?.status) params.set('status', filters.status);
       if (filters?.when) params.set('when', filters.when);
       if (filters?.projectId !== undefined) params.set('projectId', filters.projectId === null ? 'null' : filters.projectId);
+      if (filters?.assigneeId) params.set('assigneeId', filters.assigneeId);
       if (filters?.includeArchived) params.set('includeArchived', 'true');
       const qs = params.toString();
       const { data } = await api.get(`/tasks${qs ? `?${qs}` : ''}`);
@@ -241,6 +243,46 @@ export function useDeleteSubtask() {
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.subtasks(vars.taskId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+    },
+  });
+}
+
+// ─── Comment Hooks ──────────────────────────────────────────────────
+
+export function useTaskComments(taskId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.tasks.comments(taskId!),
+    queryFn: async () => {
+      const { data } = await api.get(`/tasks/${taskId}/comments`);
+      return data.data as TaskComment[];
+    },
+    enabled: !!taskId,
+    staleTime: 10_000,
+  });
+}
+
+export function useCreateComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ taskId, body }: { taskId: string; body: string }) => {
+      const { data } = await api.post(`/tasks/${taskId}/comments`, { body });
+      return data.data as TaskComment;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.comments(vars.taskId) });
+    },
+  });
+}
+
+export function useDeleteComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ commentId, taskId }: { commentId: string; taskId: string }) => {
+      await api.delete(`/tasks/comments/${commentId}`);
+      return taskId;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.comments(vars.taskId) });
     },
   });
 }

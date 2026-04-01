@@ -618,6 +618,16 @@
       "logbookDesc": "Abgeschlossene Aufgaben erscheinen hier",
       "projectTitle": "Keine Aufgaben in diesem Projekt",
       "projectDesc": "Fügen Sie Aufgaben hinzu, um loszulegen"
+    },
+    "assignee": "Zuständig",
+    "assignedToMe": "Mir zugewiesen",
+    "unassigned": "Nicht zugewiesen",
+    "comments": {
+      "title": "Kommentare",
+      "add": "Kommentar hinzufügen",
+      "placeholder": "Kommentar schreiben...",
+      "empty": "Noch keine Kommentare",
+      "delete": "Kommentar löschen"
     }
   },
   "errors": {

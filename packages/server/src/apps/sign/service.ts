@@ -341,6 +341,7 @@ export async function createSigningToken(
   name: string | null,
   expiresInDays = 30,
   signingOrder = 0,
+  role: 'signer' | 'viewer' | 'approver' | 'cc' = 'signer',
 ) {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + expiresInDays * 24 * 60 * 60 * 1000);
@@ -354,6 +355,7 @@ export async function createSigningToken(
       signerName: name,
       token,
       status: 'pending',
+      role,
       signingOrder,
       expiresAt,
       createdAt: now,
@@ -371,6 +373,30 @@ export async function createSigningToken(
     actorName: name ?? undefined,
     metadata: { email, name, signingOrder, expiresAt: expiresAt.toISOString() },
   }).catch(() => {});
+
+  // CC recipients: mark as "signed" immediately (they don't need to act) and send notification only
+  if (role === 'cc') {
+    await db
+      .update(signingTokens)
+      .set({ status: 'signed', signedAt: now, updatedAt: now })
+      .where(eq(signingTokens.id, created.id));
+
+    const [doc] = await db
+      .select({ title: signatureDocuments.title, userId: signatureDocuments.userId })
+      .from(signatureDocuments)
+      .where(eq(signatureDocuments.id, documentId))
+      .limit(1);
+
+    if (doc) {
+      const senderName = await getUserName(doc.userId);
+      sendDocumentCompletedEmail({
+        to: email,
+        documentTitle: doc.title,
+      }).catch(() => {});
+    }
+
+    return created;
+  }
 
   // Email: only send invite to the signer if it's their turn.
   // For sequential signing (signingOrder > 0), only the first signer (order 0) gets the email immediately.
@@ -553,11 +579,14 @@ export async function completeSigningToken(tokenId: string) {
     .where(eq(signingTokens.id, tokenId))
     .limit(1);
 
+  // Viewer role: mark as "viewed" (we use 'signed' status but log differently)
+  const statusLabel = tokenRow?.role === 'viewer' ? 'signed' : 'signed';
+
   await db
     .update(signingTokens)
     .set({ status: 'signed', signedAt: now, updatedAt: now })
     .where(eq(signingTokens.id, tokenId));
-  logger.info({ tokenId }, 'Signing token marked as signed');
+  logger.info({ tokenId, role: tokenRow?.role }, 'Signing token marked as completed');
 
   // Audit: token completed
   if (tokenRow) {
@@ -654,7 +683,23 @@ export async function checkDocumentComplete(documentId: string) {
     );
 
   // Check if all required fields are signed
-  const allSigned = fields.length > 0 && fields.every((f) => f.signedAt !== null);
+  const allFieldsSigned = fields.length > 0 && fields.every((f) => f.signedAt !== null);
+
+  // Also check that all signer/approver tokens are completed (viewer/cc don't need to sign)
+  const actionableTokens = await db
+    .select()
+    .from(signingTokens)
+    .where(
+      and(
+        eq(signingTokens.documentId, documentId),
+        sql`${signingTokens.role} IN ('signer', 'approver')`,
+      ),
+    );
+
+  const allTokensComplete = actionableTokens.length > 0 &&
+    actionableTokens.every((t) => t.status === 'signed' || t.status === 'declined');
+
+  const allSigned = allFieldsSigned && allTokensComplete;
 
   if (allSigned) {
     const now = new Date();

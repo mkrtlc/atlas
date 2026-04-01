@@ -538,7 +538,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg-primary);
+  background: var(--color-bg-secondary);
   overflow: hidden;
   animation: task-pop-in 0.2s ease-out;
 }

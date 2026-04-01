@@ -447,6 +447,7 @@ export const tasks = pgTable('tasks', {
   recurrenceParentId: uuid('recurrence_parent_id').references((): AnyPgColumn => tasks.id, { onDelete: 'set null' }),
   sourceEmailId: text('source_email_id'),
   sourceEmailSubject: text('source_email_subject'),
+  assigneeId: uuid('assignee_id'),
   lastReminderAt: timestamp('last_reminder_at', { withTimezone: true }),
   sortOrder: integer('sort_order').notNull().default(0),
   isArchived: boolean('is_archived').notNull().default(false),
@@ -663,7 +664,21 @@ export const taskTemplates = pgTable('task_templates', {
   userIdx: index('idx_task_templates_user').on(table.userId),
 }));
 
-// ─── Document Comments ──────────────────────────────────────────────
+// ─── Task Comments ────────���────────────────────────────────────────
+
+export const taskComments = pgTable('task_comments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  accountId: uuid('account_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  taskIdx: index('idx_task_comments_task').on(table.taskId),
+}));
+
+// ��── Document Comments ────────���─────────────────────────────────────
 
 export const documentComments = pgTable('document_comments', {
   id: uuid('id').primaryKey().defaultRandom(),

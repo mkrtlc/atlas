@@ -618,6 +618,16 @@
       "logbookDesc": "Tamamlanan görevler burada görünür",
       "projectTitle": "Bu projede görev yok",
       "projectDesc": "Başlamak için görev ekleyin"
+    },
+    "assignee": "Atanan kişi",
+    "assignedToMe": "Bana atanan",
+    "unassigned": "Atanmamış",
+    "comments": {
+      "title": "Yorumlar",
+      "add": "Yorum ekle",
+      "placeholder": "Bir yorum yaz...",
+      "empty": "Henüz yorum yok",
+      "delete": "Yorumu sil"
     }
   },
   "errors": {

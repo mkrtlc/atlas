@@ -1793,7 +1793,22 @@ export async function runMigrations() {
     // Add last_reminder_at column + dueDate index to tasks (idempotent)
     await client.query(`
       ALTER TABLE tasks ADD COLUMN IF NOT EXISTS last_reminder_at TIMESTAMPTZ;
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_id UUID;
       CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
+    `);
+
+    // ─── Task Comments ──────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS task_comments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        account_id UUID NOT NULL,
+        user_id UUID NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_task_comments_task ON task_comments(task_id);
     `);
 
     // ─── Marketplace: Installed Apps ──────────────────────────────────

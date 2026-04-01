@@ -34,12 +34,13 @@ export async function listTasks(req: Request, res: Response) {
     }
 
     const userId = req.auth!.userId;
-    const { status, when, projectId, includeArchived } = req.query;
+    const { status, when, projectId, includeArchived, assigneeId } = req.query;
 
     const tasks = await taskService.listTasks(userId, {
       status: status as string | undefined,
       when: when as string | undefined,
       projectId: projectId === 'null' ? null : (projectId as string | undefined),
+      assigneeId: assigneeId as string | undefined,
       includeArchived: includeArchived === 'true',
     });
 
@@ -84,10 +85,10 @@ export async function createTask(req: Request, res: Response) {
 
     const userId = req.auth!.userId;
     const accountId = req.auth!.accountId;
-    const { title, notes, description, icon, type, headingId, projectId, when, priority, dueDate, tags, recurrenceRule } = req.body;
+    const { title, notes, description, icon, type, headingId, projectId, when, priority, dueDate, tags, recurrenceRule, assigneeId } = req.body;
 
     const task = await taskService.createTask(userId, accountId, {
-      title, notes, description, icon, type, headingId, projectId, when, priority, dueDate, tags, recurrenceRule,
+      title, notes, description, icon, type, headingId, projectId, when, priority, dueDate, tags, recurrenceRule, assigneeId,
     });
 
     res.json({ success: true, data: task });
@@ -107,10 +108,10 @@ export async function updateTask(req: Request, res: Response) {
 
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
-    const { title, notes, description, icon, type, headingId, projectId, status, when, priority, dueDate, tags, recurrenceRule, sortOrder, isArchived } = req.body;
+    const { title, notes, description, icon, type, headingId, projectId, status, when, priority, dueDate, tags, recurrenceRule, assigneeId, sortOrder, isArchived } = req.body;
 
     const task = await taskService.updateTask(userId, taskId, {
-      title, notes, description, icon, type, headingId, projectId, status, when, priority, dueDate, tags, recurrenceRule, sortOrder, isArchived,
+      title, notes, description, icon, type, headingId, projectId, status, when, priority, dueDate, tags, recurrenceRule, assigneeId, sortOrder, isArchived,
     });
 
     if (!task) {
@@ -567,6 +568,75 @@ export async function createTaskFromTemplate(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to create task from template');
     res.status(500).json({ success: false, error: 'Failed to create task from template' });
+  }
+}
+
+// ─── Task Comments ─────────────────────────────────────────────────
+
+export async function listComments(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view comments' });
+      return;
+    }
+
+    const taskId = req.params.taskId as string;
+    const comments = await taskService.listComments(taskId);
+    res.json({ success: true, data: comments });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list task comments');
+    res.status(500).json({ success: false, error: 'Failed to list task comments' });
+  }
+}
+
+export async function createComment(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create comments' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const taskId = req.params.taskId as string;
+    const { body } = req.body;
+
+    if (!body || !body.trim()) {
+      res.status(400).json({ success: false, error: 'Comment body is required' });
+      return;
+    }
+
+    const comment = await taskService.createComment(userId, accountId, taskId, body.trim());
+    res.json({ success: true, data: comment });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create task comment');
+    res.status(500).json({ success: false, error: 'Failed to create task comment' });
+  }
+}
+
+export async function deleteComment(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tasks');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const commentId = req.params.commentId as string;
+
+    const deleted = await taskService.deleteComment(userId, commentId);
+    if (!deleted) {
+      res.status(403).json({ success: false, error: 'Comment not found or not authorized to delete' });
+      return;
+    }
+
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to delete task comment');
+    res.status(500).json({ success: false, error: 'Failed to delete task comment' });
   }
 }
 

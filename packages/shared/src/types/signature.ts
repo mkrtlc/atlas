@@ -1,7 +1,8 @@
 // ─── Digital Signature Types ────────────────────────────────────────
 
 export type SignatureDocStatus = 'draft' | 'pending' | 'signed' | 'expired' | 'voided';
-export type SignatureFieldType = 'signature' | 'initials' | 'date' | 'text' | 'checkbox' | 'dropdown';
+export type SignatureFieldType = 'signature' | 'initials' | 'date' | 'text' | 'checkbox' | 'dropdown' | 'name' | 'email';
+export type SigningTokenRole = 'signer' | 'viewer' | 'approver' | 'cc';
 export type SigningTokenStatus = 'pending' | 'signed' | 'expired' | 'declined';
 
 export interface SignatureDocument {
@@ -48,6 +49,7 @@ export interface SigningToken {
   signerName: string | null;
   token: string;
   status: SigningTokenStatus;
+  role: SigningTokenRole;
   signedAt: string | null;
   declineReason: string | null;
   signingOrder: number;
@@ -80,6 +82,7 @@ export interface CreateSigningTokenInput {
   signerName?: string;
   expiresInDays?: number;
   signingOrder?: number;
+  role?: SigningTokenRole;
 }
 
 // ─── Audit Log ─────────────────────────────────────────────────────

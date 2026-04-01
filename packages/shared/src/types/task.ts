@@ -27,6 +27,7 @@ export interface Task {
   recurrenceRule: RecurrenceRule | null;
   recurrenceParentId: string | null;
   isArchived: boolean;
+  assigneeId: string | null;
   sourceEmailId: string | null;
   sourceEmailSubject: string | null;
   subtasks?: Subtask[];
@@ -105,6 +106,18 @@ export interface TaskProject {
   updatedAt: string;
 }
 
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  accountId: string;
+  userId: string;
+  body: string;
+  userName?: string | null;
+  userEmail?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateTaskInput {
   title: string;
   notes?: string | null;
@@ -118,6 +131,7 @@ export interface CreateTaskInput {
   dueDate?: string | null;
   tags?: string[];
   recurrenceRule?: RecurrenceRule | null;
+  assigneeId?: string | null;
   sourceEmailId?: string | null;
   sourceEmailSubject?: string | null;
 }
@@ -136,6 +150,7 @@ export interface UpdateTaskInput {
   dueDate?: string | null;
   tags?: string[];
   recurrenceRule?: RecurrenceRule | null;
+  assigneeId?: string | null;
   sourceEmailId?: string | null;
   sourceEmailSubject?: string | null;
   sortOrder?: number;

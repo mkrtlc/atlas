@@ -618,6 +618,16 @@
       "logbookDesc": "Le attività completate appariranno qui",
       "projectTitle": "Nessuna attività in questo progetto",
       "projectDesc": "Aggiungi attività per iniziare"
+    },
+    "assignee": "Assegnatario",
+    "assignedToMe": "Assegnati a me",
+    "unassigned": "Non assegnato",
+    "comments": {
+      "title": "Commenti",
+      "add": "Aggiungi commento",
+      "placeholder": "Scrivi un commento...",
+      "empty": "Nessun commento",
+      "delete": "Elimina commento"
     }
   },
   "errors": {

@@ -618,6 +618,16 @@
       "logbookDesc": "Les tâches terminées apparaîtront ici",
       "projectTitle": "Aucune tâche dans ce projet",
       "projectDesc": "Ajoutez des tâches pour commencer"
+    },
+    "assignee": "Responsable",
+    "assignedToMe": "Assigné à moi",
+    "unassigned": "Non assigné",
+    "comments": {
+      "title": "Commentaires",
+      "add": "Ajouter un commentaire",
+      "placeholder": "Écrire un commentaire...",
+      "empty": "Aucun commentaire",
+      "delete": "Supprimer le commentaire"
     }
   },
   "errors": {
