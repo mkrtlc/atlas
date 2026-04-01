@@ -10,10 +10,10 @@
   "services": {
     "app": {
       "image": "activepieces/activepieces:latest",
-      "port": 3000,
+      "port": 80,
       "healthCheck": "/api/v1/flags",
       "env": {
-        "AP_ENGINE_EXECUTABLE_PATH": "dist/packages/engine/main.js",
+        "AP_EXECUTION_MODE": "UNSANDBOXED",
         "AP_ENVIRONMENT": "prod",
         "AP_FRONTEND_URL": "$APP_URL",
         "AP_WEBHOOK_TIMEOUT_SECONDS": "30",
