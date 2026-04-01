@@ -588,6 +588,14 @@
     "listView": "Vista elenco",
     "boardView": "Vista bacheca",
     "noTasksInColumn": "Nessuna attività",
+    "searchPlaceholder": "Cerca attività...",
+    "selected": "{{count}} selezionati",
+    "bulkDelete": "Elimina selezionati",
+    "bulkDeleteConfirm": "Sei sicuro di voler eliminare {{count}} attività?",
+    "quickAdd": "Aggiungi attività...",
+    "reminders": {
+      "dueToday": "Scadenza oggi"
+    },
     "empty": {
       "inboxTitle": "La tua casella di posta è vuota",
       "inboxDesc": "Le nuove attività appaiono qui per impostazione predefinita — organizzale quando sei pronto",
@@ -1511,7 +1519,15 @@
       "date": "Data",
       "text": "Testo",
       "checkbox": "Casella di controllo",
-      "dropdown": "Menu a discesa"
+      "dropdown": "Menu a discesa",
+      "name": "Nome",
+      "email": "Email"
+    },
+    "roles": {
+      "signer": "Firmatario",
+      "viewer": "Visualizzatore",
+      "approver": "Approvatore",
+      "cc": "Copia"
     },
     "send": {
       "signerEmail": "E-mail del firmatario",
@@ -1528,6 +1544,7 @@
       "generateLink": "Genera link",
       "generateLinks": "Genera link",
       "removeSigner": "Rimuovi firmatario",
+      "role": "Ruolo",
       "signInOrder": "Firma in ordine",
       "signInOrderDesc": "I firmatari devono firmare uno alla volta nell'ordine indicato"
     },
@@ -1590,7 +1607,11 @@
       "declining": "Rifiuto in corso...",
       "failedToSubmit": "Invio della firma fallito",
       "waitingForPrevious": "In attesa del firmatario precedente",
-      "waitingForPreviousDesc": "Questo documento richiede firme in un ordine specifico. Riceverai un'email quando sarà il tuo turno di firmare."
+      "waitingForPreviousDesc": "Questo documento richiede firme in un ordine specifico. Riceverai un'email quando sarà il tuo turno di firmare.",
+      "viewingAs": "Visualizzazione come {{name}}",
+      "startApproving": "Inizia approvazione",
+      "approveThisField": "Approva questo campo",
+      "approve": "Approva"
     },
     "modal": {
       "addSignature": "Aggiungi firma",

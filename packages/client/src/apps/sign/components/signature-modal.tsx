@@ -48,6 +48,8 @@ export function SignatureModal({ open, onOpenChange, onApply, fieldType }: Signa
     text: t('sign.modal.addText'),
     checkbox: t('sign.modal.toggleCheckbox'),
     dropdown: t('sign.modal.selectOption'),
+    email: t('sign.fields.email'),
+    name: t('sign.fields.name'),
   };
 
   const handleApplyDraw = useCallback(() => {

@@ -588,6 +588,14 @@
     "listView": "Listenansicht",
     "boardView": "Board-Ansicht",
     "noTasksInColumn": "Keine Aufgaben",
+    "searchPlaceholder": "Aufgaben suchen...",
+    "selected": "{{count}} ausgewählt",
+    "bulkDelete": "Ausgewählte löschen",
+    "bulkDeleteConfirm": "Möchten Sie {{count}} Aufgabe(n) wirklich löschen?",
+    "quickAdd": "Aufgabe hinzufügen...",
+    "reminders": {
+      "dueToday": "Heute fällig"
+    },
     "empty": {
       "inboxTitle": "Ihr Posteingang ist leer",
       "inboxDesc": "Neue Aufgaben erscheinen hier standardmäßig — organisieren Sie sie, wenn Sie bereit sind",
@@ -1511,7 +1519,15 @@
       "date": "Datum",
       "text": "Text",
       "checkbox": "Kontrollkästchen",
-      "dropdown": "Dropdown"
+      "dropdown": "Dropdown",
+      "name": "Name",
+      "email": "E-Mail"
+    },
+    "roles": {
+      "signer": "Unterzeichner",
+      "viewer": "Betrachter",
+      "approver": "Genehmiger",
+      "cc": "Kopie"
     },
     "send": {
       "signerEmail": "E-Mail des Unterzeichners",
@@ -1528,6 +1544,7 @@
       "generateLink": "Link generieren",
       "generateLinks": "Links generieren",
       "removeSigner": "Unterzeichner entfernen",
+      "role": "Rolle",
       "signInOrder": "In Reihenfolge signieren",
       "signInOrderDesc": "Unterzeichner müssen einzeln in der aufgelisteten Reihenfolge signieren"
     },
@@ -1590,7 +1607,11 @@
       "declining": "Wird abgelehnt...",
       "failedToSubmit": "Unterschrift konnte nicht gesendet werden",
       "waitingForPrevious": "Warten auf vorherigen Unterzeichner",
-      "waitingForPreviousDesc": "Dieses Dokument erfordert Unterschriften in einer bestimmten Reihenfolge. Sie erhalten eine E-Mail, wenn Sie an der Reihe sind."
+      "waitingForPreviousDesc": "Dieses Dokument erfordert Unterschriften in einer bestimmten Reihenfolge. Sie erhalten eine E-Mail, wenn Sie an der Reihe sind.",
+      "viewingAs": "Ansicht als {{name}}",
+      "startApproving": "Genehmigung starten",
+      "approveThisField": "Dieses Feld genehmigen",
+      "approve": "Genehmigen"
     },
     "modal": {
       "addSignature": "Unterschrift hinzufügen",

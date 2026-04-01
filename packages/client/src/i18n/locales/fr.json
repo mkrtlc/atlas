@@ -588,6 +588,14 @@
     "listView": "Vue liste",
     "boardView": "Vue tableau",
     "noTasksInColumn": "Aucune tâche",
+    "searchPlaceholder": "Rechercher des tâches...",
+    "selected": "{{count}} sélectionné(s)",
+    "bulkDelete": "Supprimer la sélection",
+    "bulkDeleteConfirm": "Voulez-vous vraiment supprimer {{count}} tâche(s) ?",
+    "quickAdd": "Ajouter une tâche...",
+    "reminders": {
+      "dueToday": "Échéance aujourd'hui"
+    },
     "empty": {
       "inboxTitle": "Votre boîte de réception est vide",
       "inboxDesc": "Les nouvelles tâches apparaissent ici par défaut — organisez-les quand vous êtes prêt",
@@ -1511,7 +1519,15 @@
       "date": "Date",
       "text": "Texte",
       "checkbox": "Case à cocher",
-      "dropdown": "Liste déroulante"
+      "dropdown": "Liste déroulante",
+      "name": "Nom",
+      "email": "E-mail"
+    },
+    "roles": {
+      "signer": "Signataire",
+      "viewer": "Observateur",
+      "approver": "Approbateur",
+      "cc": "Copie"
     },
     "send": {
       "signerEmail": "E-mail du signataire",
@@ -1528,6 +1544,7 @@
       "generateLink": "Générer le lien",
       "generateLinks": "Générer les liens",
       "removeSigner": "Retirer le signataire",
+      "role": "Rôle",
       "signInOrder": "Signer dans l'ordre",
       "signInOrderDesc": "Les signataires doivent signer un par un dans l'ordre indiqué"
     },
@@ -1590,7 +1607,11 @@
       "declining": "Refus en cours...",
       "failedToSubmit": "Échec de l'envoi de la signature",
       "waitingForPrevious": "En attente du signataire précédent",
-      "waitingForPreviousDesc": "Ce document nécessite des signatures dans un ordre spécifique. Vous recevrez un e-mail lorsque ce sera votre tour de signer."
+      "waitingForPreviousDesc": "Ce document nécessite des signatures dans un ordre spécifique. Vous recevrez un e-mail lorsque ce sera votre tour de signer.",
+      "viewingAs": "Consultation en tant que {{name}}",
+      "startApproving": "Commencer l'approbation",
+      "approveThisField": "Approuver ce champ",
+      "approve": "Approuver"
     },
     "modal": {
       "addSignature": "Ajouter une signature",

@@ -1871,7 +1871,6 @@ function CompaniesListView({
                 </span>
               ) : (
                 <span style={{ width: 160, flexShrink: 0, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text', display: 'flex', alignItems: 'center', gap: 8 }} onClick={(e) => handleCellClick(company.id, 'name', e)}>
-                  <NameAvatar name={company.name} />
                   <CompanyLogo domain={company.domain} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{company.name}</span>
                 </span>

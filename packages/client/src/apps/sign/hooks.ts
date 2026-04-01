@@ -151,7 +151,7 @@ export function useCreateSigningLink(docId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { email: string; name?: string; expiresInDays?: number; signingOrder?: number }) => {
+    mutationFn: async (input: { email: string; name?: string; expiresInDays?: number; signingOrder?: number; role?: string }) => {
       const { data } = await api.post(`/sign/${docId}/tokens`, input);
       return data.data as SigningToken;
     },
@@ -285,6 +285,7 @@ export function usePublicSignDoc(token: string | undefined) {
           signerEmail: string;
           signerName: string | null;
           status: string;
+          role: string;
           signingOrder: number;
           expiresAt: string;
         };

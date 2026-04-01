@@ -9,6 +9,7 @@ import { startSyncWorker, stopSyncWorker } from './workers';
 import { closeRedis } from './config/redis';
 import { startUpdateChecker, stopUpdateChecker } from './apps/marketplace/update-checker';
 import { startReminderScheduler, stopReminderScheduler } from './apps/sign/reminder';
+import { startTaskReminderScheduler, stopTaskReminderScheduler } from './apps/tasks/reminder';
 
 const PURGE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -53,6 +54,9 @@ app.listen(env.PORT, async () => {
 
   // Sign: automated reminders for pending signing tokens — runs hourly
   startReminderScheduler();
+
+  // Tasks: due-date reminders — runs hourly
+  startTaskReminderScheduler();
 });
 
 // Graceful shutdown
@@ -63,6 +67,7 @@ function handleShutdown(signal: string) {
   if (backupTimer) { clearInterval(backupTimer); backupTimer = null; }
   stopUpdateChecker();
   stopReminderScheduler();
+  stopTaskReminderScheduler();
 
   stopSyncWorker()
     .catch((err) => logger.warn({ err }, 'Error stopping sync worker'));

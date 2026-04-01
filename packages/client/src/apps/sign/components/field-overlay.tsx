@@ -11,6 +11,8 @@ const FIELD_COLORS: Record<SignatureFieldType, { border: string; bg: string; lab
   text: { border: '#6b7280', bg: 'rgba(107, 114, 128, 0.08)', label: 'Text' },
   checkbox: { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.08)', label: 'Checkbox' },
   dropdown: { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.08)', label: 'Dropdown' },
+  name: { border: '#0891b2', bg: 'rgba(8, 145, 178, 0.08)', label: 'Name' },
+  email: { border: '#7c3aed', bg: 'rgba(124, 58, 237, 0.08)', label: 'Email' },
 };
 
 // ─── Types ──────────────────────────────────────────────────────────

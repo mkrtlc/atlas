@@ -33,6 +33,7 @@ import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
 import { Select } from '../../components/ui/select';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
 import { StatusDot } from '../../components/ui/status-dot';
 import '../../styles/tasks.css';
@@ -159,6 +160,9 @@ function TaskItem({
   onDragEnd,
   isDragging,
   isDropTarget,
+  isChecked,
+  onCheckToggle,
+  showCheckbox,
 }: {
   task: Task;
   isSelected: boolean;
@@ -175,6 +179,9 @@ function TaskItem({
   onDragEnd?: () => void;
   isDragging?: boolean;
   isDropTarget?: boolean;
+  isChecked?: boolean;
+  onCheckToggle?: (taskId: string) => void;
+  showCheckbox?: boolean;
 }) {
   const tasksSettings = useTasksSettingsStore();
   const [completing, setCompleting] = useState(false);
@@ -239,6 +246,20 @@ function TaskItem({
       onDragOver={e => onDragOver?.(e, task.id)}
       onDrop={e => onDrop?.(e, task.id)}
     >
+      {showCheckbox && (
+        <span
+          style={{ width: 22, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => { e.stopPropagation(); onCheckToggle?.(task.id); }}
+        >
+          <input
+            type="checkbox"
+            checked={!!isChecked}
+            onChange={() => {}}
+            style={{ cursor: 'pointer', accentColor: 'var(--color-accent-primary)' }}
+          />
+        </span>
+      )}
+
       <div
         className="task-drag-handle"
         draggable
@@ -424,6 +445,7 @@ function NewTaskCreator({
   headingId?: string | null;
   onCreated?: () => void;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const createTask = useCreateTask();
@@ -464,7 +486,52 @@ function NewTaskCreator({
         value={title}
         onChange={e => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Add a task..."
+        placeholder={t('tasks.quickAdd')}
+      />
+    </div>
+  );
+}
+
+// ─── Quick Capture Input (bottom of each section) ──────────────────
+
+function QuickCaptureInput({
+  defaultWhen,
+  projectId,
+  headingId,
+}: {
+  defaultWhen: TaskWhen;
+  projectId?: string | null;
+  headingId?: string | null;
+}) {
+  const { t } = useTranslation();
+  const createTask = useCreateTask();
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px', opacity: 0.6 }}>
+      <Plus size={14} />
+      <input
+        placeholder={t('tasks.quickAdd')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+            const title = e.currentTarget.value.trim();
+            createTask.mutate({
+              title,
+              when: defaultWhen,
+              projectId: projectId ?? undefined,
+              headingId: headingId ?? undefined,
+            });
+            e.currentTarget.value = '';
+          }
+        }}
+        style={{
+          border: 'none',
+          background: 'transparent',
+          outline: 'none',
+          flex: 1,
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-text-primary)',
+          fontFamily: 'var(--font-family)',
+        }}
       />
     </div>
   );
@@ -1031,6 +1098,11 @@ export function TasksPage() {
   // Completed section collapsed state
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const deleteTaskMutation = useDeleteTask();
+
   // Data
   const { data: counts } = useTaskCounts();
   const { data: projectsData } = useProjectList();
@@ -1260,6 +1332,39 @@ export function TasksPage() {
     return Array.from(tagSet).sort();
   }, [allTasks]);
 
+  // Clear selection when switching sections
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeSection]);
+
+  const toggleSelectOne = useCallback((taskId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId); else next.add(taskId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const visibleTasks = displayTasks.filter(t => t.type !== 'heading');
+    const allSelected = visibleTasks.length > 0 && visibleTasks.every(t => selectedIds.has(t.id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(visibleTasks.map(t => t.id)));
+    }
+  }, [displayTasks, selectedIds]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await deleteTaskMutation.mutateAsync(id);
+    }
+    setSelectedIds(new Set());
+    setShowDeleteConfirm(false);
+    setSelectedTaskId(null);
+  }, [selectedIds, deleteTaskMutation]);
+
   const handleComplete = useCallback((taskId: string) => {
     const task = allTasks.find(t => t.id === taskId) ?? completedTasks.find(t => t.id === taskId);
     const newStatus = task?.status === 'completed' ? 'todo' : 'completed';
@@ -1378,6 +1483,11 @@ export function TasksPage() {
     setProjectMenuId(null);
   };
 
+  // Bulk selection computed values
+  const visibleNonHeadingTasks = useMemo(() => displayTasks.filter(t => t.type !== 'heading'), [displayTasks]);
+  const allVisibleSelected = visibleNonHeadingTasks.length > 0 && visibleNonHeadingTasks.every(t => selectedIds.has(t.id));
+  const someVisibleSelected = selectedIds.size > 0 && !allVisibleSelected;
+
   // Render task items helper
   const renderTaskItem = (task: Task) => (
     <TaskItem
@@ -1397,6 +1507,9 @@ export function TasksPage() {
       onDragEnd={handleDragEnd}
       isDragging={draggedTaskId === task.id}
       isDropTarget={dropTargetId === task.id && draggedTaskId !== task.id}
+      showCheckbox={selectedIds.size > 0}
+      isChecked={selectedIds.has(task.id)}
+      onCheckToggle={toggleSelectOne}
     />
   );
 
@@ -1517,6 +1630,24 @@ export function TasksPage() {
             {displayTasks.length > 0 && (
               <span className="tasks-toolbar-count">{displayTasks.length}</span>
             )}
+            {visibleNonHeadingTasks.length > 0 && (
+              <IconButton
+                icon={
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 14, height: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
+                      onChange={() => {}}
+                      style={{ cursor: 'pointer', accentColor: 'var(--color-accent-primary)', margin: 0 }}
+                    />
+                  </span>
+                }
+                label={allVisibleSelected ? 'Deselect all' : 'Select all'}
+                size={28}
+                onClick={toggleSelectAll}
+              />
+            )}
             {canShowBoard && (
               <div className="tasks-view-toggle">
                 <button
@@ -1544,7 +1675,7 @@ export function TasksPage() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); } }}
-                  placeholder="Search tasks..."
+                  placeholder={t('tasks.searchPlaceholder')}
                 />
                 <IconButton
                   icon={<X size={12} />}
@@ -1571,6 +1702,39 @@ export function TasksPage() {
           </>
         }
       >
+
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)',
+            padding: '6px var(--spacing-lg)',
+            background: 'var(--color-bg-secondary)',
+            borderBottom: '1px solid var(--color-border-secondary)',
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+              {t('tasks.selected', { count: selectedIds.size })}
+            </span>
+            {canDelete && (
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<Trash2 size={13} />}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                {t('tasks.bulkDelete')}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<X size={13} />}
+              onClick={() => setSelectedIds(new Set())}
+            >
+              {t('common.cancel')}
+            </Button>
+          </div>
+        )}
 
         {/* Task list + detail */}
         <div className="tasks-content">
@@ -1608,12 +1772,14 @@ export function TasksPage() {
                     {todayTasks.daytime.length > 0 && (
                       <CollapsibleSection label="Today" icon={Sun} color="#d97706" count={todayTasks.daytime.length}>
                         {todayTasks.daytime.map(renderTaskItem)}
+                        {canCreate && <QuickCaptureInput defaultWhen="today" projectId={projectIdForNew} />}
                       </CollapsibleSection>
                     )}
 
                     {todayTasks.evening.length > 0 && (
                       <CollapsibleSection label="This evening" icon={Moon} color="#6366f1" count={todayTasks.evening.length}>
                         {todayTasks.evening.map(renderTaskItem)}
+                        {canCreate && <QuickCaptureInput defaultWhen="evening" projectId={projectIdForNew} />}
                       </CollapsibleSection>
                     )}
 
@@ -1644,7 +1810,18 @@ export function TasksPage() {
                             onDelete={() => handleDeleteHeading(group.heading!.id)}
                           />
                         )}
-                        {(!group.heading || !collapsedHeadings.has(group.heading.id)) && group.tasks.map(renderTaskItem)}
+                        {(!group.heading || !collapsedHeadings.has(group.heading.id)) && (
+                          <>
+                            {group.tasks.map(renderTaskItem)}
+                            {canCreate && (
+                              <QuickCaptureInput
+                                defaultWhen={defaultWhen}
+                                projectId={projectIdForNew}
+                                headingId={group.heading?.id ?? null}
+                              />
+                            )}
+                          </>
+                        )}
                       </div>
                     ))}
 
@@ -1663,6 +1840,7 @@ export function TasksPage() {
                       group.noHeader ? (
                         <div key={group.label}>
                           {group.tasks.map(renderTaskItem)}
+                          {canCreate && <QuickCaptureInput defaultWhen="inbox" projectId={projectIdForNew} />}
                         </div>
                       ) : (
                         <CollapsibleSection
@@ -1689,6 +1867,10 @@ export function TasksPage() {
                     )}
 
                     {displayTasks.map(renderTaskItem)}
+
+                    {canCreate && activeSection !== 'logbook' && activeSection !== 'upcoming' && displayTasks.length > 0 && (
+                      <QuickCaptureInput defaultWhen={defaultWhen} projectId={projectIdForNew} />
+                    )}
 
                     {displayTasks.length === 0 && !isLoading && (
                       <EmptyState section={activeSection} seeding={seeding} onSeed={handleSeedSampleData} />
@@ -1726,6 +1908,15 @@ export function TasksPage() {
         </div>
       </ContentArea>
 
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('tasks.bulkDelete')}
+        description={t('tasks.bulkDeleteConfirm', { count: selectedIds.size })}
+        confirmLabel={t('common.delete')}
+        onConfirm={handleBulkDelete}
+        destructive
+      />
     </div>
   );
 }

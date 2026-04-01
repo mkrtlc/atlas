@@ -941,6 +941,9 @@ export async function runMigrations() {
     await client.query(`
       ALTER TABLE signing_tokens ADD COLUMN IF NOT EXISTS last_reminder_at TIMESTAMPTZ;
     `);
+    await client.query(`
+      ALTER TABLE signing_tokens ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'signer';
+    `);
 
     // ─── Signature audit log ────────────────────────────────────────
     await client.query(`
@@ -1786,6 +1789,11 @@ export async function runMigrations() {
       // crm_permissions table might not exist on fresh installs — safe to ignore
       logger.info('Skipped CRM permission migration (crm_permissions table may not exist)');
     }
+
+    // Add last_reminder_at column to tasks (idempotent)
+    await client.query(`
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS last_reminder_at TIMESTAMPTZ;
+    `);
 
     // ─── Marketplace: Installed Apps ──────────────────────────────────
     await client.query(`

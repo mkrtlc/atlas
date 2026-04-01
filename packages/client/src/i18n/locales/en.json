@@ -615,6 +615,14 @@
     "listView": "List view",
     "boardView": "Board view",
     "noTasksInColumn": "No tasks",
+    "searchPlaceholder": "Search tasks...",
+    "selected": "{{count}} selected",
+    "bulkDelete": "Delete selected",
+    "bulkDeleteConfirm": "Are you sure you want to delete {{count}} task(s)? This cannot be undone.",
+    "quickAdd": "Add task...",
+    "reminders": {
+      "dueToday": "Due today"
+    },
     "empty": {
       "inboxTitle": "Your inbox is empty",
       "inboxDesc": "New tasks appear here by default — organize them when you are ready",
@@ -1546,7 +1554,15 @@
       "date": "Date",
       "text": "Text",
       "checkbox": "Checkbox",
-      "dropdown": "Dropdown"
+      "dropdown": "Dropdown",
+      "name": "Name",
+      "email": "Email"
+    },
+    "roles": {
+      "signer": "Signer",
+      "viewer": "Viewer",
+      "approver": "Approver",
+      "cc": "CC"
     },
     "send": {
       "signerEmail": "Signer email",
@@ -1563,6 +1579,7 @@
       "generateLink": "Generate link",
       "generateLinks": "Generate links",
       "removeSigner": "Remove signer",
+      "role": "Role",
       "signInOrder": "Sign in order",
       "signInOrderDesc": "Signers must sign one at a time in the order listed"
     },
@@ -1625,7 +1642,11 @@
       "declining": "Declining...",
       "failedToSubmit": "Failed to submit signature",
       "waitingForPrevious": "Waiting for previous signer",
-      "waitingForPreviousDesc": "This document requires signatures in a specific order. You will receive an email when it is your turn to sign."
+      "waitingForPreviousDesc": "This document requires signatures in a specific order. You will receive an email when it is your turn to sign.",
+      "viewingAs": "Viewing as {{name}}",
+      "startApproving": "Start approving",
+      "approveThisField": "Approve this field",
+      "approve": "Approve"
     },
     "modal": {
       "addSignature": "Add signature",

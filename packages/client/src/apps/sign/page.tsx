@@ -32,6 +32,8 @@ import {
   BookmarkPlus,
   Bell,
   ListOrdered,
+  User,
+  Mail,
 } from 'lucide-react';
 import { ColumnHeader } from '../../components/ui/column-header';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
@@ -43,6 +45,7 @@ import { Input } from '../../components/ui/input';
 import { Modal } from '../../components/ui/modal';
 import { StatusDot } from '../../components/ui/status-dot';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { Select } from '../../components/ui/select';
 import { IconButton } from '../../components/ui/icon-button';
 import { Tooltip } from '../../components/ui/tooltip';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -149,7 +152,7 @@ export function SignPage() {
   // Upload progress
   const [uploading, setUploading] = useState(false);
   // Multiple signers (editor panel)
-  const [signers, setSigners] = useState<Signer[]>([{ email: '', name: '' }]);
+  const [signers, setSigners] = useState<Signer[]>([{ email: '', name: '', role: 'signer' }]);
   const [activeSignerIndex, setActiveSignerIndex] = useState<number | null>(null);
   const [generatedLinks, setGeneratedLinks] = useState<{ email: string; link: string }[]>([]);
   const [activeSigner, setActiveSigner] = useState<string | undefined>();
@@ -364,6 +367,7 @@ export function SignPage() {
           name: signer.name.trim() || undefined,
           expiresInDays,
           signingOrder: signInOrder ? idx : 0,
+          role: signer.role || 'signer',
         });
         links.push({
           email: signer.email.trim(),
@@ -962,6 +966,19 @@ export function SignPage() {
                     </button>
                   </Tooltip>
                 </div>
+                <div className="sign-field-toolbar-divider" />
+                <div className="sign-field-toolbar-group">
+                  <Tooltip content={t('sign.fields.name')} side="right">
+                    <button className="sign-field-toolbar-btn" onClick={() => handleAddField('name')}>
+                      <User size={18} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content={t('sign.fields.email')} side="right">
+                    <button className="sign-field-toolbar-btn" onClick={() => handleAddField('email')}>
+                      <Mail size={18} />
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
 
               {/* PDF viewer + field overlay */}
@@ -1220,6 +1237,28 @@ export function SignPage() {
                       size="md"
                     />
                   </div>
+                  <div style={{ width: 110, flexShrink: 0 }}>
+                    {idx === 0 && (
+                      <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'], color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                        {t('sign.send.role')}
+                      </div>
+                    )}
+                    <Select
+                      value={signer.role || 'signer'}
+                      onChange={(val) => {
+                        const updated = [...signers];
+                        updated[idx] = { ...updated[idx], role: val as Signer['role'] };
+                        setSigners(updated);
+                      }}
+                      options={[
+                        { value: 'signer', label: t('sign.roles.signer') },
+                        { value: 'viewer', label: t('sign.roles.viewer') },
+                        { value: 'approver', label: t('sign.roles.approver') },
+                        { value: 'cc', label: t('sign.roles.cc') },
+                      ]}
+                      size="md"
+                    />
+                  </div>
                   {signers.length > 1 && (
                     <IconButton
                       icon={<X size={14} />}
@@ -1237,7 +1276,7 @@ export function SignPage() {
                 variant="ghost"
                 size="sm"
                 icon={<Plus size={14} />}
-                onClick={() => setSigners([...signers, { email: '', name: '' }])}
+                onClick={() => setSigners([...signers, { email: '', name: '', role: 'signer' }])}
                 style={{ alignSelf: 'flex-start' }}
               >
                 {t('sign.send.addSigner')}
@@ -1320,6 +1359,11 @@ export function SignPage() {
                           <span style={{ color: 'var(--color-text-primary)' }}>
                             {link.signerEmail}
                           </span>
+                          {link.role && link.role !== 'signer' && (
+                            <Badge variant="default">
+                              {t(`sign.roles.${link.role}`)}
+                            </Badge>
+                          )}
                         </div>
                         {link.status === 'pending' && link.lastReminderAt && (
                           <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 2 }}>

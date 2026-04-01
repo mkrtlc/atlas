@@ -10,6 +10,7 @@ const SIGNER_COLORS = ['#8b5cf6', '#3b82f6', '#ef4444', '#f59e0b', '#10b981'];
 export interface Signer {
   email: string;
   name: string;
+  role: 'signer' | 'viewer' | 'approver' | 'cc';
 }
 
 interface SignerPanelProps {
@@ -28,7 +29,7 @@ export function SignerPanel({
   const { t } = useTranslation();
 
   const handleAddSigner = useCallback(() => {
-    onSignersChange([...signers, { email: '', name: '' }]);
+    onSignersChange([...signers, { email: '', name: '', role: 'signer' }]);
   }, [signers, onSignersChange]);
 
   const handleRemoveSigner = useCallback(

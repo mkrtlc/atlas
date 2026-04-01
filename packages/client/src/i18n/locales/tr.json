@@ -588,6 +588,14 @@
     "listView": "Liste görünümü",
     "boardView": "Pano görünümü",
     "noTasksInColumn": "Görev yok",
+    "searchPlaceholder": "Görev ara...",
+    "selected": "{{count}} seçildi",
+    "bulkDelete": "Seçilenleri sil",
+    "bulkDeleteConfirm": "{{count}} görevi silmek istediğinizden emin misiniz?",
+    "quickAdd": "Görev ekle...",
+    "reminders": {
+      "dueToday": "Bugün bitiyor"
+    },
     "empty": {
       "inboxTitle": "Gelen kutunuz boş",
       "inboxDesc": "Yeni görevler varsayılan olarak burada görünür — hazır olduğunuzda düzenleyin",
@@ -1511,7 +1519,15 @@
       "date": "Tarih",
       "text": "Metin",
       "checkbox": "Onay kutusu",
-      "dropdown": "Açılır liste"
+      "dropdown": "Açılır liste",
+      "name": "İsim",
+      "email": "E-posta"
+    },
+    "roles": {
+      "signer": "İmzacı",
+      "viewer": "Görüntüleyici",
+      "approver": "Onaylayıcı",
+      "cc": "Bilgi"
     },
     "send": {
       "signerEmail": "İmzacı e-postası",
@@ -1528,6 +1544,7 @@
       "generateLink": "Bağlantı oluştur",
       "generateLinks": "Bağlantılar oluştur",
       "removeSigner": "İmzacıyı kaldır",
+      "role": "Rol",
       "signInOrder": "Sıralı imzalama",
       "signInOrderDesc": "İmzacılar listelenen sırayla tek tek imzalamalıdır"
     },
@@ -1590,7 +1607,11 @@
       "declining": "Reddediliyor...",
       "failedToSubmit": "İmza gönderilemedi",
       "waitingForPrevious": "Önceki imzacı bekleniyor",
-      "waitingForPreviousDesc": "Bu belge belirli bir sırayla imza gerektirmektedir. İmzalama sırası size geldiğinde bir e-posta alacaksınız."
+      "waitingForPreviousDesc": "Bu belge belirli bir sırayla imza gerektirmektedir. İmzalama sırası size geldiğinde bir e-posta alacaksınız.",
+      "viewingAs": "{{name}} olarak görüntüleniyor",
+      "startApproving": "Onaylamaya başla",
+      "approveThisField": "Bu alanı onayla",
+      "approve": "Onayla"
     },
     "modal": {
       "addSignature": "İmza ekle",

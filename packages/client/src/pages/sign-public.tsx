@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, AlertTriangle, PenTool, ChevronRight, Download, XCircle, ChevronDown, Clock } from 'lucide-react';
+import { CheckCircle, AlertTriangle, PenTool, ChevronRight, Download, XCircle, ChevronDown, Clock, Eye, ThumbsUp } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { Input } from '../components/ui/input';
@@ -78,11 +78,33 @@ export function SignPublicPage() {
 
   // ─── Handlers ───────────────────────────────────────────────────
 
+  // Determine if role is viewer (read-only)
+  const isViewer = data?.token?.role === 'viewer';
+  const isApprover = data?.token?.role === 'approver';
+
   const handleFieldClick = useCallback(
     (fieldId: string) => {
       if (!data) return;
+      // Viewer role: no interaction allowed
+      if (isViewer) return;
+
       const field = data.fields.find((f) => f.id === fieldId);
       if (!field) return;
+
+      // Name field: auto-fill with signer's name
+      if (field.type === 'name') {
+        if (field.signatureData || localSignatures[fieldId]) return;
+        const signerName = data.token.signerName || data.token.signerEmail.split('@')[0];
+        setLocalSignatures((prev) => ({ ...prev, [fieldId]: signerName }));
+        return;
+      }
+
+      // Email field: auto-fill with signer's email
+      if (field.type === 'email') {
+        if (field.signatureData || localSignatures[fieldId]) return;
+        setLocalSignatures((prev) => ({ ...prev, [fieldId]: data.token.signerEmail }));
+        return;
+      }
 
       // Checkbox: toggle directly
       if (field.type === 'checkbox') {
@@ -114,7 +136,7 @@ export function SignPublicPage() {
       setActiveFieldId(fieldId);
       setSigModalOpen(true);
     },
-    [data, localSignatures],
+    [data, localSignatures, isViewer],
   );
 
   const handleDropdownSelect = useCallback(
@@ -382,80 +404,96 @@ export function SignPublicPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {data.token.signerName && (
             <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-              {t('sign.public.signingAs', { name: data.token.signerName })}
+              {isViewer
+                ? t('sign.public.viewingAs', { name: data.token.signerName })
+                : t('sign.public.signingAs', { name: data.token.signerName })}
             </span>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<XCircle size={14} />}
-            onClick={() => setDeclineModalOpen(true)}
-          >
-            {t('sign.public.decline')}
-          </Button>
-          {!isGuided && !allFieldsSigned && (
+          {isViewer ? (
+            /* Viewer role: read-only, just download */
             <Button
               variant="secondary"
               size="sm"
-              icon={<PenTool size={14} />}
-              onClick={handleStartGuided}
+              icon={<Download size={14} />}
+              onClick={handleDownloadPublic}
             >
-              {t('sign.public.startSigning')}
+              {t('sign.public.downloadPdf')}
             </Button>
-          )}
-          {isGuided && !allFieldsSigned && (
+          ) : (
             <>
-              <span
-                style={{
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-text-tertiary)',
-                  fontFamily: 'var(--font-family)',
-                  padding: '4px 8px',
-                  background: 'var(--color-bg-tertiary)',
-                  borderRadius: 'var(--radius-md)',
-                }}
-              >
-                {t('sign.public.fieldProgress', { current: signedCount + 1, total: totalRequiredFields })}
-              </span>
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="sm"
-                icon={<PenTool size={14} />}
-                onClick={handleGuidedFieldClick}
+                icon={<XCircle size={14} />}
+                onClick={() => setDeclineModalOpen(true)}
               >
-                {t('sign.public.signThisField')}
+                {t('sign.public.decline')}
               </Button>
-              {currentFieldIndex < sortedUnsignedFields.length - 1 && (
+              {!isGuided && !allFieldsSigned && (
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  icon={<ChevronRight size={14} />}
-                  onClick={handleNextField}
+                  icon={isApprover ? <ThumbsUp size={14} /> : <PenTool size={14} />}
+                  onClick={handleStartGuided}
                 >
-                  {t('sign.public.next')}
+                  {isApprover ? t('sign.public.startApproving') : t('sign.public.startSigning')}
+                </Button>
+              )}
+              {isGuided && !allFieldsSigned && (
+                <>
+                  <span
+                    style={{
+                      fontSize: 'var(--font-size-xs)',
+                      color: 'var(--color-text-tertiary)',
+                      fontFamily: 'var(--font-family)',
+                      padding: '4px 8px',
+                      background: 'var(--color-bg-tertiary)',
+                      borderRadius: 'var(--radius-md)',
+                    }}
+                  >
+                    {t('sign.public.fieldProgress', { current: signedCount + 1, total: totalRequiredFields })}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={isApprover ? <ThumbsUp size={14} /> : <PenTool size={14} />}
+                    onClick={handleGuidedFieldClick}
+                  >
+                    {isApprover ? t('sign.public.approveThisField') : t('sign.public.signThisField')}
+                  </Button>
+                  {currentFieldIndex < sortedUnsignedFields.length - 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<ChevronRight size={14} />}
+                      onClick={handleNextField}
+                    >
+                      {t('sign.public.next')}
+                    </Button>
+                  )}
+                </>
+              )}
+              {(allFieldsSigned && hasLocalSignatures) && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCompleteSigning}
+                  disabled={submitting}
+                >
+                  {submitting ? t('sign.public.submitting') : isApprover ? t('sign.public.approve') : t('sign.public.completeSigning')}
+                </Button>
+              )}
+              {(!allFieldsSigned && hasLocalSignatures && !isGuided) && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCompleteSigning}
+                  disabled={!hasLocalSignatures || submitting}
+                >
+                  {submitting ? t('sign.public.submitting') : isApprover ? t('sign.public.approve') : t('sign.public.completeSigning')}
                 </Button>
               )}
             </>
-          )}
-          {(allFieldsSigned && hasLocalSignatures) && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleCompleteSigning}
-              disabled={submitting}
-            >
-              {submitting ? t('sign.public.submitting') : t('sign.public.completeSigning')}
-            </Button>
-          )}
-          {(!allFieldsSigned && hasLocalSignatures && !isGuided) && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleCompleteSigning}
-              disabled={!hasLocalSignatures || submitting}
-            >
-              {submitting ? t('sign.public.submitting') : t('sign.public.completeSigning')}
-            </Button>
           )}
         </div>
       </div>
