@@ -2684,11 +2684,6 @@ export function DrivePage() {
                 onClick={() => handleDuplicate(contextMenu.item)}
               />
               <ContextMenuItem
-                icon={<Clipboard size={14} />}
-                label={t('drive.context.makeACopy')}
-                onClick={() => handleCopyItem(contextMenu.item)}
-              />
-              <ContextMenuItem
                 icon={<FolderInput size={14} />}
                 label={t('drive.context.moveTo')}
                 onClick={() => handleMove(contextMenu.item)}
@@ -2965,11 +2960,11 @@ export function DrivePage() {
               <Select
                 value={shareUserId}
                 onChange={(v) => setShareUserId(v)}
+                size="sm"
                 options={[
                   { value: '', label: t('drive.sharing.selectUser') },
                   ...(tenantUsersData ?? [])
                     .filter((u) => {
-                      // Exclude users already shared with
                       const alreadyShared = (itemSharesData ?? []).map((s) => s.sharedWithUserId);
                       return !alreadyShared.includes(u.userId);
                     })
@@ -2980,6 +2975,7 @@ export function DrivePage() {
               <Select
                 value={sharePermission}
                 onChange={(v) => setSharePermission(v)}
+                size="sm"
                 options={[
                   { value: 'view', label: t('drive.sharing.shareView') },
                   { value: 'edit', label: t('drive.sharing.shareEdit') },
@@ -3072,6 +3068,7 @@ export function DrivePage() {
             <Select
               value={shareExpiry}
               onChange={(v) => setShareExpiry(v)}
+              size="sm"
               options={[
                 { value: 'never', label: t('drive.sharing.expiryNever') },
                 { value: '1', label: t('drive.sharing.expiry1Day') },
