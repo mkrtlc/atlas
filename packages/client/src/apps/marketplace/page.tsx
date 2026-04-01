@@ -508,8 +508,6 @@ function AppCard({
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--spacing-sm)',
-            paddingTop: 'var(--spacing-xs)',
-            borderTop: '1px solid var(--color-border-secondary)',
           }}
         >
           {/* Not installed: Deploy button */}
