@@ -340,6 +340,7 @@ export async function createSigningToken(
   email: string,
   name: string | null,
   expiresInDays = 30,
+  signingOrder = 0,
 ) {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + expiresInDays * 24 * 60 * 60 * 1000);
@@ -353,13 +354,14 @@ export async function createSigningToken(
       signerName: name,
       token,
       status: 'pending',
+      signingOrder,
       expiresAt,
       createdAt: now,
       updatedAt: now,
     })
     .returning();
 
-  logger.info({ tokenId: created.id, documentId, email }, 'Signing token created');
+  logger.info({ tokenId: created.id, documentId, email, signingOrder }, 'Signing token created');
 
   // Audit: signing_link.created
   logAuditEvent({
@@ -367,10 +369,67 @@ export async function createSigningToken(
     action: 'signing_link.created',
     actorEmail: email,
     actorName: name ?? undefined,
-    metadata: { email, name, expiresAt: expiresAt.toISOString() },
+    metadata: { email, name, signingOrder, expiresAt: expiresAt.toISOString() },
   }).catch(() => {});
 
-  // Email: send signing invite
+  // Email: only send invite to the signer if it's their turn.
+  // For sequential signing (signingOrder > 0), only the first signer (order 0) gets the email immediately.
+  // Subsequent signers get notified when the previous signer completes.
+  const shouldSendEmail = signingOrder === 0;
+
+  if (shouldSendEmail) {
+    const [doc] = await db
+      .select({ title: signatureDocuments.title, userId: signatureDocuments.userId })
+      .from(signatureDocuments)
+      .where(eq(signatureDocuments.id, documentId))
+      .limit(1);
+
+    if (doc) {
+      const senderName = await getUserName(doc.userId);
+      const clientUrl = env.CLIENT_PUBLIC_URL || 'http://localhost:5180';
+      sendSigningInviteEmail({
+        to: email,
+        signerName: name ?? undefined,
+        documentTitle: doc.title,
+        senderName,
+        signingLink: `${clientUrl}/sign/${token}`,
+        expiresAt,
+      }).catch(() => {});
+    }
+  }
+
+  return created;
+}
+
+// ─── Sequential Signing Helpers ─────────────────────────────────────
+
+/**
+ * Get the next pending signer in sequence for a document.
+ * Returns the pending token with the lowest signingOrder.
+ */
+export async function getNextPendingSigner(documentId: string) {
+  const [next] = await db
+    .select()
+    .from(signingTokens)
+    .where(
+      and(
+        eq(signingTokens.documentId, documentId),
+        eq(signingTokens.status, 'pending'),
+      ),
+    )
+    .orderBy(asc(signingTokens.signingOrder))
+    .limit(1);
+  return next || null;
+}
+
+/**
+ * Send signing invite to the next signer in the sequence.
+ * Called after a signer completes their token.
+ */
+async function notifyNextSigner(documentId: string) {
+  const next = await getNextPendingSigner(documentId);
+  if (!next) return; // No more pending signers
+
   const [doc] = await db
     .select({ title: signatureDocuments.title, userId: signatureDocuments.userId })
     .from(signatureDocuments)
@@ -381,16 +440,40 @@ export async function createSigningToken(
     const senderName = await getUserName(doc.userId);
     const clientUrl = env.CLIENT_PUBLIC_URL || 'http://localhost:5180';
     sendSigningInviteEmail({
-      to: email,
-      signerName: name ?? undefined,
+      to: next.signerEmail,
+      signerName: next.signerName ?? undefined,
       documentTitle: doc.title,
       senderName,
-      signingLink: `${clientUrl}/sign/${token}`,
-      expiresAt,
+      signingLink: `${clientUrl}/sign/${next.token}`,
+      expiresAt: next.expiresAt,
     }).catch(() => {});
-  }
 
-  return created;
+    logger.info({ documentId, nextSignerEmail: next.signerEmail, signingOrder: next.signingOrder }, 'Notified next signer in sequence');
+  }
+}
+
+/**
+ * Check if it's a given signer's turn based on sequential signing order.
+ * Returns true if all signers with a lower signingOrder have completed (signed/declined).
+ */
+export async function isSignerTurn(documentId: string, signingOrder: number): Promise<boolean> {
+  // If signingOrder is 0, it's always their turn (they are first or all signers have order 0 = parallel)
+  if (signingOrder === 0) return true;
+
+  // Check if any previous signers (lower order) are still pending
+  const previousPending = await db
+    .select({ id: signingTokens.id })
+    .from(signingTokens)
+    .where(
+      and(
+        eq(signingTokens.documentId, documentId),
+        eq(signingTokens.status, 'pending'),
+        sql`${signingTokens.signingOrder} < ${signingOrder}`,
+      ),
+    )
+    .limit(1);
+
+  return previousPending.length === 0;
 }
 
 export async function getSigningToken(token: string) {
@@ -409,6 +492,13 @@ export async function getSigningToken(token: string) {
     .where(eq(signatureDocuments.id, row.documentId))
     .limit(1);
 
+  // Check if this signer needs to wait for previous signers (sequential signing)
+  let waitingForPrevious = false;
+  if (row.status === 'pending' && row.signingOrder > 0) {
+    const isTurn = await isSignerTurn(row.documentId, row.signingOrder);
+    waitingForPrevious = !isTurn;
+  }
+
   // Audit: document.viewed (when a signer views the document)
   if (row.status === 'pending') {
     logAuditEvent({
@@ -416,11 +506,11 @@ export async function getSigningToken(token: string) {
       action: 'document.viewed',
       actorEmail: row.signerEmail,
       actorName: row.signerName ?? undefined,
-      metadata: { tokenId: row.id },
+      metadata: { tokenId: row.id, waitingForPrevious },
     }).catch(() => {});
   }
 
-  return { token: row, document: doc || null };
+  return { token: row, document: doc || null, waitingForPrevious };
 }
 
 export async function listSigningTokens(documentId: string) {
@@ -428,7 +518,7 @@ export async function listSigningTokens(documentId: string) {
     .select()
     .from(signingTokens)
     .where(eq(signingTokens.documentId, documentId))
-    .orderBy(desc(signingTokens.createdAt));
+    .orderBy(asc(signingTokens.signingOrder), asc(signingTokens.createdAt));
 }
 
 // ─── Signing Operations ─────────────────────────────────────────────
@@ -478,6 +568,9 @@ export async function completeSigningToken(tokenId: string) {
       actorName: tokenRow.signerName ?? undefined,
       metadata: { tokenId },
     }).catch(() => {});
+
+    // Sequential signing: notify the next signer in the sequence
+    notifyNextSigner(tokenRow.documentId).catch(() => {});
   }
 }
 
@@ -890,4 +983,75 @@ export async function getWidgetData(userId: string, accountId: string) {
   }
 
   return { pending, signed, draft, total };
+}
+
+// ─── Single Reminder ─────────────────────────────────────────────────
+
+/**
+ * Manually send a reminder for a specific signing token.
+ * Returns true if the reminder was sent successfully.
+ */
+export async function sendSingleReminder(documentId: string, tokenId: string): Promise<boolean> {
+  const [tokenRow] = await db
+    .select()
+    .from(signingTokens)
+    .where(
+      and(
+        eq(signingTokens.id, tokenId),
+        eq(signingTokens.documentId, documentId),
+        eq(signingTokens.status, 'pending'),
+      ),
+    )
+    .limit(1);
+
+  if (!tokenRow) return false;
+
+  // Check expiry
+  if (new Date(tokenRow.expiresAt) < new Date()) return false;
+
+  // For sequential signing, only allow reminder if it's their turn
+  if (tokenRow.signingOrder > 0) {
+    const isTurn = await isSignerTurn(documentId, tokenRow.signingOrder);
+    if (!isTurn) return false;
+  }
+
+  const [doc] = await db
+    .select({ title: signatureDocuments.title, userId: signatureDocuments.userId })
+    .from(signatureDocuments)
+    .where(eq(signatureDocuments.id, documentId))
+    .limit(1);
+
+  if (!doc) return false;
+
+  const senderName = await getUserName(doc.userId);
+  const clientUrl = env.CLIENT_PUBLIC_URL || 'http://localhost:5180';
+
+  await sendSigningInviteEmail({
+    to: tokenRow.signerEmail,
+    signerName: tokenRow.signerName ?? undefined,
+    documentTitle: doc.title,
+    senderName,
+    signingLink: `${clientUrl}/sign/${tokenRow.token}`,
+    expiresAt: tokenRow.expiresAt,
+  });
+
+  // Update lastReminderAt
+  const now = new Date();
+  await db
+    .update(signingTokens)
+    .set({ lastReminderAt: now, updatedAt: now })
+    .where(eq(signingTokens.id, tokenId));
+
+  logger.info({ tokenId, signerEmail: tokenRow.signerEmail }, 'Manual reminder sent');
+
+  // Audit
+  logAuditEvent({
+    documentId,
+    action: 'reminder.sent',
+    actorEmail: tokenRow.signerEmail,
+    actorName: tokenRow.signerName ?? undefined,
+    metadata: { tokenId, manual: true },
+  }).catch(() => {});
+
+  return true;
 }

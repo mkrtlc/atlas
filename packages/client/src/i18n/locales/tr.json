@@ -1527,7 +1527,14 @@
       "generating": "Oluşturuluyor...",
       "generateLink": "Bağlantı oluştur",
       "generateLinks": "Bağlantılar oluştur",
-      "removeSigner": "İmzacıyı kaldır"
+      "removeSigner": "İmzacıyı kaldır",
+      "signInOrder": "Sıralı imzalama",
+      "signInOrderDesc": "İmzacılar listelenen sırayla tek tek imzalamalıdır"
+    },
+    "reminders": {
+      "lastSent": "Son hatırlatma gönderildi: {{date}}",
+      "sendReminder": "Hatırlatma gönder",
+      "reminderSent": "Hatırlatma gönderildi"
     },
     "signers": {
       "manageSigners": "İmzacıları yönet",
@@ -1581,7 +1588,9 @@
       "reasonOptional": "Neden (isteğe bağlı)",
       "reasonPlaceholder": "Reddetme nedeninizi girin...",
       "declining": "Reddediliyor...",
-      "failedToSubmit": "İmza gönderilemedi"
+      "failedToSubmit": "İmza gönderilemedi",
+      "waitingForPrevious": "Önceki imzacı bekleniyor",
+      "waitingForPreviousDesc": "Bu belge belirli bir sırayla imza gerektirmektedir. İmzalama sırası size geldiğinde bir e-posta alacaksınız."
     },
     "modal": {
       "addSignature": "İmza ekle",

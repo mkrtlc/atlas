@@ -30,6 +30,8 @@ import {
   BookTemplate,
   Play,
   BookmarkPlus,
+  Bell,
+  ListOrdered,
 } from 'lucide-react';
 import { ColumnHeader } from '../../components/ui/column-header';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
@@ -61,6 +63,7 @@ import {
   useDeleteField,
   useCreateSigningLink,
   useSigningLinks,
+  useSendReminder,
   useVoidDocument,
   useAuditLog,
   useTemplates,
@@ -151,6 +154,8 @@ export function SignPage() {
   const [generatedLinks, setGeneratedLinks] = useState<{ email: string; link: string }[]>([]);
   const [activeSigner, setActiveSigner] = useState<string | undefined>();
   const [signersModalOpen, setSignersModalOpen] = useState(false);
+  // Sequential signing
+  const [signInOrder, setSignInOrder] = useState(false);
   // Expiration date
   const getDefaultExpiry = () => {
     const d = new Date();
@@ -186,6 +191,7 @@ export function SignPage() {
   const updateField = useUpdateField(selectedDocId ?? undefined);
   const deleteField = useDeleteField(selectedDocId ?? undefined);
   const createSigningLink = useCreateSigningLink(selectedDocId ?? undefined);
+  const sendReminder = useSendReminder(selectedDocId ?? undefined);
   const voidDoc = useVoidDocument(selectedDocId ?? undefined);
   const createFromTemplate = useCreateFromTemplate();
   const saveAsTemplate = useSaveAsTemplate(selectedDocId ?? undefined);
@@ -351,11 +357,13 @@ export function SignPage() {
     const expiresInDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     try {
       const links: { email: string; link: string }[] = [];
-      for (const signer of validSigners) {
+      for (let idx = 0; idx < validSigners.length; idx++) {
+        const signer = validSigners[idx];
         const tokenResult = await createSigningLink.mutateAsync({
           email: signer.email.trim(),
           name: signer.name.trim() || undefined,
           expiresInDays,
+          signingOrder: signInOrder ? idx : 0,
         });
         links.push({
           email: signer.email.trim(),
@@ -375,7 +383,7 @@ export function SignPage() {
     } catch {
       // Handled by RQ
     }
-  }, [signers, createSigningLink, updateDoc]);
+  }, [signers, signInOrder, createSigningLink, updateDoc]);
 
   const handleCopyLink = useCallback(() => {
     if (!generatedLink) return;
@@ -1242,6 +1250,38 @@ export function SignPage() {
                 size="md"
                 min={new Date().toISOString().split('T')[0]}
               />
+              {/* Sign in order toggle */}
+              {signers.filter((s) => s.email.trim()).length > 1 && (
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 12px',
+                    background: signInOrder ? 'rgba(139, 92, 246, 0.06)' : 'var(--color-bg-tertiary)',
+                    border: `1px solid ${signInOrder ? 'rgba(139, 92, 246, 0.3)' : 'var(--color-border-secondary)'}`,
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={signInOrder}
+                    onChange={(e) => setSignInOrder(e.target.checked)}
+                    style={{ accentColor: '#8b5cf6' }}
+                  />
+                  <ListOrdered size={14} style={{ color: signInOrder ? '#8b5cf6' : 'var(--color-text-tertiary)', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'], color: 'var(--color-text-primary)' }}>
+                      {t('sign.send.signInOrder')}
+                    </div>
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 1 }}>
+                      {t('sign.send.signInOrderDesc')}
+                    </div>
+                  </div>
+                </label>
+              )}
               {/* Existing links */}
               {signingLinks && signingLinks.length > 0 && (
                 <div style={{ marginTop: 8 }}>
@@ -1267,14 +1307,41 @@ export function SignPage() {
                         padding: '6px 0',
                         borderBottom: '1px solid var(--color-border-secondary)',
                         fontSize: 'var(--font-size-sm)',
+                        gap: 8,
                       }}
                     >
-                      <span style={{ color: 'var(--color-text-primary)' }}>
-                        {link.signerEmail}
-                      </span>
-                      <Badge variant={link.status === 'signed' ? 'success' : link.status === 'expired' || link.status === 'declined' ? 'error' : 'warning'}>
-                        {link.status}
-                      </Badge>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {link.signingOrder > 0 && (
+                            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'] }}>
+                              #{link.signingOrder + 1}
+                            </span>
+                          )}
+                          <span style={{ color: 'var(--color-text-primary)' }}>
+                            {link.signerEmail}
+                          </span>
+                        </div>
+                        {link.status === 'pending' && link.lastReminderAt && (
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                            {t('sign.reminders.lastSent', { date: formatDate(link.lastReminderAt) })}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {link.status === 'pending' && (
+                          <Tooltip content={t('sign.reminders.sendReminder')}>
+                            <IconButton
+                              icon={<Bell size={13} />}
+                              label={t('sign.reminders.sendReminder')}
+                              size={24}
+                              onClick={() => sendReminder.mutate(link.id)}
+                            />
+                          </Tooltip>
+                        )}
+                        <Badge variant={link.status === 'signed' ? 'success' : link.status === 'expired' || link.status === 'declined' ? 'error' : 'warning'}>
+                          {link.status}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>

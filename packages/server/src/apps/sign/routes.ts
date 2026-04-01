@@ -37,6 +37,9 @@ router.get('/widget', signController.getWidgetData);
 // ─── Seed ──────────────────────────────────────────────────────────
 router.post('/seed', signController.seedSampleData);
 
+// ─── Reminders (admin) ──────────────────────────────────────────────
+router.post('/reminders/send', signController.triggerReminders);
+
 // ─── Templates ─────────────────────────────────────────────────────
 router.get('/templates', signController.listTemplates);
 router.post('/templates', signController.createTemplate);
@@ -65,5 +68,6 @@ router.delete('/fields/:fieldId', signController.deleteField);
 // ─── Tokens ─────────────────────────────────────────────────────────
 router.post('/:id/tokens', signController.createSigningToken);
 router.get('/:id/tokens', signController.listSigningTokens);
+router.post('/:id/tokens/:tokenId/remind', signController.sendSingleReminder);
 
 export default router;

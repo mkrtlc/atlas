@@ -151,9 +151,23 @@ export function useCreateSigningLink(docId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { email: string; name?: string; expiresInDays?: number }) => {
+    mutationFn: async (input: { email: string; name?: string; expiresInDays?: number; signingOrder?: number }) => {
       const { data } = await api.post(`/sign/${docId}/tokens`, input);
       return data.data as SigningToken;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sign.tokens(docId!) });
+    },
+  });
+}
+
+export function useSendReminder(docId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (tokenId: string) => {
+      const { data } = await api.post(`/sign/${docId}/tokens/${tokenId}/remind`);
+      return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sign.tokens(docId!) });
@@ -271,6 +285,7 @@ export function usePublicSignDoc(token: string | undefined) {
           signerEmail: string;
           signerName: string | null;
           status: string;
+          signingOrder: number;
           expiresAt: string;
         };
         document: {
@@ -281,6 +296,7 @@ export function usePublicSignDoc(token: string | undefined) {
           status: string;
         };
         fields: SignatureField[];
+        waitingForPrevious: boolean;
       };
     },
     enabled: !!token,

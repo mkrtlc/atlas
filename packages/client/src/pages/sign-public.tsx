@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, AlertTriangle, PenTool, ChevronRight, Download, XCircle, ChevronDown } from 'lucide-react';
+import { CheckCircle, AlertTriangle, PenTool, ChevronRight, Download, XCircle, ChevronDown, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { Input } from '../components/ui/input';
@@ -343,6 +343,25 @@ export function SignPublicPage() {
             </h2>
             <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
               {t('sign.public.signingDeclinedDesc')}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If waiting for previous signer in sequence
+  if (data.waitingForPrevious) {
+    return (
+      <div className="sign-public-container">
+        <div className="sign-public-content">
+          <div className="sign-public-error">
+            <Clock size={48} style={{ color: 'var(--color-warning)' }} />
+            <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)', fontFamily: 'var(--font-family)', color: 'var(--color-text-primary)' }}>
+              {t('sign.public.waitingForPrevious')}
+            </h2>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+              {t('sign.public.waitingForPreviousDesc')}
             </p>
           </div>
         </div>

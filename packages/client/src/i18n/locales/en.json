@@ -1562,7 +1562,14 @@
       "generating": "Generating...",
       "generateLink": "Generate link",
       "generateLinks": "Generate links",
-      "removeSigner": "Remove signer"
+      "removeSigner": "Remove signer",
+      "signInOrder": "Sign in order",
+      "signInOrderDesc": "Signers must sign one at a time in the order listed"
+    },
+    "reminders": {
+      "lastSent": "Last reminder sent {{date}}",
+      "sendReminder": "Send reminder",
+      "reminderSent": "Reminder sent"
     },
     "signers": {
       "manageSigners": "Manage signers",
@@ -1616,7 +1623,9 @@
       "reasonOptional": "Reason (optional)",
       "reasonPlaceholder": "Enter your reason for declining...",
       "declining": "Declining...",
-      "failedToSubmit": "Failed to submit signature"
+      "failedToSubmit": "Failed to submit signature",
+      "waitingForPrevious": "Waiting for previous signer",
+      "waitingForPreviousDesc": "This document requires signatures in a specific order. You will receive an email when it is your turn to sign."
     },
     "modal": {
       "addSignature": "Add signature",

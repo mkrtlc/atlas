@@ -1527,7 +1527,14 @@
       "generating": "Wird generiert...",
       "generateLink": "Link generieren",
       "generateLinks": "Links generieren",
-      "removeSigner": "Unterzeichner entfernen"
+      "removeSigner": "Unterzeichner entfernen",
+      "signInOrder": "In Reihenfolge signieren",
+      "signInOrderDesc": "Unterzeichner müssen einzeln in der aufgelisteten Reihenfolge signieren"
+    },
+    "reminders": {
+      "lastSent": "Letzte Erinnerung gesendet: {{date}}",
+      "sendReminder": "Erinnerung senden",
+      "reminderSent": "Erinnerung gesendet"
     },
     "signers": {
       "manageSigners": "Unterzeichner verwalten",
@@ -1581,7 +1588,9 @@
       "reasonOptional": "Grund (optional)",
       "reasonPlaceholder": "Geben Sie Ihren Ablehnungsgrund ein...",
       "declining": "Wird abgelehnt...",
-      "failedToSubmit": "Unterschrift konnte nicht gesendet werden"
+      "failedToSubmit": "Unterschrift konnte nicht gesendet werden",
+      "waitingForPrevious": "Warten auf vorherigen Unterzeichner",
+      "waitingForPreviousDesc": "Dieses Dokument erfordert Unterschriften in einer bestimmten Reihenfolge. Sie erhalten eine E-Mail, wenn Sie an der Reihe sind."
     },
     "modal": {
       "addSignature": "Unterschrift hinzufügen",

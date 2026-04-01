@@ -1527,7 +1527,14 @@
       "generating": "Génération...",
       "generateLink": "Générer le lien",
       "generateLinks": "Générer les liens",
-      "removeSigner": "Retirer le signataire"
+      "removeSigner": "Retirer le signataire",
+      "signInOrder": "Signer dans l'ordre",
+      "signInOrderDesc": "Les signataires doivent signer un par un dans l'ordre indiqué"
+    },
+    "reminders": {
+      "lastSent": "Dernier rappel envoyé le {{date}}",
+      "sendReminder": "Envoyer un rappel",
+      "reminderSent": "Rappel envoyé"
     },
     "signers": {
       "manageSigners": "Gérer les signataires",
@@ -1581,7 +1588,9 @@
       "reasonOptional": "Raison (facultatif)",
       "reasonPlaceholder": "Entrez votre raison de refus...",
       "declining": "Refus en cours...",
-      "failedToSubmit": "Échec de l'envoi de la signature"
+      "failedToSubmit": "Échec de l'envoi de la signature",
+      "waitingForPrevious": "En attente du signataire précédent",
+      "waitingForPreviousDesc": "Ce document nécessite des signatures dans un ordre spécifique. Vous recevrez un e-mail lorsque ce sera votre tour de signer."
     },
     "modal": {
       "addSignature": "Ajouter une signature",

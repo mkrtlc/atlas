@@ -1527,7 +1527,14 @@
       "generating": "Generazione...",
       "generateLink": "Genera link",
       "generateLinks": "Genera link",
-      "removeSigner": "Rimuovi firmatario"
+      "removeSigner": "Rimuovi firmatario",
+      "signInOrder": "Firma in ordine",
+      "signInOrderDesc": "I firmatari devono firmare uno alla volta nell'ordine indicato"
+    },
+    "reminders": {
+      "lastSent": "Ultimo promemoria inviato il {{date}}",
+      "sendReminder": "Invia promemoria",
+      "reminderSent": "Promemoria inviato"
     },
     "signers": {
       "manageSigners": "Gestisci firmatari",
@@ -1581,7 +1588,9 @@
       "reasonOptional": "Motivo (facoltativo)",
       "reasonPlaceholder": "Inserisci il motivo del rifiuto...",
       "declining": "Rifiuto in corso...",
-      "failedToSubmit": "Invio della firma fallito"
+      "failedToSubmit": "Invio della firma fallito",
+      "waitingForPrevious": "In attesa del firmatario precedente",
+      "waitingForPreviousDesc": "Questo documento richiede firme in un ordine specifico. Riceverai un'email quando sarà il tuo turno di firmare."
     },
     "modal": {
       "addSignature": "Aggiungi firma",

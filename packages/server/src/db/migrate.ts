@@ -934,6 +934,14 @@ export async function runMigrations() {
       ALTER TABLE signing_tokens ADD COLUMN IF NOT EXISTS decline_reason TEXT;
     `);
 
+    // Add signing_order and last_reminder_at columns to signing_tokens (idempotent)
+    await client.query(`
+      ALTER TABLE signing_tokens ADD COLUMN IF NOT EXISTS signing_order INTEGER NOT NULL DEFAULT 0;
+    `);
+    await client.query(`
+      ALTER TABLE signing_tokens ADD COLUMN IF NOT EXISTS last_reminder_at TIMESTAMPTZ;
+    `);
+
     // ─── Signature audit log ────────────────────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS sign_audit_log (

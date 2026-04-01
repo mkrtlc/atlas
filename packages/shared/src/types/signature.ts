@@ -50,6 +50,8 @@ export interface SigningToken {
   status: SigningTokenStatus;
   signedAt: string | null;
   declineReason: string | null;
+  signingOrder: number;
+  lastReminderAt: string | null;
   expiresAt: string;
   createdAt: string;
   updatedAt: string;
@@ -77,6 +79,7 @@ export interface CreateSigningTokenInput {
   signerEmail: string;
   signerName?: string;
   expiresInDays?: number;
+  signingOrder?: number;
 }
 
 // ─── Audit Log ─────────────────────────────────────────────────────

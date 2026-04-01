@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as signService from './service';
+import { sendPendingReminders } from './reminder';
 import { logger } from '../../utils/logger';
 import { emitAppEvent } from '../../services/event.service';
 import { getAppPermission, canAccess } from '../../services/app-permissions.service';
@@ -454,7 +455,7 @@ export async function createSigningToken(req: Request, res: Response) {
     }
 
     const documentId = req.params.id as string;
-    const { email, name, expiresInDays } = req.body;
+    const { email, name, expiresInDays, signingOrder } = req.body;
 
     if (!email) {
       res.status(400).json({ success: false, error: 'email is required' });
@@ -466,6 +467,7 @@ export async function createSigningToken(req: Request, res: Response) {
       email,
       name || null,
       expiresInDays || 30,
+      typeof signingOrder === 'number' ? signingOrder : 0,
     );
 
     if (req.auth!.tenantId) {
@@ -539,6 +541,7 @@ export async function getByToken(req: Request, res: Response) {
           signerEmail: result.token.signerEmail,
           signerName: result.token.signerName,
           status: result.token.status,
+          signingOrder: result.token.signingOrder,
           expiresAt: result.token.expiresAt,
         },
         document: {
@@ -549,6 +552,7 @@ export async function getByToken(req: Request, res: Response) {
           status: doc.status,
         },
         fields,
+        waitingForPrevious: result.waitingForPrevious,
       },
     });
   } catch (error) {
@@ -584,6 +588,12 @@ export async function signByToken(req: Request, res: Response) {
     // Check token is not already used
     if (result.token.status === 'signed') {
       res.status(409).json({ success: false, error: 'Token has already been used' });
+      return;
+    }
+
+    // Check if it's this signer's turn (sequential signing)
+    if (result.waitingForPrevious) {
+      res.status(403).json({ success: false, error: 'Waiting for previous signer to complete' });
       return;
     }
 
@@ -810,5 +820,43 @@ export async function viewPDFByToken(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to view PDF by token');
     res.status(500).json({ success: false, error: 'Failed to view PDF by token' });
+  }
+}
+
+// ─── Reminders ─────────────────────────────────────────────────────
+
+// POST /api/sign/reminders/send
+export async function triggerReminders(req: Request, res: Response) {
+  try {
+    const count = await sendPendingReminders();
+    res.json({ success: true, data: { remindersSent: count } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to trigger signing reminders');
+    res.status(500).json({ success: false, error: 'Failed to trigger signing reminders' });
+  }
+}
+
+// POST /api/sign/:id/tokens/:tokenId/remind
+export async function sendSingleReminder(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'sign');
+    if (!canAccess(perm.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to send reminders' });
+      return;
+    }
+
+    const documentId = req.params.id as string;
+    const tokenId = req.params.tokenId as string;
+
+    const result = await signService.sendSingleReminder(documentId, tokenId);
+    if (!result) {
+      res.status(404).json({ success: false, error: 'Token not found or not eligible for reminder' });
+      return;
+    }
+
+    res.json({ success: true, data: { sent: true } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to send single reminder');
+    res.status(500).json({ success: false, error: 'Failed to send single reminder' });
   }
 }
