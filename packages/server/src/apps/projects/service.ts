@@ -301,6 +301,7 @@ export async function listProjects(userId: string, accountId: string, filters?: 
       clientName: projectClients.name,
       totalTrackedMinutes: sql<number>`COALESCE((SELECT SUM(duration_minutes) FROM project_time_entries WHERE project_id = ${projectProjects.id} AND is_archived = false), 0)`.as('total_tracked_minutes'),
       totalBilledAmount: sql<number>`COALESCE((SELECT SUM(pli.amount) FROM project_invoice_line_items pli INNER JOIN project_time_entries pte ON pte.id = pli.time_entry_id WHERE pte.project_id = ${projectProjects.id}), 0)`.as('total_billed_amount'),
+      unbilledMinutes: sql<number>`COALESCE((SELECT SUM(pte2.duration_minutes) FROM project_time_entries pte2 WHERE pte2.project_id = ${projectProjects.id} AND pte2.is_archived = false AND pte2.billable = true AND NOT EXISTS (SELECT 1 FROM project_invoice_line_items pli2 WHERE pli2.time_entry_id = pte2.id)), 0)`.as('unbilled_minutes'),
     })
     .from(projectProjects)
     .leftJoin(projectClients, eq(projectProjects.clientId, projectClients.id))
@@ -1815,6 +1816,7 @@ export async function getDashboardData(userId: string, accountId: string) {
     hoursByDayResult,
     recentTimeEntries,
     recentInvoiceActions,
+    unbilledResult,
   ] = await Promise.all([
     // Active projects count
     db.select({ count: sql<number>`COUNT(*)`.as('count') })
@@ -1925,6 +1927,18 @@ export async function getDashboardData(userId: string, accountId: string) {
       ))
       .orderBy(desc(projectInvoices.updatedAt))
       .limit(5),
+
+    // Unbilled billable hours (time entries not linked to any invoice line item)
+    db.select({
+      totalMinutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('total_minutes'),
+    })
+      .from(projectTimeEntries)
+      .where(and(
+        eq(projectTimeEntries.accountId, accountId),
+        eq(projectTimeEntries.isArchived, false),
+        eq(projectTimeEntries.billable, true),
+        sql`NOT EXISTS (SELECT 1 FROM project_invoice_line_items pli WHERE pli.time_entry_id = ${projectTimeEntries.id})`,
+      )),
   ]);
 
   const projectCount = projectCountResult[0];
@@ -1932,6 +1946,7 @@ export async function getDashboardData(userId: string, accountId: string) {
   const pendingInvoice = pendingInvoiceResult[0];
   const overdue = overdueResult[0];
   const revenue = revenueResult[0];
+  const unbilled = unbilledResult[0];
 
   // Build hours by day array (Mon-Sun)
   const dayMap = new Map<string, number>();
@@ -1953,6 +1968,7 @@ export async function getDashboardData(userId: string, accountId: string) {
     totalOutstandingAmount: Number(pendingInvoice?.amount ?? 0),
     overdueInvoices: Number(overdue?.count ?? 0),
     totalOverdueAmount: Number(overdue?.amount ?? 0),
+    unbilledHours: Number(unbilled?.totalMinutes ?? 0) / 60,
     revenue: {
       invoiced: Number(revenue?.invoiced ?? 0),
       paid: Number(revenue?.paid ?? 0),

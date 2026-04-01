@@ -1716,6 +1716,7 @@
       "dashboard": "Tableau de bord",
       "timeTracking": "Suivi du temps",
       "projects": "Projets",
+      "allProjects": "Tous les projets",
       "clients": "Clients",
       "invoices": "Factures",
       "reports": "Rapports",
@@ -1749,7 +1750,10 @@
       "totalBilled": "Total facturé",
       "tue": "Mar",
       "wed": "Mer",
-      "whatDidYouWorkOn": "Sur quoi avez-vous travaillé ?"
+      "whatDidYouWorkOn": "Sur quoi avez-vous travaillé ?",
+      "unbilledHours": "Heures non facturées",
+      "needsInvoicing": "A facturer",
+      "unbilled": "non facturé"
     },
     "projects": {
       "name": "Nom",
@@ -1776,7 +1780,11 @@
       "clientName": "Nom du client",
       "clientNamePlaceholder": "Acme SARL",
       "addClient": "Ajouter un client",
-      "clientDetail": "Detail du client"
+      "clientDetail": "Detail du client",
+      "linkedProjects": "Projets",
+      "linkedInvoices": "Factures",
+      "noProjects": "Aucun projet",
+      "noInvoices": "Aucune facture"
     },
     "invoices": {
       "number": "Numero",
@@ -1810,7 +1818,9 @@
       "markPaid": "Marquer comme payee",
       "waive": "Annuler",
       "duplicate": "Dupliquer",
-      "invoiceDetail": "Detail de la facture"
+      "invoiceDetail": "Detail de la facture",
+      "nextAction": "Prochaine action",
+      "sendInvoice": "Envoyer la facture"
     },
     "timeTracking": {
       "selectProject": "Selectionner un projet",
@@ -1823,7 +1833,11 @@
       "prevMonth": "Mois precedent",
       "nextMonth": "Mois suivant",
       "copyLastWeek": "Copier la semaine derniere",
-      "addProject": "Ajouter un projet"
+      "addProject": "Ajouter un projet",
+      "saved": "Saisies enregistrées",
+      "editEntry": "Modifier",
+      "deleteEntry": "Supprimer",
+      "saveEntry": "Enregistrer"
     },
     "status": {
       "active": "Actif",

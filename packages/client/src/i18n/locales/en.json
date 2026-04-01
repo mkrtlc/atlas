@@ -1726,6 +1726,7 @@
       "dashboard": "Dashboard",
       "timeTracking": "Time tracking",
       "projects": "Projects",
+      "allProjects": "All projects",
       "clients": "Clients",
       "invoices": "Invoices",
       "reports": "Reports",
@@ -1759,7 +1760,10 @@
       "totalBilled": "Total billed",
       "tue": "Tue",
       "wed": "Wed",
-      "whatDidYouWorkOn": "What did you work on?"
+      "whatDidYouWorkOn": "What did you work on?",
+      "unbilledHours": "Unbilled hours",
+      "needsInvoicing": "Needs invoicing",
+      "unbilled": "unbilled"
     },
     "projects": {
       "name": "Name",
@@ -1786,7 +1790,11 @@
       "clientName": "Client name",
       "clientNamePlaceholder": "Acme Corp",
       "addClient": "Add client",
-      "clientDetail": "Client detail"
+      "clientDetail": "Client detail",
+      "linkedProjects": "Projects",
+      "linkedInvoices": "Invoices",
+      "noProjects": "No projects",
+      "noInvoices": "No invoices"
     },
     "invoices": {
       "number": "Number",
@@ -1820,7 +1828,9 @@
       "markPaid": "Mark as paid",
       "waive": "Waive",
       "duplicate": "Duplicate",
-      "invoiceDetail": "Invoice detail"
+      "invoiceDetail": "Invoice detail",
+      "nextAction": "Next action",
+      "sendInvoice": "Send invoice"
     },
     "timeTracking": {
       "selectProject": "Select project",
@@ -1833,7 +1843,11 @@
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
       "copyLastWeek": "Copy last week",
-      "addProject": "Add project"
+      "addProject": "Add project",
+      "saved": "Time entries saved",
+      "editEntry": "Edit",
+      "deleteEntry": "Delete",
+      "saveEntry": "Save"
     },
     "status": {
       "active": "Active",

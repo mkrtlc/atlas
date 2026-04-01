@@ -34,6 +34,7 @@ export interface Project {
   isBillable: boolean;
   totalHours: number;
   totalAmount: number;
+  unbilledHours: number;
   isArchived: boolean;
   sortOrder: number;
   createdAt: string;
@@ -101,6 +102,7 @@ export interface EnhancedDashboard {
   totalOutstandingAmount: number;
   overdueInvoices: number;
   totalOverdueAmount: number;
+  unbilledHours: number;
   revenue: {
     invoiced: number;
     paid: number;
@@ -302,6 +304,7 @@ function mapProject(raw: Record<string, unknown>): Project {
     isBillable: (raw.billable as boolean) ?? true,
     totalHours: typeof raw.totalTrackedMinutes === 'number' ? raw.totalTrackedMinutes / 60 : 0,
     totalAmount: (raw.totalBilledAmount as number) ?? 0,
+    unbilledHours: typeof raw.unbilledMinutes === 'number' ? raw.unbilledMinutes / 60 : 0,
     isArchived: (raw.isArchived as boolean) ?? false,
     sortOrder: (raw.sortOrder as number) ?? 0,
     createdAt: (raw.createdAt as string) ?? '',

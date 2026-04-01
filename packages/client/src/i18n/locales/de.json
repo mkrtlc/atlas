@@ -1716,6 +1716,7 @@
       "dashboard": "Dashboard",
       "timeTracking": "Zeiterfassung",
       "projects": "Projekte",
+      "allProjects": "Alle Projekte",
       "clients": "Kunden",
       "invoices": "Rechnungen",
       "reports": "Berichte",
@@ -1749,7 +1750,10 @@
       "totalBilled": "Gesamt berechnet",
       "tue": "Di",
       "wed": "Mi",
-      "whatDidYouWorkOn": "Woran haben Sie gearbeitet?"
+      "whatDidYouWorkOn": "Woran haben Sie gearbeitet?",
+      "unbilledHours": "Nicht abgerechnete Stunden",
+      "needsInvoicing": "Muss abgerechnet werden",
+      "unbilled": "nicht abgerechnet"
     },
     "projects": {
       "name": "Name",
@@ -1776,7 +1780,11 @@
       "clientName": "Kundenname",
       "clientNamePlaceholder": "Acme GmbH",
       "addClient": "Kunde hinzufugen",
-      "clientDetail": "Kundendetail"
+      "clientDetail": "Kundendetail",
+      "linkedProjects": "Projekte",
+      "linkedInvoices": "Rechnungen",
+      "noProjects": "Keine Projekte",
+      "noInvoices": "Keine Rechnungen"
     },
     "invoices": {
       "number": "Nummer",
@@ -1810,7 +1818,9 @@
       "markPaid": "Als bezahlt markieren",
       "waive": "Stornieren",
       "duplicate": "Duplizieren",
-      "invoiceDetail": "Rechnungsdetail"
+      "invoiceDetail": "Rechnungsdetail",
+      "nextAction": "Nächster Schritt",
+      "sendInvoice": "Rechnung senden"
     },
     "timeTracking": {
       "selectProject": "Projekt auswahlen",
@@ -1823,7 +1833,11 @@
       "prevMonth": "Vorheriger Monat",
       "nextMonth": "Nachster Monat",
       "copyLastWeek": "Letzte Woche kopieren",
-      "addProject": "Projekt hinzufugen"
+      "addProject": "Projekt hinzufugen",
+      "saved": "Zeiteinträge gespeichert",
+      "editEntry": "Bearbeiten",
+      "deleteEntry": "Löschen",
+      "saveEntry": "Speichern"
     },
     "status": {
       "active": "Aktiv",

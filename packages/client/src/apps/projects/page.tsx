@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Clock, FolderKanban, Users, FileText, BarChart3, Settings2,
   Plus, Search, X, ChevronRight, Trash2, Copy, ExternalLink,
   DollarSign, Calendar, Mail, Phone, MapPin, Hash, Percent, Activity,
+  AlertCircle, Pencil, Check, Send, CheckCircle2,
 } from 'lucide-react';
 import {
   useDashboard,
@@ -14,8 +15,8 @@ import {
   useInvoices, useCreateInvoice, useUpdateInvoice, useDeleteInvoice,
   useSendInvoice, useMarkInvoicePaid, useWaiveInvoice, useDuplicateInvoice,
   useProjectSettings, useUpdateProjectSettings,
-  useTimeEntries, useCreateTimeEntry,
-  type Project, type ProjectClient, type Invoice,
+  useTimeEntries, useCreateTimeEntry, useUpdateTimeEntry, useDeleteTimeEntry,
+  type Project, type ProjectClient, type Invoice, type TimeEntry,
   getInvoiceStatusVariant,
 } from './hooks';
 import { TimeTracker } from './components/time-tracker';
@@ -38,6 +39,7 @@ import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { SettingsSection, SettingsRow } from '../../components/settings/settings-primitives';
 import { useUIStore } from '../../stores/ui-store';
+import { useToastStore } from '../../stores/toast-store';
 import '../../styles/projects.css';
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -318,6 +320,13 @@ function DashboardView() {
           subtitle={formatCurrency(data?.totalOverdueAmount ?? 0)}
           iconColor="var(--color-error)"
         />
+        <KpiCard
+          icon={<AlertCircle size={18} />}
+          label={t('projects.dashboard.unbilledHours')}
+          value={formatNumber(data?.unbilledHours ?? 0, 1) + 'h'}
+          subtitle={t('projects.dashboard.needsInvoicing')}
+          iconColor="#ef4444"
+        />
       </div>
 
       {/* Charts — responsive grid */}
@@ -581,6 +590,20 @@ function ProjectsListView({ projects, searchQuery, onSelect, selectedId, onAdd, 
                 ) : (
                   <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>-</span>
                 )}
+                {project.unbilledHours > 0 && (
+                  <span style={{ marginLeft: 'var(--spacing-sm)' }}>
+                    <Badge variant="warning">
+                      {formatNumber(project.unbilledHours, 1)}h {t('projects.dashboard.unbilled')}
+                    </Badge>
+                  </span>
+                )}
+                {project.totalAmount > 0 && (
+                  <span style={{ marginLeft: 'var(--spacing-xs)' }}>
+                    <Badge variant="success">
+                      {formatCurrency(project.totalAmount)}
+                    </Badge>
+                  </span>
+                )}
               </span>
               {selectedId === project.id && <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
             </div>
@@ -603,10 +626,35 @@ function ProjectDetailPanel({ project, onClose }: { project: Project; onClose: (
   const { t } = useTranslation();
   const deleteProject = useDeleteProject();
   const updateProject = useUpdateProject();
+  const updateTimeEntry = useUpdateTimeEntry();
+  const deleteTimeEntry = useDeleteTimeEntry();
+  const { addToast } = useToastStore();
   const { data: timeData } = useTimeEntries({ projectId: project.id });
   const recentEntries = (timeData?.entries ?? []).slice(0, 5);
   const { data: invoicesData } = useInvoices({ clientId: project.clientId ?? undefined });
   const clientInvoices = (invoicesData?.invoices ?? []).slice(0, 5);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editHours, setEditHours] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [confirmDeleteEntryId, setConfirmDeleteEntryId] = useState<string | null>(null);
+
+  const handleStartEdit = (entry: TimeEntry) => {
+    setEditingEntryId(entry.id);
+    setEditHours(String(entry.hours));
+    setEditDescription(entry.description || '');
+  };
+
+  const handleSaveEdit = (entryId: string) => {
+    updateTimeEntry.mutate({ id: entryId, hours: parseFloat(editHours) || 0, description: editDescription.trim() || null }, {
+      onSuccess: () => { setEditingEntryId(null); addToast({ type: 'success', message: t('projects.timeTracking.saved') }); },
+    });
+  };
+
+  const handleDeleteEntry = (entryId: string) => {
+    deleteTimeEntry.mutate(entryId, {
+      onSuccess: () => { setConfirmDeleteEntryId(null); addToast({ type: 'success', message: t('projects.timeTracking.deleteEntry') }); },
+    });
+  };
 
   const hoursPct = project.budgetHours ? Math.min((project.totalHours / project.budgetHours) * 100, 100) : 0;
   const amountPct = project.budgetAmount ? Math.min((project.totalAmount / project.budgetAmount) * 100, 100) : 0;
@@ -711,23 +759,64 @@ function ProjectDetailPanel({ project, onClose }: { project: Project; onClose: (
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 'var(--spacing-xs)' }}>
                 {recentEntries.map((entry) => (
-                  <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--color-border-secondary)' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {entry.description || t('projects.dashboard.noDescription')}
-                      </div>
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-                        {formatDate(entry.date)}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, marginLeft: 'var(--spacing-sm)' }}>
-                      {formatNumber(entry.hours, 1)}h
-                    </span>
+                  <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--color-border-secondary)', gap: 'var(--spacing-xs)' }}>
+                    {editingEntryId === entry.id ? (
+                      <>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+                          <Input
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            placeholder={t('projects.dashboard.noDescription')}
+                            size="sm"
+                          />
+                          <Input
+                            type="number"
+                            step="0.25"
+                            value={editHours}
+                            onChange={(e) => setEditHours(e.target.value)}
+                            placeholder="0"
+                            size="sm"
+                            style={{ width: 70 }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                          <IconButton icon={<Check size={12} />} label={t('projects.timeTracking.saveEntry')} size={22} onClick={() => handleSaveEdit(entry.id)} />
+                          <IconButton icon={<X size={12} />} label={t('projects.actions.cancel')} size={22} onClick={() => setEditingEntryId(null)} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {entry.description || t('projects.dashboard.noDescription')}
+                          </div>
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                            {formatDate(entry.date)}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                          {formatNumber(entry.hours, 1)}h
+                        </span>
+                        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                          <IconButton icon={<Pencil size={11} />} label={t('projects.timeTracking.editEntry')} size={20} onClick={() => handleStartEdit(entry)} />
+                          <IconButton icon={<Trash2 size={11} />} label={t('projects.timeTracking.deleteEntry')} size={20} destructive onClick={() => setConfirmDeleteEntryId(entry.id)} />
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
+          <ConfirmDialog
+            open={!!confirmDeleteEntryId}
+            onOpenChange={(open) => { if (!open) setConfirmDeleteEntryId(null); }}
+            title={t('projects.timeTracking.deleteEntry')}
+            description={t('projects.timeTracking.deleteEntry') + '?'}
+            confirmLabel={t('projects.actions.delete')}
+            destructive
+            onConfirm={() => confirmDeleteEntryId && handleDeleteEntry(confirmDeleteEntryId)}
+          />
 
           {/* Linked invoices */}
           {project.clientId && clientInvoices.length > 0 && (
@@ -885,7 +974,7 @@ function ClientsListView({ clients, searchQuery, onSelect, selectedId, onAdd }: 
 
 // ─── Client Detail Panel ──────────────────────────────────────────
 
-function ClientDetailPanel({ client, onClose }: { client: ProjectClient; onClose: () => void }) {
+function ClientDetailPanel({ client, onClose, onNavigate }: { client: ProjectClient; onClose: () => void; onNavigate?: (view: ActiveView, selectId?: string) => void }) {
   const { t } = useTranslation();
   const deleteClient = useDeleteClient();
   const { data: projectsData } = useProjects({ clientId: client.id });
@@ -996,12 +1085,20 @@ function ClientDetailPanel({ client, onClose }: { client: ProjectClient; onClose
           </div>
 
           {/* Projects */}
-          {clientProjects.length > 0 && (
-            <div className="projects-detail-field">
-              <span className="projects-detail-field-label">{t('projects.sidebar.projects')} ({clientProjects.length})</span>
+          <div className="projects-detail-field">
+            <span className="projects-detail-field-label">{t('projects.clients.linkedProjects')} ({clientProjects.length})</span>
+            {clientProjects.length === 0 ? (
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                {t('projects.clients.noProjects')}
+              </div>
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 'var(--spacing-xs)' }}>
                 {clientProjects.map((proj) => (
-                  <div key={proj.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--color-border-secondary)' }}>
+                  <div
+                    key={proj.id}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--color-border-secondary)', cursor: onNavigate ? 'pointer' : undefined }}
+                    onClick={() => onNavigate?.('projects', proj.id)}
+                  >
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
                       <StatusDot color={proj.color} size={6} />
                       {proj.name}
@@ -1012,16 +1109,24 @@ function ClientDetailPanel({ client, onClose }: { client: ProjectClient; onClose
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Recent invoices */}
-          {clientInvoices.length > 0 && (
-            <div className="projects-detail-field">
-              <span className="projects-detail-field-label">{t('projects.dashboard.recentInvoices')}</span>
+          <div className="projects-detail-field">
+            <span className="projects-detail-field-label">{t('projects.clients.linkedInvoices')} ({clientInvoices.length})</span>
+            {clientInvoices.length === 0 ? (
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                {t('projects.clients.noInvoices')}
+              </div>
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 'var(--spacing-xs)' }}>
                 {clientInvoices.map((inv) => (
-                  <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--color-border-secondary)' }}>
+                  <div
+                    key={inv.id}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--color-border-secondary)', cursor: onNavigate ? 'pointer' : undefined }}
+                    onClick={() => onNavigate?.('invoices', inv.id)}
+                  >
                     <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
                       {inv.invoiceNumber}
                     </span>
@@ -1036,8 +1141,8 @@ function ClientDetailPanel({ client, onClose }: { client: ProjectClient; onClose
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1211,6 +1316,67 @@ function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invoice; on
           <Badge variant={getInvoiceStatusVariant(invoice.status)}>
             {t(`projects.status.${invoice.status}`)}
           </Badge>
+        </div>
+
+        {/* Status timeline */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: 'var(--spacing-sm) 0' }}>
+          {(['draft', 'sent', 'viewed', 'paid'] as const).map((step, i) => {
+            const statusOrder = { draft: 0, sent: 1, viewed: 2, paid: 3, overdue: 1, waived: 3 } as const;
+            const currentOrder = statusOrder[invoice.status as keyof typeof statusOrder] ?? 0;
+            const stepOrder = statusOrder[step];
+            const isActive = stepOrder <= currentOrder;
+            const isCurrent = (invoice.status === 'overdue' && step === 'sent') || (invoice.status === 'waived' && step === 'paid') || step === invoice.status;
+            return (
+              <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < 3 ? 1 : undefined }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  backgroundColor: isActive ? (invoice.status === 'overdue' && step === 'sent' ? 'var(--color-error)' : 'var(--color-accent-primary)') : 'var(--color-bg-tertiary)',
+                  color: isActive ? '#fff' : 'var(--color-text-tertiary)',
+                  fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', fontFamily: 'var(--font-family)',
+                  border: isCurrent ? '2px solid var(--color-accent-primary)' : 'none',
+                }}>
+                  {isActive ? <CheckCircle2 size={12} /> : (i + 1)}
+                </div>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', marginLeft: 'var(--spacing-xs)', whiteSpace: 'nowrap' }}>
+                  {t(`projects.status.${step}`)}
+                </span>
+                {i < 3 && (
+                  <div style={{ flex: 1, height: 2, backgroundColor: isActive ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)', margin: '0 var(--spacing-xs)' }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Next action prompt */}
+        <div style={{ padding: 'var(--spacing-sm) 0' }}>
+          <span className="projects-detail-field-label">{t('projects.invoices.nextAction')}</span>
+          <div style={{ marginTop: 'var(--spacing-xs)' }}>
+            {invoice.status === 'draft' && (
+              <Button variant="primary" size="sm" icon={<Send size={13} />} onClick={() => sendInvoice.mutate(invoice.id)}>
+                {t('projects.invoices.sendInvoice')}
+              </Button>
+            )}
+            {(invoice.status === 'sent' || invoice.status === 'viewed') && (
+              <Button variant="primary" size="sm" icon={<DollarSign size={13} />} onClick={() => markPaid.mutate(invoice.id)}>
+                {t('projects.invoices.markPaid')}
+              </Button>
+            )}
+            {invoice.status === 'overdue' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                <Badge variant="error">{t('projects.dashboard.overdue')}</Badge>
+                <Button variant="primary" size="sm" icon={<DollarSign size={13} />} onClick={() => markPaid.mutate(invoice.id)}>
+                  {t('projects.invoices.markPaid')}
+                </Button>
+              </div>
+            )}
+            {invoice.status === 'paid' && (
+              <Badge variant="success">{t('projects.status.paid')}</Badge>
+            )}
+            {invoice.status === 'waived' && (
+              <Badge variant="default">{t('projects.status.waived')}</Badge>
+            )}
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
@@ -1436,7 +1602,7 @@ export function ProjectsPage() {
     switch (activeView) {
       case 'dashboard': return t('projects.sidebar.dashboard');
       case 'timeTracking': return t('projects.sidebar.timeTracking');
-      case 'projects': return t('projects.sidebar.projects');
+      case 'projects': return t('projects.sidebar.allProjects');
       case 'clients': return t('projects.sidebar.clients');
       case 'invoices': return t('projects.sidebar.invoices');
       case 'reports': return t('projects.sidebar.reports');
@@ -1506,7 +1672,7 @@ export function ProjectsPage() {
             onClick={() => setActiveView('timeTracking')}
           />
           <SidebarItem
-            label={t('projects.sidebar.projects')}
+            label={t('projects.sidebar.allProjects')}
             icon={<FolderKanban size={14} />}
             iconColor="#8b5cf6"
             isActive={activeView === 'projects'}
@@ -1639,7 +1805,16 @@ export function ProjectsPage() {
                 <ProjectDetailPanel project={selectedProject} onClose={() => setSelectedProjectId(null)} />
               )}
               {activeView === 'clients' && selectedClient && (
-                <ClientDetailPanel client={selectedClient} onClose={() => setSelectedClientId(null)} />
+                <ClientDetailPanel
+                  client={selectedClient}
+                  onClose={() => setSelectedClientId(null)}
+                  onNavigate={(view, selectId) => {
+                    setActiveView(view);
+                    setSelectedClientId(null);
+                    if (view === 'projects' && selectId) setSelectedProjectId(selectId);
+                    if (view === 'invoices' && selectId) setSelectedInvoiceId(selectId);
+                  }}
+                />
               )}
               {activeView === 'invoices' && selectedInvoice && (
                 <InvoiceDetailPanel

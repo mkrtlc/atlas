@@ -10,6 +10,7 @@ import { Select } from '../../../components/ui/select';
 import { IconButton } from '../../../components/ui/icon-button';
 import { StatusDot } from '../../../components/ui/status-dot';
 import { ListToolbar } from '../../../components/ui/list-toolbar';
+import { useToastStore } from '../../../stores/toast-store';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -140,6 +141,7 @@ export function TimeTracker() {
 
   const bulkSave = useBulkSaveTimeEntries();
   const copyLastWeek = useCopyLastWeek();
+  const { addToast } = useToastStore();
 
   // Build grid rows from entries
   const [rows, setRows] = useState<GridRow[]>([]);
@@ -209,7 +211,9 @@ export function TimeTracker() {
         }
       });
     });
-    bulkSave.mutate(allEntries);
+    bulkSave.mutate(allEntries, {
+      onSuccess: () => addToast({ type: 'success', message: t('projects.timeTracking.saved') }),
+    });
     setIsDirty(false);
   };
 

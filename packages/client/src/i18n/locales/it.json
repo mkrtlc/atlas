@@ -1716,6 +1716,7 @@
       "dashboard": "Dashboard",
       "timeTracking": "Monitoraggio tempo",
       "projects": "Progetti",
+      "allProjects": "Tutti i progetti",
       "clients": "Clienti",
       "invoices": "Fatture",
       "reports": "Report",
@@ -1747,7 +1748,14 @@
       "totalBilled": "Totale fatturato",
       "tue": "Mar",
       "wed": "Mer",
-      "whatDidYouWorkOn": "Su cosa hai lavorato?"
+      "whatDidYouWorkOn": "Su cosa hai lavorato?",
+      "tracked": "Tempo tracciato",
+      "inProgress": "In corso",
+      "outstandingInvoices": "Fatture in sospeso",
+      "overdue": "Scadute",
+      "unbilledHours": "Ore non fatturate",
+      "needsInvoicing": "Da fatturare",
+      "unbilled": "non fatturato"
     },
     "projects": {
       "name": "Nome",
@@ -1794,7 +1802,16 @@
       "editClient": "Modifica cliente",
       "deleteClient": "Elimina cliente",
       "projectsCount": "Progetti",
-      "outstanding": "In sospeso"
+      "outstanding": "In sospeso",
+      "clientDetail": "Dettaglio cliente",
+      "addClient": "Aggiungi cliente",
+      "clientName": "Nome cliente",
+      "clientNamePlaceholder": "Acme Srl",
+      "newClientSubtitle": "Aggiungi un nuovo cliente ai tuoi progetti",
+      "linkedProjects": "Progetti",
+      "linkedInvoices": "Fatture",
+      "noProjects": "Nessun progetto",
+      "noInvoices": "Nessuna fattura"
     },
     "invoices": {
       "number": "Numero",
@@ -1825,7 +1842,20 @@
       "unitPrice": "Prezzo unitario",
       "addLineItem": "Aggiungi riga",
       "populateFromTime": "Compila da ore",
-      "saveDraft": "Salva bozza"
+      "saveDraft": "Salva bozza",
+      "nextAction": "Prossima azione",
+      "invoiceDetail": "Dettaglio fattura",
+      "lineItems": "Voci",
+      "lineItemPlaceholder": "Descrizione servizio",
+      "selectClient": "Seleziona cliente",
+      "invoiceBuilderSubtitle": "Crea o modifica una fattura con voci",
+      "from": "Da",
+      "to": "A",
+      "taxPercent": "IVA %",
+      "discountPercent": "Sconto %",
+      "notesPlaceholder": "Condizioni di pagamento, nota di ringraziamento...",
+      "send": "Invia",
+      "waive": "Annulla"
     },
     "timeTracking": {
       "title": "Monitoraggio tempo",
@@ -1842,7 +1872,16 @@
       "selectProject": "Seleziona progetto",
       "hours": "ore",
       "minutes": "minuti",
-      "noEntries": "Nessuna voce questa settimana"
+      "noEntries": "Nessuna voce questa settimana",
+      "project": "Progetto",
+      "prevWeek": "Settimana precedente",
+      "nextWeek": "Settimana successiva",
+      "prevMonth": "Mese precedente",
+      "nextMonth": "Mese successivo",
+      "saved": "Registrazioni salvate",
+      "editEntry": "Modifica",
+      "deleteEntry": "Elimina",
+      "saveEntry": "Salva"
     },
     "reports": {
       "timeReport": "Report tempo",

@@ -1716,6 +1716,7 @@
       "dashboard": "Pano",
       "timeTracking": "Zaman takibi",
       "projects": "Projeler",
+      "allProjects": "Tum projeler",
       "clients": "Musteriler",
       "invoices": "Faturalar",
       "reports": "Raporlar",
@@ -1749,7 +1750,10 @@
       "totalBilled": "Toplam faturalanan",
       "tue": "Sal",
       "wed": "Çar",
-      "whatDidYouWorkOn": "Ne üzerinde çalıştınız?"
+      "whatDidYouWorkOn": "Ne üzerinde çalıştınız?",
+      "unbilledHours": "Faturalanmamis saatler",
+      "needsInvoicing": "Faturalanmasi gerekiyor",
+      "unbilled": "faturalanmamis"
     },
     "projects": {
       "name": "Ad",
@@ -1776,7 +1780,11 @@
       "clientName": "Musteri adi",
       "clientNamePlaceholder": "Acme Sirket",
       "addClient": "Musteri ekle",
-      "clientDetail": "Musteri detayi"
+      "clientDetail": "Musteri detayi",
+      "linkedProjects": "Projeler",
+      "linkedInvoices": "Faturalar",
+      "noProjects": "Proje yok",
+      "noInvoices": "Fatura yok"
     },
     "invoices": {
       "number": "Numara",
@@ -1810,7 +1818,9 @@
       "markPaid": "Odendi olarak isaretle",
       "waive": "Feragat et",
       "duplicate": "Kopyala",
-      "invoiceDetail": "Fatura detayi"
+      "invoiceDetail": "Fatura detayi",
+      "nextAction": "Sonraki adim",
+      "sendInvoice": "Faturayi gonder"
     },
     "timeTracking": {
       "selectProject": "Proje secin",
@@ -1823,7 +1833,11 @@
       "prevMonth": "Onceki ay",
       "nextMonth": "Sonraki ay",
       "copyLastWeek": "Gecen haftayi kopyala",
-      "addProject": "Proje ekle"
+      "addProject": "Proje ekle",
+      "saved": "Zaman kayitlari kaydedildi",
+      "editEntry": "Duzenle",
+      "deleteEntry": "Sil",
+      "saveEntry": "Kaydet"
     },
     "status": {
       "active": "Aktif",
