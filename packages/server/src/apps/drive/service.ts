@@ -1,6 +1,6 @@
 import { db } from '../../config/database';
 import { driveItems, driveItemVersions, driveShareLinks, driveItemShares, driveActivityLog, driveComments, users } from '../../db/schema';
-import { eq, and, asc, desc, sql, isNull, inArray } from 'drizzle-orm';
+import { eq, and, asc, desc, sql, isNull, inArray, or } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import { unlinkSync, existsSync, copyFileSync } from 'node:fs';
 import path from 'node:path';
@@ -25,7 +25,7 @@ function normalizeAll(items: any[]) {
 
 // ─── List items in a folder ──────────────────────────────────────────
 
-export async function listItems(userId: string, parentId: string | null, includeArchived = false, sortBy?: string, sortOrder?: string) {
+export async function listItems(userId: string, parentId: string | null, includeArchived = false, sortBy?: string, sortOrder?: string, tenantId?: string | null) {
   const foldersFirst = desc(sql`CASE WHEN ${driveItems.type} = 'folder' THEN 0 ELSE 1 END`);
   const dir = sortOrder === 'desc' ? desc : asc;
 
@@ -47,8 +47,11 @@ export async function listItems(userId: string, parentId: string | null, include
       sortClauses = [foldersFirst, asc(driveItems.sortOrder), asc(driveItems.name)];
   }
 
-  // Normal owner query
-  const conditions = [eq(driveItems.userId, userId)];
+  // Normal owner query — include team-visible items from same tenant
+  const ownerCondition = tenantId
+    ? or(eq(driveItems.userId, userId), and(eq(driveItems.visibility, 'team'), eq(driveItems.tenantId, tenantId)))
+    : eq(driveItems.userId, userId);
+  const conditions = [ownerCondition!];
   if (parentId) {
     conditions.push(eq(driveItems.parentId, parentId));
   } else {
@@ -96,11 +99,14 @@ export async function listItems(userId: string, parentId: string | null, include
 
 // ─── Get a single item ──────────────────────────────────────────────
 
-export async function getItem(userId: string, itemId: string) {
+export async function getItem(userId: string, itemId: string, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(driveItems.userId, userId), and(eq(driveItems.visibility, 'team'), eq(driveItems.tenantId, tenantId)))
+    : eq(driveItems.userId, userId);
   const [item] = await db
     .select()
     .from(driveItems)
-    .where(and(eq(driveItems.id, itemId), eq(driveItems.userId, userId)))
+    .where(and(eq(driveItems.id, itemId), ownerCondition!))
     .limit(1);
 
   if (item) return normalizeTags(item);
@@ -121,7 +127,7 @@ export async function getItem(userId: string, itemId: string) {
 
 // ─── Create a folder ─────────────────────────────────────────────────
 
-export async function createFolder(userId: string, accountId: string, input: { name: string; parentId?: string | null }) {
+export async function createFolder(userId: string, accountId: string, input: { name: string; parentId?: string | null }, tenantId?: string | null) {
   const now = new Date();
 
   const [maxSort] = await db
@@ -139,6 +145,7 @@ export async function createFolder(userId: string, accountId: string, input: { n
       name: input.name || 'Untitled folder',
       type: 'folder',
       parentId: input.parentId || null,
+      tenantId: tenantId ?? null,
       sortOrder,
       createdAt: now,
       updatedAt: now,
@@ -151,7 +158,7 @@ export async function createFolder(userId: string, accountId: string, input: { n
 
 // ─── Upload file (create record after multer has saved the file) ─────
 
-export async function uploadFile(userId: string, accountId: string, input: CreateDriveItemInput) {
+export async function uploadFile(userId: string, accountId: string, input: CreateDriveItemInput, tenantId?: string | null) {
   const now = new Date();
 
   const [maxSort] = await db
@@ -172,6 +179,7 @@ export async function uploadFile(userId: string, accountId: string, input: Creat
       size: input.size || null,
       parentId: input.parentId || null,
       storagePath: input.storagePath || null,
+      tenantId: tenantId ?? null,
       sortOrder,
       createdAt: now,
       updatedAt: now,
@@ -1102,4 +1110,12 @@ export async function deleteComment(userId: string, commentId: string) {
   await db.delete(driveComments)
     .where(and(eq(driveComments.id, commentId), eq(driveComments.userId, userId)));
   return comment;
+}
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export async function updateDriveItemVisibility(userId: string, itemId: string, visibility: 'private' | 'team', tenantId: string | null) {
+  if (visibility === 'team' && !tenantId) throw new Error('Tenant required for team visibility');
+  await db.update(driveItems).set({ visibility, tenantId: visibility === 'team' ? tenantId : null, updatedAt: new Date() })
+    .where(and(eq(driveItems.id, itemId), eq(driveItems.userId, userId)));
 }

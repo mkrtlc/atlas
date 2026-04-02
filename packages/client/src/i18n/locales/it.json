@@ -31,7 +31,14 @@
     "file_other": "{{count}} file",
     "previous": "Precedente",
     "next": "Successivo",
-    "retry": "Riprova"
+    "retry": "Riprova",
+    "visibility": "Visibilit\u00e0",
+    "private": "Privato",
+    "team": "Team",
+    "visibilityPrivate": "Solo tu puoi vedere questo",
+    "visibilityTeam": "Visibile a tutti i membri",
+    "madeTeamVisible": "Condiviso con il team",
+    "madePrivate": "Reso privato"
   },
   "auth": {
     "appName": "Atlas",

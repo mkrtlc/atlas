@@ -1,13 +1,16 @@
 import { db } from '../../config/database';
 import { drawings } from '../../db/schema';
-import { eq, and, asc, sql } from 'drizzle-orm';
+import { eq, and, asc, sql, or } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import type { CreateDrawingInput, UpdateDrawingInput } from '@atlasmail/shared';
 
 // ─── List all drawings (flat list) ───────────────────────────────────
 
-export async function listDrawings(userId: string, includeArchived = false) {
-  const conditions = [eq(drawings.userId, userId)];
+export async function listDrawings(userId: string, includeArchived = false, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(drawings.userId, userId), and(eq(drawings.visibility, 'team'), eq(drawings.tenantId, tenantId)))
+    : eq(drawings.userId, userId);
+  const conditions = [ownerCondition!];
 
   if (!includeArchived) {
     conditions.push(eq(drawings.isArchived, false));
@@ -22,6 +25,7 @@ export async function listDrawings(userId: string, includeArchived = false) {
       thumbnailUrl: drawings.thumbnailUrl,
       sortOrder: drawings.sortOrder,
       isArchived: drawings.isArchived,
+      visibility: drawings.visibility,
       createdAt: drawings.createdAt,
       updatedAt: drawings.updatedAt,
     })
@@ -32,11 +36,14 @@ export async function listDrawings(userId: string, includeArchived = false) {
 
 // ─── Get a single drawing with full content ──────────────────────────
 
-export async function getDrawing(userId: string, drawingId: string) {
+export async function getDrawing(userId: string, drawingId: string, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(drawings.userId, userId), and(eq(drawings.visibility, 'team'), eq(drawings.tenantId, tenantId)))
+    : eq(drawings.userId, userId);
   const [drawing] = await db
     .select()
     .from(drawings)
-    .where(and(eq(drawings.id, drawingId), eq(drawings.userId, userId)))
+    .where(and(eq(drawings.id, drawingId), ownerCondition!))
     .limit(1);
 
   return drawing || null;
@@ -158,7 +165,7 @@ export async function seedSampleDrawings(userId: string, accountId: string) {
 
 // ─── Create a new drawing ────────────────────────────────────────────
 
-export async function createDrawing(userId: string, accountId: string, input: CreateDrawingInput) {
+export async function createDrawing(userId: string, accountId: string, input: CreateDrawingInput, tenantId?: string | null) {
   const now = new Date();
 
   // Determine the next sort order
@@ -176,6 +183,7 @@ export async function createDrawing(userId: string, accountId: string, input: Cr
       userId,
       title: input.title || 'Untitled drawing',
       content: input.content ?? null,
+      tenantId: tenantId ?? null,
       sortOrder,
       createdAt: now,
       updatedAt: now,
@@ -291,4 +299,12 @@ export async function purgeOldArchivedDrawings() {
   }
 
   return deleted.length;
+}
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export async function updateDrawingVisibility(userId: string, drawingId: string, visibility: 'private' | 'team', tenantId: string | null) {
+  if (visibility === 'team' && !tenantId) throw new Error('Tenant required for team visibility');
+  await db.update(drawings).set({ visibility, tenantId: visibility === 'team' ? tenantId : null, updatedAt: new Date() })
+    .where(and(eq(drawings.id, drawingId), eq(drawings.userId, userId)));
 }

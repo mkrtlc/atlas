@@ -42,6 +42,7 @@ export async function listTasks(req: Request, res: Response) {
       projectId: projectId === 'null' ? null : (projectId as string | undefined),
       assigneeId: assigneeId as string | undefined,
       includeArchived: includeArchived === 'true',
+      tenantId: req.auth!.tenantId ?? null,
     });
 
     res.json({ success: true, data: { tasks } });
@@ -62,7 +63,7 @@ export async function getTask(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
 
-    const task = await taskService.getTask(userId, taskId);
+    const task = await taskService.getTask(userId, taskId, req.auth!.tenantId ?? null);
     if (!task) {
       res.status(404).json({ success: false, error: 'Task not found' });
       return;
@@ -89,7 +90,7 @@ export async function createTask(req: Request, res: Response) {
 
     const task = await taskService.createTask(userId, accountId, {
       title, notes, description, icon, type, headingId, projectId, when, priority, dueDate, tags, recurrenceRule, assigneeId,
-    });
+    }, req.auth!.tenantId ?? null);
 
     res.json({ success: true, data: task });
   } catch (error) {
@@ -259,7 +260,7 @@ export async function listProjects(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const includeArchived = req.query.includeArchived === 'true';
 
-    const projects = await taskService.listProjects(userId, includeArchived);
+    const projects = await taskService.listProjects(userId, includeArchived, req.auth!.tenantId ?? null);
     res.json({ success: true, data: { projects } });
   } catch (error) {
     logger.error({ error }, 'Failed to list projects');
@@ -279,7 +280,7 @@ export async function createProject(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
     const { title, color, description, icon } = req.body;
 
-    const project = await taskService.createProject(userId, accountId, { title, color, description, icon });
+    const project = await taskService.createProject(userId, accountId, { title, color, description, icon }, req.auth!.tenantId ?? null);
     res.json({ success: true, data: project });
   } catch (error) {
     logger.error({ error }, 'Failed to create project');
@@ -657,10 +658,58 @@ export async function createTaskFromEmail(req: Request, res: Response) {
       title: subject || snippet || 'Task from email',
       sourceEmailId: emailId,
       sourceEmailSubject: subject || null,
-    } as any);
+    } as any, req.auth!.tenantId ?? null);
     res.json({ success: true, data: task });
   } catch (error) {
     logger.error({ error }, 'Failed to create task from email');
     res.status(500).json({ success: false, error: 'Failed to create task from email' });
+  }
+}
+
+// ─── Visibility ─────────────────────────────────────────────────────
+
+export async function updateTaskVisibility(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const taskId = req.params.id as string;
+    const { visibility } = req.body;
+
+    if (visibility !== 'private' && visibility !== 'team') {
+      res.status(400).json({ success: false, error: 'Visibility must be "private" or "team"' });
+      return;
+    }
+
+    await taskService.updateTaskVisibility(userId, taskId, visibility, req.auth!.tenantId ?? null);
+    res.json({ success: true, data: null });
+  } catch (error: any) {
+    if (error.message === 'Tenant required for team visibility') {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    logger.error({ error }, 'Failed to update task visibility');
+    res.status(500).json({ success: false, error: 'Failed to update task visibility' });
+  }
+}
+
+export async function updateProjectVisibility(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const projectId = req.params.id as string;
+    const { visibility } = req.body;
+
+    if (visibility !== 'private' && visibility !== 'team') {
+      res.status(400).json({ success: false, error: 'Visibility must be "private" or "team"' });
+      return;
+    }
+
+    await taskService.updateProjectVisibility(userId, projectId, visibility, req.auth!.tenantId ?? null);
+    res.json({ success: true, data: null });
+  } catch (error: any) {
+    if (error.message === 'Tenant required for team visibility') {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    logger.error({ error }, 'Failed to update project visibility');
+    res.status(500).json({ success: false, error: 'Failed to update project visibility' });
   }
 }

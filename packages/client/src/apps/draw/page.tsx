@@ -35,12 +35,15 @@ import {
   useRestoreDrawing,
   useDuplicateDrawing,
   useAutoSaveDrawing,
+  useUpdateDrawingVisibility,
 } from './hooks';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useDrawSettingsStore, useDrawSettingsSync, type DrawSortOrder } from './settings-store';
 import { DrawSettingsModal } from './components/draw-settings-modal';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { PresenceAvatars } from '../../components/shared/presence-avatars';
+import { VisibilityToggle } from '../../components/shared/visibility-toggle';
+import { useAuthStore } from '../../stores/auth-store';
 import { useUIStore } from '../../stores/ui-store';
 import { DRAWING_TEMPLATES } from '../../config/drawing-templates';
 import { DEFAULT_LIBRARY_ITEMS } from '../../config/drawing-libraries';
@@ -977,12 +980,14 @@ function EditableTitle({
   isSaving,
   excalidrawApi,
   presenceSlot,
+  visibilitySlot,
 }: {
   title: string;
   onChange: (title: string) => void;
   isSaving: boolean;
   excalidrawApi: ExcalidrawImperativeAPI | null;
   presenceSlot?: React.ReactNode;
+  visibilitySlot?: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
@@ -1073,6 +1078,7 @@ function EditableTitle({
           {`${t('common.save')}...`}
         </span>
       )}
+      {visibilitySlot}
       {presenceSlot}
       <ExportMenu excalidrawApi={excalidrawApi} />
     </div>
@@ -1179,12 +1185,14 @@ function ExcalidrawCanvas({
   onThumbnailGenerated,
   isSaving,
   onTitleChange,
+  visibilitySlot,
 }: {
   drawing: Drawing;
   onAutoSave: (content: Record<string, unknown>) => void;
   onThumbnailGenerated: (thumbnailUrl: string) => void;
   isSaving: boolean;
   onTitleChange: (title: string) => void;
+  visibilitySlot?: React.ReactNode;
 }) {
   const [excalidrawApi, setExcalidrawApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const theme = useSettingsStore((s) => s.theme);
@@ -1276,6 +1284,7 @@ function ExcalidrawCanvas({
         isSaving={isSaving}
         excalidrawApi={excalidrawApi}
         presenceSlot={<PresenceAvatars appId="draw" recordId={drawing.id} />}
+        visibilitySlot={visibilitySlot}
       />
       <SmartButtonBar appId="draw" recordId={drawing.id} />
       <div style={{ flex: 1, position: 'relative' }}>
@@ -1311,6 +1320,8 @@ export function DrawPage() {
   const { save, isSaving } = useAutoSaveDrawing(autoSaveInterval);
   const createDrawing = useCreateDrawing();
   const updateDrawing = useUpdateDrawing();
+  const updateVisibility = useUpdateDrawingVisibility();
+  const { account } = useAuthStore();
   const [showTemplates, setShowTemplates] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { openSettings } = useUIStore();
@@ -1443,6 +1454,13 @@ export function DrawPage() {
             onThumbnailGenerated={handleThumbnailGenerated}
             isSaving={isSaving}
             onTitleChange={handleTitleChange}
+            visibilitySlot={
+              <VisibilityToggle
+                visibility={(drawing.visibility as 'private' | 'team') || 'private'}
+                onToggle={(v) => updateVisibility.mutate({ id: drawing.id, visibility: v })}
+                disabled={drawing.userId !== account?.userId}
+              />
+            }
           />
         ) : (
           <div

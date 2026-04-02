@@ -30,6 +30,7 @@ import {
   useCreateLinkedDocument, useCreateLinkedDrawing, useCreateLinkedSpreadsheet,
   useSharedWithMe, useItemShares, useShareItem, useRevokeShare,
   useFileActivity, useFileComments, useCreateFileComment, useDeleteFileComment,
+  useUpdateDriveItemVisibility,
 } from './hooks';
 import { api } from '../../lib/api-client';
 import { useToastStore } from '../../stores/toast-store';
@@ -40,6 +41,7 @@ import { Select } from '../../components/ui/select';
 import { Chip } from '../../components/ui/chip';
 import { EmojiPicker } from '../../components/shared/emoji-picker';
 import { PresenceAvatars } from '../../components/shared/presence-avatars';
+import { VisibilityToggle } from '../../components/shared/visibility-toggle';
 import { getFileTypeIcon, formatBytes, formatRelativeDate, isImageFile } from '../../lib/drive-utils';
 import { ROUTES } from '../../config/routes';
 import { useDriveSettingsStore, useDriveSettingsSync } from './settings-store';
@@ -628,6 +630,8 @@ export function DrivePage() {
   const revokeShare = useRevokeShare();
   const createFileComment = useCreateFileComment();
   const deleteFileComment = useDeleteFileComment();
+  const updateDriveVisibility = useUpdateDriveItemVisibility();
+  const { account } = useAuthStore();
 
   // Activity & comments queries
   const activityItemId = activityOpen && previewItem ? previewItem.id : undefined;
@@ -2436,6 +2440,14 @@ export function DrivePage() {
                 </div>
               </div>
             )}
+            <div className="drive-preview-meta-row">
+              <span className="drive-preview-meta-label">{t('common.visibility')}</span>
+              <VisibilityToggle
+                visibility={((previewItem as any).visibility as 'private' | 'team') || 'private'}
+                onToggle={(v) => updateDriveVisibility.mutate({ id: previewItem.id, visibility: v })}
+                disabled={previewItem.userId !== account?.userId}
+              />
+            </div>
             {previewItem.type === 'file' && (
               <div style={{ borderTop: '1px solid var(--color-border-secondary)', paddingTop: 8 }}>
                 <Button

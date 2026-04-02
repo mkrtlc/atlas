@@ -1,6 +1,6 @@
 import { db } from '../../config/database';
 import { tasks, taskProjects, subtasks, taskActivities, taskTemplates, taskComments, users } from '../../db/schema';
-import { eq, and, asc, desc, sql, isNull, gte, lte } from 'drizzle-orm';
+import { eq, and, asc, desc, sql, isNull, gte, lte, or } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import type {
   CreateTaskInput, UpdateTaskInput,
@@ -62,8 +62,12 @@ export async function listTasks(userId: string, filters?: {
   projectId?: string | null;
   assigneeId?: string;
   includeArchived?: boolean;
+  tenantId?: string | null;
 }) {
-  const conditions = [eq(tasks.userId, userId)];
+  const ownerCondition = filters?.tenantId
+    ? or(eq(tasks.userId, userId), and(eq(tasks.visibility, 'team'), eq(tasks.tenantId, filters.tenantId)))
+    : eq(tasks.userId, userId);
+  const conditions = [ownerCondition!];
 
   if (!filters?.includeArchived) {
     conditions.push(eq(tasks.isArchived, false));
@@ -97,17 +101,20 @@ export async function listTasks(userId: string, filters?: {
     .orderBy(asc(tasks.sortOrder), asc(tasks.createdAt));
 }
 
-export async function getTask(userId: string, taskId: string) {
+export async function getTask(userId: string, taskId: string, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(tasks.userId, userId), and(eq(tasks.visibility, 'team'), eq(tasks.tenantId, tenantId)))
+    : eq(tasks.userId, userId);
   const [task] = await db
     .select()
     .from(tasks)
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+    .where(and(eq(tasks.id, taskId), ownerCondition!))
     .limit(1);
 
   return task || null;
 }
 
-export async function createTask(userId: string, accountId: string, input: CreateTaskInput) {
+export async function createTask(userId: string, accountId: string, input: CreateTaskInput, tenantId?: string | null) {
   const now = new Date();
 
   const [maxSort] = await db
@@ -137,6 +144,7 @@ export async function createTask(userId: string, accountId: string, input: Creat
       assigneeId: input.assigneeId || null,
       sourceEmailId: (input as any).sourceEmailId ?? null,
       sourceEmailSubject: (input as any).sourceEmailSubject ?? null,
+      tenantId: tenantId ?? null,
       sortOrder,
       createdAt: now,
       updatedAt: now,
@@ -292,8 +300,11 @@ export async function reorderTasks(userId: string, taskIds: string[]) {
 
 // ─── Projects ───────────────────────────────────────────────────────
 
-export async function listProjects(userId: string, includeArchived = false) {
-  const conditions = [eq(taskProjects.userId, userId)];
+export async function listProjects(userId: string, includeArchived = false, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(taskProjects.userId, userId), and(eq(taskProjects.visibility, 'team'), eq(taskProjects.tenantId, tenantId)))
+    : eq(taskProjects.userId, userId);
+  const conditions = [ownerCondition!];
   if (!includeArchived) {
     conditions.push(eq(taskProjects.isArchived, false));
   }
@@ -305,17 +316,20 @@ export async function listProjects(userId: string, includeArchived = false) {
     .orderBy(asc(taskProjects.sortOrder), asc(taskProjects.createdAt));
 }
 
-export async function getProject(userId: string, projectId: string) {
+export async function getProject(userId: string, projectId: string, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(taskProjects.userId, userId), and(eq(taskProjects.visibility, 'team'), eq(taskProjects.tenantId, tenantId)))
+    : eq(taskProjects.userId, userId);
   const [project] = await db
     .select()
     .from(taskProjects)
-    .where(and(eq(taskProjects.id, projectId), eq(taskProjects.userId, userId)))
+    .where(and(eq(taskProjects.id, projectId), ownerCondition!))
     .limit(1);
 
   return project || null;
 }
 
-export async function createProject(userId: string, accountId: string, input: CreateProjectInput) {
+export async function createProject(userId: string, accountId: string, input: CreateProjectInput, tenantId?: string | null) {
   const now = new Date();
 
   const [maxSort] = await db
@@ -334,6 +348,7 @@ export async function createProject(userId: string, accountId: string, input: Cr
       description: input.description ?? null,
       icon: input.icon ?? null,
       color: input.color ?? '#5a7fa0',
+      tenantId: tenantId ?? null,
       sortOrder,
       createdAt: now,
       updatedAt: now,
@@ -686,4 +701,18 @@ export async function deleteComment(userId: string, commentId: string) {
 
   await db.delete(taskComments).where(eq(taskComments.id, commentId));
   return true;
+}
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export async function updateTaskVisibility(userId: string, taskId: string, visibility: 'private' | 'team', tenantId: string | null) {
+  if (visibility === 'team' && !tenantId) throw new Error('Tenant required for team visibility');
+  await db.update(tasks).set({ visibility, tenantId: visibility === 'team' ? tenantId : null, updatedAt: new Date() })
+    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
+}
+
+export async function updateProjectVisibility(userId: string, projectId: string, visibility: 'private' | 'team', tenantId: string | null) {
+  if (visibility === 'team' && !tenantId) throw new Error('Tenant required for team visibility');
+  await db.update(taskProjects).set({ visibility, tenantId: visibility === 'team' ? tenantId : null, updatedAt: new Date() })
+    .where(and(eq(taskProjects.id, projectId), eq(taskProjects.userId, userId)));
 }

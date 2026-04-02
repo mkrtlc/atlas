@@ -260,3 +260,17 @@ export function useAutoSaveDocument(delay = 1000) {
 
   return { save, flush, isSaving: updateMutation.isPending };
 }
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export function useUpdateDocumentVisibility() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, visibility }: { id: string; visibility: 'private' | 'team' }) => {
+      await api.patch(`/docs/${id}/visibility`, { visibility });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.docs.all });
+    },
+  });
+}

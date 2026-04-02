@@ -384,6 +384,8 @@ export const documents = pgTable('documents', {
   coverImage: text('cover_image'),
   sortOrder: integer('sort_order').notNull().default(0),
   isArchived: boolean('is_archived').notNull().default(false),
+  tenantId: uuid('tenant_id'),
+  visibility: varchar('visibility', { length: 10 }).notNull().default('private'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
@@ -418,6 +420,8 @@ export const taskProjects = pgTable('task_projects', {
   color: text('color').notNull().default('#5a7fa0'),
   sortOrder: integer('sort_order').notNull().default(0),
   isArchived: boolean('is_archived').notNull().default(false),
+  tenantId: uuid('tenant_id'),
+  visibility: varchar('visibility', { length: 10 }).notNull().default('private'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
@@ -451,6 +455,8 @@ export const tasks = pgTable('tasks', {
   lastReminderAt: timestamp('last_reminder_at', { withTimezone: true }),
   sortOrder: integer('sort_order').notNull().default(0),
   isArchived: boolean('is_archived').notNull().default(false),
+  tenantId: uuid('tenant_id'),
+  visibility: varchar('visibility', { length: 10 }).notNull().default('private'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
@@ -501,6 +507,8 @@ export const driveItems = pgTable('drive_items', {
   isArchived: boolean('is_archived').notNull().default(false),
   tags: jsonb('tags').$type<string[]>().notNull().default([]),
   sortOrder: integer('sort_order').notNull().default(0),
+  tenantId: uuid('tenant_id'),
+  visibility: varchar('visibility', { length: 10 }).notNull().default('private'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
@@ -591,6 +599,8 @@ export const drawings = pgTable('drawings', {
   thumbnailUrl: text('thumbnail_url'),
   sortOrder: integer('sort_order').notNull().default(0),
   isArchived: boolean('is_archived').notNull().default(false),
+  tenantId: uuid('tenant_id'),
+  visibility: varchar('visibility', { length: 10 }).notNull().default('private'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({

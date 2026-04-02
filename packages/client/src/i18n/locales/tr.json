@@ -31,7 +31,14 @@
     "file_other": "{{count}} dosya",
     "previous": "Önceki",
     "next": "Sonraki",
-    "retry": "Tekrar dene"
+    "retry": "Tekrar dene",
+    "visibility": "G\u00f6r\u00fcn\u00fcrl\u00fck",
+    "private": "\u00d6zel",
+    "team": "Tak\u0131m",
+    "visibilityPrivate": "Bunu yaln\u0131z siz g\u00f6rebilirsiniz",
+    "visibilityTeam": "T\u00fcm tak\u0131m \u00fcyeleri g\u00f6rebilir",
+    "madeTeamVisible": "Tak\u0131mla payla\u015f\u0131ld\u0131",
+    "madePrivate": "\u00d6zel yap\u0131ld\u0131"
   },
   "auth": {
     "appName": "Atlas",

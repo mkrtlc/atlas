@@ -22,6 +22,7 @@ router.patch('/comments/:commentId/resolve', documentController.resolveComment);
 
 router.get('/:id', documentController.getDocument);
 router.patch('/:id', documentController.updateDocument);
+router.patch('/:id/visibility', documentController.updateDocumentVisibility);
 router.delete('/:id', documentController.deleteDocument);
 router.patch('/:id/move', documentController.moveDocument);
 router.patch('/:id/restore', documentController.restoreDocument);

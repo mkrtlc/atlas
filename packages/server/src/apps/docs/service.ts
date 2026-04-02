@@ -1,6 +1,6 @@
 import { db } from '../../config/database';
 import { documents, documentVersions, documentComments, documentLinks } from '../../db/schema';
-import { eq, and, isNull, asc, desc, sql } from 'drizzle-orm';
+import { eq, and, isNull, asc, desc, sql, or } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import type {
   CreateDocumentInput,
@@ -11,8 +11,11 @@ import type {
 
 // ─── List all documents (flat) for building the tree ─────────────────
 
-export async function listDocuments(userId: string, includeArchived = false) {
-  const conditions = [eq(documents.userId, userId)];
+export async function listDocuments(userId: string, includeArchived = false, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(documents.userId, userId), and(eq(documents.visibility, 'team'), eq(documents.tenantId, tenantId)))
+    : eq(documents.userId, userId);
+  const conditions = [ownerCondition!];
 
   if (!includeArchived) {
     conditions.push(eq(documents.isArchived, false));
@@ -26,6 +29,8 @@ export async function listDocuments(userId: string, includeArchived = false) {
       icon: documents.icon,
       sortOrder: documents.sortOrder,
       isArchived: documents.isArchived,
+      visibility: documents.visibility,
+      userId: documents.userId,
       createdAt: documents.createdAt,
       updatedAt: documents.updatedAt,
     })
@@ -116,11 +121,14 @@ export async function seedSampleDocuments(userId: string, accountId: string) {
 
 // ─── Get a single document with full content ─────────────────────────
 
-export async function getDocument(userId: string, documentId: string) {
+export async function getDocument(userId: string, documentId: string, tenantId?: string | null) {
+  const ownerCondition = tenantId
+    ? or(eq(documents.userId, userId), and(eq(documents.visibility, 'team'), eq(documents.tenantId, tenantId)))
+    : eq(documents.userId, userId);
   const [doc] = await db
     .select()
     .from(documents)
-    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
+    .where(and(eq(documents.id, documentId), ownerCondition!))
     .limit(1);
 
   return doc || null;
@@ -128,7 +136,7 @@ export async function getDocument(userId: string, documentId: string) {
 
 // ─── Create a new document ───────────────────────────────────────────
 
-export async function createDocument(userId: string, accountId: string, input: CreateDocumentInput) {
+export async function createDocument(userId: string, accountId: string, input: CreateDocumentInput, tenantId?: string | null) {
   const now = new Date();
 
   // Determine the next sort order within the target parent
@@ -155,6 +163,7 @@ export async function createDocument(userId: string, accountId: string, input: C
       title: input.title || 'Untitled',
       content: input.content ?? null,
       icon: input.icon ?? null,
+      tenantId: tenantId ?? null,
       sortOrder,
       createdAt: now,
       updatedAt: now,
@@ -509,4 +518,12 @@ export async function getBacklinks(userId: string, docId: string) {
       eq(documents.isArchived, false),
     ));
   return links;
+}
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export async function updateDocumentVisibility(userId: string, documentId: string, visibility: 'private' | 'team', tenantId: string | null) {
+  if (visibility === 'team' && !tenantId) throw new Error('Tenant required for team visibility');
+  await db.update(documents).set({ visibility, tenantId: visibility === 'team' ? tenantId : null, updatedAt: new Date() })
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
 }

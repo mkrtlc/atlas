@@ -31,7 +31,14 @@
     "file_other": "{{count}} Dateien",
     "previous": "Zurück",
     "next": "Weiter",
-    "retry": "Wiederholen"
+    "retry": "Wiederholen",
+    "visibility": "Sichtbarkeit",
+    "private": "Privat",
+    "team": "Team",
+    "visibilityPrivate": "Nur Sie k\u00f6nnen dies sehen",
+    "visibilityTeam": "F\u00fcr alle Teammitglieder sichtbar",
+    "madeTeamVisible": "Mit Team geteilt",
+    "madePrivate": "Privat gemacht"
   },
   "auth": {
     "appName": "Atlas",

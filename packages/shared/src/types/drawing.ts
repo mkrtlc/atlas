@@ -7,6 +7,7 @@ export interface Drawing {
   thumbnailUrl: string | null;
   sortOrder: number;
   isArchived: boolean;
+  visibility?: 'private' | 'team';
   createdAt: string;
   updatedAt: string;
 }

@@ -1874,6 +1874,24 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_presence_lookup ON presence_heartbeats(tenant_id, app_id, record_id);
     `);
 
+    // ─── Shared Workspaces: visibility + tenantId columns ──────────────
+    await client.query(`
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tenant_id UUID;
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
+
+      ALTER TABLE documents ADD COLUMN IF NOT EXISTS tenant_id UUID;
+      ALTER TABLE documents ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
+
+      ALTER TABLE drawings ADD COLUMN IF NOT EXISTS tenant_id UUID;
+      ALTER TABLE drawings ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
+
+      ALTER TABLE task_projects ADD COLUMN IF NOT EXISTS tenant_id UUID;
+      ALTER TABLE task_projects ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
+
+      ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS tenant_id UUID;
+      ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
+    `);
+
     logger.info('Database migrations completed');
   } finally {
     await client.end();

@@ -568,3 +568,17 @@ export function useDeleteFileComment() {
     },
   });
 }
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export function useUpdateDriveItemVisibility() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, visibility }: { id: string; visibility: 'private' | 'team' }) => {
+      await api.patch(`/drive/${id}/visibility`, { visibility });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}

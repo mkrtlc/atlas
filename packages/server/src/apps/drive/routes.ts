@@ -85,6 +85,7 @@ router.delete('/:id/shares/:userId', driveController.revokeShare);
 router.post('/:id/copy', driveController.copyItem);
 router.post('/:id/duplicate', driveController.duplicateItem);
 router.patch('/:id', driveController.updateItem);
+router.patch('/:id/visibility', driveController.updateDriveItemVisibility);
 router.delete('/:id', driveController.deleteItem);
 router.patch('/:id/restore', driveController.restoreItem);
 router.delete('/:id/permanent', driveController.permanentDelete);

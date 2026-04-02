@@ -364,3 +364,29 @@ export function useCreateTaskFromEmail() {
     },
   });
 }
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export function useUpdateTaskVisibility() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, visibility }: { id: string; visibility: 'private' | 'team' }) => {
+      await api.patch(`/tasks/${id}/visibility`, { visibility });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+    },
+  });
+}
+
+export function useUpdateProjectVisibility() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, visibility }: { id: string; visibility: 'private' | 'team' }) => {
+      await api.patch(`/tasks/projects/${id}/visibility`, { visibility });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+    },
+  });
+}

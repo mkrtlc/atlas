@@ -19,7 +19,7 @@ export async function listDocuments(req: Request, res: Response) {
     // Auto-seed sample documents on first visit
     await documentService.seedSampleDocuments(userId, accountId);
 
-    const docs = await documentService.listDocuments(userId, includeArchived);
+    const docs = await documentService.listDocuments(userId, includeArchived, req.auth!.tenantId ?? null);
     const tree = documentService.buildDocumentTree(docs);
 
     res.json({ success: true, data: { documents: docs, tree } });
@@ -47,7 +47,7 @@ export async function createDocument(req: Request, res: Response) {
       title,
       icon,
       content,
-    });
+    }, req.auth!.tenantId ?? null);
 
     res.json({ success: true, data: doc });
   } catch (error) {
@@ -68,7 +68,7 @@ export async function getDocument(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const documentId = req.params.id as string;
 
-    const doc = await documentService.getDocument(userId, documentId);
+    const doc = await documentService.getDocument(userId, documentId, req.auth!.tenantId ?? null);
 
     if (!doc) {
       res.status(404).json({ success: false, error: 'Document not found' });
@@ -431,10 +431,35 @@ export async function importDocument(req: Request, res: Response) {
     const doc = await documentService.createDocument(req.auth!.userId, req.auth!.accountId, {
       title: title || 'Imported document',
       content: html ? { _html: html } : null,
-    });
+    }, req.auth!.tenantId ?? null);
     res.json({ success: true, data: doc });
   } catch (error) {
     logger.error({ error }, 'Failed to import document');
     res.status(500).json({ success: false, error: 'Failed to import document' });
+  }
+}
+
+// ─── Visibility ─────────────────────────────────────────────────────
+
+export async function updateDocumentVisibility(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const documentId = req.params.id as string;
+    const { visibility } = req.body;
+
+    if (visibility !== 'private' && visibility !== 'team') {
+      res.status(400).json({ success: false, error: 'Visibility must be "private" or "team"' });
+      return;
+    }
+
+    await documentService.updateDocumentVisibility(userId, documentId, visibility, req.auth!.tenantId ?? null);
+    res.json({ success: true, data: null });
+  } catch (error: any) {
+    if (error.message === 'Tenant required for team visibility') {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    logger.error({ error }, 'Failed to update document visibility');
+    res.status(500).json({ success: false, error: 'Failed to update document visibility' });
   }
 }

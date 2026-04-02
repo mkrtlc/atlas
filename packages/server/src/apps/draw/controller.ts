@@ -33,7 +33,7 @@ export async function listDrawings(req: Request, res: Response) {
     // Auto-seed sample drawing on first visit
     await drawingService.seedSampleDrawings(userId, accountId);
 
-    const drawings = await drawingService.listDrawings(userId, includeArchived);
+    const drawings = await drawingService.listDrawings(userId, includeArchived, req.auth!.tenantId ?? null);
 
     res.json({ success: true, data: { drawings } });
   } catch (error) {
@@ -58,7 +58,7 @@ export async function createDrawing(req: Request, res: Response) {
     const drawing = await drawingService.createDrawing(userId, accountId, {
       title,
       content,
-    });
+    }, req.auth!.tenantId ?? null);
 
     res.json({ success: true, data: drawing });
   } catch (error) {
@@ -79,7 +79,7 @@ export async function getDrawing(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const drawingId = req.params.id as string;
 
-    const drawing = await drawingService.getDrawing(userId, drawingId);
+    const drawing = await drawingService.getDrawing(userId, drawingId, req.auth!.tenantId ?? null);
 
     if (!drawing) {
       res.status(404).json({ success: false, error: 'Drawing not found' });
@@ -193,5 +193,29 @@ export async function searchDrawings(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to search drawings');
     res.status(500).json({ success: false, error: 'Failed to search drawings' });
+  }
+}
+
+// PATCH /api/drawings/:id/visibility
+export async function updateDrawingVisibility(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const drawingId = req.params.id as string;
+    const { visibility } = req.body;
+
+    if (visibility !== 'private' && visibility !== 'team') {
+      res.status(400).json({ success: false, error: 'Visibility must be "private" or "team"' });
+      return;
+    }
+
+    await drawingService.updateDrawingVisibility(userId, drawingId, visibility, req.auth!.tenantId ?? null);
+    res.json({ success: true, data: null });
+  } catch (error: any) {
+    if (error.message === 'Tenant required for team visibility') {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    logger.error({ error }, 'Failed to update drawing visibility');
+    res.status(500).json({ success: false, error: 'Failed to update drawing visibility' });
   }
 }

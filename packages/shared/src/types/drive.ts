@@ -15,6 +15,7 @@ export interface DriveItem {
   isArchived: boolean;
   tags: string[];
   sortOrder: number;
+  visibility?: 'private' | 'team';
   createdAt: string;
   updatedAt: string;
 }

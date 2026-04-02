@@ -16,6 +16,7 @@ import {
   useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask,
   useTaskActivities,
   useTaskComments, useCreateComment, useDeleteComment,
+  useUpdateTaskVisibility, useUpdateProjectVisibility,
 } from './hooks';
 import { TaskNotesEditor } from './components/task-notes-editor';
 import { queryKeys } from '../../config/query-keys';
@@ -34,6 +35,7 @@ import { useMyAppPermission } from '../../hooks/use-app-permissions';
 import { useTenantUsers } from '../../hooks/use-platform';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { PresenceAvatars } from '../../components/shared/presence-avatars';
+import { VisibilityToggle } from '../../components/shared/visibility-toggle';
 import { Avatar } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
@@ -953,6 +955,9 @@ function TaskDetailPanel({
   const [showTaskEmoji, setShowTaskEmoji] = useState(false);
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const updateVisibility = useUpdateTaskVisibility();
+  const { account } = useAuthStore();
+  const isOwner = task.userId === account?.userId;
   const titleRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -1172,6 +1177,16 @@ function TaskDetailPanel({
               </div>
             </div>
           )}
+
+          {/* Visibility */}
+          <div className="task-detail-field">
+            <span className="task-detail-label">{t('common.visibility')}</span>
+            <VisibilityToggle
+              visibility={(task.visibility as 'private' | 'team') || 'private'}
+              onToggle={(v) => updateVisibility.mutate({ id: task.id, visibility: v })}
+              disabled={!isOwner}
+            />
+          </div>
         </div>
 
         {/* Subtasks */}

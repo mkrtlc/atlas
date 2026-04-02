@@ -45,7 +45,7 @@ export async function listItems(req: Request, res: Response) {
     // Auto-seed on first visit
     await driveService.seedSampleFolder(userId, accountId);
 
-    const items = await driveService.listItems(userId, parentId, false, sortBy, sortOrder);
+    const items = await driveService.listItems(userId, parentId, false, sortBy, sortOrder, req.auth!.tenantId ?? null);
     res.json({ success: true, data: { items } });
   } catch (error) {
     logger.error({ error }, 'Failed to list drive items');
@@ -66,7 +66,7 @@ export async function createFolder(req: Request, res: Response) {
     const accountId = req.auth!.accountId;
     const { name, parentId } = req.body;
 
-    const folder = await driveService.createFolder(userId, accountId, { name, parentId });
+    const folder = await driveService.createFolder(userId, accountId, { name, parentId }, req.auth!.tenantId ?? null);
     driveService.logDriveActivity({ driveItemId: folder.id, accountId, userId, action: 'folder.created', metadata: { name: folder.name } }).catch((err) => logger.warn({ err }, 'Drive activity log failed'));
     res.json({ success: true, data: folder });
   } catch (error) {
@@ -105,7 +105,7 @@ export async function uploadFiles(req: Request, res: Response) {
         size: file.size,
         parentId,
         storagePath: file.filename,
-      });
+      }, req.auth!.tenantId ?? null);
       created.push(item);
     }
 
@@ -261,7 +261,7 @@ export async function getItem(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const itemId = req.params.id as string;
 
-    const item = await driveService.getItem(userId, itemId);
+    const item = await driveService.getItem(userId, itemId, req.auth!.tenantId ?? null);
     if (!item) {
       res.status(404).json({ success: false, error: 'Item not found' });
       return;
@@ -1206,5 +1206,29 @@ export async function previewFile(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to preview file');
     res.status(500).json({ success: false, error: 'Failed to preview file' });
+  }
+}
+
+// PATCH /api/drive/:id/visibility
+export async function updateDriveItemVisibility(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const itemId = req.params.id as string;
+    const { visibility } = req.body;
+
+    if (visibility !== 'private' && visibility !== 'team') {
+      res.status(400).json({ success: false, error: 'Visibility must be "private" or "team"' });
+      return;
+    }
+
+    await driveService.updateDriveItemVisibility(userId, itemId, visibility, req.auth!.tenantId ?? null);
+    res.json({ success: true, data: null });
+  } catch (error: any) {
+    if (error.message === 'Tenant required for team visibility') {
+      res.status(400).json({ success: false, error: error.message });
+      return;
+    }
+    logger.error({ error }, 'Failed to update drive item visibility');
+    res.status(500).json({ success: false, error: 'Failed to update drive item visibility' });
   }
 }

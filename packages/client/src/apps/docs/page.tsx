@@ -32,6 +32,7 @@ import {
   useDocumentVersions,
   useCreateVersion,
   useRestoreVersion,
+  useUpdateDocumentVisibility,
 } from './hooks';
 import { DocSettingsModal } from './components/doc-settings-modal';
 import { CommentSidebar } from './components/comment-sidebar';
@@ -47,6 +48,8 @@ import { EmojiPicker } from '../../components/shared/emoji-picker';
 import { CoverPicker, isCoverGradient } from '../../components/shared/cover-picker';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { PresenceAvatars } from '../../components/shared/presence-avatars';
+import { VisibilityToggle } from '../../components/shared/visibility-toggle';
+import { useAuthStore } from '../../stores/auth-store';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
 import '../../styles/docs.css';
 
@@ -942,6 +945,8 @@ export function DocsPage() {
   const { save, isSaving } = useAutoSaveDocument();
   const updateDoc = useUpdateDocument();
   const createDoc = useCreateDocument();
+  const updateVisibility = useUpdateDocumentVisibility();
+  const { account } = useAuthStore();
   const { data: drawingListData } = useDrawingList();
   const { data: tableListData } = useTableList();
   const [showVersionHistory, setShowVersionHistory] = useState(false);
@@ -1150,6 +1155,9 @@ export function DocsPage() {
             onOpenSettings={() => openSettings('documents')}
             showComments={showComments}
             onToggleComments={() => setShowComments(!showComments)}
+            visibility={(doc.visibility as 'private' | 'team') || 'private'}
+            onVisibilityToggle={(v) => updateVisibility.mutate({ id: doc.id, visibility: v })}
+            isOwner={doc.userId === account?.userId}
           />
         )}
 
@@ -1225,6 +1233,9 @@ function TopBar({
   onOpenSettings,
   showComments,
   onToggleComments,
+  visibility,
+  onVisibilityToggle,
+  isOwner,
 }: {
   doc: { id: string; title: string; icon: string | null; content: Record<string, unknown> | null };
   breadcrumbs: { id: string; title: string; icon: string | null }[];
@@ -1234,6 +1245,9 @@ function TopBar({
   onOpenSettings: () => void;
   showComments: boolean;
   onToggleComments: () => void;
+  visibility: 'private' | 'team';
+  onVisibilityToggle: (v: 'private' | 'team') => void;
+  isOwner: boolean;
 }) {
   const [showExport, setShowExport] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -1411,6 +1425,12 @@ function TopBar({
       )}
 
       <PresenceAvatars appId="docs" recordId={doc.id} />
+
+      <VisibilityToggle
+        visibility={visibility}
+        onToggle={onVisibilityToggle}
+        disabled={!isOwner}
+      />
 
       {/* Comments toggle button */}
       <IconButton

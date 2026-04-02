@@ -148,3 +148,17 @@ export function useAutoSaveDrawing(delay = 2000) {
 
   return { save, flush, isSaving: updateMutation.isPending };
 }
+
+// ─── Visibility ────────────────────────────────────────────────────
+
+export function useUpdateDrawingVisibility() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, visibility }: { id: string; visibility: 'private' | 'team' }) => {
+      await api.patch(`/drawings/${id}/visibility`, { visibility });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drawings.all });
+    },
+  });
+}

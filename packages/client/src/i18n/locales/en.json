@@ -31,7 +31,14 @@
     "attachment_other": "{{count}} attachments",
     "file_one": "{{count}} file",
     "file_other": "{{count}} files",
-    "retry": "Retry"
+    "retry": "Retry",
+    "visibility": "Visibility",
+    "private": "Private",
+    "team": "Team",
+    "visibilityPrivate": "Only you can see this",
+    "visibilityTeam": "Visible to all team members",
+    "madeTeamVisible": "Shared with team",
+    "madePrivate": "Made private"
   },
   "auth": {
     "appName": "Atlas",

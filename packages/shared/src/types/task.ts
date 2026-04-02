@@ -30,6 +30,7 @@ export interface Task {
   assigneeId: string | null;
   sourceEmailId: string | null;
   sourceEmailSubject: string | null;
+  visibility?: 'private' | 'team';
   subtasks?: Subtask[];
   createdAt: string;
   updatedAt: string;
@@ -102,6 +103,7 @@ export interface TaskProject {
   color: string;
   sortOrder: number;
   isArchived: boolean;
+  visibility?: 'private' | 'team';
   createdAt: string;
   updatedAt: string;
 }

@@ -9,6 +9,7 @@ export interface Document {
   coverImage: string | null;
   sortOrder: number;
   isArchived: boolean;
+  visibility?: 'private' | 'team';
   createdAt: string;
   updatedAt: string;
 }
