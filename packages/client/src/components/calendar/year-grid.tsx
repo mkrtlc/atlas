@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useCalendarStore } from '../../stores/calendar-store';
 import { useCalendarEvents } from '../../hooks/use-calendar';
 import type { CalendarEvent } from '@atlasmail/shared';
+import type { CSSProperties } from 'react';
 
 interface YearGridProps {
   weekStartsOnMonday: boolean;
@@ -58,7 +59,18 @@ export function YearGrid({ weekStartsOnMonday }: YearGridProps) {
   };
 
   return (
-    <div className="grid grid-cols-4 gap-6 p-6 max-w-[1200px] mx-auto">
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 'var(--spacing-2xl)',
+        padding: 'var(--spacing-2xl)',
+        maxWidth: 1200,
+        margin: '0 auto',
+        overflow: 'auto',
+        height: '100%',
+      }}
+    >
       {months.map((month) => (
         <MiniMonth
           key={month}
@@ -113,17 +125,40 @@ function MiniMonth({
     return cells;
   }, [year, month, weekStartsOnMonday]);
 
+  const monthBtnStyle: CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: 'var(--font-size-sm)',
+    fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
+    color: 'var(--color-text-primary)',
+    fontFamily: 'var(--font-family)',
+    marginBottom: 8,
+    padding: 0,
+  };
+
   return (
-    <div className="select-none">
+    <div style={{ userSelect: 'none' }}>
       <button
         onClick={() => onMonthClick(month)}
-        className="text-sm font-semibold mb-2 hover:text-blue-600 transition-colors cursor-pointer"
+        style={monthBtnStyle}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-accent-primary)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-text-primary)'; }}
       >
         {MONTH_NAMES[month]}
       </button>
-      <div className="grid grid-cols-7 gap-0">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0 }}>
         {dayLabels.map((label) => (
-          <div key={label} className="text-[10px] text-center text-gray-400 pb-1">
+          <div
+            key={label}
+            style={{
+              fontSize: 10,
+              textAlign: 'center',
+              color: 'var(--color-text-tertiary)',
+              paddingBottom: 4,
+              fontFamily: 'var(--font-family)',
+            }}
+          >
             {label}
           </div>
         ))}
@@ -139,18 +174,59 @@ function MiniMonth({
             <button
               key={dateStr}
               onClick={() => onDayClick(dateStr)}
-              className={`
-                relative text-[11px] w-6 h-6 flex items-center justify-center rounded-full
-                cursor-pointer transition-colors
-                ${isToday ? 'bg-blue-600 text-white font-bold' : 'hover:bg-gray-100 text-gray-700'}
-              `}
+              style={{
+                position: 'relative',
+                width: 24,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 11,
+                fontFamily: 'var(--font-family)',
+                fontWeight: isToday ? 700 : 400,
+                background: isToday ? 'var(--color-accent-primary)' : 'transparent',
+                color: isToday ? 'var(--color-text-inverse)' : 'var(--color-text-primary)',
+                transition: 'background var(--transition-fast)',
+                padding: 0,
+              }}
+              onMouseEnter={(e) => {
+                if (!isToday) e.currentTarget.style.background = 'var(--color-surface-hover)';
+              }}
+              onMouseLeave={(e) => {
+                if (!isToday) e.currentTarget.style.background = 'transparent';
+              }}
             >
               {day}
               {hasEvent && !isToday && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500" />
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 4,
+                    height: 4,
+                    borderRadius: '50%',
+                    background: 'var(--color-accent-primary)',
+                  }}
+                />
               )}
               {hasEvent && isToday && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white" />
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 4,
+                    height: 4,
+                    borderRadius: '50%',
+                    background: 'var(--color-text-inverse)',
+                  }}
+                />
               )}
             </button>
           );

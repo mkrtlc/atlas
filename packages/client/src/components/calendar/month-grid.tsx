@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import type { CalendarEvent } from '@atlasmail/shared';
+import { IconButton } from '../ui/icon-button';
 
 interface MonthGridProps {
   selectedDate: string; // YYYY-MM-DD
@@ -376,25 +378,16 @@ export function MonthGrid({
                                   day: 'numeric',
                                 })}
                               </span>
-                              <button
+                              <IconButton
+                                icon={<X size={12} />}
+                                label="Close"
+                                size={20}
+                                tooltip={false}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setExpandedDay(null);
                                 }}
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  color: 'var(--color-text-tertiary)',
-                                  fontSize: 13,
-                                  lineHeight: 1,
-                                  padding: '2px 4px',
-                                  borderRadius: 3,
-                                  fontFamily: 'var(--font-family)',
-                                }}
-                              >
-                                ✕
-                              </button>
+                              />
                             </div>
 
                             {/* All events for this day */}

@@ -2,6 +2,9 @@ import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { Copy, Mail, MapPin, Pencil, Trash2, Users, Video, X } from 'lucide-react';
 import type { CalendarEvent } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
+import { Button } from '../ui/button';
+import { IconButton } from '../ui/icon-button';
+import { Input } from '../ui/input';
 
 interface WeekGridProps {
   weekStart: Date;
@@ -962,7 +965,7 @@ export function WeekGrid({
               zIndex: 9999,
               width: MENU_W,
               background: 'var(--color-bg-elevated)',
-              border: '1px solid #d0d5dd',
+              border: '1px solid var(--color-border-primary)',
               borderRadius: 4,
               boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
               padding: '4px 0',
@@ -1416,11 +1419,12 @@ export function WeekGrid({
                         minWidth: 180,
                       }}
                     >
-                      <input
+                      <Input
                         ref={quickInputRef}
                         value={quickTitle}
                         onChange={(e) => setQuickTitle(e.target.value)}
                         placeholder="Event title"
+                        size="sm"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && quickTitle.trim() && quickCreate) {
                             onQuickCreate?.(quickTitle.trim(), quickCreate.start, quickCreate.end);
@@ -1432,25 +1436,14 @@ export function WeekGrid({
                             setQuickTitle('');
                           }
                         }}
-                        style={{
-                          width: '100%',
-                          height: 30,
-                          padding: '0 8px',
-                          border: '1px solid var(--color-border-primary)',
-                          borderRadius: 'var(--radius-sm)',
-                          background: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)',
-                          fontSize: 'var(--font-size-sm)',
-                          fontFamily: 'var(--font-family)',
-                          outline: 'none',
-                          boxSizing: 'border-box',
-                        }}
                       />
                       <div style={{ display: 'flex', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
                         {formatTime(quickCreate.start)} – {formatTime(quickCreate.end)}
                       </div>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', alignItems: 'center' }}>
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => {
                             if (quickCreate) {
                               onDragCreate(quickCreate.start, quickCreate.end);
@@ -1458,19 +1451,13 @@ export function WeekGrid({
                             setQuickCreate(null);
                             setQuickTitle('');
                           }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--color-accent-primary)',
-                            fontSize: 'var(--font-size-xs)',
-                            fontFamily: 'var(--font-family)',
-                            cursor: 'pointer',
-                            padding: 0,
-                          }}
+                          style={{ padding: 0, height: 'auto', fontSize: 'var(--font-size-xs)', color: 'var(--color-accent-primary)' }}
                         >
                           More options
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
                           onClick={() => {
                             if (quickTitle.trim() && quickCreate) {
                               onQuickCreate?.(quickTitle.trim(), quickCreate.start, quickCreate.end);
@@ -1479,21 +1466,10 @@ export function WeekGrid({
                             setQuickTitle('');
                           }}
                           disabled={!quickTitle.trim()}
-                          style={{
-                            height: 26,
-                            padding: '0 12px',
-                            background: 'var(--color-accent-primary)',
-                            border: 'none',
-                            borderRadius: 'var(--radius-sm)',
-                            color: 'var(--color-text-inverse)',
-                            fontSize: 'var(--font-size-xs)',
-                            fontFamily: 'var(--font-family)',
-                            cursor: quickTitle.trim() ? 'pointer' : 'not-allowed',
-                            opacity: quickTitle.trim() ? 1 : 0.5,
-                          }}
+                          style={{ height: 26, fontSize: 'var(--font-size-xs)', borderRadius: 'var(--radius-sm)' }}
                         >
                           Save
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -1552,25 +1528,13 @@ export function WeekGrid({
                             {eventPopover.event.summary || '(No title)'}
                           </span>
                         </div>
-                        <button
+                        <IconButton
+                          icon={<X size={14} />}
+                          label="Close"
+                          size={22}
                           onClick={() => setEventPopover(null)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 22,
-                            height: 22,
-                            padding: 0,
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: 'var(--radius-sm)',
-                            color: 'var(--color-text-tertiary)',
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <X size={14} />
-                        </button>
+                          tooltip={false}
+                        />
                       </div>
 
                       {/* Time */}
@@ -1712,8 +1676,10 @@ export function WeekGrid({
                           {(['accepted', 'tentative', 'declined'] as const).map((status) => {
                             const isCurrent = eventPopover.event.selfResponseStatus === status;
                             return (
-                              <button
+                              <Button
                                 key={status}
+                                variant={isCurrent ? 'primary' : 'secondary'}
+                                size="sm"
                                 onClick={() => {
                                   onRSVP(eventPopover.event.id, status);
                                   setEventPopover(null);
@@ -1721,20 +1687,16 @@ export function WeekGrid({
                                 style={{
                                   flex: 1,
                                   height: 26,
-                                  border: isCurrent ? 'none' : '1px solid var(--color-border-primary)',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: isCurrent
-                                    ? status === 'accepted' ? '#22c55e' : status === 'tentative' ? '#f0ad4e' : '#ef4444'
-                                    : 'transparent',
-                                  color: isCurrent ? '#fff' : 'var(--color-text-secondary)',
                                   fontSize: 10,
-                                  fontFamily: 'var(--font-family)',
-                                  fontWeight: 500,
-                                  cursor: 'pointer',
+                                  borderRadius: 'var(--radius-sm)',
+                                  ...(isCurrent ? {
+                                    background: status === 'accepted' ? '#22c55e' : status === 'tentative' ? '#f0ad4e' : '#ef4444',
+                                    border: 'none',
+                                  } : {}),
                                 }}
                               >
                                 {status === 'accepted' ? 'Accept' : status === 'tentative' ? 'Maybe' : 'Decline'}
-                              </button>
+                              </Button>
                             );
                           })}
                         </div>
@@ -1742,82 +1704,52 @@ export function WeekGrid({
 
                       {/* Actions */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                        <button
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<Pencil size={11} />}
                           onClick={() => {
                             const ev = eventPopover.event;
                             setEventPopover(null);
                             onEventClick(ev);
                           }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            height: 28,
-                            padding: '0 10px',
-                            background: 'var(--color-accent-primary)',
-                            border: 'none',
-                            borderRadius: 'var(--radius-sm)',
-                            color: 'var(--color-text-inverse)',
-                            fontSize: 'var(--font-size-xs)',
-                            fontFamily: 'var(--font-family)',
-                            cursor: 'pointer',
-                          }}
+                          style={{ height: 28, fontSize: 'var(--font-size-xs)', borderRadius: 'var(--radius-sm)' }}
                         >
-                          <Pencil size={11} />
                           Edit
-                        </button>
+                        </Button>
                         {onEventDuplicate && (
-                          <button
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={<Copy size={11} />}
                             onClick={() => {
                               onEventDuplicate(eventPopover.event);
                               setEventPopover(null);
                             }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              height: 28,
-                              padding: '0 10px',
-                              background: 'transparent',
-                              border: '1px solid var(--color-border-primary)',
-                              borderRadius: 'var(--radius-sm)',
-                              color: 'var(--color-text-secondary)',
-                              fontSize: 'var(--font-size-xs)',
-                              fontFamily: 'var(--font-family)',
-                              cursor: 'pointer',
-                            }}
+                            style={{ height: 28, fontSize: 'var(--font-size-xs)', borderRadius: 'var(--radius-sm)' }}
                           >
-                            <Copy size={11} />
                             Duplicate
-                          </button>
+                          </Button>
                         )}
                         {onEventDelete && (
-                          <button
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={<Trash2 size={11} />}
                             onClick={() => {
                               onEventDelete(eventPopover.event.id);
                               setEventPopover(null);
                             }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              height: 28,
-                              padding: '0 10px',
-                              background: 'transparent',
-                              border: '1px solid var(--color-border-primary)',
-                              borderRadius: 'var(--radius-sm)',
-                              color: 'var(--color-error)',
-                              fontSize: 'var(--font-size-xs)',
-                              fontFamily: 'var(--font-family)',
-                              cursor: 'pointer',
-                            }}
+                            style={{ height: 28, fontSize: 'var(--font-size-xs)', borderRadius: 'var(--radius-sm)' }}
                           >
-                            <Trash2 size={11} />
                             Delete
-                          </button>
+                          </Button>
                         )}
                         {eventPopover.event.attendees && eventPopover.event.attendees.length > 0 && (
-                          <button
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={<Mail size={11} />}
                             onClick={() => {
                               const emails = eventPopover.event.attendees!
                                 .map((a: any) => a.email)
@@ -1827,24 +1759,10 @@ export function WeekGrid({
                               window.open(`mailto:${emails}?subject=${subject}`, '_self');
                               setEventPopover(null);
                             }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              height: 28,
-                              padding: '0 10px',
-                              background: 'transparent',
-                              border: '1px solid var(--color-border-primary)',
-                              borderRadius: 'var(--radius-sm)',
-                              color: 'var(--color-text-secondary)',
-                              fontSize: 'var(--font-size-xs)',
-                              fontFamily: 'var(--font-family)',
-                              cursor: 'pointer',
-                            }}
+                            style={{ height: 28, fontSize: 'var(--font-size-xs)', borderRadius: 'var(--radius-sm)' }}
                           >
-                            <Mail size={11} />
                             Email
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>

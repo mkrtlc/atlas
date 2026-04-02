@@ -4,6 +4,12 @@ import type { RecurringEditScope } from '@atlasmail/shared';
 import { useCalendarStore } from '../../stores/calendar-store';
 import { useCalendars, useCreateCalendarEvent, useUpdateCalendarEvent, useDeleteCalendarEvent } from '../../hooks/use-calendar';
 import { SchedulingAssistant } from './scheduling-assistant';
+import { Modal } from '../ui/modal';
+import { Button } from '../ui/button';
+import { IconButton } from '../ui/icon-button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Select } from '../ui/select';
 import type { CSSProperties } from 'react';
 
 /** Google Calendar event color IDs mapped to hex values */
@@ -523,59 +529,15 @@ export function EventModal() {
   const showRSVP = eventModal.mode === 'edit' && currentResponseStatus && !isOrganizer;
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={closeEventModal}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'var(--color-bg-overlay)',
-          zIndex: 200,
-        }}
-      />
-
-      {/* Modal */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 460,
-          maxWidth: 'calc(100vw - 32px)',
-          maxHeight: 'calc(100vh - 64px)',
-          background: 'var(--color-bg-elevated)',
-          border: '1px solid var(--color-border-primary)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-elevated)',
-          zIndex: 201,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          fontFamily: 'var(--font-family)',
-        }}
-      >
+    <Modal
+      open={eventModal.open}
+      onOpenChange={(open) => { if (!open) closeEventModal(); }}
+      width={460}
+      title={eventModal.mode === 'create' ? 'New event' : 'Edit event'}
+      contentStyle={{ maxHeight: 'calc(100vh - 64px)' }}
+    >
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '14px 16px',
-            borderBottom: '1px solid var(--color-border-primary)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              style={{
-                fontSize: 'var(--font-size-md)',
-                fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              {eventModal.mode === 'create' ? 'New event' : 'Edit event'}
-            </span>
+        <Modal.Header title={eventModal.mode === 'create' ? 'New event' : 'Edit event'}>
             {isRecurring && (
               <span
                 style={{
@@ -619,33 +581,12 @@ export function EventModal() {
                 Join
               </a>
             )}
-          </div>
-          <button
-            onClick={closeEventModal}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 28,
-              height: 28,
-              padding: 0,
-              background: 'transparent',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--color-text-tertiary)',
-              cursor: 'pointer',
-            }}
-          >
-            <X size={16} />
-          </button>
-        </div>
+        </Modal.Header>
 
         {/* Body */}
+        <Modal.Body padding="16px">
         <div
           style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: 16,
             display: 'flex',
             flexDirection: 'column',
             gap: 14,
@@ -653,19 +594,17 @@ export function EventModal() {
         >
           {/* Title */}
           <div>
-            <input
+            <Input
               ref={titleRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Event title"
+              size="lg"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) handleSubmit();
                 if (e.key === 'Escape') closeEventModal();
               }}
               style={{
-                ...inputStyle,
-                height: 40,
-                fontSize: 'var(--font-size-md)',
                 fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
               }}
             />
@@ -678,18 +617,20 @@ export function EventModal() {
               Date &amp; time
             </label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
+              <Input
                 type={isAllDay ? 'date' : 'datetime-local'}
                 value={isAllDay ? startTime.slice(0, 10) : startTime}
                 onChange={(e) => { setStartTime(e.target.value); setTimeError(''); }}
-                style={{ ...inputStyle, flex: 1 }}
+                size="sm"
+                style={{ flex: 1 }}
               />
               <span style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>to</span>
-              <input
+              <Input
                 type={isAllDay ? 'date' : 'datetime-local'}
                 value={isAllDay ? endTime.slice(0, 10) : endTime}
                 onChange={(e) => { setEndTime(e.target.value); setTimeError(''); }}
-                style={{ ...inputStyle, flex: 1 }}
+                size="sm"
+                style={{ flex: 1 }}
               />
             </div>
             {timeError && (
@@ -724,30 +665,32 @@ export function EventModal() {
               <Repeat size={14} />
               Repeat
             </label>
-            <select
+            <Select
               value={recurrenceFreq}
-              onChange={(e) => setRecurrenceFreq(e.target.value as typeof recurrenceFreq)}
-              style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
-            >
-              <option value="none">None</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
+              onChange={(val) => setRecurrenceFreq(val as typeof recurrenceFreq)}
+              size="sm"
+              options={[
+                { value: 'none', label: 'None' },
+                { value: 'daily', label: 'Daily' },
+                { value: 'weekly', label: 'Weekly' },
+                { value: 'monthly', label: 'Monthly' },
+                { value: 'yearly', label: 'Yearly' },
+              ]}
+            />
 
             {recurrenceFreq !== 'none' && (
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {/* Every N frequency */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                   <span>Every</span>
-                  <input
+                  <Input
                     type="number"
                     min={1}
                     max={99}
-                    value={recurrenceInterval}
+                    value={String(recurrenceInterval)}
                     onChange={(e) => setRecurrenceInterval(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    style={{ ...inputStyle, width: 60, textAlign: 'center' }}
+                    size="sm"
+                    style={{ width: 60, textAlign: 'center' }}
                   />
                   <span>{recurrenceFreq === 'daily' ? 'day(s)' : recurrenceFreq === 'weekly' ? 'week(s)' : recurrenceFreq === 'monthly' ? 'month(s)' : 'year(s)'}</span>
                 </div>
@@ -812,14 +755,15 @@ export function EventModal() {
                       {endOption === 'count' && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           After
-                          <input
+                          <Input
                             type="number"
                             min={1}
                             max={999}
-                            value={recurrenceCount}
+                            value={String(recurrenceCount)}
                             onChange={(e) => setRecurrenceCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
                             disabled={recurrenceEnd !== 'count'}
-                            style={{ ...inputStyle, width: 60, textAlign: 'center', opacity: recurrenceEnd !== 'count' ? 0.4 : 1 }}
+                            size="sm"
+                            style={{ width: 60, textAlign: 'center', opacity: recurrenceEnd !== 'count' ? 0.4 : 1 }}
                           />
                           occurrences
                         </span>
@@ -827,12 +771,13 @@ export function EventModal() {
                       {endOption === 'until' && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           On
-                          <input
+                          <Input
                             type="date"
                             value={recurrenceUntil}
                             onChange={(e) => setRecurrenceUntil(e.target.value)}
                             disabled={recurrenceEnd !== 'until'}
-                            style={{ ...inputStyle, width: 'auto', opacity: recurrenceEnd !== 'until' ? 0.4 : 1 }}
+                            size="sm"
+                            style={{ width: 'auto', opacity: recurrenceEnd !== 'until' ? 0.4 : 1 }}
                           />
                         </span>
                       )}
@@ -1103,6 +1048,7 @@ export function EventModal() {
             )}
           </div>
         </div>
+        </Modal.Body>
 
         {/* Footer */}
         {submitError && (
@@ -1122,66 +1068,36 @@ export function EventModal() {
         >
           {eventModal.mode === 'edit' && (
             <div style={{ display: 'flex', gap: 8 }}>
-              <button
+              <Button
+                variant="danger"
+                size="md"
+                icon={<Trash2 size={14} />}
                 onClick={handleDelete}
                 disabled={isPending}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  height: 34,
-                  padding: '0 12px',
-                  background: 'transparent',
-                  border: '1px solid var(--color-error)',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--color-error)',
-                  fontSize: 'var(--font-size-sm)',
-                  fontFamily: 'var(--font-family)',
-                  cursor: isPending ? 'not-allowed' : 'pointer',
-                  opacity: isPending ? 0.5 : 1,
-                }}
+                style={{ borderRadius: 'var(--radius-sm)' }}
               >
-                <Trash2 size={14} />
                 Delete
-              </button>
+              </Button>
             </div>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               onClick={closeEventModal}
-              style={{
-                height: 34,
-                padding: '0 16px',
-                background: 'transparent',
-                border: '1px solid var(--color-border-primary)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--color-text-primary)',
-                fontSize: 'var(--font-size-sm)',
-                fontFamily: 'var(--font-family)',
-                cursor: 'pointer',
-              }}
+              style={{ borderRadius: 'var(--radius-sm)' }}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
               onClick={handleSubmit}
               disabled={!title.trim() || isPending}
-              style={{
-                height: 34,
-                padding: '0 16px',
-                background: 'var(--color-accent-primary)',
-                border: 'none',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--color-text-inverse)',
-                fontSize: 'var(--font-size-sm)',
-                fontFamily: 'var(--font-family)',
-                fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-                cursor: !title.trim() || isPending ? 'not-allowed' : 'pointer',
-                opacity: !title.trim() || isPending ? 0.5 : 1,
-              }}
+              style={{ borderRadius: 'var(--radius-sm)' }}
             >
               {eventModal.mode === 'create' ? 'Create' : 'Save'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1222,70 +1138,57 @@ export function EventModal() {
               This event is part of a series. What would you like to {recurringPrompt === 'delete' ? 'delete' : 'edit'}?
             </span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 260 }}>
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => {
                   setRecurringPrompt(null);
                   if (recurringPrompt === 'delete') doDelete('single');
                   else doSubmit('single');
                 }}
                 disabled={isPending}
-                style={scopeBtnStyle}
+                style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
               >
                 This event only
-              </button>
+              </Button>
               {recurringPrompt !== 'delete' && (
-                <button
+                <Button
+                  variant="primary"
+                  size="md"
                   onClick={() => {
                     setRecurringPrompt(null);
                     doSubmit('thisAndFollowing');
                   }}
                   disabled={isPending}
-                  style={scopeBtnStyle}
+                  style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
                 >
                   This and following events
-                </button>
+                </Button>
               )}
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => {
                   setRecurringPrompt(null);
                   if (recurringPrompt === 'delete') doDelete('all');
                   else doSubmit('all');
                 }}
                 disabled={isPending}
-                style={scopeBtnStyle}
+                style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
               >
                 All events in the series
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => setRecurringPrompt(null)}
-                style={{
-                  ...scopeBtnStyle,
-                  background: 'transparent',
-                  border: '1px solid var(--color-border-primary)',
-                  color: 'var(--color-text-secondary)',
-                  marginTop: 4,
-                }}
+                style={{ width: '100%', borderRadius: 'var(--radius-sm)', marginTop: 4 }}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
-    </>
+    </Modal>
   );
 }
-
-const scopeBtnStyle: CSSProperties = {
-  height: 36,
-  padding: '0 16px',
-  background: 'var(--color-accent-primary)',
-  border: 'none',
-  borderRadius: 'var(--radius-sm)',
-  color: 'var(--color-text-inverse)',
-  fontSize: 'var(--font-size-sm)',
-  fontFamily: 'var(--font-family)',
-  fontWeight: 500,
-  cursor: 'pointer',
-  width: '100%',
-};

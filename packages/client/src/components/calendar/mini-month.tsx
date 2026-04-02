@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { CSSProperties } from 'react';
+import { IconButton } from '../ui/icon-button';
 
 interface MiniMonthProps {
   selectedDate: string; // YYYY-MM-DD
@@ -99,9 +100,12 @@ export function MiniMonth({ selectedDate, onSelectDate, weekStartsOnMonday = fal
           padding: '0 2px',
         }}
       >
-        <button onClick={prevMonth} style={navBtnStyle}>
-          <ChevronLeft size={14} />
-        </button>
+        <IconButton
+          icon={<ChevronLeft size={14} />}
+          label="Previous month"
+          size={24}
+          onClick={prevMonth}
+        />
         <span
           style={{
             fontSize: 'var(--font-size-sm)',
@@ -111,9 +115,12 @@ export function MiniMonth({ selectedDate, onSelectDate, weekStartsOnMonday = fal
         >
           {monthLabel}
         </span>
-        <button onClick={nextMonth} style={navBtnStyle}>
-          <ChevronRight size={14} />
-        </button>
+        <IconButton
+          icon={<ChevronRight size={14} />}
+          label="Next month"
+          size={24}
+          onClick={nextMonth}
+        />
       </div>
 
       {/* Day name headers */}
@@ -247,16 +254,3 @@ export function MiniMonth({ selectedDate, onSelectDate, weekStartsOnMonday = fal
   );
 }
 
-const navBtnStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 24,
-  height: 24,
-  padding: 0,
-  background: 'transparent',
-  border: 'none',
-  borderRadius: 'var(--radius-sm)',
-  color: 'var(--color-text-secondary)',
-  cursor: 'pointer',
-};

@@ -16,6 +16,10 @@ import { useMediaQuery } from '../hooks/use-media-query';
 import { useUIStore } from '../stores/ui-store';
 import { api } from '../lib/api-client';
 import '../styles/calendar.css';
+import { Button } from '../components/ui/button';
+import { IconButton } from '../components/ui/icon-button';
+import { Input } from '../components/ui/input';
+import { Select } from '../components/ui/select';
 import { useCalendars, useCalendarEvents, useSyncCalendar, useToggleCalendar, useCreateCalendar, useUpdateCalendarEvent, useCreateCalendarEvent, useDeleteCalendarEvent, useSearchCalendarEvents } from '../hooks/use-calendar';
 import { useCalendarStore } from '../stores/calendar-store';
 import { useCalendarSettingsStore } from '../stores/calendar-settings-store';
@@ -603,13 +607,11 @@ export function CalendarPage() {
         }}
       >
         {/* Back to home */}
-        <button
+        <IconButton
+          icon={<ArrowLeft size={16} />}
+          label="Home screen"
           onClick={() => navigate('/')}
-          title="Home screen"
-          style={iconBtnStyle}
-        >
-          <ArrowLeft size={16} />
-        </button>
+        />
 
         <span
           style={{
@@ -624,29 +626,31 @@ export function CalendarPage() {
 
         {/* Sidebar toggle */}
         {!isNarrow && (
-          <button
+          <IconButton
+            icon={sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            label={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
             onClick={() => setSidebarCollapsed((v) => !v)}
-            title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
-            style={iconBtnStyle}
-          >
-            {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-          </button>
+          />
         )}
 
         <div style={{ width: 1, height: 20, background: 'var(--color-border-primary)', margin: '0 4px' }} />
 
         {/* Today button */}
-        <button onClick={goToday} style={toolbarBtnStyle}>
+        <Button variant="secondary" size="sm" onClick={goToday}>
           Today
-        </button>
+        </Button>
 
         {/* Prev / Next */}
-        <button onClick={goPrev} style={iconBtnStyle}>
-          <ChevronLeft size={16} />
-        </button>
-        <button onClick={goNext} style={iconBtnStyle}>
-          <ChevronRight size={16} />
-        </button>
+        <IconButton
+          icon={<ChevronLeft size={16} />}
+          label="Previous"
+          onClick={goPrev}
+        />
+        <IconButton
+          icon={<ChevronRight size={16} />}
+          label="Next"
+          onClick={goNext}
+        />
 
         {/* Week range label — click to jump to a date */}
         <div
@@ -737,24 +741,22 @@ export function CalendarPage() {
           }}
         >
           {(['day', 'week', 'month-grid', 'agenda', 'year'] as const).map((v) => (
-            <button
+            <Button
               key={v}
+              variant={view === v ? 'primary' : 'ghost'}
               onClick={() => setView(v)}
               style={{
                 height: 26,
                 padding: '0 10px',
-                background: view === v ? 'var(--color-accent-primary)' : 'transparent',
-                border: 'none',
-                color: view === v ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)',
+                borderRadius: 0,
                 fontSize: 'var(--font-size-xs)',
-                fontFamily: 'var(--font-family)',
                 fontWeight: view === v ? 600 : 400,
-                cursor: 'pointer',
                 textTransform: 'capitalize',
+                border: 'none',
               }}
             >
               {v === 'month-grid' ? 'Month' : v === 'agenda' ? 'Agenda' : v === 'year' ? 'Year' : v}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -769,32 +771,15 @@ export function CalendarPage() {
             alignItems: 'center',
           }}
         >
-          <Search
-            size={13}
-            style={{
-              position: 'absolute',
-              left: 8,
-              color: 'var(--color-text-tertiary)',
-              pointerEvents: 'none',
-            }}
-          />
-          <input
+          <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             placeholder="Search events"
+            size="sm"
+            iconLeft={<Search size={13} />}
             style={{
               width: isNarrow ? 120 : 180,
-              height: 28,
-              paddingLeft: 28,
-              paddingRight: 8,
-              border: '1px solid var(--color-border-primary)',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-bg-primary)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-xs)',
-              fontFamily: 'var(--font-family)',
-              outline: 'none',
             }}
           />
           {/* Search results dropdown */}
@@ -910,23 +895,19 @@ export function CalendarPage() {
 
         {/* Timezone label — click to set secondary timezone */}
         <div ref={tzPickerRef} style={{ position: 'relative' }}>
-          <button
+          <Button
+            variant={secondaryTimezone ? 'secondary' : 'ghost'}
+            size="sm"
             onClick={() => setShowTzPicker((v) => !v)}
             title="Set secondary timezone"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
               height: 26,
               padding: '0 8px',
-              background: secondaryTimezone ? 'color-mix(in srgb, var(--color-accent-primary) 10%, transparent)' : 'transparent',
-              border: secondaryTimezone ? '1px solid color-mix(in srgb, var(--color-accent-primary) 40%, transparent)' : '1px solid transparent',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--color-text-tertiary)',
               fontSize: 'var(--font-size-xs)',
-              fontFamily: 'var(--font-family)',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              ...(secondaryTimezone ? {
+                background: 'color-mix(in srgb, var(--color-accent-primary) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-accent-primary) 40%, transparent)',
+              } : {}),
             }}
           >
             {new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop()}
@@ -935,7 +916,7 @@ export function CalendarPage() {
                 +{new Date().toLocaleTimeString('en-US', { timeZone: secondaryTimezone, timeZoneName: 'short' }).split(' ').pop()}
               </span>
             )}
-          </button>
+          </Button>
 
           {showTzPicker && (
             <div
@@ -963,98 +944,65 @@ export function CalendarPage() {
               >
                 Secondary timezone
               </div>
-              <select
+              <Select
                 value={secondaryTimezone || ''}
-                onChange={(e) => {
-                  setSecondaryTimezone(e.target.value || null);
+                onChange={(val) => {
+                  setSecondaryTimezone(val || null);
                   setShowTzPicker(false);
                 }}
-                style={{
-                  width: '100%',
-                  height: 28,
-                  padding: '0 6px',
-                  border: '1px solid var(--color-border-primary)',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--color-bg-primary)',
-                  color: 'var(--color-text-primary)',
-                  fontSize: 'var(--font-size-xs)',
-                  fontFamily: 'var(--font-family)',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <option value="">Off</option>
-                <option value="America/New_York">America/New York (ET)</option>
-                <option value="America/Chicago">America/Chicago (CT)</option>
-                <option value="America/Denver">America/Denver (MT)</option>
-                <option value="America/Los_Angeles">America/Los Angeles (PT)</option>
-                <option value="America/Sao_Paulo">America/Sao Paulo (BRT)</option>
-                <option value="Europe/London">Europe/London (GMT/BST)</option>
-                <option value="Europe/Paris">Europe/Paris (CET)</option>
-                <option value="Europe/Berlin">Europe/Berlin (CET)</option>
-                <option value="Europe/Istanbul">Europe/Istanbul (TRT)</option>
-                <option value="Asia/Dubai">Asia/Dubai (GST)</option>
-                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
-                <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-                <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
-                <option value="Pacific/Auckland">Pacific/Auckland (NZST)</option>
-              </select>
+                size="sm"
+                options={[
+                  { value: '', label: 'Off' },
+                  { value: 'America/New_York', label: 'America/New York (ET)' },
+                  { value: 'America/Chicago', label: 'America/Chicago (CT)' },
+                  { value: 'America/Denver', label: 'America/Denver (MT)' },
+                  { value: 'America/Los_Angeles', label: 'America/Los Angeles (PT)' },
+                  { value: 'America/Sao_Paulo', label: 'America/Sao Paulo (BRT)' },
+                  { value: 'Europe/London', label: 'Europe/London (GMT/BST)' },
+                  { value: 'Europe/Paris', label: 'Europe/Paris (CET)' },
+                  { value: 'Europe/Berlin', label: 'Europe/Berlin (CET)' },
+                  { value: 'Europe/Istanbul', label: 'Europe/Istanbul (TRT)' },
+                  { value: 'Asia/Dubai', label: 'Asia/Dubai (GST)' },
+                  { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST)' },
+                  { value: 'Asia/Shanghai', label: 'Asia/Shanghai (CST)' },
+                  { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST)' },
+                  { value: 'Australia/Sydney', label: 'Australia/Sydney (AEST)' },
+                  { value: 'Pacific/Auckland', label: 'Pacific/Auckland (NZST)' },
+                ]}
+              />
             </div>
           )}
         </div>
 
         {/* Sync button */}
-        <button
+        <IconButton
+          icon={<RefreshCw size={13} style={{ animation: syncCalendar.isPending ? 'spin 1s linear infinite' : undefined }} />}
+          label="Sync calendar"
           onClick={() => syncCalendar.mutate()}
           disabled={syncCalendar.isPending}
-          title="Sync calendar"
           style={{
-            ...iconBtnStyle,
             border: '1px solid var(--color-border-primary)',
             opacity: syncCalendar.isPending ? 0.5 : 1,
           }}
-        >
-          <RefreshCw
-            size={13}
-            style={{
-              animation: syncCalendar.isPending ? 'spin 1s linear infinite' : undefined,
-            }}
-          />
-        </button>
+        />
 
         {/* Settings button */}
-        <button
+        <IconButton
+          icon={<Settings size={15} />}
+          label="Calendar settings"
           onClick={() => openSettings('calendar')}
-          title="Calendar settings"
-          style={iconBtnStyle}
-        >
-          <Settings size={15} />
-        </button>
+        />
 
         {/* New event button */}
-        <button
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Plus size={14} />}
           onClick={() => openCreateModal()}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            height: 30,
-            padding: '0 12px',
-            background: 'var(--color-accent-primary)',
-            border: 'none',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--color-text-inverse)',
-            fontSize: 'var(--font-size-sm)',
-            fontFamily: 'var(--font-family)',
-            fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
-            cursor: 'pointer',
-          }}
+          style={{ height: 30 }}
         >
-          <Plus size={14} />
           New event
-        </button>
+        </Button>
       </div>
 
       {/* Main content: sidebar + week grid */}
@@ -1179,7 +1127,9 @@ export function CalendarPage() {
                     style={{ width: 20, height: 20, border: 'none', padding: 0, cursor: 'pointer', background: 'transparent' }}
                   />
                   <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', flex: 1 }}>Color</span>
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => {
                       if (newCalName.trim()) {
                         createCalendar.mutate(
@@ -1198,59 +1148,30 @@ export function CalendarPage() {
                       }
                     }}
                     disabled={!newCalName.trim() || createCalendar.isPending}
-                    style={{
-                      height: 22,
-                      padding: '0 8px',
-                      background: 'var(--color-accent-primary)',
-                      border: 'none',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--color-text-inverse)',
-                      fontSize: 10,
-                      fontFamily: 'var(--font-family)',
-                      cursor: newCalName.trim() ? 'pointer' : 'default',
-                      opacity: !newCalName.trim() || createCalendar.isPending ? 0.5 : 1,
-                    }}
+                    style={{ height: 22, padding: '0 8px', fontSize: 10, borderRadius: 'var(--radius-sm)' }}
                   >
                     {createCalendar.isPending ? 'Creating...' : 'Add'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => { setShowAddCalendar(false); setNewCalName(''); }}
-                    style={{
-                      height: 22,
-                      padding: '0 8px',
-                      background: 'transparent',
-                      border: '1px solid var(--color-border-primary)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--color-text-secondary)',
-                      fontSize: 10,
-                      fontFamily: 'var(--font-family)',
-                      cursor: 'pointer',
-                    }}
+                    style={{ height: 22, padding: '0 8px', fontSize: 10, borderRadius: 'var(--radius-sm)' }}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Plus size={12} />}
                 onClick={() => setShowAddCalendar(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  marginTop: 4,
-                  padding: '3px 0',
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--color-text-tertiary)',
-                  fontSize: 'var(--font-size-xs)',
-                  fontFamily: 'var(--font-family)',
-                  cursor: 'pointer',
-                }}
+                style={{ marginTop: 4, padding: '3px 0', height: 'auto', fontSize: 'var(--font-size-xs)' }}
               >
-                <Plus size={12} />
                 Add calendar
-              </button>
+              </Button>
             )}
 
           </div>
@@ -1316,46 +1237,20 @@ export function CalendarPage() {
                   : 'Calendar access not granted. Please re-authenticate to enable calendar sync.'}
               </span>
               {scopeMissing && (
-                <button
-                  onClick={handleReAuth}
-                  style={{
-                    height: 30,
-                    padding: '0 14px',
-                    background: 'var(--color-accent-primary)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    color: 'var(--color-text-inverse)',
-                    fontSize: 'var(--font-size-sm)',
-                    fontFamily: 'var(--font-family)',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
+                <Button variant="primary" size="sm" onClick={handleReAuth} style={{ height: 30 }}>
                   Grant access
-                </button>
+                </Button>
               )}
               {apiNotEnabled && (
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={() => syncCalendar.mutate()}
                   disabled={syncCalendar.isPending}
-                  style={{
-                    height: 30,
-                    padding: '0 14px',
-                    background: 'var(--color-accent-primary)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    color: 'var(--color-text-inverse)',
-                    fontSize: 'var(--font-size-sm)',
-                    fontFamily: 'var(--font-family)',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    opacity: syncCalendar.isPending ? 0.5 : 1,
-                  }}
+                  style={{ height: 30, opacity: syncCalendar.isPending ? 0.5 : 1 }}
                 >
                   Retry sync
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -1444,12 +1339,12 @@ export function CalendarPage() {
               <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                 Keyboard shortcuts
               </span>
-              <button
+              <IconButton
+                icon={<span style={{ fontSize: 14, lineHeight: 1 }}>✕</span>}
+                label="Close"
                 onClick={() => setShowShortcutsHelp(false)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', padding: 4 }}
-              >
-                ✕
-              </button>
+                size={24}
+              />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr', rowGap: 8, columnGap: 12, fontSize: 'var(--font-size-sm)' }}>
               {([
@@ -1499,28 +1394,3 @@ export function CalendarPage() {
   );
 }
 
-const iconBtnStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 28,
-  height: 28,
-  padding: 0,
-  background: 'transparent',
-  border: 'none',
-  borderRadius: 'var(--radius-sm)',
-  color: 'var(--color-text-secondary)',
-  cursor: 'pointer',
-};
-
-const toolbarBtnStyle: CSSProperties = {
-  height: 28,
-  padding: '0 10px',
-  background: 'transparent',
-  border: '1px solid var(--color-border-primary)',
-  borderRadius: 'var(--radius-sm)',
-  color: 'var(--color-text-primary)',
-  fontSize: 'var(--font-size-sm)',
-  fontFamily: 'var(--font-family)',
-  cursor: 'pointer',
-};
