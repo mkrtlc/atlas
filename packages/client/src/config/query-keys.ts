@@ -221,6 +221,13 @@ export const queryKeys = {
     all: ['activity-feed'] as const,
     list: (before?: string) => ['activity-feed', 'list', before] as const,
   },
+  calendar: {
+    all: ['calendar'] as const,
+    calendars: ['calendar', 'calendars'] as const,
+    events: (timeMin: string, timeMax: string) => ['calendar', 'events', timeMin, timeMax] as const,
+    freeBusy: (emails: string, timeMin: string, timeMax: string) => ['calendar', 'freeBusy', emails, timeMin, timeMax] as const,
+    search: (query: string) => ['calendar', 'search', query] as const,
+  },
   projects: {
     all: ['projects'] as const,
     widget: ['projects', 'widget'] as const,

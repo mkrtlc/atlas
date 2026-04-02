@@ -24,6 +24,7 @@ import { ForgotPasswordPage } from './pages/forgot-password';
 import { ResetPasswordPage } from './pages/reset-password';
 import { SignPublicPage } from './pages/sign-public';
 import { ProjectPortalPage } from './pages/project-portal';
+import { CalendarPage } from './pages/calendar';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -87,6 +88,15 @@ export function App() {
                   element={
                     <ProtectedRoute>
                       <SettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path={ROUTES.CALENDAR}
+                  element={
+                    <ProtectedRoute>
+                      <CalendarPage />
                     </ProtectedRoute>
                   }
                 />
