@@ -1731,3 +1731,17 @@ export const marketplaceApps = pgTable('marketplace_apps', {
   uniqueIdx: uniqueIndex('idx_marketplace_apps_unique').on(table.accountId, table.appId),
 }));
 
+// ─── Presence Heartbeats ────────────────────────────────────────────
+
+export const presenceHeartbeats = pgTable('presence_heartbeats', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  tenantId: uuid('tenant_id').notNull(),
+  appId: varchar('app_id', { length: 50 }).notNull(),
+  recordId: varchar('record_id', { length: 255 }).notNull(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uniquePresence: uniqueIndex('idx_presence_unique').on(table.userId, table.appId, table.recordId),
+  lookupIdx: index('idx_presence_lookup').on(table.tenantId, table.appId, table.recordId),
+}));
+

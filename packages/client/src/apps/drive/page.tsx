@@ -39,6 +39,7 @@ import { Modal } from '../../components/ui/modal';
 import { Select } from '../../components/ui/select';
 import { Chip } from '../../components/ui/chip';
 import { EmojiPicker } from '../../components/shared/emoji-picker';
+import { PresenceAvatars } from '../../components/shared/presence-avatars';
 import { getFileTypeIcon, formatBytes, formatRelativeDate, isImageFile } from '../../lib/drive-utils';
 import { ROUTES } from '../../config/routes';
 import { useDriveSettingsStore, useDriveSettingsSync } from './settings-store';
@@ -2201,6 +2202,7 @@ export function DrivePage() {
           />
           <div className="drive-preview-header">
             <span className="drive-preview-title">{previewItem.name}</span>
+            <PresenceAvatars appId="drive" recordId={previewItem?.id} />
             <IconButton
               icon={<X size={16} />}
               label="Close preview"

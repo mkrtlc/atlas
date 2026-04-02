@@ -40,6 +40,7 @@ import { useSettingsStore } from '../../stores/settings-store';
 import { useDrawSettingsStore, useDrawSettingsSync, type DrawSortOrder } from './settings-store';
 import { DrawSettingsModal } from './components/draw-settings-modal';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { PresenceAvatars } from '../../components/shared/presence-avatars';
 import { useUIStore } from '../../stores/ui-store';
 import { DRAWING_TEMPLATES } from '../../config/drawing-templates';
 import { DEFAULT_LIBRARY_ITEMS } from '../../config/drawing-libraries';
@@ -975,11 +976,13 @@ function EditableTitle({
   onChange,
   isSaving,
   excalidrawApi,
+  presenceSlot,
 }: {
   title: string;
   onChange: (title: string) => void;
   isSaving: boolean;
   excalidrawApi: ExcalidrawImperativeAPI | null;
+  presenceSlot?: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
@@ -1070,6 +1073,7 @@ function EditableTitle({
           {`${t('common.save')}...`}
         </span>
       )}
+      {presenceSlot}
       <ExportMenu excalidrawApi={excalidrawApi} />
     </div>
   );
@@ -1271,6 +1275,7 @@ function ExcalidrawCanvas({
         onChange={onTitleChange}
         isSaving={isSaving}
         excalidrawApi={excalidrawApi}
+        presenceSlot={<PresenceAvatars appId="draw" recordId={drawing.id} />}
       />
       <SmartButtonBar appId="draw" recordId={drawing.id} />
       <div style={{ flex: 1, position: 'relative' }}>

@@ -33,6 +33,7 @@ import { useAuthStore } from '../../stores/auth-store';
 import { useMyAppPermission } from '../../hooks/use-app-permissions';
 import { useTenantUsers } from '../../hooks/use-platform';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { PresenceAvatars } from '../../components/shared/presence-avatars';
 import { Avatar } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
 import { IconButton } from '../../components/ui/icon-button';
@@ -982,6 +983,7 @@ function TaskDetailPanel({
       <div className="task-detail-header">
         <span className="task-detail-header-label">Task detail</span>
         <div className="task-detail-header-actions">
+          <PresenceAvatars appId="tasks" recordId={task.id} />
           {canDelete && (
             <IconButton
               icon={<Trash2 size={14} />}

@@ -2224,5 +2224,9 @@
     "startupTimeoutDesc": "Die App hat noch nicht geantwortet. Sie können versuchen, sie trotzdem zu öffnen oder die Protokolle zu überprüfen.",
     "backToMarketplace": "Zurück",
     "openAnyway": "Trotzdem öffnen"
+  },
+  "presence": {
+    "viewing": "Wird gerade angesehen",
+    "andMore": "+{{count}} weitere"
   }
 }

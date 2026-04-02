@@ -1860,6 +1860,20 @@ export async function runMigrations() {
       CREATE UNIQUE INDEX IF NOT EXISTS idx_marketplace_apps_unique ON marketplace_apps(account_id, app_id);
     `);
 
+    // ─── Presence Heartbeats ────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS presence_heartbeats (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        tenant_id UUID NOT NULL,
+        app_id VARCHAR(50) NOT NULL,
+        record_id VARCHAR(255) NOT NULL,
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_presence_unique ON presence_heartbeats(user_id, app_id, record_id);
+      CREATE INDEX IF NOT EXISTS idx_presence_lookup ON presence_heartbeats(tenant_id, app_id, record_id);
+    `);
+
     logger.info('Database migrations completed');
   } finally {
     await client.end();

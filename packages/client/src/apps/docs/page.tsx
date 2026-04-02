@@ -46,6 +46,7 @@ import { useTableList } from '../tables/hooks';
 import { EmojiPicker } from '../../components/shared/emoji-picker';
 import { CoverPicker, isCoverGradient } from '../../components/shared/cover-picker';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { PresenceAvatars } from '../../components/shared/presence-avatars';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
 import '../../styles/docs.css';
 
@@ -1408,6 +1409,8 @@ function TopBar({
           Saving...
         </span>
       )}
+
+      <PresenceAvatars appId="docs" recordId={doc.id} />
 
       {/* Comments toggle button */}
       <IconButton

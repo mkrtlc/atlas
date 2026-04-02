@@ -2241,5 +2241,9 @@
     "startupTimeoutDesc": "The app hasn't responded yet. You can try opening it anyway or check the logs.",
     "backToMarketplace": "Back",
     "openAnyway": "Open anyway"
+  },
+  "presence": {
+    "viewing": "Currently viewing",
+    "andMore": "+{{count}} more"
   }
 }

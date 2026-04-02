@@ -44,6 +44,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { IconButton } from '../../components/ui/icon-button';
 import { Badge } from '../../components/ui/badge';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
+import { PresenceAvatars } from '../../components/shared/presence-avatars';
 import { CustomFieldsRenderer } from '../../components/shared/custom-fields-renderer';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { ColumnHeader } from '../../components/ui/column-header';
@@ -781,6 +782,7 @@ function DealDetailPanel({
           {t('crm.deals.dealDetail')}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <PresenceAvatars appId="crm" recordId={deal.id} />
           <IconButton icon={<Trash2 size={14} />} label={t('crm.deals.deleteDeal')} size={28} destructive onClick={() => { deleteDeal.mutate(deal.id); onClose(); }} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>
@@ -932,6 +934,7 @@ function ContactDetailPanel({
           {t('crm.contacts.contactDetail')}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <PresenceAvatars appId="crm" recordId={contact.id} />
           <IconButton icon={<Trash2 size={14} />} label={t('crm.contacts.deleteContact')} size={28} destructive onClick={() => { deleteContact.mutate(contact.id); onClose(); }} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>
@@ -1064,6 +1067,7 @@ function CompanyDetailPanel({
           {t('crm.companies.companyDetail')}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <PresenceAvatars appId="crm" recordId={company.id} />
           <IconButton icon={<Trash2 size={14} />} label={t('crm.companies.deleteCompany')} size={28} destructive onClick={() => { deleteCompany.mutate(company.id); onClose(); }} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>

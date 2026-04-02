@@ -2224,5 +2224,9 @@
     "startupTimeoutDesc": "L'application n'a pas encore répondu. Vous pouvez essayer de l'ouvrir quand même ou vérifier les journaux.",
     "backToMarketplace": "Retour",
     "openAnyway": "Ouvrir quand même"
+  },
+  "presence": {
+    "viewing": "En cours de consultation",
+    "andMore": "+{{count}} de plus"
   }
 }

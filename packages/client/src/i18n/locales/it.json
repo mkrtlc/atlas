@@ -2235,5 +2235,9 @@
     "startupTimeoutDesc": "L'app non ha ancora risposto. Puoi provare ad aprirla comunque o controllare i registri.",
     "backToMarketplace": "Indietro",
     "openAnyway": "Apri comunque"
+  },
+  "presence": {
+    "viewing": "Attualmente in visualizzazione",
+    "andMore": "+{{count}} in più"
   }
 }

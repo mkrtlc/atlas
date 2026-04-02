@@ -2231,5 +2231,9 @@
     "startupTimeoutDesc": "Uygulama henüz yanıt vermedi. Yine de açmayı deneyebilir veya günlükleri kontrol edebilirsiniz.",
     "backToMarketplace": "Geri",
     "openAnyway": "Yine de aç"
+  },
+  "presence": {
+    "viewing": "Şu anda görüntülüyor",
+    "andMore": "+{{count}} kişi daha"
   }
 }

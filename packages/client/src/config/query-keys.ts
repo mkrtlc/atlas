@@ -205,6 +205,9 @@ export const queryKeys = {
     status: (appId: string) => ['marketplace', 'status', appId] as const,
     logs: (appId: string) => ['marketplace', 'logs', appId] as const,
   },
+  presence: {
+    viewers: (appId: string, recordId: string) => ['presence', appId, recordId] as const,
+  },
   notifications: {
     all: ['notifications'] as const,
     list: ['notifications', 'list'] as const,
