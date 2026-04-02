@@ -1018,6 +1018,7 @@ function InsertImageButton({
   const handleInsertImage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !excalidrawApi) return;
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10 MB'); return; }
 
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {

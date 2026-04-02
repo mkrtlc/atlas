@@ -2720,6 +2720,7 @@ export function TablesPage() {
   const handleFileImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { useToastStore.getState().addToast({ type: 'error', message: 'File must be under 50 MB' }); return; }
 
     try {
       const buffer = await file.arrayBuffer();
