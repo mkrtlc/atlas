@@ -9,10 +9,7 @@
 
 services:
   atlas:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: atlas:latest
+    image: ghcr.io/bluewave-labs/atlas:${IMAGE_TAG:-latest}
     container_name: atlas
     restart: unless-stopped
     ports:
