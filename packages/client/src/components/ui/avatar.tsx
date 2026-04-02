@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
-import BoringAvatar from 'boring-avatars';
 function getInitials(name: string | null, email?: string): string {
   if (name) {
     const parts = name.trim().split(/\s+/);
@@ -217,38 +216,16 @@ export function Avatar({ src, name, email = '', size = 32, cssSize }: AvatarProp
           justifyContent: 'center',
           width: '100%',
           height: '100%',
-          position: 'relative',
+          background: colors[0],
         }}
       >
-        {/* Boring-avatars gradient background */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <BoringAvatar
-            name={seed}
-            variant="marble"
-            size={size}
-            colors={colors}
-            square={false}
-          />
-        </div>
-        {/* Initials overlay */}
         <span
           style={{
-            position: 'relative',
-            zIndex: 1,
             color: '#ffffff',
             fontSize: size <= 24 ? 9 : size <= 32 ? 11 : size <= 40 ? 13 : 15,
             fontWeight: 600,
             fontFamily: 'var(--font-family)',
             letterSpacing: '0.03em',
-            textShadow: '0 0 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4)',
             lineHeight: 1,
           }}
         >
