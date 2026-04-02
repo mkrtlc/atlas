@@ -1890,6 +1890,8 @@ export async function runMigrations() {
 
       ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS tenant_id UUID;
       ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
+
+      ALTER TABLE signature_fields ADD COLUMN IF NOT EXISTS options JSONB NOT NULL DEFAULT '{}';
     `);
 
     // ─── Table Row Comments ─────────────────────────────────────────────

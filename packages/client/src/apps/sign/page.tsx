@@ -427,13 +427,14 @@ export function SignPage() {
     if (validSigners.length === 0) return;
     // Calculate days from now to expiry
     const now = new Date();
-    const expiry = new Date(expiryDate);
-    const diffMs = expiry.getTime() - now.getTime();
-    const expiresInDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    const globalExpiry = new Date(expiryDate);
     try {
       const links: { email: string; link: string }[] = [];
       for (let idx = 0; idx < validSigners.length; idx++) {
         const signer = validSigners[idx];
+        const signerExpiry = signer.expiryDate ? new Date(signer.expiryDate) : globalExpiry;
+        const diffMs = signerExpiry.getTime() - now.getTime();
+        const expiresInDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
         const tokenResult = await createSigningLink.mutateAsync({
           email: signer.email.trim(),
           name: signer.name.trim() || undefined,
@@ -1404,6 +1405,25 @@ export function SignPage() {
                       size="md"
                     />
                   </div>
+                  <div style={{ width: 120, flexShrink: 0 }}>
+                    {idx === 0 && (
+                      <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'], color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                        {t('sign.send.signerExpiry')}
+                      </div>
+                    )}
+                    <Input
+                      type="date"
+                      value={signer.expiryDate || ''}
+                      onChange={(e) => {
+                        const updated = [...signers];
+                        updated[idx] = { ...updated[idx], expiryDate: e.target.value || undefined };
+                        setSigners(updated);
+                      }}
+                      placeholder={t('sign.send.defaultExpiry')}
+                      size="md"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
                   {signers.length > 1 && (
                     <IconButton
                       icon={<X size={14} />}
@@ -1421,7 +1441,7 @@ export function SignPage() {
                 variant="ghost"
                 size="sm"
                 icon={<Plus size={14} />}
-                onClick={() => setSigners([...signers, { email: '', name: '', role: 'signer' }])}
+                onClick={() => setSigners([...signers, { email: '', name: '', role: 'signer', expiryDate: undefined }])}
                 style={{ alignSelf: 'flex-start' }}
               >
                 {t('sign.send.addSigner')}

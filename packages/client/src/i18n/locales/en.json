@@ -1664,7 +1664,11 @@
       "checkbox": "Checkbox",
       "dropdown": "Dropdown",
       "name": "Name",
-      "email": "Email"
+      "email": "Email",
+      "readOnly": "Read only",
+      "placeholder": "Placeholder",
+      "fontSize": "Font size",
+      "textAlign": "Alignment"
     },
     "roles": {
       "signer": "Signer",
@@ -1689,7 +1693,9 @@
       "removeSigner": "Remove signer",
       "role": "Role",
       "signInOrder": "Sign in order",
-      "signInOrderDesc": "Signers must sign one at a time in the order listed"
+      "signInOrderDesc": "Signers must sign one at a time in the order listed",
+      "signerExpiry": "Expiry",
+      "defaultExpiry": "Default"
     },
     "reminders": {
       "lastSent": "Last reminder sent {{date}}",

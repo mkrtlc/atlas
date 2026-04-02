@@ -953,6 +953,7 @@ export const signatureFields = pgTable('signature_fields', {
   signerEmail: varchar('signer_email', { length: 255 }),
   label: varchar('label', { length: 255 }),
   required: boolean('required').notNull().default(true),
+  options: jsonb('options').$type<Record<string, unknown>>().notNull().default({}),
   signedAt: timestamp('signed_at', { withTimezone: true }),
   signatureData: text('signature_data'),
   sortOrder: integer('sort_order').notNull().default(0),

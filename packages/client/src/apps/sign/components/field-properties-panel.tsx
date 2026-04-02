@@ -4,7 +4,7 @@ import { Settings, Trash2 } from 'lucide-react';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { Select } from '../../../components/ui/select';
-import type { SignatureField, SignatureFieldType } from '@atlasmail/shared';
+import type { SignatureField, SignatureFieldType, FieldOptions } from '@atlasmail/shared';
 import type { Signer } from './signer-panel';
 
 const SIGNER_COLORS = ['#8b5cf6', '#3b82f6', '#ef4444', '#f59e0b', '#10b981'];
@@ -184,6 +184,135 @@ export function FieldPropertiesPanel({
           />
         </button>
       </div>
+
+      {/* Read only toggle */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--spacing-xs) 0',
+        }}
+      >
+        <label
+          style={{
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-text-secondary)',
+            fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+          }}
+        >
+          {t('sign.fields.readOnly')}
+        </label>
+        <button
+          onClick={() => {
+            const opts: FieldOptions = { ...(field.options || {}), readOnly: !(field.options?.readOnly) };
+            onUpdateField({ options: opts } as Partial<SignatureField>);
+          }}
+          style={{
+            width: 32,
+            height: 18,
+            borderRadius: 9,
+            border: 'none',
+            background: field.options?.readOnly ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)',
+            cursor: 'pointer',
+            position: 'relative',
+            transition: 'background 0.15s',
+            padding: 0,
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              top: 2,
+              left: field.options?.readOnly ? 16 : 2,
+              width: 14,
+              height: 14,
+              borderRadius: '50%',
+              background: '#fff',
+              boxShadow: 'var(--shadow-sm)',
+              transition: 'left 0.15s',
+            }}
+          />
+        </button>
+      </div>
+
+      {/* Placeholder (for text/name/email fields) */}
+      {['text', 'name', 'email'].includes(field.type) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+          <label
+            style={{
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-secondary)',
+              fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+            }}
+          >
+            {t('sign.fields.placeholder')}
+          </label>
+          <Input
+            value={field.options?.placeholder ?? ''}
+            onChange={(e) => {
+              const opts: FieldOptions = { ...(field.options || {}), placeholder: e.target.value || undefined };
+              onUpdateField({ options: opts } as Partial<SignatureField>);
+            }}
+            placeholder={t('sign.fields.placeholder')}
+            size="sm"
+          />
+        </div>
+      )}
+
+      {/* Font size (for text/name/email fields) */}
+      {['text', 'name', 'email'].includes(field.type) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+          <label
+            style={{
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-secondary)',
+              fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+            }}
+          >
+            {t('sign.fields.fontSize')}
+          </label>
+          <Input
+            type="number"
+            value={String(field.options?.fontSize ?? '')}
+            onChange={(e) => {
+              const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
+              const opts: FieldOptions = { ...(field.options || {}), fontSize: val };
+              onUpdateField({ options: opts } as Partial<SignatureField>);
+            }}
+            placeholder="14"
+            size="sm"
+          />
+        </div>
+      )}
+
+      {/* Text align (for text/name/email fields) */}
+      {['text', 'name', 'email'].includes(field.type) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+          <label
+            style={{
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-secondary)',
+              fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+            }}
+          >
+            {t('sign.fields.textAlign')}
+          </label>
+          <Select
+            value={field.options?.textAlign ?? 'left'}
+            onChange={(value) => {
+              const opts: FieldOptions = { ...(field.options || {}), textAlign: value as FieldOptions['textAlign'] };
+              onUpdateField({ options: opts } as Partial<SignatureField>);
+            }}
+            options={[
+              { value: 'left', label: 'Left' },
+              { value: 'center', label: 'Center' },
+              { value: 'right', label: 'Right' },
+            ]}
+            size="sm"
+          />
+        </div>
+      )}
 
       {/* Size controls */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>

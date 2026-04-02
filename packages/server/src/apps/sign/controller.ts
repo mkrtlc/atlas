@@ -361,7 +361,7 @@ export async function createField(req: Request, res: Response) {
     }
 
     const documentId = req.params.id as string;
-    const { type, pageNumber, x, y, width, height, signerEmail, label, required, sortOrder } = req.body;
+    const { type, pageNumber, x, y, width, height, signerEmail, label, required, options, sortOrder } = req.body;
 
     if (x === undefined || y === undefined || width === undefined || height === undefined) {
       res.status(400).json({ success: false, error: 'x, y, width, and height are required' });
@@ -379,6 +379,7 @@ export async function createField(req: Request, res: Response) {
       signerEmail,
       label,
       required,
+      options,
       sortOrder,
     });
     res.json({ success: true, data: field });
@@ -398,7 +399,7 @@ export async function updateField(req: Request, res: Response) {
     }
 
     const fieldId = req.params.fieldId as string;
-    const { type, pageNumber, x, y, width, height, signerEmail, label, required, sortOrder } = req.body;
+    const { type, pageNumber, x, y, width, height, signerEmail, label, required, options, sortOrder } = req.body;
 
     const field = await signService.updateField(fieldId, {
       type,
@@ -410,6 +411,7 @@ export async function updateField(req: Request, res: Response) {
       signerEmail,
       label,
       required,
+      options,
       sortOrder,
     });
 

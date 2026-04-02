@@ -11,6 +11,7 @@ export interface Signer {
   email: string;
   name: string;
   role: 'signer' | 'viewer' | 'approver' | 'cc';
+  expiryDate?: string;
 }
 
 interface SignerPanelProps {
@@ -29,7 +30,7 @@ export function SignerPanel({
   const { t } = useTranslation();
 
   const handleAddSigner = useCallback(() => {
-    onSignersChange([...signers, { email: '', name: '', role: 'signer' }]);
+    onSignersChange([...signers, { email: '', name: '', role: 'signer', expiryDate: undefined }]);
   }, [signers, onSignersChange]);
 
   const handleRemoveSigner = useCallback(

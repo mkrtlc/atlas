@@ -91,6 +91,9 @@ export function SignPublicPage() {
       const field = data.fields.find((f) => f.id === fieldId);
       if (!field) return;
 
+      // Read-only fields: no interaction allowed
+      if (field.options?.readOnly) return;
+
       // Name field: auto-fill with signer's name
       if (field.type === 'name') {
         if (field.signatureData || localSignatures[fieldId]) return;

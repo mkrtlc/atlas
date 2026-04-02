@@ -23,6 +23,13 @@ export interface SignatureDocument {
   updatedAt: string;
 }
 
+export interface FieldOptions {
+  readOnly?: boolean;
+  placeholder?: string;
+  fontSize?: number;
+  textAlign?: 'left' | 'center' | 'right';
+}
+
 export interface SignatureField {
   id: string;
   documentId: string;
@@ -35,6 +42,7 @@ export interface SignatureField {
   signerEmail: string | null;
   label: string | null;
   required: boolean;
+  options?: FieldOptions;
   signedAt: string | null;
   signatureData: string | null;
   sortOrder: number;

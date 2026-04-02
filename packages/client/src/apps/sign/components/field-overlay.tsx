@@ -252,29 +252,51 @@ function FieldBox({
             </span>
           )
         ) : field.signatureData ? (
-          <img
-            src={field.signatureData}
-            alt="Signature"
-            style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-              pointerEvents: 'none',
-            }}
-          />
+          // For text-like fields that have signatureData as text (name, email, text), render as text
+          ['name', 'email', 'text'].includes(field.type) ? (
+            <span
+              style={{
+                fontSize: field.options?.fontSize ? `${field.options.fontSize}px` : 'var(--font-size-xs)',
+                color: 'var(--color-text-primary)',
+                fontFamily: 'var(--font-family)',
+                fontWeight: 500,
+                pointerEvents: 'none',
+                userSelect: 'none',
+                textAlign: field.options?.textAlign || 'left',
+                width: '100%',
+                padding: '0 4px',
+              }}
+            >
+              {field.signatureData}
+            </span>
+          ) : (
+            <img
+              src={field.signatureData}
+              alt="Signature"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                pointerEvents: 'none',
+              }}
+            />
+          )
         ) : (
           <span
             style={{
-              fontSize: 'var(--font-size-xs)',
+              fontSize: field.options?.fontSize ? `${field.options.fontSize}px` : 'var(--font-size-xs)',
               color: colors.border,
               fontFamily: 'var(--font-family)',
               fontWeight: 500,
               pointerEvents: 'none',
               userSelect: 'none',
               opacity: 0.6,
+              textAlign: field.options?.textAlign || undefined,
+              width: '100%',
+              padding: '0 4px',
             }}
           >
-            {field.label || colors.label}
+            {field.options?.placeholder || field.label || colors.label}
           </span>
         )}
       </div>

@@ -254,6 +254,7 @@ export async function createField(data: {
   signerEmail?: string;
   label?: string;
   required?: boolean;
+  options?: Record<string, unknown>;
   sortOrder?: number;
 }) {
   const now = new Date();
@@ -271,6 +272,7 @@ export async function createField(data: {
       signerEmail: data.signerEmail ?? null,
       label: data.label ?? null,
       required: data.required ?? true,
+      options: data.options ?? {},
       sortOrder: data.sortOrder ?? 0,
       createdAt: now,
       updatedAt: now,
@@ -293,6 +295,7 @@ export async function updateField(
     signerEmail?: string | null;
     label?: string | null;
     required?: boolean;
+    options?: Record<string, unknown>;
     sortOrder?: number;
     signatureData?: string | null;
     signedAt?: Date | null;
@@ -310,6 +313,7 @@ export async function updateField(
   if (data.signerEmail !== undefined) updates.signerEmail = data.signerEmail;
   if (data.label !== undefined) updates.label = data.label;
   if (data.required !== undefined) updates.required = data.required;
+  if (data.options !== undefined) updates.options = data.options;
   if (data.sortOrder !== undefined) updates.sortOrder = data.sortOrder;
   if (data.signatureData !== undefined) updates.signatureData = data.signatureData;
   if (data.signedAt !== undefined) updates.signedAt = data.signedAt;
