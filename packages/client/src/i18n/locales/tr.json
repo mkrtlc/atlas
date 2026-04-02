@@ -556,6 +556,10 @@
     "autoSave10s": "10 saniye",
     "fromTemplate": "Şablondan",
     "blankDrawing": "Boş çizim",
+    "saving": "Kaydediliyor...",
+    "saved": "Kaydedildi",
+    "exportPdf": "PDF olarak dışa aktar",
+    "insertImage": "Resim ekle",
     "empty": {
       "title": "İlk çiziminizi oluşturun",
       "desc": "Diyagramlar, tel kafesler ve görsel fikirler çizin",
@@ -789,6 +793,23 @@
     "deleteSelected": "Sil",
     "duplicateSelected": "Çoğalt",
     "clearSelection": "Seçimi temizle",
+    "saved": "Kaydedildi",
+    "import": {
+      "title": "Veri içe aktar",
+      "preview": "Önizleme",
+      "firstRowHeader": "İlk satır başlık içeriyor",
+      "import": "İçe aktar",
+      "rowCount": "{{count}} satır",
+      "rowCount_one": "{{count}} satır",
+      "rowCount_other": "{{count}} satır"
+    },
+    "comments": {
+      "title": "Yorumlar",
+      "empty": "Henüz yorum yok",
+      "placeholder": "Yorum ekle...",
+      "add": "Ekle",
+      "delete": "Sil"
+    },
     "empty": {
       "title": "İlk tablonuzu oluşturun",
       "desc": "Güçlü alan türleri ve görünümlerle elektronik tablolar oluşturun",

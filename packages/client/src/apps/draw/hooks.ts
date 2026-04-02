@@ -146,7 +146,7 @@ export function useAutoSaveDrawing(delay = 2000) {
     }
   }, []);
 
-  return { save, flush, isSaving: updateMutation.isPending };
+  return { save, flush, isSaving: updateMutation.isPending, isSuccess: updateMutation.isSuccess };
 }
 
 // ─── Visibility ────────────────────────────────────────────────────

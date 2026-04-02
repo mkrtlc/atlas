@@ -556,6 +556,10 @@
     "autoSave10s": "10 Sekunden",
     "fromTemplate": "Aus Vorlage",
     "blankDrawing": "Leere Zeichnung",
+    "saving": "Speichern...",
+    "saved": "Gespeichert",
+    "exportPdf": "Als PDF exportieren",
+    "insertImage": "Bild einfügen",
     "empty": {
       "title": "Erste Zeichnung erstellen",
       "desc": "Skizzieren Sie Diagramme, Wireframes und visuelle Ideen",
@@ -789,6 +793,23 @@
     "deleteSelected": "Löschen",
     "duplicateSelected": "Duplizieren",
     "clearSelection": "Auswahl aufheben",
+    "saved": "Gespeichert",
+    "import": {
+      "title": "Daten importieren",
+      "preview": "Vorschau",
+      "firstRowHeader": "Erste Zeile enthält Überschriften",
+      "import": "Importieren",
+      "rowCount": "{{count}} Zeilen",
+      "rowCount_one": "{{count}} Zeile",
+      "rowCount_other": "{{count}} Zeilen"
+    },
+    "comments": {
+      "title": "Kommentare",
+      "empty": "Noch keine Kommentare",
+      "placeholder": "Kommentar hinzufügen...",
+      "add": "Hinzufügen",
+      "delete": "Löschen"
+    },
     "empty": {
       "title": "Erste Tabelle erstellen",
       "desc": "Erstellen Sie Tabellen mit leistungsstarken Feldtypen und Ansichten",

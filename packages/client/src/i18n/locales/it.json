@@ -556,6 +556,10 @@
     "autoSave10s": "10 secondi",
     "fromTemplate": "Da modello",
     "blankDrawing": "Disegno vuoto",
+    "saving": "Salvataggio...",
+    "saved": "Salvato",
+    "exportPdf": "Esporta come PDF",
+    "insertImage": "Inserisci immagine",
     "empty": {
       "title": "Crea il tuo primo disegno",
       "desc": "Disegna diagrammi, wireframe e idee visive",
@@ -789,6 +793,23 @@
     "deleteSelected": "Elimina",
     "duplicateSelected": "Duplica",
     "clearSelection": "Cancella selezione",
+    "saved": "Salvato",
+    "import": {
+      "title": "Importa dati",
+      "preview": "Anteprima",
+      "firstRowHeader": "La prima riga contiene le intestazioni",
+      "import": "Importa",
+      "rowCount": "{{count}} righe",
+      "rowCount_one": "{{count}} riga",
+      "rowCount_other": "{{count}} righe"
+    },
+    "comments": {
+      "title": "Commenti",
+      "empty": "Nessun commento",
+      "placeholder": "Aggiungi un commento...",
+      "add": "Aggiungi",
+      "delete": "Elimina"
+    },
     "empty": {
       "title": "Crea la tua prima tabella",
       "desc": "Costruisci fogli di calcolo con tipi di campo potenti e viste",

@@ -488,6 +488,21 @@ export const spreadsheets = pgTable('spreadsheets', {
   accountIdx: index('idx_spreadsheets_account').on(table.accountId, table.isArchived),
 }));
 
+// ─── Table Row Comments ─────────────────────────────────────────────
+
+export const tableRowComments = pgTable('table_row_comments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  spreadsheetId: uuid('spreadsheet_id').notNull().references(() => spreadsheets.id, { onDelete: 'cascade' }),
+  rowId: text('row_id').notNull(),
+  accountId: uuid('account_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  rowIdx: index('idx_table_row_comments_row').on(table.spreadsheetId, table.rowId),
+}));
+
 // ─── Drive (file storage) ────────────────────────────────────────────
 
 export const driveItems = pgTable('drive_items', {

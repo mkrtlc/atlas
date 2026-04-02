@@ -185,6 +185,80 @@ export async function seedSampleData(req: Request, res: Response) {
   }
 }
 
+// ─── Row Comments ─────────────────────────────────────────────────
+
+// GET /api/tables/:id/rows/:rowId/comments
+export async function listRowComments(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tables');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to view comments' });
+      return;
+    }
+
+    const spreadsheetId = req.params.id as string;
+    const rowId = req.params.rowId as string;
+    const comments = await tableService.listRowComments(spreadsheetId, rowId);
+    res.json({ success: true, data: comments });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list row comments');
+    res.status(500).json({ success: false, error: 'Failed to list row comments' });
+  }
+}
+
+// POST /api/tables/:id/rows/:rowId/comments
+export async function createRowComment(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tables');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create comments' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const accountId = req.auth!.accountId;
+    const spreadsheetId = req.params.id as string;
+    const rowId = req.params.rowId as string;
+    const { body } = req.body;
+
+    if (!body || !body.trim()) {
+      res.status(400).json({ success: false, error: 'Comment body is required' });
+      return;
+    }
+
+    const comment = await tableService.createRowComment(userId, accountId, spreadsheetId, rowId, body.trim());
+    res.json({ success: true, data: comment });
+  } catch (error) {
+    logger.error({ error }, 'Failed to create row comment');
+    res.status(500).json({ success: false, error: 'Failed to create row comment' });
+  }
+}
+
+// DELETE /api/tables/comments/:commentId
+export async function deleteRowComment(req: Request, res: Response) {
+  try {
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'tables');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const commentId = req.params.commentId as string;
+
+    const deleted = await tableService.deleteRowComment(userId, commentId);
+    if (!deleted) {
+      res.status(403).json({ success: false, error: 'Comment not found or not authorized to delete' });
+      return;
+    }
+
+    res.json({ success: true, data: null });
+  } catch (error) {
+    logger.error({ error }, 'Failed to delete row comment');
+    res.status(500).json({ success: false, error: 'Failed to delete row comment' });
+  }
+}
+
 // GET /api/tables/search?q=...
 export async function searchSpreadsheets(req: Request, res: Response) {
   try {

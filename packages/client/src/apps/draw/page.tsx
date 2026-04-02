@@ -21,6 +21,9 @@ import {
   ArrowDownAZ,
   Layers,
   Share2,
+  Loader2,
+  Check,
+  ImagePlus,
 } from 'lucide-react';
 import { AppSidebar } from '../../components/layout/app-sidebar';
 import { Button } from '../../components/ui/button';
@@ -905,9 +908,39 @@ function ExportMenu({
     setOpen(false);
   }, [excalidrawApi, exportWithBackground]);
 
+  const handleExportPdf = useCallback(async () => {
+    if (!excalidrawApi) return;
+    const elements = excalidrawApi.getSceneElements();
+    const appState = excalidrawApi.getAppState();
+    const files = excalidrawApi.getFiles();
+    try {
+      const blob = await exportToBlob({
+        elements,
+        appState: { ...appState, exportWithDarkMode: appState.theme === 'dark', exportBackground: exportWithBackground },
+        files,
+        getDimensions: () => ({ width: 1920 * exportQuality, height: 1080 * exportQuality, scale: exportQuality }),
+      } as any);
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      const img = new window.Image();
+      img.src = dataUrl;
+      await new Promise<void>((resolve) => { img.onload = () => resolve(); });
+      const { jsPDF } = await import('jspdf');
+      const orientation = img.width >= img.height ? 'landscape' : 'portrait';
+      const pdf = new jsPDF({ orientation, unit: 'px', format: [img.width, img.height] });
+      pdf.addImage(dataUrl, 'PNG', 0, 0, img.width, img.height);
+      pdf.save('drawing.pdf');
+    } catch { /* ignore */ }
+    setOpen(false);
+  }, [excalidrawApi, exportQuality, exportWithBackground]);
+
   const menuItems = [
     { label: t('draw.exportPng'), icon: <Image size={14} />, onClick: handleExportPng },
     { label: t('draw.exportSvg'), icon: <FileImage size={14} />, onClick: handleExportSvg },
+    { label: t('draw.exportPdf'), icon: <Download size={14} />, onClick: handleExportPdf },
     { label: t('draw.copyClipboard'), icon: <Clipboard size={14} />, onClick: handleCopyClipboard },
   ];
 
@@ -972,12 +1005,122 @@ function ExportMenu({
   );
 }
 
+// ─── Insert image button ────────────────────────────────────────────
+
+function InsertImageButton({
+  excalidrawApi,
+}: {
+  excalidrawApi: ExcalidrawImperativeAPI | null;
+}) {
+  const { t } = useTranslation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleInsertImage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !excalidrawApi) return;
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Get image dimensions
+      const img = new window.Image();
+      img.src = dataUrl;
+      await new Promise<void>((resolve) => { img.onload = () => resolve(); });
+
+      const fileId = crypto.randomUUID() as any;
+
+      // Register the file with Excalidraw
+      excalidrawApi.addFiles([{
+        id: fileId,
+        dataURL: dataUrl as any,
+        mimeType: file.type as any,
+        created: Date.now(),
+        lastRetrieved: Date.now(),
+      }]);
+
+      // Scale to fit within canvas (max 600px width/height)
+      const maxSize = 600;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxSize || height > maxSize) {
+        const scale = Math.min(maxSize / width, maxSize / height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      const imageElement = {
+        type: 'image' as const,
+        id: crypto.randomUUID(),
+        fileId,
+        x: 100,
+        y: 100,
+        width,
+        height,
+        strokeColor: 'transparent',
+        backgroundColor: 'transparent',
+        fillStyle: 'solid' as const,
+        strokeWidth: 0,
+        roughness: 0,
+        opacity: 100,
+        roundness: null,
+        seed: Math.floor(Math.random() * 100000),
+        version: 1,
+        versionNonce: Math.floor(Math.random() * 100000),
+        isDeleted: false,
+        groupIds: [],
+        boundElements: null,
+        locked: false,
+        link: null,
+        updated: Date.now(),
+        status: 'saved' as const,
+        scale: [1, 1] as [number, number],
+      };
+
+      const existingElements = excalidrawApi.getSceneElements();
+      excalidrawApi.updateScene({
+        elements: [...existingElements, imageElement] as any,
+      });
+    } catch {
+      // Failed to insert image
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [excalidrawApi]);
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        icon={<ImagePlus size={13} />}
+        onClick={() => fileInputRef.current?.click()}
+        title={t('draw.insertImage')}
+      >
+        {t('draw.insertImage')}
+      </Button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleInsertImage}
+      />
+    </>
+  );
+}
+
 // ─── Editable title header ───────────────────────────────────────────
 
 function EditableTitle({
   title,
   onChange,
   isSaving,
+  showSaved,
   excalidrawApi,
   presenceSlot,
   visibilitySlot,
@@ -985,6 +1128,7 @@ function EditableTitle({
   title: string;
   onChange: (title: string) => void;
   isSaving: boolean;
+  showSaved?: boolean;
   excalidrawApi: ExcalidrawImperativeAPI | null;
   presenceSlot?: React.ReactNode;
   visibilitySlot?: React.ReactNode;
@@ -1073,13 +1217,33 @@ function EditableTitle({
             fontSize: 'var(--font-size-xs)',
             color: 'var(--color-text-tertiary)',
             flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
           }}
         >
-          {`${t('common.save')}...`}
+          <Loader2 size={12} style={{ animation: 'draw-spin 1s linear infinite' }} />
+          {t('draw.saving')}
+        </span>
+      )}
+      {!isSaving && showSaved && (
+        <span
+          style={{
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-text-tertiary)',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <Check size={12} />
+          {t('draw.saved')}
         </span>
       )}
       {visibilitySlot}
       {presenceSlot}
+      <InsertImageButton excalidrawApi={excalidrawApi} />
       <ExportMenu excalidrawApi={excalidrawApi} />
     </div>
   );
@@ -1184,6 +1348,7 @@ function ExcalidrawCanvas({
   onAutoSave,
   onThumbnailGenerated,
   isSaving,
+  showSaved,
   onTitleChange,
   visibilitySlot,
 }: {
@@ -1191,6 +1356,7 @@ function ExcalidrawCanvas({
   onAutoSave: (content: Record<string, unknown>) => void;
   onThumbnailGenerated: (thumbnailUrl: string) => void;
   isSaving: boolean;
+  showSaved?: boolean;
   onTitleChange: (title: string) => void;
   visibilitySlot?: React.ReactNode;
 }) {
@@ -1282,6 +1448,7 @@ function ExcalidrawCanvas({
         title={drawing.title}
         onChange={onTitleChange}
         isSaving={isSaving}
+        showSaved={showSaved}
         excalidrawApi={excalidrawApi}
         presenceSlot={<PresenceAvatars appId="draw" recordId={drawing.id} />}
         visibilitySlot={visibilitySlot}
@@ -1317,7 +1484,7 @@ export function DrawPage() {
   const { data: drawing, isLoading } = useDrawing(selectedId);
   const { data: listData } = useDrawingList();
   const { autoSaveInterval } = useDrawSettingsStore();
-  const { save, isSaving } = useAutoSaveDrawing(autoSaveInterval);
+  const { save, isSaving, isSuccess: isSaveSuccess } = useAutoSaveDrawing(autoSaveInterval);
   const createDrawing = useCreateDrawing();
   const updateDrawing = useUpdateDrawing();
   const updateVisibility = useUpdateDrawingVisibility();
@@ -1325,6 +1492,20 @@ export function DrawPage() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { openSettings } = useUIStore();
+
+  // "Saved" indicator auto-dismiss
+  const [showSaved, setShowSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (isSaveSuccess && !isSaving) {
+      setShowSaved(true);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setShowSaved(false), 2000);
+    }
+  }, [isSaveSuccess, isSaving]);
+  useEffect(() => {
+    return () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); };
+  }, []);
 
   // Sync selectedId with URL param when it changes (browser back/forward)
   useEffect(() => {
@@ -1453,6 +1634,7 @@ export function DrawPage() {
             onAutoSave={handleAutoSave}
             onThumbnailGenerated={handleThumbnailGenerated}
             isSaving={isSaving}
+            showSaved={showSaved}
             onTitleChange={handleTitleChange}
             visibilitySlot={
               <VisibilityToggle
@@ -1491,6 +1673,13 @@ export function DrawPage() {
         open={showSettings}
         onClose={() => setShowSettings(false)}
       />
+
+      <style>{`
+        @keyframes draw-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

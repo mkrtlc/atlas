@@ -265,6 +265,15 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+.tables-spin {
+  animation: tables-spin-anim 1s linear infinite;
+}
+
+@keyframes tables-spin-anim {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ─── Topbar view tabs ───────────────────────────────────────────── */
 
 .tables-topbar-view-tabs {

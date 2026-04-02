@@ -34,6 +34,6 @@ export const tablesServerManifest: ServerAppManifest = {
   version: '1.0.0',
   router: tablesRouter,
   routePrefix: '/tables',
-  tables: ['spreadsheets', 'spreadsheet_columns', 'spreadsheet_rows'],
+  tables: ['spreadsheets', 'spreadsheet_columns', 'spreadsheet_rows', 'table_row_comments'],
   objects,
 };

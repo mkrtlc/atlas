@@ -1892,6 +1892,21 @@ export async function runMigrations() {
       ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
     `);
 
+    // ─── Table Row Comments ─────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS table_row_comments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        spreadsheet_id UUID NOT NULL REFERENCES spreadsheets(id) ON DELETE CASCADE,
+        row_id TEXT NOT NULL,
+        account_id UUID NOT NULL,
+        user_id UUID NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_table_row_comments_row ON table_row_comments(spreadsheet_id, row_id);
+    `);
+
     logger.info('Database migrations completed');
   } finally {
     await client.end();

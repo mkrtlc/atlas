@@ -583,6 +583,10 @@
     "autoSave10s": "10 seconds",
     "fromTemplate": "From template",
     "blankDrawing": "Blank drawing",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "exportPdf": "Export as PDF",
+    "insertImage": "Insert image",
     "empty": {
       "title": "Create your first drawing",
       "desc": "Sketch diagrams, wireframes, and visual ideas",
@@ -816,6 +820,23 @@
     "deleteSelected": "Delete",
     "duplicateSelected": "Duplicate",
     "clearSelection": "Clear selection",
+    "saved": "Saved",
+    "import": {
+      "title": "Import data",
+      "preview": "Preview",
+      "firstRowHeader": "First row contains headers",
+      "import": "Import",
+      "rowCount": "{{count}} rows",
+      "rowCount_one": "{{count}} row",
+      "rowCount_other": "{{count}} rows"
+    },
+    "comments": {
+      "title": "Comments",
+      "empty": "No comments yet",
+      "placeholder": "Add a comment...",
+      "add": "Add",
+      "delete": "Delete"
+    },
     "empty": {
       "title": "Create your first table",
       "desc": "Build spreadsheets with powerful field types and views",

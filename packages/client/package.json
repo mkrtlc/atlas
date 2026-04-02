@@ -61,6 +61,7 @@
     "fast-formula-parser": "^1.0.19",
     "i18next": "^25.8.13",
     "i18next-browser-languagedetector": "^8.2.1",
+    "jspdf": "^4.2.1",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.460.0",
     "pdfjs-dist": "^5.5.207",

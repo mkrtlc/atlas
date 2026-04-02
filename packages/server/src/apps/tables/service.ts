@@ -1,5 +1,5 @@
 import { db } from '../../config/database';
-import { spreadsheets } from '../../db/schema';
+import { spreadsheets, tableRowComments, users } from '../../db/schema';
 import { eq, and, asc, sql } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import type { CreateSpreadsheetInput, UpdateSpreadsheetInput } from '@atlasmail/shared';
@@ -185,4 +185,89 @@ export async function searchSpreadsheets(userId: string, query: string) {
     )
     .orderBy(asc(spreadsheets.updatedAt))
     .limit(20);
+}
+
+// ─── Row Comments ───────────────────────────────────────────────────
+
+export async function listRowComments(spreadsheetId: string, rowId: string) {
+  return db
+    .select({
+      id: tableRowComments.id,
+      spreadsheetId: tableRowComments.spreadsheetId,
+      rowId: tableRowComments.rowId,
+      accountId: tableRowComments.accountId,
+      userId: tableRowComments.userId,
+      body: tableRowComments.body,
+      userName: users.name,
+      userEmail: users.email,
+      createdAt: tableRowComments.createdAt,
+      updatedAt: tableRowComments.updatedAt,
+    })
+    .from(tableRowComments)
+    .leftJoin(users, eq(tableRowComments.userId, users.id))
+    .where(
+      and(
+        eq(tableRowComments.spreadsheetId, spreadsheetId),
+        eq(tableRowComments.rowId, rowId),
+      ),
+    )
+    .orderBy(asc(tableRowComments.createdAt));
+}
+
+export async function createRowComment(
+  userId: string,
+  accountId: string,
+  spreadsheetId: string,
+  rowId: string,
+  body: string,
+) {
+  const now = new Date();
+  const [created] = await db
+    .insert(tableRowComments)
+    .values({
+      spreadsheetId,
+      rowId,
+      accountId,
+      userId,
+      body,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  // Return with user info
+  const [result] = await db
+    .select({
+      id: tableRowComments.id,
+      spreadsheetId: tableRowComments.spreadsheetId,
+      rowId: tableRowComments.rowId,
+      accountId: tableRowComments.accountId,
+      userId: tableRowComments.userId,
+      body: tableRowComments.body,
+      userName: users.name,
+      userEmail: users.email,
+      createdAt: tableRowComments.createdAt,
+      updatedAt: tableRowComments.updatedAt,
+    })
+    .from(tableRowComments)
+    .leftJoin(users, eq(tableRowComments.userId, users.id))
+    .where(eq(tableRowComments.id, created.id))
+    .limit(1);
+
+  return result;
+}
+
+export async function deleteRowComment(userId: string, commentId: string) {
+  // Only the author can delete
+  const [comment] = await db
+    .select()
+    .from(tableRowComments)
+    .where(eq(tableRowComments.id, commentId))
+    .limit(1);
+
+  if (!comment) return false;
+  if (comment.userId !== userId) return false;
+
+  await db.delete(tableRowComments).where(eq(tableRowComments.id, commentId));
+  return true;
 }

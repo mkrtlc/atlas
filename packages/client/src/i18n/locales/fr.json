@@ -556,6 +556,10 @@
     "autoSave10s": "10 secondes",
     "fromTemplate": "À partir d'un modèle",
     "blankDrawing": "Dessin vierge",
+    "saving": "Enregistrement...",
+    "saved": "Enregistré",
+    "exportPdf": "Exporter en PDF",
+    "insertImage": "Insérer une image",
     "empty": {
       "title": "Créez votre premier dessin",
       "desc": "Esquissez des diagrammes, des maquettes et des idées visuelles",
@@ -789,6 +793,23 @@
     "deleteSelected": "Supprimer",
     "duplicateSelected": "Dupliquer",
     "clearSelection": "Effacer la sélection",
+    "saved": "Enregistré",
+    "import": {
+      "title": "Importer des données",
+      "preview": "Aperçu",
+      "firstRowHeader": "La première ligne contient les en-têtes",
+      "import": "Importer",
+      "rowCount": "{{count}} lignes",
+      "rowCount_one": "{{count}} ligne",
+      "rowCount_other": "{{count}} lignes"
+    },
+    "comments": {
+      "title": "Commentaires",
+      "empty": "Aucun commentaire",
+      "placeholder": "Ajouter un commentaire...",
+      "add": "Ajouter",
+      "delete": "Supprimer"
+    },
     "empty": {
       "title": "Créez votre première table",
       "desc": "Construisez des feuilles de calcul avec des types de champs puissants et des vues",

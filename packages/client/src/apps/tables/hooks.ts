@@ -150,5 +150,60 @@ export function useAutoSaveTable(delay = 2000) {
     };
   }, []);
 
-  return { save, flush, isSaving: updateMutation.isPending };
+  return { save, flush, isSaving: updateMutation.isPending, isSuccess: updateMutation.isSuccess };
+}
+
+// ─── Row Comments ───────────────────────────────────────────────────
+
+interface RowComment {
+  id: string;
+  spreadsheetId: string;
+  rowId: string;
+  accountId: string;
+  userId: string;
+  body: string;
+  userName: string | null;
+  userEmail: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useRowComments(spreadsheetId: string | undefined, rowId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.tables.rowComments(spreadsheetId!, rowId!),
+    queryFn: async () => {
+      const { data } = await api.get(`/tables/${spreadsheetId}/rows/${rowId}/comments`);
+      return data.data as RowComment[];
+    },
+    enabled: !!spreadsheetId && !!rowId,
+    staleTime: 10_000,
+  });
+}
+
+export function useCreateRowComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ spreadsheetId, rowId, body }: { spreadsheetId: string; rowId: string; body: string }) => {
+      const { data } = await api.post(`/tables/${spreadsheetId}/rows/${rowId}/comments`, { body });
+      return data.data as RowComment;
+    },
+    onSuccess: (comment) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tables.rowComments(comment.spreadsheetId, comment.rowId) });
+    },
+  });
+}
+
+export function useDeleteRowComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ commentId, spreadsheetId, rowId }: { commentId: string; spreadsheetId: string; rowId: string }) => {
+      await api.delete(`/tables/comments/${commentId}`);
+      return { spreadsheetId, rowId };
+    },
+    onSuccess: ({ spreadsheetId, rowId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tables.rowComments(spreadsheetId, rowId) });
+    },
+  });
 }

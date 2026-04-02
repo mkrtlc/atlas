@@ -1,15 +1,18 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Paperclip, FileIcon, ChevronUp, ChevronDown, Plus } from 'lucide-react';
+import { X, Paperclip, FileIcon, ChevronUp, ChevronDown, Plus, Trash2, MessageSquare } from 'lucide-react';
 import { Modal } from '../../../components/ui/modal';
 import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
+import { Avatar } from '../../../components/ui/avatar';
 import type { TableColumn, TableRow, TableAttachment, TableFieldType } from '@atlasmail/shared';
 import { FIELD_TYPE_ICONS } from '../../../lib/field-type-icons';
 import { api } from '../../../lib/api-client';
 import { Textarea } from '../../../components/ui/textarea';
 import { Select } from '../../../components/ui/select';
+import { useRowComments, useCreateRowComment, useDeleteRowComment } from '../hooks';
+import { useAuthStore } from '../../../stores/auth-store';
 
 const FIELD_TYPES: { value: TableFieldType; label: string }[] = [
   { value: 'text', label: 'Text' },
@@ -31,6 +34,7 @@ const FIELD_TYPES: { value: TableFieldType; label: string }[] = [
 interface ExpandRowModalProps {
   row: TableRow;
   columns: TableColumn[];
+  spreadsheetId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateField: (rowId: string, colId: string, value: unknown) => void;
@@ -43,6 +47,7 @@ interface ExpandRowModalProps {
 export function ExpandRowModal({
   row,
   columns,
+  spreadsheetId,
   open,
   onOpenChange,
   onUpdateField,
@@ -378,6 +383,11 @@ export function ExpandRowModal({
             )}
           </div>
 
+          {/* Comments section */}
+          {spreadsheetId && (
+            <RowCommentsSection spreadsheetId={spreadsheetId} rowId={row._id} />
+          )}
+
           {/* Hidden file input for attachment uploads */}
           <input
             type="file"
@@ -386,6 +396,130 @@ export function ExpandRowModal({
             onChange={handleAttachmentUpload}
           />
     </Modal>
+  );
+}
+
+/* ─── Row comments section ─────────────────────────────────────── */
+
+function RowCommentsSection({
+  spreadsheetId,
+  rowId,
+}: {
+  spreadsheetId: string;
+  rowId: string;
+}) {
+  const { t } = useTranslation();
+  const { account } = useAuthStore();
+  const { data: comments, isLoading } = useRowComments(spreadsheetId, rowId);
+  const createComment = useCreateRowComment();
+  const deleteComment = useDeleteRowComment();
+  const [newComment, setNewComment] = useState('');
+
+  const handleSubmit = () => {
+    if (!newComment.trim()) return;
+    createComment.mutate(
+      { spreadsheetId, rowId, body: newComment.trim() },
+      { onSuccess: () => setNewComment('') },
+    );
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return t('common.now');
+    if (diffMins < 60) return `${diffMins}m`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs}h`;
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString();
+  };
+
+  return (
+    <div style={{ padding: '0 var(--spacing-lg) var(--spacing-lg)', borderTop: '1px solid var(--color-border-secondary)', marginTop: 'var(--spacing-lg)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', padding: 'var(--spacing-md) 0', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>
+        <MessageSquare size={14} />
+        {t('tables.comments.title')}
+      </div>
+
+      {/* Comment list */}
+      {isLoading ? (
+        <div style={{ padding: 'var(--spacing-md) 0', color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>{t('common.loading')}</div>
+      ) : comments && comments.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
+          {comments.map((comment) => (
+            <div key={comment.id} style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'flex-start' }}>
+              <Avatar name={comment.userName || comment.userEmail || ''} size={28} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                  <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                    {comment.userName || comment.userEmail || 'Unknown'}
+                  </span>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+                    {formatDate(comment.createdAt)}
+                  </span>
+                  {comment.userId === account?.userId && (
+                    <IconButton
+                      icon={<Trash2 size={12} />}
+                      label={t('tables.comments.delete')}
+                      size={20}
+                      style={{ opacity: 0.4, marginLeft: 'auto' }}
+                      onClick={() => deleteComment.mutate({ commentId: comment.id, spreadsheetId, rowId })}
+                    />
+                  )}
+                </div>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {comment.body}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ padding: 'var(--spacing-md) 0', color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+          {t('tables.comments.empty')}
+        </div>
+      )}
+
+      {/* Add comment */}
+      <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'flex-end' }}>
+        <textarea
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder={t('tables.comments.placeholder')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          style={{
+            flex: 1,
+            minHeight: 36,
+            maxHeight: 120,
+            padding: '8px 10px',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-md)',
+            fontSize: 'var(--font-size-sm)',
+            fontFamily: 'var(--font-family)',
+            color: 'var(--color-text-primary)',
+            background: 'var(--color-bg-tertiary)',
+            resize: 'vertical',
+            outline: 'none',
+          }}
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleSubmit}
+          disabled={!newComment.trim() || createComment.isPending}
+        >
+          {t('tables.comments.add')}
+        </Button>
+      </div>
+    </div>
   );
 }
 

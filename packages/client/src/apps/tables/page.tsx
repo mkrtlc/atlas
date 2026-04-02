@@ -46,6 +46,8 @@ import {
   Settings2,
   GanttChart,
   Upload,
+  Loader2,
+  Check,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import {
@@ -87,6 +89,7 @@ import { RowColorPopover } from './components/RowColorPopover';
 import { useTablesSettingsStore } from './settings-store';
 import { useUIStore } from '../../stores/ui-store';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { Modal } from '../../components/ui/modal';
 import { useToastStore } from '../../stores/toast-store';
 import { FindReplaceBar } from './components/FindReplaceBar';
 import { BatchEditOverlay } from './components/BatchEditOverlay';
@@ -1468,7 +1471,7 @@ export function TablesPage() {
   const createTable = useCreateTable();
   const deleteTable = useDeleteTable();
   const restoreTable = useRestoreTable();
-  const { save: autoSave, isSaving } = useAutoSaveTable();
+  const { save: autoSave, isSaving, isSuccess: isSaveSuccess } = useAutoSaveTable();
   const tablesSettings = useTablesSettingsStore();
   const { openSettings } = useUIStore();
 
@@ -1480,6 +1483,20 @@ export function TablesPage() {
   const [showTrash, setShowTrash] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // "Saved" indicator auto-dismiss
+  const [showSaved, setShowSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (isSaveSuccess && !isSaving) {
+      setShowSaved(true);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setShowSaved(false), 2000);
+    }
+  }, [isSaveSuccess, isSaving]);
+  useEffect(() => {
+    return () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); };
+  }, []);
 
   // Local state for the active spreadsheet (optimistic)
   const [localColumns, setLocalColumns] = useState<TableColumn[]>([]);
@@ -1496,6 +1513,14 @@ export function TablesPage() {
   const [rowMenu, setRowMenu] = useState<{ rowId: string; x: number; y: number } | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
+
+  // Import modal state
+  const [importModalData, setImportModalData] = useState<{
+    fileName: string;
+    allRows: unknown[][];
+    firstRowHeader: boolean;
+    columnMappings: { name: string; type: TableFieldType }[];
+  } | null>(null);
 
   // Attachment upload
   const attachmentInputRef = useRef<HTMLInputElement>(null);
@@ -2705,11 +2730,16 @@ export function TablesPage() {
 
       if (jsonData.length < 1) return;
 
-      const headers = (jsonData[0] as string[]).map((h) => String(h || 'Column'));
-      const dataRows = jsonData.slice(1);
+      // Auto-detect if first row looks like headers
+      const firstRow = jsonData[0] as unknown[];
+      const allStrings = firstRow.every((v) => typeof v === 'string' && v.trim().length > 0);
+      const hasHeader = allStrings;
+
+      const headerRow = hasHeader ? firstRow.map((h) => String(h || 'Column')) : firstRow.map((_, i) => `Column ${i + 1}`);
+      const dataRows = hasHeader ? jsonData.slice(1) : jsonData;
 
       // Infer column types from sample data
-      const columns: TableColumn[] = headers.map((header, idx) => {
+      const columnMappings = headerRow.map((name, idx) => {
         const sampleValues = dataRows.slice(0, 10).map((r) => r[idx]).filter(Boolean);
         let type: TableFieldType = 'text';
         if (sampleValues.length > 0 && sampleValues.every((v) => typeof v === 'number' || !isNaN(Number(v)))) {
@@ -2717,31 +2747,56 @@ export function TablesPage() {
         } else if (sampleValues.length > 0 && sampleValues.every((v) => typeof v === 'boolean' || v === 'true' || v === 'false')) {
           type = 'checkbox';
         }
-
-        return { id: crypto.randomUUID(), name: header, type, width: 150 };
+        return { name: String(name), type };
       });
 
-      const rows: TableRow[] = dataRows.map((row) => {
-        const cells: Record<string, unknown> = {
-          _id: crypto.randomUUID(),
-          _createdAt: new Date().toISOString(),
-        };
-        columns.forEach((col, idx) => {
-          cells[col.id] = row[idx] ?? '';
-        });
-        return cells as TableRow;
+      setImportModalData({
+        fileName: file.name.replace(/\.(csv|xlsx?|xls)$/i, ''),
+        allRows: jsonData,
+        firstRowHeader: hasHeader,
+        columnMappings,
       });
-
-      const title = file.name.replace(/\.(csv|xlsx?|xls)$/i, '');
-      const created = await createTable.mutateAsync({ title, columns, rows });
-      handleSelectTable(created.id);
     } catch (error) {
       console.error('Import failed:', error);
     }
 
     // Reset input
     e.target.value = '';
-  }, [createTable, handleSelectTable]);
+  }, []);
+
+  const handleImportConfirm = useCallback(async () => {
+    if (!importModalData) return;
+
+    const { fileName, allRows, firstRowHeader, columnMappings } = importModalData;
+    const dataRows = firstRowHeader ? allRows.slice(1) : allRows;
+
+    const columns: TableColumn[] = columnMappings.map((col) => ({
+      id: crypto.randomUUID(),
+      name: col.name,
+      type: col.type,
+      width: 150,
+    }));
+
+    const rows: TableRow[] = dataRows.map((row) => {
+      const cells: Record<string, unknown> = {
+        _id: crypto.randomUUID(),
+        _createdAt: new Date().toISOString(),
+      };
+      columns.forEach((col, idx) => {
+        cells[col.id] = (row as unknown[])[idx] ?? '';
+      });
+      return cells as TableRow;
+    });
+
+    try {
+      const created = await createTable.mutateAsync({ title: fileName, columns, rows });
+      handleSelectTable(created.id);
+    } catch (error) {
+      console.error('Import failed:', error);
+    }
+
+    setImportModalData(null);
+  }, [importModalData, createTable, handleSelectTable]);
 
   // ─── Row grouping handlers ────────────────────────────────────
   const handleGroupByColumn = useCallback(
@@ -3284,8 +3339,15 @@ export function TablesPage() {
                 />
 
                 {isSaving && (
-                  <span className="tables-topbar-saving">
+                  <span className="tables-topbar-saving" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Loader2 size={12} className="tables-spin" />
                     {t('tables.saving')}
+                  </span>
+                )}
+                {!isSaving && showSaved && (
+                  <span className="tables-topbar-saving" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Check size={12} />
+                    {t('tables.saved')}
                   </span>
                 )}
               </div>
@@ -3946,6 +4008,7 @@ export function TablesPage() {
           <ExpandRowModal
             row={row}
             columns={localColumns}
+            spreadsheetId={selectedId || undefined}
             open={true}
             onOpenChange={(open) => { if (!open) setExpandedRowId(null); }}
             onUpdateField={handleUpdateRowField}
@@ -3985,6 +4048,124 @@ export function TablesPage() {
           opacity: 1 !important;
         }
       `}</style>
+
+      {/* Import modal */}
+      {importModalData && (
+        <Modal
+          open={true}
+          onOpenChange={(open) => { if (!open) setImportModalData(null); }}
+          width="90vw"
+          maxWidth={800}
+          title={t('tables.import.title')}
+        >
+          <div style={{ padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+            {/* First row is header toggle */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={importModalData.firstRowHeader}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setImportModalData((prev) => {
+                    if (!prev) return prev;
+                    const headerRow = checked
+                      ? (prev.allRows[0] as unknown[]).map((h) => String(h || 'Column'))
+                      : (prev.allRows[0] as unknown[]).map((_, i) => `Column ${i + 1}`);
+                    const dataRows = checked ? prev.allRows.slice(1) : prev.allRows;
+                    const columnMappings = headerRow.map((name, idx) => {
+                      const sampleValues = dataRows.slice(0, 10).map((r) => (r as unknown[])[idx]).filter(Boolean);
+                      let type = prev.columnMappings[idx]?.type ?? ('text' as TableFieldType);
+                      if (sampleValues.length > 0 && sampleValues.every((v) => typeof v === 'number' || !isNaN(Number(v)))) {
+                        type = 'number';
+                      }
+                      return { name: String(name), type };
+                    });
+                    return { ...prev, firstRowHeader: checked, columnMappings };
+                  });
+                }}
+                style={{ width: 16, height: 16 }}
+              />
+              {t('tables.import.firstRowHeader')}
+            </label>
+
+            {/* Column mappings */}
+            <div style={{ border: '1px solid var(--color-border-primary)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)' }}>
+                <thead>
+                  <tr style={{ background: 'var(--color-bg-secondary)' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid var(--color-border-primary)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>{t('tables.column')}</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid var(--color-border-primary)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>{t('tables.fieldType')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importModalData.columnMappings.map((col, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--color-border-secondary)', color: 'var(--color-text-primary)' }}>{col.name}</td>
+                      <td style={{ padding: '6px 12px', borderBottom: '1px solid var(--color-border-secondary)' }}>
+                        <Select
+                          value={col.type}
+                          onChange={(val) => {
+                            setImportModalData((prev) => {
+                              if (!prev) return prev;
+                              const updated = [...prev.columnMappings];
+                              updated[idx] = { ...updated[idx], type: val as TableFieldType };
+                              return { ...prev, columnMappings: updated };
+                            });
+                          }}
+                          options={[
+                            { value: 'text', label: 'Text' },
+                            { value: 'number', label: 'Number' },
+                            { value: 'checkbox', label: 'Checkbox' },
+                            { value: 'date', label: 'Date' },
+                            { value: 'url', label: 'URL' },
+                            { value: 'email', label: 'Email' },
+                          ]}
+                          size="sm"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Preview (first 5 rows) */}
+            <div>
+              <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
+                {t('tables.import.preview')} &mdash; {t('tables.import.rowCount', { count: importModalData.firstRowHeader ? importModalData.allRows.length - 1 : importModalData.allRows.length })}
+              </div>
+              <div style={{ border: '1px solid var(--color-border-primary)', borderRadius: 'var(--radius-md)', overflow: 'auto', maxHeight: 200 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-xs)', fontFamily: 'var(--font-family)' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--color-bg-secondary)' }}>
+                      {importModalData.columnMappings.map((col, idx) => (
+                        <th key={idx} style={{ padding: '6px 8px', textAlign: 'left', borderBottom: '1px solid var(--color-border-primary)', color: 'var(--color-text-secondary)', fontWeight: 500, whiteSpace: 'nowrap' }}>{col.name}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(importModalData.firstRowHeader ? importModalData.allRows.slice(1, 6) : importModalData.allRows.slice(0, 5)).map((row, rowIdx) => (
+                      <tr key={rowIdx}>
+                        {importModalData.columnMappings.map((_, colIdx) => (
+                          <td key={colIdx} style={{ padding: '4px 8px', borderBottom: '1px solid var(--color-border-secondary)', color: 'var(--color-text-primary)', whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {(row as unknown[])[colIdx] != null ? String((row as unknown[])[colIdx]) : ''}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-sm)' }}>
+              <Button variant="secondary" size="md" onClick={() => setImportModalData(null)}>{t('tables.cancel')}</Button>
+              <Button variant="primary" size="md" onClick={handleImportConfirm}>{t('tables.import.import')}</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Delete table confirmation */}
       <ConfirmDialog
