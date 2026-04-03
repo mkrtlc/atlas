@@ -31,30 +31,14 @@ Then open **http://localhost:3001** and create your admin account.
 ## Manual Docker setup
 
 ```bash
-# 1. Download compose file
-curl -O https://raw.githubusercontent.com/bluewave-labs/atlas/main/docker-compose.production.yml
-
-# 2. Create environment file and generate secrets
-cat > .env << 'EOF'
-JWT_SECRET=$(openssl rand -hex 32)
-JWT_REFRESH_SECRET=$(openssl rand -hex 32)
-TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
-POSTGRES_PASSWORD=$(openssl rand -hex 16)
-SERVER_PUBLIC_URL=http://localhost:3001
-CLIENT_PUBLIC_URL=http://localhost:3001
-CORS_ORIGINS=http://localhost:3001
-EOF
-
-# 3. Pull and start (pre-built image from GitHub Container Registry)
+git clone https://github.com/bluewave-labs/atlas.git
+cd atlas
 docker compose -f docker-compose.production.yml up -d
-
-# 4. Open http://localhost:3001
 ```
 
-To pin a specific version:
-```bash
-IMAGE_TAG=1.3.2 docker compose -f docker-compose.production.yml up -d
-```
+Open **http://localhost:3001** and create your admin account. Secrets are auto-generated on first run.
+
+To pin a specific version: `IMAGE_TAG=1.3.2 docker compose -f docker-compose.production.yml up -d`
 
 ## HTTPS with Caddy (optional)
 
