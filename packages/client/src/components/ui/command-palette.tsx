@@ -12,27 +12,27 @@ import type { GlobalSearchResult } from '@atlasmail/shared';
 import '../../styles/command-palette.css';
 
 const NAV_ITEMS = [
-  { id: 'crm', label: 'CRM', icon: Briefcase, path: '/crm' },
-  { id: 'hr', label: 'HRM', icon: Users, path: '/hr' },
-  { id: 'calendar', label: 'Calendar', icon: CalendarDays, path: '/calendar' },
-  { id: 'projects', label: 'Projects', icon: FolderKanban, path: '/projects' },
-  { id: 'sign', label: 'Sign', icon: PenTool, path: '/sign-app' },
-  { id: 'drive', label: 'Drive', icon: HardDrive, path: '/drive' },
-  { id: 'tables', label: 'Tables', icon: Table2, path: '/tables' },
-  { id: 'tasks', label: 'Tasks', icon: CheckSquare, path: '/tasks' },
-  { id: 'docs', label: 'Write', icon: FileText, path: '/docs' },
-  { id: 'draw', label: 'Draw', icon: Pencil, path: '/draw' },
-  { id: 'system', label: 'System', icon: Monitor, path: '/system' },
-  { id: 'marketplace', label: 'Marketplace', icon: Store, path: '/marketplace' },
-  { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
+  { id: 'crm', labelKey: 'sidebar.crm', icon: Briefcase, path: '/crm' },
+  { id: 'hr', labelKey: 'sidebar.hr', icon: Users, path: '/hr' },
+  { id: 'calendar', labelKey: 'sidebar.calendar', icon: CalendarDays, path: '/calendar' },
+  { id: 'projects', labelKey: 'sidebar.projects', icon: FolderKanban, path: '/projects' },
+  { id: 'sign', labelKey: 'sidebar.sign', icon: PenTool, path: '/sign-app' },
+  { id: 'drive', labelKey: 'sidebar.drive', icon: HardDrive, path: '/drive' },
+  { id: 'tables', labelKey: 'sidebar.tables', icon: Table2, path: '/tables' },
+  { id: 'tasks', labelKey: 'sidebar.tasks', icon: CheckSquare, path: '/tasks' },
+  { id: 'docs', labelKey: 'sidebar.write', icon: FileText, path: '/docs' },
+  { id: 'draw', labelKey: 'sidebar.draw', icon: Pencil, path: '/draw' },
+  { id: 'system', labelKey: 'sidebar.system', icon: Monitor, path: '/system' },
+  { id: 'marketplace', labelKey: 'sidebar.marketplace', icon: Store, path: '/marketplace' },
+  { id: 'settings', labelKey: 'common.settings', icon: Settings, path: '/settings' },
 ];
 
 const ACTION_ITEMS = [
-  { id: 'new-contact', label: 'Create contact', icon: Plus, path: '/crm?view=contacts', keywords: ['new', 'add', 'contact'] },
-  { id: 'new-deal', label: 'Create deal', icon: Plus, path: '/crm?view=pipeline', keywords: ['new', 'add', 'deal'] },
-  { id: 'new-task', label: 'Create task', icon: Plus, path: '/tasks', keywords: ['new', 'add', 'task'] },
-  { id: 'new-doc', label: 'New document', icon: Plus, path: '/docs', keywords: ['new', 'add', 'document'] },
-  { id: 'new-drawing', label: 'New drawing', icon: Plus, path: '/draw', keywords: ['new', 'add', 'drawing'] },
+  { id: 'new-contact', labelKey: 'commandPalette.createContact', icon: Plus, path: '/crm?view=contacts', keywords: ['new', 'add', 'contact'] },
+  { id: 'new-deal', labelKey: 'commandPalette.createDeal', icon: Plus, path: '/crm?view=pipeline', keywords: ['new', 'add', 'deal'] },
+  { id: 'new-task', labelKey: 'commandPalette.newTask', icon: Plus, path: '/tasks', keywords: ['new', 'add', 'task'] },
+  { id: 'new-doc', labelKey: 'commandPalette.newDocument', icon: Plus, path: '/docs', keywords: ['new', 'add', 'document'] },
+  { id: 'new-drawing', labelKey: 'commandPalette.newDrawing', icon: Plus, path: '/draw', keywords: ['new', 'add', 'drawing'] },
 ];
 
 export function CommandPalette() {
@@ -127,7 +127,7 @@ export function CommandPalette() {
             return (
               <Command.Item key={item.id} value={item.id} onSelect={handleSelect} className="cmd-item">
                 <span className="cmd-item-icon"><Icon size={14} /></span>
-                <span className="cmd-item-title">{item.label}</span>
+                <span className="cmd-item-title">{t(item.labelKey)}</span>
               </Command.Item>
             );
           })}
@@ -139,7 +139,7 @@ export function CommandPalette() {
             return (
               <Command.Item key={item.id} value={item.id} keywords={item.keywords} onSelect={handleSelect} className="cmd-item">
                 <span className="cmd-item-icon"><Icon size={14} /></span>
-                <span className="cmd-item-title">{item.label}</span>
+                <span className="cmd-item-title">{t(item.labelKey)}</span>
               </Command.Item>
             );
           })}
