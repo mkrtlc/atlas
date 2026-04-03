@@ -1,272 +1,155 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Command } from 'cmdk';
 import {
-  Search, Briefcase, Users, FolderKanban, PenTool, HardDrive,
-  Table2, CheckSquare, FileText, Pencil, Monitor, CalendarDays, Store,
-  Plus, LayoutDashboard, Settings, Clock, X, Loader2,
+  Search, LayoutDashboard, GitBranch, Briefcase, Users, Building2,
+  Activity, Zap, Shield, FileText, BarChart3,
+  Plus, Clock, X, Loader2,
 } from 'lucide-react';
 import { useGlobalSearch } from '../../hooks/use-global-search';
-import type { GlobalSearchResult } from '@atlasmail/shared';
 import '../../styles/command-palette.css';
 
-// ─── Constants ───────────────────────────────────────────────────
-
-const RECENT_SEARCHES_KEY = 'atlas_cmd_recent';
+const RECENT_KEY = 'atlas_crm_cmd_recent';
 const MAX_RECENT = 5;
-
-const SEARCH_HINTS = [
-  'Search contacts, deals, tasks...',
-  'Type a page name to navigate...',
+const HINTS = [
+  'Search contacts, companies, deals...',
+  'Navigate to pipeline, leads, forecast...',
   'Create a new contact or deal...',
-  'Find documents and files...',
-  'Jump to any app with Cmd+K...',
+  'Find activities and automations...',
 ];
 
-const NAV_ITEMS = [
-  { id: 'crm', labelKey: 'sidebar.crm', icon: Briefcase, path: '/crm' },
-  { id: 'hr', labelKey: 'sidebar.hr', icon: Users, path: '/hr' },
-  { id: 'calendar', labelKey: 'sidebar.calendar', icon: CalendarDays, path: '/calendar' },
-  { id: 'projects', labelKey: 'sidebar.projects', icon: FolderKanban, path: '/projects' },
-  { id: 'sign', labelKey: 'sidebar.sign', icon: PenTool, path: '/sign-app' },
-  { id: 'drive', labelKey: 'sidebar.drive', icon: HardDrive, path: '/drive' },
-  { id: 'tables', labelKey: 'sidebar.tables', icon: Table2, path: '/tables' },
-  { id: 'tasks', labelKey: 'sidebar.tasks', icon: CheckSquare, path: '/tasks' },
-  { id: 'docs', labelKey: 'sidebar.write', icon: FileText, path: '/docs' },
-  { id: 'draw', labelKey: 'sidebar.draw', icon: Pencil, path: '/draw' },
-  { id: 'system', labelKey: 'sidebar.system', icon: Monitor, path: '/system' },
-  { id: 'marketplace', labelKey: 'sidebar.marketplace', icon: Store, path: '/marketplace' },
-  { id: 'settings', labelKey: 'common.settings', icon: Settings, path: '/settings' },
+const CRM_NAV = [
+  { id: 'dashboard', key: 'crm.sidebar.dashboard', icon: LayoutDashboard, view: 'dashboard' },
+  { id: 'pipeline', key: 'crm.sidebar.pipeline', icon: GitBranch, view: 'pipeline' },
+  { id: 'deals', key: 'crm.sidebar.deals', icon: Briefcase, view: 'deals' },
+  { id: 'contacts', key: 'crm.sidebar.contacts', icon: Users, view: 'contacts' },
+  { id: 'companies', key: 'crm.sidebar.companies', icon: Building2, view: 'companies' },
+  { id: 'leads', key: 'crm.leads.title', icon: FileText, view: 'leads' },
+  { id: 'activities', key: 'crm.sidebar.activities', icon: Activity, view: 'activities' },
+  { id: 'forecast', key: 'crm.forecast.title', icon: BarChart3, view: 'forecast' },
+  { id: 'automations', key: 'crm.sidebar.automations', icon: Zap, view: 'automations' },
+  { id: 'permissions', key: 'crm.sidebar.permissions', icon: Shield, view: 'permissions' },
+  { id: 'leadForms', key: 'crm.sidebar.leadForms', icon: FileText, view: 'leadForms' },
 ];
 
-const ACTION_ITEMS = [
-  { id: 'new-contact', labelKey: 'commandPalette.createContact', icon: Plus, path: '/crm?view=contacts', keywords: ['new', 'add', 'contact'] },
-  { id: 'new-deal', labelKey: 'commandPalette.createDeal', icon: Plus, path: '/crm?view=pipeline', keywords: ['new', 'add', 'deal'] },
-  { id: 'new-task', labelKey: 'commandPalette.newTask', icon: Plus, path: '/tasks', keywords: ['new', 'add', 'task'] },
-  { id: 'new-doc', labelKey: 'commandPalette.newDocument', icon: Plus, path: '/docs', keywords: ['new', 'add', 'document'] },
-  { id: 'new-drawing', labelKey: 'commandPalette.newDrawing', icon: Plus, path: '/draw', keywords: ['new', 'add', 'drawing'] },
+const CRM_ACTIONS = [
+  { id: 'new-contact', key: 'commandPalette.createContact', icon: Plus, view: 'contacts', kw: ['new', 'add', 'contact'] },
+  { id: 'new-deal', key: 'commandPalette.createDeal', icon: Plus, view: 'pipeline', kw: ['new', 'add', 'deal'] },
+  { id: 'new-company', key: 'commandPalette.createCompany', icon: Plus, view: 'companies', kw: ['new', 'add', 'company'] },
 ];
 
-const APP_ICONS: Record<string, typeof Briefcase> = {
-  crm: Briefcase, hr: Users, tasks: CheckSquare, drive: HardDrive,
-  docs: FileText, draw: Pencil, tables: Table2, sign: PenTool, projects: FolderKanban,
-};
-
-// ─── Recent searches helpers ─────────────────────────────────────
-
-interface RecentSearch { query: string; timestamp: number }
-
-function loadRecent(): RecentSearch[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || '[]');
-  } catch { return []; }
-}
-
-function saveRecent(items: RecentSearch[]) {
-  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(items.slice(0, MAX_RECENT)));
-}
-
-function addRecent(query: string) {
-  const trimmed = query.trim();
-  if (trimmed.length < 2) return;
-  const items = loadRecent().filter((r) => r.query !== trimmed);
-  items.unshift({ query: trimmed, timestamp: Date.now() });
-  saveRecent(items);
-}
-
-function removeRecent(timestamp: number) {
-  saveRecent(loadRecent().filter((r) => r.timestamp !== timestamp));
-}
-
-// ─── Component ───────────────────────────────────────────────────
+interface Recent { query: string; ts: number }
+function loadRecent(): Recent[] { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; } }
+function saveRecent(items: Recent[]) { localStorage.setItem(RECENT_KEY, JSON.stringify(items.slice(0, MAX_RECENT))); }
 
 export function CommandPalette() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
-  const [hintIndex, setHintIndex] = useState(0);
+  const [recents, setRecents] = useState<Recent[]>([]);
+  const [hint, setHint] = useState(0);
   const { data: searchResults, isLoading } = useGlobalSearch(query.length >= 2 ? query : '');
+  const crmResults = searchResults?.filter((r) => r.appId === 'crm') ?? [];
 
-  // Cmd+K global shortcut
+  // Cmd+K
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const fn = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setOpen(p => !p); } };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
   }, []);
 
-  // Body scroll lock when open
+  // Scroll lock + load recents
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-      setRecentSearches(loadRecent());
-      setHintIndex((prev) => (prev + 1) % SEARCH_HINTS.length);
-    } else {
-      document.body.style.overflow = '';
-    }
+    if (open) { document.body.style.overflow = 'hidden'; setRecents(loadRecent()); setHint(p => (p + 1) % HINTS.length); }
+    else { document.body.style.overflow = ''; }
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
+  const close = () => { setOpen(false); setQuery(''); };
+
   const handleSelect = useCallback((value: string) => {
-    // Save search to recent if it was a text search
-    if (query.trim().length >= 2) addRecent(query);
-
-    setOpen(false);
-    setQuery('');
-
-    const nav = NAV_ITEMS.find((n) => n.id === value);
-    if (nav) { navigate(nav.path); return; }
-    const action = ACTION_ITEMS.find((a) => a.id === value);
-    if (action) { navigate(action.path); return; }
+    if (query.trim().length >= 2) {
+      const items = loadRecent().filter(r => r.query !== query.trim());
+      items.unshift({ query: query.trim(), ts: Date.now() });
+      saveRecent(items);
+    }
+    close();
+    const nav = CRM_NAV.find(n => n.id === value);
+    if (nav) { navigate(`/crm?view=${nav.view}`); return; }
+    const act = CRM_ACTIONS.find(a => a.id === value);
+    if (act) { navigate(`/crm?view=${act.view}`); return; }
     if (value.startsWith('search-') && searchResults) {
-      const result = searchResults.find((r) => `search-${r.appId}-${r.recordId}` === value);
-      if (result) {
-        const routes: Record<string, string> = {
-          crm: '/crm', hr: '/hr', tasks: '/tasks', drive: '/drive',
-          docs: '/docs', draw: '/draw', tables: '/tables', sign: '/sign-app', projects: '/projects',
-        };
-        navigate(`${routes[result.appId] || '/' + result.appId}?id=${result.recordId}`);
-      }
+      const r = searchResults.find(x => `search-${x.appId}-${x.recordId}` === value);
+      if (r) navigate(`/crm?id=${r.recordId}`);
     }
   }, [navigate, searchResults, query]);
 
-  const handleRecentClick = useCallback((recentQuery: string) => {
-    setQuery(recentQuery);
-  }, []);
-
-  const handleRemoveRecent = useCallback((e: React.MouseEvent, timestamp: number) => {
-    e.stopPropagation();
-    removeRecent(timestamp);
-    setRecentSearches(loadRecent());
-  }, []);
-
-  const resultCount = searchResults?.length ?? 0;
-
   return (
-    <Command.Dialog
-      open={open}
-      onOpenChange={(v) => { setOpen(v); if (!v) setQuery(''); }}
-      label={t('common.commandPalette')}
-      overlayClassName="cmd-overlay"
-      contentClassName="cmd-content"
-    >
+    <Command.Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) setQuery(''); }} label="CRM" overlayClassName="cmd-overlay" contentClassName="cmd-content">
       <div className="cmd-header">
-        {isLoading ? (
-          <Loader2 size={16} style={{ color: 'var(--color-accent-primary)', flexShrink: 0, animation: 'spin 1s linear infinite' }} />
-        ) : (
-          <Search size={16} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
-        )}
-        <Command.Input
-          value={query}
-          onValueChange={setQuery}
-          placeholder={SEARCH_HINTS[hintIndex]}
-          className="cmd-input"
-        />
-        {query && (
-          <button
-            className="cmd-clear-btn"
-            onClick={() => setQuery('')}
-            aria-label="Clear"
-          >
-            <X size={14} />
-          </button>
-        )}
+        {isLoading
+          ? <Loader2 size={16} style={{ color: 'var(--color-accent-primary)', flexShrink: 0, animation: 'spin 1s linear infinite' }} />
+          : <Search size={16} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />}
+        <Command.Input value={query} onValueChange={setQuery} placeholder={HINTS[hint]} className="cmd-input" />
+        {query && <button className="cmd-clear-btn" onClick={() => setQuery('')}><X size={14} /></button>}
       </div>
 
-      {/* Result count */}
       {query.length >= 2 && !isLoading && (
         <div className="cmd-result-count">
-          {resultCount > 0
-            ? `${resultCount} result${resultCount !== 1 ? 's' : ''}`
-            : t('common.noResults')}
+          {crmResults.length > 0 ? `${crmResults.length} result${crmResults.length !== 1 ? 's' : ''}` : t('common.noResults')}
         </div>
       )}
 
       <Command.List className="cmd-list">
         <Command.Empty className="cmd-empty">{t('common.noResults')}</Command.Empty>
 
-        {/* Recent searches (shown when no query) */}
-        {!query && recentSearches.length > 0 && (
+        {!query && recents.length > 0 && (
           <Command.Group heading={t('commandPalette.recentSearches')}>
-            {recentSearches.map((recent) => (
-              <Command.Item
-                key={recent.timestamp}
-                value={`recent-${recent.query}`}
-                onSelect={() => handleRecentClick(recent.query)}
-                className="cmd-item"
-              >
+            {recents.map(r => (
+              <Command.Item key={r.ts} value={`recent-${r.query}`} onSelect={() => setQuery(r.query)} className="cmd-item">
                 <span className="cmd-item-icon"><Clock size={14} /></span>
-                <span className="cmd-item-title" style={{ flex: 1 }}>{recent.query}</span>
-                <button
-                  className="cmd-recent-remove"
-                  onClick={(e) => handleRemoveRecent(e, recent.timestamp)}
-                  aria-label="Remove"
-                >
-                  <X size={12} />
-                </button>
+                <span className="cmd-item-title" style={{ flex: 1 }}>{r.query}</span>
+                <button className="cmd-recent-remove" onClick={e => { e.stopPropagation(); saveRecent(loadRecent().filter(x => x.ts !== r.ts)); setRecents(loadRecent()); }}><X size={12} /></button>
               </Command.Item>
             ))}
           </Command.Group>
         )}
 
-        {/* Search results */}
-        {searchResults && searchResults.length > 0 && (
-          <Command.Group heading={`${t('common.records')} (${resultCount})`}>
-            {searchResults.slice(0, 8).map((result) => {
-              const Icon = APP_ICONS[result.appId] || LayoutDashboard;
-              return (
-                <Command.Item
-                  key={`search-${result.appId}-${result.recordId}`}
-                  value={`search-${result.appId}-${result.recordId}`}
-                  onSelect={handleSelect}
-                  className="cmd-item"
-                >
-                  <span className="cmd-item-icon"><Icon size={14} /></span>
-                  <div className="cmd-item-text">
-                    <span className="cmd-item-title">{result.title}</span>
-                    <span className="cmd-item-desc">{result.appName}</span>
-                  </div>
-                </Command.Item>
-              );
-            })}
+        {crmResults.length > 0 && (
+          <Command.Group heading={`${t('common.records')} (${crmResults.length})`}>
+            {crmResults.slice(0, 8).map(r => (
+              <Command.Item key={`search-${r.appId}-${r.recordId}`} value={`search-${r.appId}-${r.recordId}`} onSelect={handleSelect} className="cmd-item">
+                <span className="cmd-item-icon"><Briefcase size={14} /></span>
+                <div className="cmd-item-text">
+                  <span className="cmd-item-title">{r.title}</span>
+                  <span className="cmd-item-desc">{r.appName}</span>
+                </div>
+              </Command.Item>
+            ))}
           </Command.Group>
         )}
 
-        {/* Navigation */}
         <Command.Group heading={t('common.navigation')}>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Command.Item key={item.id} value={item.id} onSelect={handleSelect} className="cmd-item">
-                <span className="cmd-item-icon"><Icon size={14} /></span>
-                <span className="cmd-item-title">{t(item.labelKey)}</span>
-              </Command.Item>
-            );
-          })}
+          {CRM_NAV.map(item => { const I = item.icon; return (
+            <Command.Item key={item.id} value={item.id} onSelect={handleSelect} className="cmd-item">
+              <span className="cmd-item-icon"><I size={14} /></span>
+              <span className="cmd-item-title">{t(item.key)}</span>
+            </Command.Item>
+          ); })}
         </Command.Group>
 
-        {/* Actions */}
         <Command.Group heading={t('common.actions')}>
-          {ACTION_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Command.Item key={item.id} value={item.id} keywords={item.keywords} onSelect={handleSelect} className="cmd-item">
-                <span className="cmd-item-icon"><Icon size={14} /></span>
-                <span className="cmd-item-title">{t(item.labelKey)}</span>
-              </Command.Item>
-            );
-          })}
+          {CRM_ACTIONS.map(item => { const I = item.icon; return (
+            <Command.Item key={item.id} value={item.id} keywords={item.kw} onSelect={handleSelect} className="cmd-item">
+              <span className="cmd-item-icon"><I size={14} /></span>
+              <span className="cmd-item-title">{t(item.key)}</span>
+            </Command.Item>
+          ); })}
         </Command.Group>
       </Command.List>
 
-      {/* Footer hint */}
       <div className="cmd-footer">
         <span><kbd>↑↓</kbd> navigate</span>
         <span><kbd>↵</kbd> select</span>
