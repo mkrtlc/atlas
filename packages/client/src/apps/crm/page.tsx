@@ -36,6 +36,7 @@ import { LeadFormsView } from './components/lead-forms-view';
 import { ForecastView } from './components/forecast-view';
 import { MergeContactsModal, MergeCompaniesModal } from './components/merge-modal';
 import { NotesSection } from './components/notes-section';
+import { EmailTimeline } from './components/email-timeline';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -907,6 +908,11 @@ function DealDetailPanel({
           <ActivityTimeline activities={activities} />
         </div>
 
+        {/* Emails */}
+        <div style={{ marginTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-lg)' }}>
+          <EmailTimeline dealId={deal.id} />
+        </div>
+
         {/* Notes */}
         <div style={{ marginTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-lg)' }}>
           <NotesSection dealId={deal.id} />
@@ -1047,6 +1053,11 @@ function ContactDetailPanel({
             {t('crm.sidebar.activities')}
           </div>
           <ActivityTimeline activities={activities} />
+        </div>
+
+        {/* Emails */}
+        <div style={{ marginTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-lg)' }}>
+          <EmailTimeline contactId={contact.id} defaultTo={contact.email || undefined} />
         </div>
 
         {/* Notes */}
