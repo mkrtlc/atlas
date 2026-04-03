@@ -987,6 +987,11 @@
       "contactsDeals": "Contacts / Affaires",
       "groupByIndustry": "Secteur"
     },
+    "confirm": {
+      "deleteDeal": "Voulez-vous vraiment supprimer \"{{name}}\" ? Cette action est irréversible.",
+      "deleteContact": "Voulez-vous vraiment supprimer \"{{name}}\" ? Cette action est irréversible.",
+      "deleteCompany": "Voulez-vous vraiment supprimer \"{{name}}\" ? Cette action est irréversible."
+    },
     "activities": {
       "logActivity": "Enregistrer une activité",
       "logActivitySubtitle": "Enregistrez une note, un appel, une réunion ou un e-mail",

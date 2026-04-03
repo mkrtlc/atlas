@@ -763,6 +763,7 @@ function DealDetailPanel({
 }) {
   const { t } = useTranslation();
   const [stageId, setStageId] = useState(deal.stageId);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const updateDeal = useUpdateDeal();
   const deleteDeal = useDeleteDeal();
   const { data: activitiesData } = useActivities({ dealId: deal.id });
@@ -774,6 +775,15 @@ function DealDetailPanel({
 
   return (
     <div className="crm-detail-panel">
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('crm.deals.deleteDeal')}
+        description={t('crm.confirm.deleteDeal', { name: deal.title })}
+        confirmLabel={t('common.delete')}
+        destructive
+        onConfirm={() => { deleteDeal.mutate(deal.id); onClose(); }}
+      />
       <div style={{
         padding: '12px var(--spacing-lg)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -784,7 +794,7 @@ function DealDetailPanel({
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <PresenceAvatars appId="crm" recordId={deal.id} />
-          <IconButton icon={<Trash2 size={14} />} label={t('crm.deals.deleteDeal')} size={28} destructive onClick={() => { deleteDeal.mutate(deal.id); onClose(); }} />
+          <IconButton icon={<Trash2 size={14} />} label={t('crm.deals.deleteDeal')} size={28} destructive onClick={() => setShowDeleteConfirm(true)} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>
       </div>
@@ -918,6 +928,7 @@ function ContactDetailPanel({
   onDealClick?: (dealId: string) => void;
 }) {
   const { t } = useTranslation();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
   const { data: activitiesData } = useActivities({ contactId: contact.id });
@@ -926,6 +937,15 @@ function ContactDetailPanel({
 
   return (
     <div className="crm-detail-panel">
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('crm.contacts.deleteContact')}
+        description={t('crm.confirm.deleteContact', { name: contact.name })}
+        confirmLabel={t('common.delete')}
+        destructive
+        onConfirm={() => { deleteContact.mutate(contact.id); onClose(); }}
+      />
       <div style={{
         padding: '12px var(--spacing-lg)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -936,7 +956,7 @@ function ContactDetailPanel({
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <PresenceAvatars appId="crm" recordId={contact.id} />
-          <IconButton icon={<Trash2 size={14} />} label={t('crm.contacts.deleteContact')} size={28} destructive onClick={() => { deleteContact.mutate(contact.id); onClose(); }} />
+          <IconButton icon={<Trash2 size={14} />} label={t('crm.contacts.deleteContact')} size={28} destructive onClick={() => setShowDeleteConfirm(true)} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>
       </div>
@@ -1051,6 +1071,7 @@ function CompanyDetailPanel({
   onDealClick?: (dealId: string) => void;
 }) {
   const { t } = useTranslation();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteCompany = useDeleteCompany();
   const { data: activitiesData } = useActivities({ companyId: company.id });
   const activities = activitiesData?.activities ?? [];
@@ -1059,6 +1080,15 @@ function CompanyDetailPanel({
 
   return (
     <div className="crm-detail-panel">
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('crm.companies.deleteCompany')}
+        description={t('crm.confirm.deleteCompany', { name: company.name })}
+        confirmLabel={t('common.delete')}
+        destructive
+        onConfirm={() => { deleteCompany.mutate(company.id); onClose(); }}
+      />
       <div style={{
         padding: '12px var(--spacing-lg)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1069,7 +1099,7 @@ function CompanyDetailPanel({
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <PresenceAvatars appId="crm" recordId={company.id} />
-          <IconButton icon={<Trash2 size={14} />} label={t('crm.companies.deleteCompany')} size={28} destructive onClick={() => { deleteCompany.mutate(company.id); onClose(); }} />
+          <IconButton icon={<Trash2 size={14} />} label={t('crm.companies.deleteCompany')} size={28} destructive onClick={() => setShowDeleteConfirm(true)} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>
       </div>

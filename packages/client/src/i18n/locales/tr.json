@@ -987,6 +987,11 @@
       "contactsDeals": "Kişiler / Anlaşmalar",
       "groupByIndustry": "Sektör"
     },
+    "confirm": {
+      "deleteDeal": "\"{{name}}\" anlaşmasını silmek istediğinizden emin misiniz?",
+      "deleteContact": "\"{{name}}\" kişisini silmek istediğinizden emin misiniz?",
+      "deleteCompany": "\"{{name}}\" şirketini silmek istediğinizden emin misiniz?"
+    },
     "activities": {
       "logActivity": "Aktivite kaydet",
       "logActivitySubtitle": "Bir not, arama, toplantı veya e-posta kaydedin",

@@ -987,6 +987,11 @@
       "contactsDeals": "Contatti / Trattative",
       "groupByIndustry": "Settore"
     },
+    "confirm": {
+      "deleteDeal": "Sei sicuro di voler eliminare \"{{name}}\"? Questa azione non può essere annullata.",
+      "deleteContact": "Sei sicuro di voler eliminare \"{{name}}\"? Questa azione non può essere annullata.",
+      "deleteCompany": "Sei sicuro di voler eliminare \"{{name}}\"? Questa azione non può essere annullata."
+    },
     "activities": {
       "logActivity": "Registra attività",
       "logActivitySubtitle": "Registra una nota, chiamata, riunione o e-mail",

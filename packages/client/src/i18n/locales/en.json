@@ -1014,6 +1014,11 @@
       "contactsDeals": "Contacts / Deals",
       "groupByIndustry": "Industry"
     },
+    "confirm": {
+      "deleteDeal": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+      "deleteContact": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+      "deleteCompany": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+    },
     "activities": {
       "logActivity": "Log activity",
       "logActivitySubtitle": "Record a note, call, meeting, or email",
