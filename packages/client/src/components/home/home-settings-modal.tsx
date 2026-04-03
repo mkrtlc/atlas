@@ -8,6 +8,15 @@ import { Input } from '../ui/input';
 import { Chip } from '../ui/chip';
 import { widgetRegistry } from './widgets/registry';
 import { appRegistry } from '../../config/app-registry';
+
+// Map widget IDs to i18n keys for translated names/descriptions
+const WIDGET_I18N: Record<string, { name: string; desc: string }> = {
+  weather: { name: 'widgets.weatherName', desc: 'widgets.weatherDesc' },
+  quote: { name: 'widgets.quoteName', desc: 'widgets.quoteDesc' },
+  stocks: { name: 'widgets.stocksName', desc: 'widgets.stocksDesc' },
+  pomodoro: { name: 'widgets.pomodoroName', desc: 'widgets.pomodoroDesc' },
+  game: { name: 'widgets.gameName', desc: 'widgets.gameDesc' },
+};
 import { PET_OPTIONS, PetPreview, type PetType } from './dock-pet';
 
 type BgType = 'unsplash' | 'solid' | 'gradient' | 'custom';
@@ -388,17 +397,17 @@ export function HomeWidgetsPanel() {
                   <Icon size={16} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                      {widget.name}
+                      {WIDGET_I18N[widget.id] ? t(WIDGET_I18N[widget.id].name) : widget.name}
                     </div>
                     <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 1 }}>
-                      {widget.description}
+                      {WIDGET_I18N[widget.id] ? t(WIDGET_I18N[widget.id].desc) : widget.description}
                     </div>
                   </div>
                 </div>
                 <SettingsToggle
                   checked={isEnabled(widget.id)}
                   onChange={() => toggle(widget.id)}
-                  label={widget.name}
+                  label={WIDGET_I18N[widget.id] ? t(WIDGET_I18N[widget.id].name) : widget.name}
                 />
               </div>
             );
