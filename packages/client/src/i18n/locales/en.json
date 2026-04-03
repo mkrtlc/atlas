@@ -343,8 +343,24 @@
   "commandPalette": {
     "title": "Command palette",
     "placeholder": "Type a command or search...",
-    "noResults": "No commands found for \"{{query}}\"",
+    "searchPlaceholder": "Search or jump to...",
+    "noResults": "No results",
+    "noResultsQuery": "No results for \"{{query}}\"",
     "commands": "Commands",
+    "navigation": "Navigation",
+    "actions": "Actions",
+    "records": "Records",
+    "shortcuts": "Shortcuts",
+    "goTo": "Go to {{page}}",
+    "settings": "Settings",
+    "createContact": "Create contact",
+    "createDeal": "Create deal",
+    "createCompany": "Create company",
+    "newDocument": "New document",
+    "newTask": "New task",
+    "toNavigate": "navigate",
+    "toSelect": "select",
+    "toClose": "close",
     "goToImportant": "Go to important",
     "goToOther": "Go to other",
     "goToNewsletters": "Go to newsletters",
@@ -957,7 +973,12 @@
       "changeStage": "Change stage",
       "clearSelection": "Clear selection",
       "avgProbability": "Avg probability",
-      "probabilityPercent": "Probability %"
+      "probabilityPercent": "Probability %",
+      "groupBy": "Group by",
+      "noGroup": "No grouping",
+      "groupByStage": "Stage",
+      "groupByContact": "Contact",
+      "groupByCompany": "Company"
     },
     "fields": {
       "manageFields": "Manage fields"
@@ -974,7 +995,8 @@
       "addContact": "Add contact",
       "contactDetail": "Contact detail",
       "deleteContact": "Delete contact",
-      "duplicateEmail": "A contact named \"{{name}}\" already uses this email"
+      "duplicateEmail": "A contact named \"{{name}}\" already uses this email",
+      "groupByCompany": "Company"
     },
     "companies": {
       "name": "Name",
@@ -989,7 +1011,8 @@
       "companyDetail": "Company detail",
       "deleteCompany": "Delete company",
       "employees": "employees",
-      "contactsDeals": "Contacts / Deals"
+      "contactsDeals": "Contacts / Deals",
+      "groupByIndustry": "Industry"
     },
     "activities": {
       "logActivity": "Log activity",
@@ -1045,6 +1068,22 @@
       "addFilter": "Add filter",
       "saveView": "Save view",
       "addNew": "Add new"
+    },
+    "list": {
+      "groupBy": "Group by",
+      "noGrouping": "No grouping",
+      "aggregate": "Total",
+      "average": "Average",
+      "count": "{{count}} records",
+      "sum": "Sum"
+    },
+    "detail": {
+      "customize": "Customize",
+      "customizeFields": "Customize fields",
+      "showField": "Show field",
+      "hideField": "Hide field",
+      "done": "Done",
+      "resetLayout": "Reset layout"
     },
     "empty": {
       "noDeals": "No deals yet",

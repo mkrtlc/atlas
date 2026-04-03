@@ -343,11 +343,27 @@
   "commandPalette": {
     "title": "Komut paleti",
     "placeholder": "Komut yazın veya arayın...",
-    "noResults": "\"{{query}}\" için komut bulunamadı",
+    "searchPlaceholder": "Ara veya git...",
+    "noResults": "Sonuc yok",
+    "noResultsQuery": "\"{{query}}\" icin sonuc bulunamadi",
     "commands": "Komutlar",
-    "goToImportant": "Önemlilere git",
-    "goToOther": "Diğerlerine git",
-    "goToNewsletters": "Bültenlere git",
+    "navigation": "Gezinme",
+    "actions": "Eylemler",
+    "records": "Kayitlar",
+    "shortcuts": "Kisayollar",
+    "goTo": "{{page}} sayfasina git",
+    "settings": "Ayarlar",
+    "createContact": "Kisi olustur",
+    "createDeal": "Anlasma olustur",
+    "createCompany": "Sirket olustur",
+    "newDocument": "Yeni belge",
+    "newTask": "Yeni gorev",
+    "toNavigate": "gezin",
+    "toSelect": "sec",
+    "toClose": "kapat",
+    "goToImportant": "Onemlilere git",
+    "goToOther": "Digerlerine git",
+    "goToNewsletters": "Bultenlere git",
     "goToNotifications": "Bildirimlere git",
     "composeNewEmail": "Yeni e-posta yaz"
   },
@@ -930,7 +946,12 @@
       "changeStage": "Aşama değiştir",
       "clearSelection": "Seçimi temizle",
       "avgProbability": "Ort olasılık",
-      "probabilityPercent": "Olasılık %"
+      "probabilityPercent": "Olasılık %",
+      "groupBy": "Grupla",
+      "noGroup": "Gruplama yok",
+      "groupByStage": "Aşama",
+      "groupByContact": "Kişi",
+      "groupByCompany": "Şirket"
     },
     "fields": {
       "manageFields": "Alanları yönet"
@@ -947,7 +968,8 @@
       "addContact": "Kişi ekle",
       "contactDetail": "Kişi detayı",
       "deleteContact": "Kişiyi sil",
-      "duplicateEmail": "\"{{name}}\" adlı bir kişi zaten bu e-postayı kullanıyor"
+      "duplicateEmail": "\"{{name}}\" adlı bir kişi zaten bu e-postayı kullanıyor",
+      "groupByCompany": "Şirket"
     },
     "companies": {
       "name": "İsim",
@@ -962,7 +984,8 @@
       "companyDetail": "Şirket detayı",
       "deleteCompany": "Şirketi sil",
       "employees": "çalışan",
-      "contactsDeals": "Kişiler / Anlaşmalar"
+      "contactsDeals": "Kişiler / Anlaşmalar",
+      "groupByIndustry": "Sektör"
     },
     "activities": {
       "logActivity": "Aktivite kaydet",
@@ -1018,6 +1041,22 @@
       "addFilter": "Filtre ekle",
       "saveView": "Görünümü kaydet",
       "addNew": "Yeni ekle"
+    },
+    "list": {
+      "groupBy": "Grupla",
+      "noGrouping": "Gruplama yok",
+      "aggregate": "Toplam",
+      "average": "Ortalama",
+      "count": "{{count}} kayıt",
+      "sum": "Toplam"
+    },
+    "detail": {
+      "customize": "Özelleştir",
+      "customizeFields": "Alanları özelleştir",
+      "showField": "Alanı göster",
+      "hideField": "Alanı gizle",
+      "done": "Tamam",
+      "resetLayout": "Düzeni sıfırla"
     },
     "empty": {
       "noDeals": "Henüz anlaşma yok",

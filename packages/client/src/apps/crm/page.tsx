@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { formatDate, formatCurrency } from '../../lib/format';
 import {
   Briefcase, Users, Building2, Clock, Plus, Search, Settings2, X,
-  ChevronRight, Trash2, Phone as PhoneIcon, Mail,
+  ChevronRight, ChevronDown, Trash2, Phone as PhoneIcon, Mail,
   Trophy, XCircle, LayoutGrid, List,
   PhoneCall, CalendarDays, StickyNote, Pencil, AlertTriangle,
   Download, Upload, BarChart3, Zap, Shield, FileSpreadsheet,
-  UserPlus, TrendingUp, Merge,
-  DollarSign, Calendar, Globe, Tag, User, Target, Eye, FileText,
+  UserPlus, TrendingUp, Merge, Sliders, RotateCcw,
+  DollarSign, Calendar, Globe, Tag, User, Target, Eye, FileText, EyeOff,
+  Layers,
 } from 'lucide-react';
 import {
   useCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany,
@@ -1197,7 +1198,7 @@ function DealsListView({
   deals, stages, selectedId, onSelect, searchQuery,
   selectedIds, onSelectionChange, focusedIndex, onFocusedIndexChange,
   editingCell, onEditingCellChange, sort, onSortChange,
-  companies, onAdd, canEdit = true,
+  companies, onAdd, canEdit = true, groupBy = null,
 }: {
   deals: CrmDeal[];
   stages: CrmDealStage[];
@@ -1215,6 +1216,7 @@ function DealsListView({
   companies: CrmCompany[];
   onAdd: () => void;
   canEdit?: boolean;
+  groupBy?: string | null;
 }) {
   const { t } = useTranslation();
   const updateDeal = useUpdateDeal();
@@ -1326,6 +1328,34 @@ function DealsListView({
     companies.forEach((c) => { if (c.domain) map.set(c.id, c.domain); });
     return map;
   }, [companies]);
+
+  // Grouping
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const groups = useMemo(() => {
+    if (!groupBy) return null;
+    const map = new Map<string, CrmDeal[]>();
+    for (const deal of sorted) {
+      let key = '';
+      switch (groupBy) {
+        case 'stage': key = deal.stageName || 'No stage'; break;
+        case 'contact': key = deal.contactName || 'No contact'; break;
+        case 'company': key = deal.companyName || 'No company'; break;
+        default: key = 'Other';
+      }
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(deal);
+    }
+    return Array.from(map.entries()).map(([label, items]) => ({ label, items }));
+  }, [sorted, groupBy]);
+
+  const toggleGroup = useCallback((label: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  }, []);
 
   const totalValue = useMemo(() => sorted.reduce((sum, d) => sum + d.value, 0), [sorted]);
   const avgValue = sorted.length > 0 ? totalValue / sorted.length : 0;
@@ -1465,7 +1495,7 @@ function ContactsListView({
   contacts, selectedId, onSelect, searchQuery,
   selectedIds, onSelectionChange, focusedIndex, onFocusedIndexChange,
   editingCell, onEditingCellChange, sort, onSortChange,
-  companies, onAdd, canEdit = true,
+  companies, onAdd, canEdit = true, groupBy = null,
 }: {
   contacts: CrmContact[];
   selectedId: string | null;
@@ -1481,6 +1511,7 @@ function ContactsListView({
   onSortChange: (sort: SortState | null) => void;
   companies: CrmCompany[];
   onAdd: () => void;
+  groupBy?: string | null;
   canEdit?: boolean;
 }) {
   const { t } = useTranslation();
@@ -1706,7 +1737,7 @@ function CompaniesListView({
   companies, selectedId, onSelect, searchQuery,
   selectedIds, onSelectionChange, focusedIndex, onFocusedIndexChange,
   editingCell, onEditingCellChange, sort, onSortChange,
-  onAdd, canEdit = true,
+  onAdd, canEdit = true, groupBy = null,
 }: {
   companies: CrmCompany[];
   selectedId: string | null;
@@ -1722,6 +1753,7 @@ function CompaniesListView({
   onSortChange: (sort: SortState | null) => void;
   onAdd: () => void;
   canEdit?: boolean;
+  groupBy?: string | null;
 }) {
   const { t } = useTranslation();
   const updateCompany = useUpdateCompany();
@@ -2032,6 +2064,9 @@ export function CrmPage() {
   const [filters, setFilters] = useState<CrmFilter[]>([]);
   const pendingViewRef = useRef<SavedView | null>(null);
 
+  // Grouping
+  const [groupBy, setGroupBy] = useState<string | null>(null);
+
   // Import/export modals
   const [showImportModal, setShowImportModal] = useState(false);
 
@@ -2103,6 +2138,8 @@ export function CrmPage() {
     setSelectedIds(new Set());
     setFocusedIndex(null);
     setEditingCell(null);
+
+    setGroupBy(null);
 
     const pending = pendingViewRef.current;
     if (pending) {
@@ -2562,6 +2599,46 @@ export function CrmPage() {
               onApplyView={handleApplyView}
             />
             <ListToolbar.Separator />
+            {/* Group by dropdown */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={groupBy ? 'secondary' : 'ghost'} size="sm" icon={<Layers size={13} />}>
+                  {t('crm.list.groupBy')}{groupBy ? `: ${groupBy}` : ''}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" style={{ padding: 'var(--spacing-xs)', minWidth: 150 }}>
+                {[
+                  { value: null, label: t('crm.list.noGrouping') },
+                  ...(activeView === 'deals' ? [
+                    { value: 'stage', label: t('crm.deals.groupByStage') },
+                    { value: 'contact', label: t('crm.deals.groupByContact') },
+                    { value: 'company', label: t('crm.deals.groupByCompany') },
+                  ] : activeView === 'contacts' ? [
+                    { value: 'company', label: t('crm.contacts.groupByCompany') },
+                  ] : [
+                    { value: 'industry', label: t('crm.companies.groupByIndustry') },
+                  ]),
+                ].map((opt) => (
+                  <button
+                    key={opt.value ?? 'none'}
+                    onClick={() => setGroupBy(opt.value)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)',
+                      width: '100%', padding: '6px var(--spacing-sm)',
+                      background: groupBy === opt.value ? 'var(--color-surface-selected)' : 'transparent',
+                      border: 'none', borderRadius: 'var(--radius-sm)',
+                      color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)',
+                      fontFamily: 'var(--font-family)', cursor: 'pointer', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-hover)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = groupBy === opt.value ? 'var(--color-surface-selected)' : 'transparent'; }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+            <ListToolbar.Separator />
             <FilterBar
               columns={currentFilterColumns}
               filters={filters}
@@ -2621,6 +2698,7 @@ export function CrmPage() {
                 companies={companies}
                 onAdd={() => setShowCreateDeal(true)}
                 canEdit={canAccess(myRole, 'deals', 'update')}
+                groupBy={groupBy}
               />
             )}
 
@@ -2641,6 +2719,7 @@ export function CrmPage() {
                 companies={companies}
                 onAdd={() => setShowCreateContact(true)}
                 canEdit={canAccess(myRole, 'contacts', 'update')}
+                groupBy={groupBy}
               />
             )}
 
@@ -2660,6 +2739,7 @@ export function CrmPage() {
                 onSortChange={setSort}
                 onAdd={() => setShowCreateCompany(true)}
                 canEdit={canAccess(myRole, 'companies', 'update')}
+                groupBy={groupBy}
               />
             )}
 
@@ -2679,47 +2759,42 @@ export function CrmPage() {
             )}
           </div>
 
-          {/* Detail panel */}
+          {/* Slide-out detail drawer */}
           {hasDetailPanel && (
-            <div style={{
-              width: 380,
-              borderLeft: '1px solid var(--color-border-primary)',
-              flexShrink: 0,
-              overflow: 'hidden',
-              height: '100%',
-            }}>
-              {(activeView === 'pipeline' || activeView === 'deals') && selectedDeal && (
-                <DealDetailPanel
-                  deal={selectedDeal}
-                  stages={stages}
-                  onClose={() => setSelectedDealId(null)}
-                  onMarkWon={() => markWon.mutate(selectedDeal.id)}
-                  onMarkLost={() => setMarkLostDealId(selectedDeal.id)}
-                  onContactClick={(contactId) => { setActiveView('contacts'); setSelectedContactId(contactId); setSelectedDealId(null); setSelectedCompanyId(null); }}
-                  onCompanyClick={(companyId) => { setActiveView('companies'); setSelectedCompanyId(companyId); setSelectedDealId(null); setSelectedContactId(null); }}
-                />
-              )}
-              {activeView === 'contacts' && selectedContact && (
-                <ContactDetailPanel
-                  contact={selectedContact}
-                  deals={deals}
-                  onClose={() => setSelectedContactId(null)}
-                  onCompanyClick={(companyId) => { setActiveView('companies'); setSelectedCompanyId(companyId); setSelectedContactId(null); setSelectedDealId(null); }}
-                  onDealClick={(dealId) => { setActiveView('deals'); setSelectedDealId(dealId); setSelectedContactId(null); setSelectedCompanyId(null); }}
-                />
-              )}
-              {activeView === 'companies' && selectedCompany && (
-                <CompanyDetailPanel
-                  company={selectedCompany}
-                  contacts={contacts}
-                  deals={deals}
-                  onClose={() => setSelectedCompanyId(null)}
-                  onContactClick={(contactId) => { setActiveView('contacts'); setSelectedContactId(contactId); setSelectedCompanyId(null); setSelectedDealId(null); }}
-                  onDealClick={(dealId) => { setActiveView('deals'); setSelectedDealId(dealId); setSelectedCompanyId(null); setSelectedContactId(null); }}
-                />
-              )}
-            </div>
+            <div className="crm-drawer-backdrop" onClick={() => { setSelectedDealId(null); setSelectedContactId(null); setSelectedCompanyId(null); }} />
           )}
+          <div className={`crm-drawer-container${hasDetailPanel ? ' open' : ''}`}>
+            {(activeView === 'pipeline' || activeView === 'deals') && selectedDeal && (
+              <DealDetailPanel
+                deal={selectedDeal}
+                stages={stages}
+                onClose={() => setSelectedDealId(null)}
+                onMarkWon={() => markWon.mutate(selectedDeal.id)}
+                onMarkLost={() => setMarkLostDealId(selectedDeal.id)}
+                onContactClick={(contactId) => { setActiveView('contacts'); setSelectedContactId(contactId); setSelectedDealId(null); setSelectedCompanyId(null); }}
+                onCompanyClick={(companyId) => { setActiveView('companies'); setSelectedCompanyId(companyId); setSelectedDealId(null); setSelectedContactId(null); }}
+              />
+            )}
+            {activeView === 'contacts' && selectedContact && (
+              <ContactDetailPanel
+                contact={selectedContact}
+                deals={deals}
+                onClose={() => setSelectedContactId(null)}
+                onCompanyClick={(companyId) => { setActiveView('companies'); setSelectedCompanyId(companyId); setSelectedContactId(null); setSelectedDealId(null); }}
+                onDealClick={(dealId) => { setActiveView('deals'); setSelectedDealId(dealId); setSelectedContactId(null); setSelectedCompanyId(null); }}
+              />
+            )}
+            {activeView === 'companies' && selectedCompany && (
+              <CompanyDetailPanel
+                company={selectedCompany}
+                contacts={contacts}
+                deals={deals}
+                onClose={() => setSelectedCompanyId(null)}
+                onContactClick={(contactId) => { setActiveView('contacts'); setSelectedContactId(contactId); setSelectedCompanyId(null); setSelectedDealId(null); }}
+                onDealClick={(dealId) => { setActiveView('deals'); setSelectedDealId(dealId); setSelectedCompanyId(null); setSelectedContactId(null); }}
+              />
+            )}
+          </div>
         </div>
       </ContentArea>
 

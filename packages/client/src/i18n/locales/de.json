@@ -343,8 +343,24 @@
   "commandPalette": {
     "title": "Befehlspalette",
     "placeholder": "Befehl oder Suche eingeben…",
-    "noResults": "Keine Befehle für \"{{query}}\" gefunden",
+    "searchPlaceholder": "Suchen oder springen...",
+    "noResults": "Keine Ergebnisse",
+    "noResultsQuery": "Keine Ergebnisse für \"{{query}}\"",
     "commands": "Befehle",
+    "navigation": "Navigation",
+    "actions": "Aktionen",
+    "records": "Datensätze",
+    "shortcuts": "Tastenkürzel",
+    "goTo": "Zu {{page}} wechseln",
+    "settings": "Einstellungen",
+    "createContact": "Kontakt erstellen",
+    "createDeal": "Geschäft erstellen",
+    "createCompany": "Unternehmen erstellen",
+    "newDocument": "Neues Dokument",
+    "newTask": "Neue Aufgabe",
+    "toNavigate": "navigieren",
+    "toSelect": "auswählen",
+    "toClose": "schließen",
     "goToImportant": "Zu Wichtig wechseln",
     "goToOther": "Zu Sonstige wechseln",
     "goToNewsletters": "Zu Newsletter wechseln",
@@ -930,7 +946,12 @@
       "changeStage": "Phase ändern",
       "clearSelection": "Auswahl aufheben",
       "avgProbability": "Durchschn. Wahrsch.",
-      "probabilityPercent": "Wahrscheinlichkeit %"
+      "probabilityPercent": "Wahrscheinlichkeit %",
+      "groupBy": "Gruppieren nach",
+      "noGroup": "Keine Gruppierung",
+      "groupByStage": "Phase",
+      "groupByContact": "Kontakt",
+      "groupByCompany": "Unternehmen"
     },
     "fields": {
       "manageFields": "Felder verwalten"
@@ -947,7 +968,8 @@
       "addContact": "Kontakt hinzufügen",
       "contactDetail": "Kontaktdetail",
       "deleteContact": "Kontakt löschen",
-      "duplicateEmail": "Ein Kontakt namens \"{{name}}\" verwendet bereits diese E-Mail"
+      "duplicateEmail": "Ein Kontakt namens \"{{name}}\" verwendet bereits diese E-Mail",
+      "groupByCompany": "Unternehmen"
     },
     "companies": {
       "name": "Name",
@@ -962,7 +984,8 @@
       "companyDetail": "Unternehmensdetail",
       "deleteCompany": "Unternehmen löschen",
       "employees": "Mitarbeiter",
-      "contactsDeals": "Kontakte / Geschäfte"
+      "contactsDeals": "Kontakte / Geschäfte",
+      "groupByIndustry": "Branche"
     },
     "activities": {
       "logActivity": "Aktivität erfassen",
@@ -1018,6 +1041,22 @@
       "addFilter": "Filter hinzufügen",
       "saveView": "Ansicht speichern",
       "addNew": "Neu hinzufügen"
+    },
+    "list": {
+      "groupBy": "Gruppieren nach",
+      "noGrouping": "Keine Gruppierung",
+      "aggregate": "Gesamt",
+      "average": "Durchschnitt",
+      "count": "{{count}} Datensätze",
+      "sum": "Summe"
+    },
+    "detail": {
+      "customize": "Anpassen",
+      "customizeFields": "Felder anpassen",
+      "showField": "Feld anzeigen",
+      "hideField": "Feld ausblenden",
+      "done": "Fertig",
+      "resetLayout": "Layout zurücksetzen"
     },
     "empty": {
       "noDeals": "Noch keine Geschäfte",

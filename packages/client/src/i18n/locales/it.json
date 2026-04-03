@@ -343,8 +343,24 @@
   "commandPalette": {
     "title": "Tavolozza comandi",
     "placeholder": "Digita un comando o cerca...",
-    "noResults": "Nessun comando trovato per \"{{query}}\"",
+    "searchPlaceholder": "Cerca o vai a...",
+    "noResults": "Nessun risultato",
+    "noResultsQuery": "Nessun risultato per \"{{query}}\"",
     "commands": "Comandi",
+    "navigation": "Navigazione",
+    "actions": "Azioni",
+    "records": "Record",
+    "shortcuts": "Scorciatoie",
+    "goTo": "Vai a {{page}}",
+    "settings": "Impostazioni",
+    "createContact": "Crea contatto",
+    "createDeal": "Crea trattativa",
+    "createCompany": "Crea azienda",
+    "newDocument": "Nuovo documento",
+    "newTask": "Nuova attività",
+    "toNavigate": "naviga",
+    "toSelect": "seleziona",
+    "toClose": "chiudi",
     "goToImportant": "Vai a importanti",
     "goToOther": "Vai ad altro",
     "goToNewsletters": "Vai a newsletter",
@@ -930,7 +946,12 @@
       "changeStage": "Cambia fase",
       "clearSelection": "Annulla selezione",
       "avgProbability": "Prob. media",
-      "probabilityPercent": "Probabilità %"
+      "probabilityPercent": "Probabilità %",
+      "groupBy": "Raggruppa per",
+      "noGroup": "Nessun raggruppamento",
+      "groupByStage": "Fase",
+      "groupByContact": "Contatto",
+      "groupByCompany": "Azienda"
     },
     "fields": {
       "manageFields": "Gestisci campi"
@@ -947,7 +968,8 @@
       "addContact": "Aggiungi contatto",
       "contactDetail": "Dettaglio contatto",
       "deleteContact": "Elimina contatto",
-      "duplicateEmail": "Un contatto chiamato \"{{name}}\" utilizza già questa email"
+      "duplicateEmail": "Un contatto chiamato \"{{name}}\" utilizza già questa email",
+      "groupByCompany": "Azienda"
     },
     "companies": {
       "name": "Nome",
@@ -962,7 +984,8 @@
       "companyDetail": "Dettaglio azienda",
       "deleteCompany": "Elimina azienda",
       "employees": "dipendenti",
-      "contactsDeals": "Contatti / Trattative"
+      "contactsDeals": "Contatti / Trattative",
+      "groupByIndustry": "Settore"
     },
     "activities": {
       "logActivity": "Registra attività",
@@ -1018,6 +1041,22 @@
       "addFilter": "Aggiungi filtro",
       "saveView": "Salva vista",
       "addNew": "Aggiungi nuovo"
+    },
+    "list": {
+      "groupBy": "Raggruppa per",
+      "noGrouping": "Nessun raggruppamento",
+      "aggregate": "Totale",
+      "average": "Media",
+      "count": "{{count}} record",
+      "sum": "Somma"
+    },
+    "detail": {
+      "customize": "Personalizza",
+      "customizeFields": "Personalizza campi",
+      "showField": "Mostra campo",
+      "hideField": "Nascondi campo",
+      "done": "Fatto",
+      "resetLayout": "Ripristina layout"
     },
     "empty": {
       "noDeals": "Nessuna trattativa ancora",

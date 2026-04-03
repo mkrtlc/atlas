@@ -343,8 +343,24 @@
   "commandPalette": {
     "title": "Palette de commandes",
     "placeholder": "Saisissez une commande ou recherchez...",
-    "noResults": "Aucune commande trouvée pour « {{query}} »",
+    "searchPlaceholder": "Rechercher ou aller à...",
+    "noResults": "Aucun résultat",
+    "noResultsQuery": "Aucun résultat pour « {{query}} »",
     "commands": "Commandes",
+    "navigation": "Navigation",
+    "actions": "Actions",
+    "records": "Enregistrements",
+    "shortcuts": "Raccourcis",
+    "goTo": "Aller à {{page}}",
+    "settings": "Paramètres",
+    "createContact": "Créer un contact",
+    "createDeal": "Créer une affaire",
+    "createCompany": "Créer une entreprise",
+    "newDocument": "Nouveau document",
+    "newTask": "Nouvelle tâche",
+    "toNavigate": "naviguer",
+    "toSelect": "sélectionner",
+    "toClose": "fermer",
     "goToImportant": "Aller aux importants",
     "goToOther": "Aller aux autres",
     "goToNewsletters": "Aller aux newsletters",
@@ -930,7 +946,12 @@
       "changeStage": "Changer l'étape",
       "clearSelection": "Effacer la sélection",
       "avgProbability": "Prob. moyenne",
-      "probabilityPercent": "Probabilité %"
+      "probabilityPercent": "Probabilité %",
+      "groupBy": "Grouper par",
+      "noGroup": "Pas de groupement",
+      "groupByStage": "Étape",
+      "groupByContact": "Contact",
+      "groupByCompany": "Entreprise"
     },
     "fields": {
       "manageFields": "Gérer les champs"
@@ -947,7 +968,8 @@
       "addContact": "Ajouter un contact",
       "contactDetail": "Détail du contact",
       "deleteContact": "Supprimer le contact",
-      "duplicateEmail": "Un contact nommé \"{{name}}\" utilise déjà cet e-mail"
+      "duplicateEmail": "Un contact nommé \"{{name}}\" utilise déjà cet e-mail",
+      "groupByCompany": "Entreprise"
     },
     "companies": {
       "name": "Nom",
@@ -962,7 +984,8 @@
       "companyDetail": "Détail de l'entreprise",
       "deleteCompany": "Supprimer l'entreprise",
       "employees": "employés",
-      "contactsDeals": "Contacts / Affaires"
+      "contactsDeals": "Contacts / Affaires",
+      "groupByIndustry": "Secteur"
     },
     "activities": {
       "logActivity": "Enregistrer une activité",
@@ -1018,6 +1041,22 @@
       "addFilter": "Ajouter un filtre",
       "saveView": "Enregistrer la vue",
       "addNew": "Ajouter"
+    },
+    "list": {
+      "groupBy": "Grouper par",
+      "noGrouping": "Pas de groupement",
+      "aggregate": "Total",
+      "average": "Moyenne",
+      "count": "{{count}} enregistrements",
+      "sum": "Somme"
+    },
+    "detail": {
+      "customize": "Personnaliser",
+      "customizeFields": "Personnaliser les champs",
+      "showField": "Afficher le champ",
+      "hideField": "Masquer le champ",
+      "done": "Terminé",
+      "resetLayout": "Réinitialiser la disposition"
     },
     "empty": {
       "noDeals": "Pas encore d'affaires",
