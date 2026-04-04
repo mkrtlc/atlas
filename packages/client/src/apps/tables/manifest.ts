@@ -28,8 +28,8 @@ export const tablesManifest: ClientAppManifest = {
     icon: Table2,
     color: '#2d8a6e',
     panels: [
-      { id: 'general', label: 'General', icon: Settings, component: TablesGeneralPanel },
-      { id: 'regional', label: 'Regional', icon: Languages, component: TablesRegionalPanel },
+      { id: 'general', label: 'General', icon: Settings, component: TablesGeneralPanel, adminOnly: true },
+      { id: 'regional', label: 'Regional', icon: Languages, component: TablesRegionalPanel, adminOnly: true },
     ],
   },
 };

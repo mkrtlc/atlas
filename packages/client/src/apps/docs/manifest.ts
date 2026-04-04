@@ -28,8 +28,8 @@ export const docsManifest: ClientAppManifest = {
     icon: FileText,
     color: '#c4856c',
     panels: [
-      { id: 'editor', label: 'Editor', icon: Type, component: DocsEditorPanel },
-      { id: 'startup', label: 'Startup', icon: Rocket, component: DocsStartupPanel },
+      { id: 'editor', label: 'Editor', icon: Type, component: DocsEditorPanel, adminOnly: true },
+      { id: 'startup', label: 'Startup', icon: Rocket, component: DocsStartupPanel, adminOnly: true },
     ],
   },
 };

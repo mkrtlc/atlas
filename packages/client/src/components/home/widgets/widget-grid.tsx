@@ -5,6 +5,8 @@ import { api } from '../../../lib/api-client';
 import { queryKeys } from '../../../config/query-keys';
 import { widgetRegistry } from './registry';
 import { appRegistry } from '../../../config/app-registry';
+import { useAuthStore } from '../../../stores/auth-store';
+import { useMyAppPermission } from '../../../hooks/use-app-permissions';
 
 const WIDGET_W = 240;
 const WIDGET_H = 160;
@@ -64,10 +66,28 @@ export function WidgetGrid() {
     return all.filter((w) => enabledIds!.includes(`${w.appId}:${w.id}`));
   }, [settings]);
 
+  // Role-based widget filtering
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = tenantRole === 'owner' || tenantRole === 'admin';
+  const { data: crmPerm } = useMyAppPermission('crm');
+  const { data: hrPerm } = useMyAppPermission('hr');
+
+  const filteredAppWidgets = useMemo(() => {
+    return enabledAppWidgets.filter(w => {
+      // CPU/Memory: admin only
+      if (w.id === 'cpu-usage' || w.id === 'memory-usage') return isAdmin;
+      // CRM Pipeline: only if user has CRM access
+      if (w.appId === 'crm') return !!crmPerm;
+      // HR Team: only if user has HR admin/manager/editor access (not portal viewers)
+      if (w.appId === 'hr') return !!hrPerm && hrPerm.role !== 'viewer';
+      return true;
+    });
+  }, [enabledAppWidgets, isAdmin, crmPerm, hrPerm]);
+
   const navigate = useNavigate();
   const [hoveredWidget, setHoveredWidget] = useState<string | null>(null);
 
-  const hasWidgets = enabledWidgets.length > 0 || enabledAppWidgets.length > 0;
+  const hasWidgets = enabledWidgets.length > 0 || filteredAppWidgets.length > 0;
   if (!hasWidgets) return null;
 
   const visibleWidgets = enabledWidgets.slice(0, 10);
@@ -105,7 +125,7 @@ export function WidgetGrid() {
         </div>
       )}
 
-      {enabledAppWidgets.length > 0 && (
+      {filteredAppWidgets.length > 0 && (
         <div
           style={{
             display: 'grid',
@@ -116,7 +136,7 @@ export function WidgetGrid() {
             maxWidth: '90vw',
           }}
         >
-          {enabledAppWidgets.map((widget) => {
+          {filteredAppWidgets.map((widget) => {
             const wKey = `${widget.appId}:${widget.id}`;
             const isHovered = hoveredWidget === wKey;
             const app = appRegistry.getAll().find((a) => a.id === widget.appId);

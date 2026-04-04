@@ -5,6 +5,7 @@ import { getSettingsCategories } from '../config/settings-registry';
 import { appRegistry } from '../apps';
 import { SidebarNavButton } from '../components/settings/settings-modal';
 import { useUIStore } from '../stores/ui-store';
+import { useAuthStore } from '../stores/auth-store';
 
 // ---------------------------------------------------------------------------
 // Settings modal — two-level navigation overlay
@@ -47,10 +48,18 @@ const CATEGORY_KEY_MAP: Record<string, string> = {
 export function SettingsModal() {
   const { t } = useTranslation();
   const { settingsOpen, settingsApp, settingsPanel, closeSettings } = useUIStore();
-  const settingsCategories = useMemo(
-    () => getSettingsCategories(appRegistry.getSettingsCategories()),
-    [],
-  );
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = tenantRole === 'owner' || tenantRole === 'admin';
+
+  const settingsCategories = useMemo(() => {
+    const all = getSettingsCategories(appRegistry.getSettingsCategories());
+    if (isAdmin) return all;
+    // Non-admins: filter out admin-only panels, hide categories with no visible panels
+    return all.map(cat => ({
+      ...cat,
+      panels: cat.panels.filter(p => !p.adminOnly),
+    })).filter(cat => cat.panels.length > 0);
+  }, [isAdmin]);
 
   // Resolve initial category from store
   const resolvedCategory = settingsCategories.find((c) => c.id === settingsApp) ?? settingsCategories[0];
@@ -140,7 +149,7 @@ export function SettingsModal() {
         {/* Primary sidebar — categories */}
         <div
           style={{
-            width: 180,
+            width: 200,
             flexShrink: 0,
             background: 'var(--color-bg-tertiary)',
             borderRight: '1px solid var(--color-border-primary)',
@@ -190,7 +199,7 @@ export function SettingsModal() {
         {/* Secondary sidebar — panels for the active category */}
         <div
           style={{
-            width: 180,
+            width: 200,
             flexShrink: 0,
             background: 'var(--color-bg-secondary)',
             borderRight: '1px solid var(--color-border-primary)',

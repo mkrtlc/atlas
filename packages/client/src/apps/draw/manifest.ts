@@ -28,8 +28,8 @@ export const drawManifest: ClientAppManifest = {
     icon: Pencil,
     color: '#e06c9f',
     panels: [
-      { id: 'canvas', label: 'Canvas', icon: Palette, component: DrawCanvasPanel },
-      { id: 'export', label: 'Export', icon: Download, component: DrawExportPanel },
+      { id: 'canvas', label: 'Canvas', icon: Palette, component: DrawCanvasPanel, adminOnly: true },
+      { id: 'export', label: 'Export', icon: Download, component: DrawExportPanel, adminOnly: true },
     ],
   },
 };

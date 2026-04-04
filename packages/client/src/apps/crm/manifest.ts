@@ -36,10 +36,10 @@ export const crmManifest: ClientAppManifest = {
     icon: Briefcase,
     color: '#f97316',
     panels: [
-      { id: 'stages', label: 'Pipeline stages', icon: Settings, component: CrmStagesPanel },
-      { id: 'activity-types', label: 'Activity types', icon: Settings, component: CrmActivityTypesPanel },
-      { id: 'general', label: 'General', icon: Settings, component: CrmGeneralPanel },
-      { id: 'integrations', label: 'Integrations', icon: Settings, component: CrmIntegrationsPanel },
+      { id: 'stages', label: 'Pipeline stages', icon: Settings, component: CrmStagesPanel, adminOnly: true },
+      { id: 'activity-types', label: 'Activity types', icon: Settings, component: CrmActivityTypesPanel, adminOnly: true },
+      { id: 'general', label: 'General', icon: Settings, component: CrmGeneralPanel, adminOnly: true },
+      { id: 'integrations', label: 'Integrations', icon: Settings, component: CrmIntegrationsPanel, adminOnly: true },
     ],
   },
 };

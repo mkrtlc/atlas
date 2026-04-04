@@ -33,6 +33,7 @@ export interface SettingsPanel {
   label: string;
   icon: LucideIcon;
   component: () => ReactElement;
+  adminOnly?: boolean;
 }
 
 export interface SettingsCategory {
@@ -55,11 +56,11 @@ export const globalSettingsCategory: SettingsCategory = {
   panels: [
     { id: 'general', label: 'General', icon: Settings, component: GeneralPanel },
     { id: 'appearance', label: 'Appearance', icon: Palette, component: AppearancePanel },
-    { id: 'formats', label: 'Formats', icon: Clock, component: FormatsPanel },
-    { id: 'data-model', label: 'Data model', icon: Database, component: DataModelPanel },
+    { id: 'formats', label: 'Formats', icon: Clock, component: FormatsPanel, adminOnly: true },
+    { id: 'data-model', label: 'Data model', icon: Database, component: DataModelPanel, adminOnly: true },
     { id: 'home-background', label: 'Home background', icon: Image, component: HomeBackgroundPanel },
     { id: 'home-widgets', label: 'Widgets', icon: LayoutGrid, component: HomeWidgetsPanel },
-    { id: 'ai', label: 'AI', icon: Sparkles, component: AiSettingsPanel },
+    { id: 'ai', label: 'AI', icon: Sparkles, component: AiSettingsPanel, adminOnly: true },
     { id: 'about', label: 'About', icon: Info, component: AboutPanel },
   ],
 };
