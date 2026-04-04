@@ -1,7 +1,7 @@
 :root,
 [data-theme="light"] {
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f5f6f8;
+  --color-bg-secondary: #f8f9fb;
   --color-bg-tertiary: #eef0f3;
   --color-bg-elevated: #ffffff;
   --color-bg-overlay: rgba(0, 0, 0, 0.4);

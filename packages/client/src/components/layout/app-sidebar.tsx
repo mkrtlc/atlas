@@ -271,7 +271,7 @@ export function SidebarItem({ label, icon, iconColor, isActive, count, onClick, 
       }}
     >
       {icon && (
-        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.7, color: iconColor || 'inherit' }}>
+        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.85, color: iconColor || 'inherit' }}>
           {icon}
         </span>
       )}
