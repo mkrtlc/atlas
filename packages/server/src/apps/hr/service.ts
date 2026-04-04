@@ -68,6 +68,16 @@ interface UpdateTimeOffRequestInput extends Partial<Omit<CreateTimeOffRequestInp
   isArchived?: boolean;
 }
 
+// ─── Shared scope helper ────────────────────────────────────────────
+
+function addEmployeeScopeConditions(conditions: any[], userId: string, isAdmin?: boolean, userEmail?: string) {
+  if (!isAdmin && userEmail) {
+    conditions.push(sql`LOWER(${employees.email}) = LOWER(${userEmail})`);
+  } else if (!isAdmin) {
+    conditions.push(eq(employees.userId, userId));
+  }
+}
+
 // ─── Employees ──────────────────────────────────────────────────────
 
 export async function listEmployees(userId: string, accountId: string, filters?: {
@@ -78,13 +88,7 @@ export async function listEmployees(userId: string, accountId: string, filters?:
   userEmail?: string;
 }) {
   const conditions = [eq(employees.accountId, accountId)];
-
-  // Admin/managers see all employees, regular users see only their own record
-  if (!filters?.isAdmin && filters?.userEmail) {
-    conditions.push(sql`LOWER(${employees.email}) = LOWER(${filters.userEmail})`);
-  } else if (!filters?.isAdmin) {
-    conditions.push(eq(employees.userId, userId));
-  }
+  addEmployeeScopeConditions(conditions, userId, filters?.isAdmin, filters?.userEmail);
 
   if (!filters?.includeArchived) {
     conditions.push(eq(employees.isArchived, false));
@@ -373,11 +377,7 @@ export async function searchEmployees(userId: string, accountId: string, query: 
 
 export async function getEmployeeCounts(userId: string, accountId: string, isAdmin = false, userEmail?: string) {
   const conditions = [eq(employees.accountId, accountId), eq(employees.isArchived, false)];
-  if (!isAdmin && userEmail) {
-    conditions.push(sql`LOWER(${employees.email}) = LOWER(${userEmail})`);
-  } else if (!isAdmin) {
-    conditions.push(eq(employees.userId, userId));
-  }
+  addEmployeeScopeConditions(conditions, userId, isAdmin, userEmail);
   const allEmployees = await db
     .select({ status: employees.status })
     .from(employees)
