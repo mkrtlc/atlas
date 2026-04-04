@@ -22,6 +22,13 @@ function validateBody<T>(schema: z.ZodSchema<T>, body: unknown, res: Response): 
 const inviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   role: z.enum(['owner', 'admin', 'member']).default('member'),
+  appPermissions: z.array(z.object({
+    appId: z.string(),
+    enabled: z.boolean(),
+    role: z.enum(['admin', 'manager', 'editor', 'viewer']),
+    recordAccess: z.enum(['all', 'team', 'own']).default('all'),
+  })).optional(),
+  crmTeamId: z.string().optional(),
 });
 
 const createTenantUserSchema = z.object({
@@ -252,7 +259,10 @@ export async function inviteTenantUser(req: Request, res: Response) {
     if (!data) return;
 
     const role = data.role ?? 'member';
-    const invitation = await tenantUserService.inviteUser(tenantId, data.email, role, req.auth!.userId);
+    const invitation = await tenantUserService.inviteUser(tenantId, data.email, role, req.auth!.userId, {
+      appPermissions: data.appPermissions,
+      crmTeamId: data.crmTeamId,
+    });
     logger.info({ audit: true, action: 'invitation.create', tenantId, email: data.email, role, performedBy: req.auth!.userId }, 'User invited');
 
     emitAppEvent({

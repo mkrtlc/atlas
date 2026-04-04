@@ -836,6 +836,8 @@ export const tenantInvitations = pgTable('tenant_invitations', {
   token: varchar('token', { length: 255 }).unique().notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+  appPermissions: jsonb('app_permissions').$type<Array<{ appId: string; enabled: boolean; role: string; recordAccess?: string }> | null>(),
+  crmTeamId: uuid('crm_team_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   tenantEmailIdx: uniqueIndex('idx_tenant_invitations_tenant_email').on(table.tenantId, table.email),

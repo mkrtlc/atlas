@@ -136,7 +136,10 @@ export async function updateTenantUserRole(tenantId: string, userId: string, rol
     .where(and(eq(tenantMembers.tenantId, tenantId), eq(tenantMembers.userId, userId)));
 }
 
-export async function inviteUser(tenantId: string, email: string, role: TenantMemberRole, invitedBy: string) {
+export async function inviteUser(
+  tenantId: string, email: string, role: TenantMemberRole, invitedBy: string,
+  options?: { appPermissions?: Array<{ appId: string; enabled: boolean; role: string; recordAccess?: string }>; crmTeamId?: string },
+) {
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -147,6 +150,8 @@ export async function inviteUser(tenantId: string, email: string, role: TenantMe
     invitedBy,
     token,
     expiresAt,
+    appPermissions: options?.appPermissions ?? null,
+    crmTeamId: options?.crmTeamId ?? null,
   }).returning();
 
   logger.info({ tenantId, email, invitationId: invitation.id }, 'User invited to tenant');
@@ -200,8 +205,27 @@ export async function acceptInvitation(token: string, input: { name: string; pas
     role: invitation.role,
   });
 
-  // Grant default app permissions for new members
-  if (invitation.role === 'member') {
+  // Apply app permissions — use stored permissions from invite, or defaults
+  const storedPerms = invitation.appPermissions as Array<{ appId: string; enabled: boolean; role: string; recordAccess: string }> | null;
+  if (storedPerms && storedPerms.length > 0) {
+    for (const perm of storedPerms) {
+      if (perm.enabled) {
+        await setAppPermission(invitation.tenantId, user.id, perm.appId, perm.role as AppRole, perm.recordAccess as AppRecordAccess);
+      }
+    }
+    // Add to CRM team if specified
+    const crmTeamId = (invitation as any).crmTeamId;
+    if (crmTeamId) {
+      try {
+        const { addTeamMember } = await import('../../apps/crm/service');
+        const tenantAccount = await db.select({ id: accounts.id }).from(accounts)
+          .where(eq(accounts.userId, invitation.invitedBy)).limit(1);
+        if (tenantAccount[0]) {
+          await addTeamMember(crmTeamId, user.id, tenantAccount[0].id);
+        }
+      } catch { /* CRM team assignment optional */ }
+    }
+  } else if (invitation.role === 'member') {
     await grantDefaultPermissions(invitation.tenantId, user.id);
   }
 

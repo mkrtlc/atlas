@@ -2009,6 +2009,12 @@ export async function runMigrations() {
       ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS team_id UUID;
     `);
 
+    // ─── Invitation app permissions ─────────────────────────────────
+    await client.query(`
+      ALTER TABLE tenant_invitations ADD COLUMN IF NOT EXISTS app_permissions JSONB;
+      ALTER TABLE tenant_invitations ADD COLUMN IF NOT EXISTS crm_team_id UUID;
+    `);
+
     // ─── Index: employees.email for permission-based filtering ────────
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(account_id, email);
