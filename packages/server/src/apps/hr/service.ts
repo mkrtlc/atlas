@@ -6,8 +6,9 @@ import {
   hrLifecycleEvents, hrLeaveApplications,
   users, tenantMembers, appPermissions,
 } from '../../db/schema';
-import { eq, and, asc, desc, sql, gte, lte } from 'drizzle-orm';
+import { eq, and, asc, desc, sql, gte, lte, type SQL } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
+import { setAppPermission } from '../../services/app-permissions.service';
 
 const UNASSIGNED_DEPT_COLOR = '#94a3b8';
 
@@ -70,7 +71,7 @@ interface UpdateTimeOffRequestInput extends Partial<Omit<CreateTimeOffRequestInp
 
 // ─── Shared scope helper ────────────────────────────────────────────
 
-function addEmployeeScopeConditions(conditions: any[], userId: string, isAdmin?: boolean, userEmail?: string) {
+function addEmployeeScopeConditions(conditions: SQL[], userId: string, isAdmin?: boolean, userEmail?: string) {
   if (!isAdmin && userEmail) {
     conditions.push(sql`LOWER(${employees.email}) = LOWER(${userEmail})`);
   } else if (!isAdmin) {
@@ -239,7 +240,6 @@ export async function createEmployee(userId: string, accountId: string, input: C
         created.linkedUserId = matchingUser.id;
 
         // Auto-grant HR viewer permission if none exists
-        const { setAppPermission } = await import('../../services/app-permissions.service');
         const [membership] = await db.select({ tenantId: tenantMembers.tenantId }).from(tenantMembers)
           .where(eq(tenantMembers.userId, matchingUser.id)).limit(1);
         if (membership) {

@@ -796,7 +796,10 @@ export async function createTeam(req: Request, res: Response) {
     const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'crm');
     if (!canAccess(perm.role, 'create')) { res.status(403).json({ success: false, error: 'No permission' }); return; }
     const { name, color, leaderUserId } = req.body;
-    const data = await crmService.createTeam(req.auth!.accountId, { name, color, leaderUserId });
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      res.status(400).json({ success: false, error: 'Team name is required' }); return;
+    }
+    const data = await crmService.createTeam(req.auth!.accountId, { name: name.trim(), color, leaderUserId });
     res.json({ success: true, data });
   } catch (error) {
     logger.error({ error }, 'Failed to create CRM team');
