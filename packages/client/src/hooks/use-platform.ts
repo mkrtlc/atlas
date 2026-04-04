@@ -83,7 +83,7 @@ export function useUpdateTenantUserRole(tenantId: string) {
 export function useInviteTenantUser(tenantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { email: string; role?: TenantMemberRole }) => {
+    mutationFn: async (input: { email: string; role?: TenantMemberRole; appPermissions?: Array<{ appId: string; enabled: boolean; role: string; recordAccess?: string }>; crmTeamId?: string }) => {
       const { data } = await api.post(`/platform/tenants/${tenantId}/invitations`, input);
       return data.data;
     },

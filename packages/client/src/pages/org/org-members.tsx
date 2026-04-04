@@ -280,7 +280,33 @@ export function OrgMembersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [addForm, setAddForm] = useState({ email: '', name: '', password: '', role: 'member' as TenantMemberRole });
-  const [inviteForm, setInviteForm] = useState({ email: '', role: 'member' as TenantMemberRole });
+  const DEFAULT_APP_PERMS = [
+    { appId: 'hr', enabled: true, role: 'viewer', recordAccess: 'own' },
+    { appId: 'tasks', enabled: true, role: 'editor', recordAccess: 'all' },
+    { appId: 'drive', enabled: true, role: 'editor', recordAccess: 'all' },
+    { appId: 'docs', enabled: true, role: 'editor', recordAccess: 'all' },
+    { appId: 'draw', enabled: true, role: 'editor', recordAccess: 'all' },
+    { appId: 'tables', enabled: true, role: 'editor', recordAccess: 'all' },
+    { appId: 'sign', enabled: true, role: 'editor', recordAccess: 'all' },
+    { appId: 'crm', enabled: false, role: 'editor', recordAccess: 'own' },
+    { appId: 'projects', enabled: false, role: 'editor', recordAccess: 'all' },
+  ];
+  const APP_LABELS: Record<string, string> = {
+    hr: 'HR', tasks: 'Tasks', drive: 'Drive', docs: 'Write', draw: 'Draw',
+    tables: 'Tables', sign: 'Sign', crm: 'CRM', projects: 'Projects',
+  };
+  const ROLE_OPTIONS = [
+    { value: 'admin', label: 'Admin' },
+    { value: 'manager', label: 'Manager' },
+    { value: 'editor', label: 'Editor' },
+    { value: 'viewer', label: 'Viewer' },
+  ];
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    role: 'member' as TenantMemberRole,
+    appPermissions: DEFAULT_APP_PERMS.map(p => ({ ...p })),
+    crmTeamId: '',
+  });
   const [addError, setAddError] = useState('');
   const [inviteError, setInviteError] = useState('');
   const [inviteSuccess, setInviteSuccess] = useState('');
@@ -358,10 +384,15 @@ export function OrgMembersPage() {
     setInviteError('');
     setInviteSuccess('');
     try {
-      await inviteUser.mutateAsync(inviteForm);
+      await inviteUser.mutateAsync({
+        email: inviteForm.email,
+        role: inviteForm.role,
+        appPermissions: inviteForm.appPermissions.filter(p => p.enabled),
+        crmTeamId: inviteForm.crmTeamId || undefined,
+      });
       setInviteSuccess(`Invitation sent to ${inviteForm.email}`);
       setShowInviteModal(false);
-      setInviteForm({ email: '', role: 'member' });
+      setInviteForm({ email: '', role: 'member', appPermissions: DEFAULT_APP_PERMS.map(p => ({ ...p })), crmTeamId: '' });
     } catch (err: any) {
       setInviteError(err.response?.data?.error || 'Failed to send invitation');
     }
@@ -716,7 +747,7 @@ export function OrgMembersPage() {
       <Modal
         open={showInviteModal}
         onOpenChange={(open) => { if (!open) { setShowInviteModal(false); setInviteError(''); } }}
-        width={440}
+        width={520}
         title="Invite team member"
       >
         <Modal.Header title="Invite team member" />
@@ -755,6 +786,44 @@ export function OrgMembersPage() {
                     { value: 'admin', label: 'Admin' },
                   ]}
                 />
+              </div>
+              {/* App access section */}
+              <div style={{ borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-md)' }}>
+                <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', display: 'block', marginBottom: 'var(--spacing-sm)' }}>
+                  App access
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+                  {inviteForm.appPermissions.map((perm, i) => (
+                    <div key={perm.appId} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', padding: '4px 0' }}>
+                      <input
+                        type="checkbox"
+                        checked={perm.enabled}
+                        onChange={(e) => {
+                          const next = [...inviteForm.appPermissions];
+                          next[i] = { ...next[i], enabled: e.target.checked };
+                          setInviteForm({ ...inviteForm, appPermissions: next });
+                        }}
+                        style={{ width: 14, height: 14, accentColor: 'var(--color-accent-primary)' }}
+                      />
+                      <span style={{ width: 70, fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', color: 'var(--color-text-primary)' }}>
+                        {APP_LABELS[perm.appId] || perm.appId}
+                      </span>
+                      {perm.enabled && (
+                        <Select
+                          value={perm.role}
+                          onChange={(v) => {
+                            const next = [...inviteForm.appPermissions];
+                            next[i] = { ...next[i], role: v };
+                            setInviteForm({ ...inviteForm, appPermissions: next });
+                          }}
+                          options={ROLE_OPTIONS}
+                          size="sm"
+                          width={110}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
               <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
                 The user will receive an invitation link to set up their account.
