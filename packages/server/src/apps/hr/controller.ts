@@ -78,7 +78,7 @@ export async function getEmployee(req: Request, res: Response) {
     }
 
     // Non-admin users can only see their own record and shouldn't see salary data
-    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager' || perm.role === 'editor';
     const isSelf = employee.email?.toLowerCase() === req.auth!.email?.toLowerCase();
 
     if (!isAdmin && !isSelf) {

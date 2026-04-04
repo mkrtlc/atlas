@@ -80,7 +80,7 @@ export async function listEmployees(userId: string, accountId: string, filters?:
 
   // Admin/managers see all employees, regular users see only their own record
   if (!filters?.isAdmin && filters?.userEmail) {
-    conditions.push(eq(employees.email, filters.userEmail));
+    conditions.push(sql`LOWER(${employees.email}) = LOWER(${filters.userEmail})`);
   } else if (!filters?.isAdmin) {
     conditions.push(eq(employees.userId, userId));
   }
