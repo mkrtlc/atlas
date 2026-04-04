@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { eq } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../config/database';
-import { userSettings } from '../db/schema';
+import { userSettings, crmDeals, crmContacts, crmCompanies, crmLeads, crmActivities, crmNotes, crmWorkflows, crmLeadForms } from '../db/schema';
+import { employees, departments } from '../db/schema';
 import { settingsSchema } from '@atlasmail/shared';
 import { encrypt, decrypt } from '../utils/crypto';
 import { testApiKey } from '../services/ai.service';
@@ -34,6 +35,38 @@ router.put('/', async (req: Request, res: Response) => {
   } else {
     const [created] = await db.insert(userSettings).values({ accountId: req.auth!.accountId, ...parsed.data }).returning();
     res.json({ success: true, data: created });
+  }
+});
+
+// ─── Clear Demo Data ──────────────────────────────────────────────
+
+router.post('/clear-demo', async (req: Request, res: Response) => {
+  try {
+    const accountId = req.auth!.accountId;
+
+    // Delete CRM data
+    await db.delete(crmActivities).where(eq(crmActivities.accountId, accountId));
+    await db.delete(crmNotes).where(eq(crmNotes.accountId, accountId));
+    await db.delete(crmLeads).where(eq(crmLeads.accountId, accountId));
+    await db.delete(crmDeals).where(eq(crmDeals.accountId, accountId));
+    await db.delete(crmContacts).where(eq(crmContacts.accountId, accountId));
+    await db.delete(crmCompanies).where(eq(crmCompanies.accountId, accountId));
+    await db.delete(crmWorkflows).where(eq(crmWorkflows.accountId, accountId));
+    await db.delete(crmLeadForms).where(eq(crmLeadForms.accountId, accountId));
+
+    // Delete HR data
+    await db.delete(employees).where(eq(employees.accountId, accountId));
+    await db.delete(departments).where(eq(departments.accountId, accountId));
+
+    // Update settings flag
+    await db.update(userSettings).set({ homeDemoDataActive: false, updatedAt: new Date() })
+      .where(eq(userSettings.accountId, accountId));
+
+    logger.info({ accountId }, 'Demo data cleared');
+    res.json({ success: true });
+  } catch (error) {
+    logger.error({ error }, 'Failed to clear demo data');
+    res.status(500).json({ success: false, error: 'Failed to clear demo data' });
   }
 });
 

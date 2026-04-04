@@ -679,7 +679,7 @@ export function HomePage() {
   const [showClearDemoConfirm, setShowClearDemoConfirm] = useState(false);
   const handleClearDemoData = useCallback(async () => {
     try {
-      await api.put('/settings', { homeDemoDataActive: false });
+      await api.post('/settings/clear-demo');
       queryClient.invalidateQueries();
     } catch { /* ignore */ }
     setShowClearDemoConfirm(false);
