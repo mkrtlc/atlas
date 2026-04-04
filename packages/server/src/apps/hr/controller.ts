@@ -128,25 +128,33 @@ export async function createEmployee(req: Request, res: Response) {
 export async function updateEmployee(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+    const userEmail = req.auth!.email;
+    const id = req.params.id as string;
 
     const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
-    if (!canAccess(perm.role, 'update')) {
-      res.status(403).json({ success: false, error: 'No permission to update HR records' });
-      return;
+    const hasUpdatePerm = canAccess(perm.role, 'update');
+
+    // If user doesn't have HR update permission, check if they're editing their own record
+    if (!hasUpdatePerm) {
+      const existing = await hrService.getEmployee(userId, req.auth!.accountId, id);
+      if (!existing || existing.email?.toLowerCase() !== userEmail?.toLowerCase()) {
+        res.status(403).json({ success: false, error: 'You can only edit your own employee record' });
+        return;
+      }
     }
 
-    const id = req.params.id as string;
     const {
       name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags, sortOrder, isArchived,
       dateOfBirth, gender, emergencyContactName, emergencyContactPhone, emergencyContactRelation,
       employmentType, managerId, jobTitle, workLocation, salary, salaryCurrency, salaryPeriod,
     } = req.body;
 
-    const employee = await hrService.updateEmployee(userId, id, {
-      name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags, sortOrder, isArchived,
-      dateOfBirth, gender, emergencyContactName, emergencyContactPhone, emergencyContactRelation,
-      employmentType, managerId, jobTitle, workLocation, salary, salaryCurrency, salaryPeriod,
-    });
+    // Non-admin users can't change sensitive fields on their own record
+    const updates = hasUpdatePerm
+      ? { name, email, role, departmentId, startDate, phone, avatarUrl, status, linkedUserId, tags, sortOrder, isArchived, dateOfBirth, gender, emergencyContactName, emergencyContactPhone, emergencyContactRelation, employmentType, managerId, jobTitle, workLocation, salary, salaryCurrency, salaryPeriod }
+      : { name, phone, dateOfBirth, gender, emergencyContactName, emergencyContactPhone, emergencyContactRelation, workLocation };
+
+    const employee = await hrService.updateEmployee(userId, id, updates);
 
     if (!employee) {
       res.status(404).json({ success: false, error: 'Employee not found' });

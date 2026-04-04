@@ -45,6 +45,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { CustomFieldsRenderer } from '../../components/shared/custom-fields-renderer';
 import { DataTable, type DataTableColumn } from '../../components/ui/data-table';
+import { EditableField } from '../../components/ui/editable-field';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
 import { StatusDot } from '../../components/ui/status-dot';
 import { ContentArea } from '../../components/ui/content-area';
@@ -862,10 +863,8 @@ function EmployeeDetailPanel({
             {/* Avatar + name header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
               <Avatar name={employee.name} size={48} />
-              <div>
-                <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-                  {employee.name}
-                </div>
+              <div style={{ flex: 1 }}>
+                <EditableField label="" value={employee.name} onSave={(v) => autoSave({ name: v })} />
                 <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
                   {employee.jobTitle || employee.role}
                 </div>
@@ -875,24 +874,10 @@ function EmployeeDetailPanel({
             {/* Basic fields */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
               {/* Email */}
-              <div className="hr-detail-field">
-                <span className="hr-detail-field-label">{t('hr.fields.email')}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-                  <Mail size={14} style={{ color: 'var(--color-text-tertiary)' }} />
-                  {employee.email}
-                </div>
-              </div>
+              <EditableField label={t('hr.fields.email')} value={employee.email} onSave={(v) => autoSave({ email: v })} />
 
               {/* Phone */}
-              {employee.phone && (
-                <div className="hr-detail-field">
-                  <span className="hr-detail-field-label">{t('hr.fields.phone')}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-                    <Phone size={14} style={{ color: 'var(--color-text-tertiary)' }} />
-                    {employee.phone}
-                  </div>
-                </div>
-              )}
+              <EditableField label={t('hr.fields.phone')} value={employee.phone || ''} onSave={(v) => autoSave({ phone: v || null })} />
 
               {/* Role */}
               <div className="hr-detail-field">
