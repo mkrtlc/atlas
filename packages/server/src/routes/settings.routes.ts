@@ -15,9 +15,15 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', async (req: Request, res: Response) => {
-  const [settings] = await db.select().from(userSettings)
+  let [settings] = await db.select().from(userSettings)
     .where(eq(userSettings.accountId, req.auth!.accountId)).limit(1);
-  res.json({ success: true, data: settings || null });
+
+  // Auto-create settings row with defaults if none exists
+  if (!settings) {
+    [settings] = await db.insert(userSettings).values({ accountId: req.auth!.accountId }).returning();
+  }
+
+  res.json({ success: true, data: settings });
 });
 
 router.put('/', async (req: Request, res: Response) => {

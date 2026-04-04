@@ -50,7 +50,7 @@ export async function getAppPermission(
 
     if (member) {
       const isPrivileged = member.role === 'owner' || member.role === 'admin';
-      return { role: isPrivileged ? 'admin' : 'editor', recordAccess: isPrivileged ? 'all' : 'all' };
+      return { role: isPrivileged ? 'admin' : 'viewer', recordAccess: isPrivileged ? 'all' : 'own' };
     }
   }
 

@@ -76,9 +76,9 @@ export function WidgetGrid() {
     return enabledAppWidgets.filter(w => {
       // CPU/Memory: admin only
       if (w.id === 'cpu-usage' || w.id === 'memory-usage') return isAdmin;
-      // CRM Pipeline: only if user has CRM access
-      if (w.appId === 'crm') return !!crmPerm;
-      // HR Team: only if user has HR admin/manager/editor access (not portal viewers)
+      // CRM Pipeline: only for users with CRM editor+ access (not default viewer fallback)
+      if (w.appId === 'crm') return !!crmPerm && crmPerm.role !== 'viewer';
+      // HR Team: only for HR admin/manager/editor (not portal viewers)
       if (w.appId === 'hr') return !!hrPerm && hrPerm.role !== 'viewer';
       return true;
     });
