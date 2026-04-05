@@ -2147,7 +2147,24 @@
       "deleteEmployee": "Are you sure you want to delete {{name}}? This action cannot be undone."
     },
     "detail": {
-      "title": "Employee detail"
+      "title": "Employee detail",
+      "back": "Back",
+      "previous": "Previous",
+      "next": "Next",
+      "notFound": "Employee not found",
+      "tabOverview": "Overview",
+      "tabPersonal": "Personal",
+      "tabLeave": "Leave",
+      "tabOnboarding": "Onboarding",
+      "tabDocuments": "Documents",
+      "tabTimeline": "Timeline",
+      "tenure": "Tenure",
+      "year": "year",
+      "years": "years",
+      "month": "month",
+      "months": "months",
+      "recentTimeOff": "Recent time off",
+      "onboardingProgress": "Onboarding progress"
     },
     "tabs": {
       "details": "Details",

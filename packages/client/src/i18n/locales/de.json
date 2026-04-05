@@ -2111,7 +2111,24 @@
       "searchPlaceholder": "Mitarbeiter suchen..."
     },
     "detail": {
-      "title": "Mitarbeiterdetail"
+      "title": "Mitarbeiterdetail",
+      "back": "Zurück",
+      "previous": "Vorheriger",
+      "next": "Nächster",
+      "notFound": "Mitarbeiter nicht gefunden",
+      "tabOverview": "Übersicht",
+      "tabPersonal": "Persönlich",
+      "tabLeave": "Urlaub",
+      "tabOnboarding": "Einarbeitung",
+      "tabDocuments": "Dokumente",
+      "tabTimeline": "Zeitleiste",
+      "tenure": "Betriebszugehörigkeit",
+      "year": "Jahr",
+      "years": "Jahre",
+      "month": "Monat",
+      "months": "Monate",
+      "recentTimeOff": "Letzte Abwesenheiten",
+      "onboardingProgress": "Einarbeitungsfortschritt"
     },
     "tabs": {
       "details": "Details",

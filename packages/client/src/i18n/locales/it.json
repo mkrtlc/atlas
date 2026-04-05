@@ -2111,7 +2111,24 @@
       "searchPlaceholder": "Cerca dipendenti..."
     },
     "detail": {
-      "title": "Dettaglio dipendente"
+      "title": "Dettaglio dipendente",
+      "back": "Indietro",
+      "previous": "Precedente",
+      "next": "Successivo",
+      "notFound": "Dipendente non trovato",
+      "tabOverview": "Panoramica",
+      "tabPersonal": "Personale",
+      "tabLeave": "Ferie",
+      "tabOnboarding": "Onboarding",
+      "tabDocuments": "Documenti",
+      "tabTimeline": "Cronologia",
+      "tenure": "Anzianità",
+      "year": "anno",
+      "years": "anni",
+      "month": "mese",
+      "months": "mesi",
+      "recentTimeOff": "Ferie recenti",
+      "onboardingProgress": "Avanzamento onboarding"
     },
     "tabs": {
       "details": "Dettagli",

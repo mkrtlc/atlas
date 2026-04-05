@@ -2111,7 +2111,24 @@
       "searchPlaceholder": "Çalışanları ara..."
     },
     "detail": {
-      "title": "Çalışan detayı"
+      "title": "Çalışan detayı",
+      "back": "Geri",
+      "previous": "Önceki",
+      "next": "Sonraki",
+      "notFound": "Çalışan bulunamadı",
+      "tabOverview": "Genel bakış",
+      "tabPersonal": "Kişisel",
+      "tabLeave": "İzin",
+      "tabOnboarding": "İşe alım",
+      "tabDocuments": "Belgeler",
+      "tabTimeline": "Zaman çizelgesi",
+      "tenure": "Kıdem",
+      "year": "yıl",
+      "years": "yıl",
+      "month": "ay",
+      "months": "ay",
+      "recentTimeOff": "Son izinler",
+      "onboardingProgress": "İşe alım ilerlemesi"
     },
     "tabs": {
       "details": "Detaylar",

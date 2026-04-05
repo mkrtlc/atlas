@@ -27,6 +27,7 @@ import { useMyAppPermission } from '../../hooks/use-app-permissions';
 import { useHrSettingsStore } from './settings-store';
 import { OrgChartView } from './components/org-chart';
 import { EmployeeDetailPanel } from './components/employee-detail-panel';
+import { EmployeeDetailPage } from './components/employee-detail-page';
 import { CreateEmployeeModal } from './components/modals/create-employee-modal';
 import { CreateDepartmentModal } from './components/modals/create-department-modal';
 import { RequestTimeOffModal } from './components/modals/request-time-off-modal';
@@ -47,7 +48,7 @@ import '../../styles/hr.css';
 
 // ─── Navigation ────────────────────────────────────────────────────
 
-type NavSection = 'dashboard' | 'employees' | 'departments' | 'org-chart' | 'time-off'
+type NavSection = 'dashboard' | 'employees' | 'employee-detail' | 'departments' | 'org-chart' | 'time-off'
   | 'attendance' | 'my-leave' | 'my-profile' | 'team-calendar' | 'leave-types' | 'holidays' | 'policies'
   | `dept:${string}`;
 
@@ -170,7 +171,7 @@ export function HrPage() {
 
   const sectionTitle = useMemo(() => {
     if (activeNav === 'dashboard') return t('hr.sidebar.dashboard');
-    if (activeNav === 'employees') return t('hr.sidebar.allEmployees');
+    if (activeNav === 'employees' || activeNav === 'employee-detail') return t('hr.sidebar.allEmployees');
     if (activeNav === 'departments') return t('hr.sidebar.departments');
     if (activeNav === 'org-chart') return t('hr.sidebar.orgChart');
     if (activeNav === 'time-off') return t('hr.sidebar.timeOff');
@@ -263,7 +264,7 @@ export function HrPage() {
                 label={t('hr.sidebar.allEmployees')}
                 icon={<Users size={14} />}
                 iconColor="#14b8a6"
-                isActive={activeNav === 'employees'}
+                isActive={activeNav === 'employees' || activeNav === 'employee-detail'}
                 count={counts.totalEmployees}
                 onClick={() => { setActiveNav('employees'); setSelectedEmployeeId(null); }}
               />
@@ -368,7 +369,7 @@ export function HrPage() {
       </AppSidebar>
 
       {/* Main content */}
-      <ContentArea
+      {activeNav !== 'employee-detail' && <ContentArea
         title={sectionTitle}
         actions={
           <>
@@ -409,7 +410,7 @@ export function HrPage() {
         {activeNav === 'dashboard' && <DashboardView />}
 
         {activeNav === 'org-chart' && (
-          <OrgChartView departments={departments} employees={allEmployees} onSelectEmployee={(id) => { setActiveNav('employees'); setSelectedEmployeeId(id); }} />
+          <OrgChartView departments={departments} employees={allEmployees} onSelectEmployee={(id) => { setSearchParams({ view: 'employee-detail', employee: id }, { replace: true }); }} />
         )}
 
         {(activeNav === 'employees' || activeNav.startsWith('dept:')) && (
@@ -417,7 +418,7 @@ export function HrPage() {
             employees={employees}
             departments={departments}
             selectedId={selectedEmployeeId}
-            onSelect={setSelectedEmployeeId}
+            onSelect={(id) => setSearchParams({ view: 'employee-detail', employee: id }, { replace: true })}
             searchQuery={searchQuery}
             onAdd={handleAdd}
           />
@@ -460,22 +461,17 @@ export function HrPage() {
         {activeNav === 'leave-types' && <LeaveTypesView />}
         {activeNav === 'holidays' && <HolidaysView />}
         {activeNav === 'policies' && <LeavePoliciesView />}
-      </ContentArea>
+      </ContentArea>}
 
-      {/* Detail panel */}
-      {selectedEmployee && (activeNav === 'employees' || activeNav.startsWith('dept:')) && (
-        <div style={{
-          width: 400, borderLeft: '1px solid var(--color-border-primary)',
-          flexShrink: 0, overflow: 'hidden', height: '100%',
-        }}>
-          <EmployeeDetailPanel
-            employee={selectedEmployee}
-            departments={departments}
-            employees={allEmployees}
-            timeOffRequests={timeOffRequests}
-            onClose={() => setSelectedEmployeeId(null)}
-          />
-        </div>
+      {/* Full-page employee detail (rendered outside ContentArea to avoid double header) */}
+      {activeNav === 'employee-detail' && searchParams.get('employee') && (
+        <EmployeeDetailPage
+          employeeId={searchParams.get('employee')!}
+          employees={allEmployees}
+          departments={departments}
+          onBack={() => setActiveNav('employees')}
+          onNavigate={(id) => setSearchParams({ view: 'employee-detail', employee: id }, { replace: true })}
+        />
       )}
 
       {/* Modals */}

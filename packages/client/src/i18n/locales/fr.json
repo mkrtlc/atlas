@@ -2111,7 +2111,24 @@
       "searchPlaceholder": "Rechercher des employes..."
     },
     "detail": {
-      "title": "Detail de l'employe"
+      "title": "Detail de l'employe",
+      "back": "Retour",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "notFound": "Employé introuvable",
+      "tabOverview": "Aperçu",
+      "tabPersonal": "Personnel",
+      "tabLeave": "Congés",
+      "tabOnboarding": "Intégration",
+      "tabDocuments": "Documents",
+      "tabTimeline": "Chronologie",
+      "tenure": "Ancienneté",
+      "year": "an",
+      "years": "ans",
+      "month": "mois",
+      "months": "mois",
+      "recentTimeOff": "Congés récents",
+      "onboardingProgress": "Progression de l'intégration"
     },
     "tabs": {
       "details": "Details",
