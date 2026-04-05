@@ -113,12 +113,30 @@ npm run dev
 | `PORT` | No | `3001` | Server port |
 | `SERVER_PUBLIC_URL` | No | `http://localhost:3001` | Public URL for the server |
 | `CLIENT_PUBLIC_URL` | No | `http://localhost:3001` | Public URL for the client |
-| `GOOGLE_CLIENT_ID` | No | — | Google OAuth (for CRM email/calendar sync) |
+| `GOOGLE_CLIENT_ID` | No | — | Google OAuth (CRM sync, Drive import/export) |
 | `GOOGLE_CLIENT_SECRET` | No | — | Google OAuth secret |
 | `SMTP_HOST` | No | — | SMTP server for password reset emails |
 | `SMTP_PORT` | No | `587` | SMTP port |
 | `SMTP_USER` | No | — | SMTP username |
 | `SMTP_PASS` | No | — | SMTP password |
+
+## Google integration (optional)
+
+Enables CRM email/calendar sync and Drive file import/export.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → **APIs & Services > Credentials**
+2. Create an **OAuth 2.0 Client ID** (type: Web application)
+3. Set the authorized redirect URI to: `https://your-domain.com/api/v1/auth/google/callback`
+4. Copy the Client ID and Client Secret into your `.env`:
+   ```
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   ```
+5. Enable these APIs in **APIs & Services > Library**:
+   - Gmail API
+   - Google Calendar API
+   - Google Drive API
+6. Users can connect their Google account from **Settings** or when using Google-dependent features
 
 ## Troubleshooting
 
