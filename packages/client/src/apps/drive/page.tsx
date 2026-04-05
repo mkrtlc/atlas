@@ -24,7 +24,7 @@ import { DriveDataTableList } from './components/drive-data-table-list';
 import { DriveGridView } from './components/drive-grid-view';
 import { DrivePreviewPanel } from './components/drive-preview-panel';
 import { DriveContextMenuView } from './components/drive-context-menu';
-import { NewFolderModal, MoveModal, TagModal, ShareModal } from './components/modals';
+import { NewFolderModal, MoveModal, TagModal, ShareModal, GoogleDriveModal } from './components/modals';
 import { getSortOptions, getTypeFilterOptions, getModifiedFilterOptions, parseTag } from './lib/helpers';
 import { useDrivePage } from './use-drive-page';
 
@@ -65,6 +65,8 @@ export function DrivePage() {
                   <button onClick={() => { d.setNewDropdownOpen(false); d.createLinkedDocument.mutate({ parentId: d.currentParentId }, { onSuccess: (data) => d.navigate(`/docs/${data.resourceId}`), onError: () => d.addToast({ type: 'error', message: t('drive.actions.failedToCreateDocument') }) }); }} className="drive-new-dropdown-item"><FileText size={14} /> {t('drive.actions.newDocument')}</button>
                   <button onClick={() => { d.setNewDropdownOpen(false); d.createLinkedDrawing.mutate({ parentId: d.currentParentId }, { onSuccess: (data) => d.navigate(`/draw/${data.resourceId}`), onError: () => d.addToast({ type: 'error', message: t('drive.actions.failedToCreateDrawing') }) }); }} className="drive-new-dropdown-item"><Pencil size={14} /> {t('drive.actions.newDrawing')}</button>
                   <button onClick={() => { d.setNewDropdownOpen(false); d.createLinkedSpreadsheet.mutate({ parentId: d.currentParentId }, { onSuccess: (data) => d.navigate(`/tables/${data.resourceId}`), onError: () => d.addToast({ type: 'error', message: t('drive.actions.failedToCreateSpreadsheet') }) }); }} className="drive-new-dropdown-item"><Table2 size={14} /> {t('drive.actions.newSpreadsheet')}</button>
+                  <div style={{ height: 1, background: 'var(--color-border-primary)', margin: '4px 0' }} />
+                  <button onClick={() => { d.setNewDropdownOpen(false); d.setGoogleDriveModalOpen(true); }} className="drive-new-dropdown-item"><HardDrive size={14} /> {t('drive.google.importFromGoogle', 'Import from Google Drive')}</button>
                 </div>
               )}
             </div>
@@ -192,6 +194,7 @@ export function DrivePage() {
       <MoveModal open={d.batchMoveOpen} onOpenChange={d.setBatchMoveOpen} title={t('drive.modals.moveItemsTo', { count: d.selectedIds.size })} folderTree={d.batchFolderTree} targetId={d.batchMoveTargetId} setTargetId={d.setBatchMoveTargetId} onSubmit={d.handleBulkMoveSubmit} />
       <TagModal tagModalItem={d.tagModalItem} setTagModalItem={d.setTagModalItem} tagLabel={d.tagLabel} setTagLabel={d.setTagLabel} tagColor={d.tagColor} setTagColor={d.setTagColor} handleTagSubmit={d.handleTagSubmit} />
       <ShareModal shareModalItem={d.shareModalItem} setShareModalItem={d.setShareModalItem} tenantUsersData={d.tenantUsersData ?? []} itemSharesData={d.itemSharesData} shareLinksData={d.shareLinksData} shareItem={d.shareItem} revokeShare={d.revokeShare} createShareLink={d.createShareLink} deleteShareLink={d.deleteShareLink} addToast={d.addToast} defaultExpiry={d.driveSettings.shareDefaultExpiry || 'never'} />
+      <GoogleDriveModal open={d.googleDriveModalOpen} onClose={() => d.setGoogleDriveModalOpen(false)} targetParentId={d.currentParentId} />
 
       {/* Hidden replace file input */}
       <input type="file" ref={d.replaceFileInputRef} style={{ display: 'none' }} onChange={(e) => { const file = e.target.files?.[0]; if (file && d.replaceTargetId) { d.replaceFile.mutate({ itemId: d.replaceTargetId, file }, { onSuccess: () => { d.addToast({ type: 'success', message: t('drive.actions.newVersionUploaded') }); d.setReplaceTargetId(null); } }); } e.target.value = ''; }} />

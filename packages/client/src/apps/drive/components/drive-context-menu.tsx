@@ -2,9 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Download, Pencil, Copy, FolderInput, Star, Tag, Share2,
-  Upload, Trash2, RotateCcw, ExternalLink, FileArchive,
+  Upload, Trash2, RotateCcw, ExternalLink, FileArchive, CloudUpload,
 } from 'lucide-react';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from '../../../components/ui/context-menu';
+import { useGoogleDriveStatus, useExportToGoogleDrive } from '../hooks';
+import { useToastStore } from '../../../stores/toast-store';
 import type { DriveItem } from '@atlasmail/shared';
 import type { SidebarView } from '../lib/types';
 
@@ -49,6 +51,9 @@ export function DriveContextMenuView({
 }: DriveContextMenuProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const addToast = useToastStore((s) => s.addToast);
+  const { data: googleStatus } = useGoogleDriveStatus();
+  const exportToGoogle = useExportToGoogleDrive();
 
   return (
     <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={() => setContextMenu(null)} minWidth={180}>
@@ -141,6 +146,22 @@ export function DriveContextMenuView({
                 setReplaceTargetId(contextMenu.item.id);
                 setContextMenu(null);
                 setTimeout(() => replaceFileInputRef.current?.click(), 50);
+              }}
+            />
+          )}
+          {contextMenu.item.type === 'file' && googleStatus?.driveScoped && (
+            <ContextMenuItem
+              icon={<CloudUpload size={14} />}
+              label={t('drive.google.exportToGoogle', 'Export to Google Drive')}
+              onClick={() => {
+                setContextMenu(null);
+                exportToGoogle.mutate(
+                  { driveItemId: contextMenu.item.id },
+                  {
+                    onSuccess: () => addToast({ type: 'success', message: t('drive.google.exportSuccess', 'File exported to Google Drive') }),
+                    onError: () => addToast({ type: 'error', message: t('drive.google.exportError', 'Failed to export file') }),
+                  },
+                );
               }}
             />
           )}

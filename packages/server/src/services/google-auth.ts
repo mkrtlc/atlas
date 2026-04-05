@@ -13,6 +13,11 @@ const SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
 ];
 
+const DRIVE_SCOPES = [
+  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/drive.file',
+];
+
 export function isGoogleConfigured(): boolean {
   return !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 }
@@ -93,4 +98,36 @@ export async function getAuthenticatedClient(accountId: string): Promise<OAuth2C
   }
 
   return client;
+}
+
+// ─── Google Drive scope helpers ──────────────────────────────────────
+
+/**
+ * Generate an OAuth URL that requests Drive scopes incrementally
+ * (preserves existing Gmail/Calendar grants).
+ */
+export function getDriveConnectUrl(state: string): string {
+  const client = createOAuth2Client();
+  return client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: [...SCOPES, ...DRIVE_SCOPES],
+    state,
+    include_granted_scopes: true,
+  });
+}
+
+/**
+ * Check if account has Google Drive scopes granted.
+ * Returns true if the stored token includes drive scopes.
+ */
+export async function hasDriveScope(accountId: string): Promise<boolean> {
+  try {
+    const client = await getAuthenticatedClient(accountId);
+    const tokenInfo = await client.getTokenInfo(client.credentials.access_token!);
+    const grantedScopes = tokenInfo.scopes || [];
+    return DRIVE_SCOPES.every((s) => grantedScopes.includes(s));
+  } catch {
+    return false;
+  }
 }

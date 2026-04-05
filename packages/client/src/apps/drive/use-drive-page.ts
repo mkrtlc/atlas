@@ -79,6 +79,7 @@ export function useDrivePage() {
   const [batchMoveOpen, setBatchMoveOpen] = useState(false);
   const [batchMoveTargetId, setBatchMoveTargetId] = useState<string | null>(null);
   const [shareModalItem, setShareModalItem] = useState<DriveItem | null>(null);
+  const [googleDriveModalOpen, setGoogleDriveModalOpen] = useState(false);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -516,6 +517,7 @@ export function useDrivePage() {
     iconPickerItem, setIconPickerItem, dragOverFolderId,
     batchMoveOpen, setBatchMoveOpen, batchMoveTargetId, setBatchMoveTargetId,
     shareModalItem, setShareModalItem,
+    googleDriveModalOpen, setGoogleDriveModalOpen,
     versionHistoryOpen, setVersionHistoryOpen,
     activityOpen, setActivityOpen, commentsOpen, setCommentsOpen,
     commentBody, setCommentBody,

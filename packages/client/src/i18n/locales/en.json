@@ -2002,6 +2002,24 @@
       "duplicateRename": "Rename with suffix",
       "duplicateReplace": "Replace existing",
       "duplicateAsk": "Ask each time"
+    },
+    "google": {
+      "importFromGoogle": "Import from Google Drive",
+      "exportToGoogle": "Export to Google Drive",
+      "exportSuccess": "File exported to Google Drive",
+      "exportError": "Failed to export file",
+      "myDrive": "My Drive",
+      "importSuccess": "Files imported successfully",
+      "importError": "Failed to import files",
+      "importTitle": "Import from Google Drive",
+      "notConnected": "Google Drive not connected",
+      "notConnectedDesc": "Connect your Google account to browse and import files.",
+      "connectButton": "Connect Google Drive",
+      "searchPlaceholder": "Search files...",
+      "noResults": "No files match your search",
+      "emptyFolder": "This folder is empty",
+      "importing": "Importing...",
+      "importButton": "Import {{count}}"
     }
   },
   "hr": {

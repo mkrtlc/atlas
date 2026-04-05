@@ -1971,6 +1971,24 @@
       "duplicateRename": "Renommer avec suffixe",
       "duplicateReplace": "Remplacer l'existant",
       "duplicateAsk": "Demander à chaque fois"
+    },
+    "google": {
+      "importFromGoogle": "Importer depuis Google Drive",
+      "exportToGoogle": "Exporter vers Google Drive",
+      "exportSuccess": "Fichier exporté vers Google Drive",
+      "exportError": "Impossible d'exporter le fichier",
+      "myDrive": "Mon Drive",
+      "importSuccess": "Fichiers importés avec succès",
+      "importError": "Impossible d'importer les fichiers",
+      "importTitle": "Importer depuis Google Drive",
+      "notConnected": "Google Drive non connecté",
+      "notConnectedDesc": "Connectez votre compte Google pour parcourir et importer des fichiers.",
+      "connectButton": "Connecter Google Drive",
+      "searchPlaceholder": "Rechercher des fichiers...",
+      "noResults": "Aucun fichier ne correspond à votre recherche",
+      "emptyFolder": "Ce dossier est vide",
+      "importing": "Importation en cours...",
+      "importButton": "Importer {{count}}"
     }
   },
   "hr": {

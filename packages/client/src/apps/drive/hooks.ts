@@ -582,3 +582,51 @@ export function useUpdateDriveItemVisibility() {
     },
   });
 }
+
+// ─── Google Drive ────────────────────────────────────────────────────
+
+export function useGoogleDriveStatus() {
+  return useQuery({
+    queryKey: ['drive', 'google', 'status'],
+    queryFn: async () => {
+      const { data } = await api.get('/drive/google/status');
+      return data.data as { connected: boolean; driveScoped: boolean };
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function useGoogleDriveFiles(parentId?: string) {
+  return useQuery({
+    queryKey: ['drive', 'google', 'browse', parentId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (parentId) params.set('parentId', parentId);
+      const { data } = await api.get(`/drive/google/browse?${params}`);
+      return data.data as Array<{ id: string; name: string; mimeType: string; size: number | null; modifiedTime: string; isFolder: boolean }>;
+    },
+    enabled: false, // only fetch when user opens the modal
+  });
+}
+
+export function useImportFromGoogleDrive() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { fileIds: string[]; targetParentId?: string | null }) => {
+      const { data } = await api.post('/drive/google/import', input);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}
+
+export function useExportToGoogleDrive() {
+  return useMutation({
+    mutationFn: async (input: { driveItemId: string; googleParentFolderId?: string }) => {
+      const { data } = await api.post('/drive/google/export', input);
+      return data.data;
+    },
+  });
+}
