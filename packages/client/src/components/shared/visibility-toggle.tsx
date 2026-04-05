@@ -15,7 +15,8 @@ export function VisibilityToggle({ visibility, onToggle, disabled }: VisibilityT
   return (
     <Tooltip content={isTeam ? t('common.visibilityTeam') : t('common.visibilityPrivate')}>
       <button
-        onClick={() => onToggle(isTeam ? 'private' : 'team')}
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onToggle(isTeam ? 'private' : 'team'); }}
         disabled={disabled}
         style={{
           display: 'inline-flex',

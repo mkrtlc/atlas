@@ -3,7 +3,7 @@ import {
   Plus, Search, Inbox, Star, Calendar, Coffee,
   Archive, BookOpen, Check, Trash2, X, ChevronRight, ChevronDown,
   Hash, CircleDot, MoreHorizontal, Moon, Sun, GripVertical,
-  Clock, FileText, Filter, Tag, CheckCircle2, Settings2,
+  Clock, FileText, Filter, Tag, CheckCircle2, Settings,
   Repeat, LayoutList, LayoutGrid, User, MessageSquare, Send,
   Paperclip, Download, CalendarDays, AlertTriangle, Link2, Users,
   Globe, Lock, Eye,
@@ -2579,7 +2579,7 @@ export function TasksPage() {
               />
             )}
             <IconButton
-              icon={<Settings2 size={15} strokeWidth={1.8} />}
+              icon={<Settings size={15} strokeWidth={1.8} />}
               label="Tasks settings"
               size={28}
               onClick={() => openSettings('tasks')}
