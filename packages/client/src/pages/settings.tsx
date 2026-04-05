@@ -30,6 +30,7 @@ const PANEL_KEY_MAP: Record<string, string> = {
   files: 'settingsPanel.panels.files',
   regional: 'settingsPanel.panels.regional',
   behavior: 'settingsPanel.panels.behavior',
+  updates: 'settingsPanel.panels.updates',
 };
 
 // Map category IDs to i18n keys

@@ -15,6 +15,7 @@ import appPermissionsRoutes from './app-permissions.routes';
 import stocksRoutes from './stocks.routes';
 import presenceRoutes from './presence.routes';
 import calendarRoutes from './calendar.routes';
+import updatesRoutes from './updates.routes';
 import { adminLimiter } from '../middleware/rate-limit';
 import { serverAppRegistry } from '../apps';
 
@@ -37,6 +38,7 @@ router.use('/permissions', appPermissionsRoutes);
 router.use('/stocks', stocksRoutes);
 router.use('/presence', presenceRoutes);
 router.use('/calendar', calendarRoutes);
+router.use('/updates', updatesRoutes);
 
 // App routes mounted dynamically from registry
 serverAppRegistry.mountAll(router);

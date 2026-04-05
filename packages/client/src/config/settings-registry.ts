@@ -10,6 +10,7 @@ import {
   Image,
   LayoutGrid,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 
 import { GeneralPanel } from '../components/settings/general-panel';
@@ -18,6 +19,7 @@ import { FormatsPanel } from '../components/settings/formats-panel';
 import { DataModelPanel } from '../components/settings/data-model-panel';
 import { AboutPanel } from '../components/settings/about-panel';
 import { AiSettingsPanel } from '../components/settings/ai-settings-panel';
+import { UpdatesPanel } from '../components/settings/updates-panel';
 
 import {
   HomeBackgroundPanel,
@@ -61,6 +63,7 @@ export const globalSettingsCategory: SettingsCategory = {
     { id: 'home-background', label: 'Home background', icon: Image, component: HomeBackgroundPanel },
     { id: 'home-widgets', label: 'Widgets', icon: LayoutGrid, component: HomeWidgetsPanel },
     { id: 'ai', label: 'AI', icon: Sparkles, component: AiSettingsPanel, adminOnly: true },
+    { id: 'updates', label: 'Updates', icon: RefreshCw, component: UpdatesPanel, adminOnly: true },
     { id: 'about', label: 'About', icon: Info, component: AboutPanel },
   ],
 };

@@ -64,6 +64,28 @@ services:
       timeout: 5s
       retries: 5
 
+  # Auto-updater — checks for new Atlas images and updates automatically
+  # Disabled by default. Set AUTO_UPDATE=true in .env to enable.
+  # WATCHTOWER_SCHEDULE uses cron syntax (default: 3 AM daily)
+  watchtower:
+    image: containrrr/watchtower
+    container_name: atlas-watchtower
+    restart: unless-stopped
+    profiles: ["auto-update"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_STOPPED: "false"
+      WATCHTOWER_SCHEDULE: "${WATCHTOWER_SCHEDULE:-0 0 3 * * *}"
+      WATCHTOWER_ROLLING_RESTART: "true"
+      WATCHTOWER_HTTP_API_TOKEN: "${WATCHTOWER_API_TOKEN:-atlas-watchtower-token}"
+      WATCHTOWER_HTTP_API_METRICS: "true"
+      WATCHTOWER_HTTP_API_UPDATE: "true"
+    ports:
+      - "127.0.0.1:8070:8080"
+    command: atlas
+
 volumes:
   atlas-uploads:
   atlas-pg-data:
