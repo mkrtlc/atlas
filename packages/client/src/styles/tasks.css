@@ -125,7 +125,7 @@
 }
 
 .task-nav-item.active {
-  background: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+  background: var(--color-surface-selected);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
 }

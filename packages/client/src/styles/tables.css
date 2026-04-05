@@ -84,8 +84,8 @@
 }
 
 .tables-sidebar-item.active {
-  background: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
-  color: var(--color-accent-primary);
+  background: var(--color-surface-selected);
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
@@ -147,8 +147,8 @@
 }
 
 .tables-sidebar-view-item.active {
-  background: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
-  color: var(--color-accent-primary);
+  background: var(--color-surface-selected);
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 

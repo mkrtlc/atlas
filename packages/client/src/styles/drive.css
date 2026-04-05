@@ -71,7 +71,7 @@
 }
 
 .drive-nav-item.active {
-  background: var(--color-surface-active);
+  background: var(--color-surface-selected);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-medium, 500);
 }
