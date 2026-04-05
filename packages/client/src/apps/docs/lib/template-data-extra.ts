@@ -1,5 +1,5 @@
-import type { PageTemplate } from './templates';
-import { CATEGORY_COLORS } from './templates';
+import type { PageTemplate } from './template-constants';
+import { CATEGORY_COLORS } from './template-constants';
 
 // Templates: HR & People, Marketing, Design
 export const EXTRA_TEMPLATES: PageTemplate[] = [

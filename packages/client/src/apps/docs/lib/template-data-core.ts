@@ -1,5 +1,5 @@
-import type { PageTemplate } from './templates';
-import { CATEGORY_COLORS } from './templates';
+import type { PageTemplate } from './template-constants';
+import { CATEGORY_COLORS } from './template-constants';
 
 // Templates: Blank, Product, Engineering, General
 export const CORE_TEMPLATES: PageTemplate[] = [
