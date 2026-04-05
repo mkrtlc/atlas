@@ -309,6 +309,18 @@ Atlas uses `react-i18next` for internationalization. 5 languages: EN, TR, DE, FR
 - When tagging and making a release, always update the version number in Settings > About Atlas (next to "Current application version").
 - When starting the server locally, do NOT run the Electron app. Only start the client and server packages.
 - NEVER tag or create a release without explicit user permission. Always ask before tagging.
+
+### Release Workflow
+When the user asks to "create a release", "make a new version", "tag and release", or similar:
+1. **Decide version number**: increment minor (x.Y.0) for features/refactors, patch (x.y.Z) for bugfixes only. Ask if unsure.
+2. **Update About panel**: change version string in `packages/client/src/components/settings/about-panel.tsx`
+3. **Update README.md**: update version pin example if it references a specific version
+4. **Commit**: `chore: bump version to X.Y.Z`
+5. **Tag**: `git tag vX.Y.Z`
+6. **Push**: `git push origin main && git push origin vX.Y.Z`
+7. **Create GitHub Release**: `gh release create vX.Y.Z` with detailed release notes
+8. **Docker images**: the tag push automatically triggers `.github/workflows/docker.yml` which builds amd64 + arm64 images and pushes to `ghcr.io/bluewave-labs/atlas`
+9. **Verify**: confirm the Docker workflow started and report the run URL
 - Every user-visible string MUST use `t()` — no hardcoded English text
 - Sidebar labels, view titles, button labels, form labels, empty states, error messages
 - Keys are namespaced by app: `crm.sidebar.dashboard`, `sign.actions.upload`

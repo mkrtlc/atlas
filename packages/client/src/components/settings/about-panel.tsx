@@ -58,7 +58,7 @@ export function AboutPanel() {
               border: '1px solid var(--color-border-secondary)',
             }}
           >
-            1.5.2
+            1.6.0
           </span>
         </SettingsRow>
 
