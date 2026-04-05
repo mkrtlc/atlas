@@ -40,7 +40,7 @@ interface EmployeeDetailPageProps {
   onNavigate: (employeeId: string) => void;
 }
 
-type DetailTab = 'overview' | 'personal' | 'leave' | 'onboarding' | 'documents' | 'timeline';
+type DetailTab = 'overview' | 'leave' | 'onboarding' | 'documents' | 'timeline';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -133,7 +133,6 @@ export function EmployeeDetailPage({
 
   const tabs: { id: DetailTab; label: string }[] = [
     { id: 'overview', label: t('hr.detail.tabOverview', 'Overview') },
-    { id: 'personal', label: t('hr.detail.tabPersonal', 'Personal') },
     { id: 'leave', label: t('hr.detail.tabLeave', 'Leave') },
     { id: 'onboarding', label: t('hr.detail.tabOnboarding', 'Onboarding') },
     { id: 'documents', label: t('hr.detail.tabDocuments', 'Documents') },
@@ -223,24 +222,24 @@ export function EmployeeDetailPage({
         {/* Left: tab content */}
         <div style={{ flex: 6, overflow: 'auto', padding: 'var(--spacing-xl)' }}>
           {activeTab === 'overview' && (
-            <OverviewTab
-              employee={employee}
-              department={department}
-              tenure={tenure}
-              employeeTimeOff={employeeTimeOff}
-              onboardingTasks={onboardingTasks ?? []}
-              t={t}
-            />
-          )}
-          {activeTab === 'personal' && (
-            <PersonalTab
-              employee={employee}
-              departments={departments}
-              employees={employees}
-              autoSave={autoSave}
-              updateEmployee={updateEmployee}
-              t={t}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}>
+              <OverviewTab
+                employee={employee}
+                department={department}
+                tenure={tenure}
+                employeeTimeOff={employeeTimeOff}
+                onboardingTasks={onboardingTasks ?? []}
+                t={t}
+              />
+              <PersonalTab
+                employee={employee}
+                departments={departments}
+                employees={employees}
+                autoSave={autoSave}
+                updateEmployee={updateEmployee}
+                t={t}
+              />
+            </div>
           )}
           {activeTab === 'leave' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}>

@@ -99,7 +99,7 @@ export function LifecycleTimeline({ employeeId, departments }: { employeeId: str
                 )}
                 {(evt.fromDepartmentId || evt.toDepartmentId) && (
                   <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)', marginTop: 2 }}>
-                    {getDeptName(evt.fromDepartmentId)} \u2192 {getDeptName(evt.toDepartmentId)}
+                    {getDeptName(evt.fromDepartmentId)} {'\u2192'} {getDeptName(evt.toDepartmentId)}
                   </div>
                 )}
                 {evt.notes && (
