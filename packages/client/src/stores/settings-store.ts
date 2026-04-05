@@ -103,6 +103,7 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   setThemeTransition: (themeTransition) => { set({ themeTransition }); persistToServer('themeTransition', themeTransition); },
   setLanguage: (language) => {
     i18n.changeLanguage(language);
+    document.documentElement.lang = language;
     set({ language });
     persistToServer('language', language);
   },
@@ -122,6 +123,7 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
     }
     if (data.language && typeof data.language === 'string') {
       i18n.changeLanguage(data.language);
+      document.documentElement.lang = data.language;
     }
     set({ ...patch, _hydrated: true } as Partial<SettingsState>);
   },

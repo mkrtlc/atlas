@@ -171,6 +171,7 @@ export function SetupPage({ preview = false }: { preview?: boolean }) {
   // Switch language in real time
   useEffect(() => {
     i18n.changeLanguage(language);
+    document.documentElement.lang = language;
   }, [language]);
 
   if (checking) return null;
