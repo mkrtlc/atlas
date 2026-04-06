@@ -150,17 +150,12 @@
 /* ── macOS-style dock ── */
 
 .dock-item {
-  --dock-w: 52px;
-  --dock-h: 52px;
-  --dock-mt: 0px;
-  width: var(--dock-w);
-  height: var(--dock-h);
-  margin-top: var(--dock-mt);
+  width: 52px;
+  height: 52px;
+  margin-top: 0px;
   position: relative;
   padding: 0 1px;
   box-sizing: border-box;
-  /* No transition during hover — JS drives sizes in real-time for instant response.
-     Transition is added via .dock-resetting class on mouse-leave for smooth spring-back. */
 }
 
 .dock-item.dock-resetting {

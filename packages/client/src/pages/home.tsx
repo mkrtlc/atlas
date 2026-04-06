@@ -658,9 +658,9 @@ export function HomePage() {
       const scale = Math.max(0, 1 - normalized * normalized);
       const size = BASE + (MAX - BASE) * scale;
       const mt = -(size - BASE);
-      item.style.setProperty('--dock-w', `${size}px`);
-      item.style.setProperty('--dock-h', `${size}px`);
-      item.style.setProperty('--dock-mt', `${mt}px`);
+      item.style.width = `${size}px`;
+      item.style.height = `${size}px`;
+      item.style.marginTop = `${mt}px`;
     });
   }, []);
 
@@ -670,10 +670,16 @@ export function HomePage() {
     const items = dock.querySelectorAll<HTMLElement>('.dock-item');
     items.forEach((item) => {
       item.classList.add('dock-resetting');
-      item.style.removeProperty('--dock-w');
-      item.style.removeProperty('--dock-h');
-      item.style.removeProperty('--dock-mt');
+      item.style.width = '52px';
+      item.style.height = '52px';
+      item.style.marginTop = '0px';
     });
+    // Clean up after transition completes
+    setTimeout(() => {
+      items.forEach((item) => {
+        item.classList.remove('dock-resetting');
+      });
+    }, 400);
   }, []);
 
   // Clear demo data handler
