@@ -6,13 +6,14 @@ import {
   User, ChevronDown,
   LayoutDashboard, GitBranch,
   ClipboardList, Calendar, Shield,
-  UserCheck,
+  UserCheck, CheckSquare,
 } from 'lucide-react';
 import {
   useEmployeeList, useEmployeeCounts,
   useDepartmentList,
   useTimeOffList, useUpdateTimeOff, useDeleteTimeOff,
   useSeedHrData, useDeleteDepartment,
+  usePendingApprovals,
   type HrEmployee, type HrDepartment,
 } from './hooks';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
@@ -43,6 +44,7 @@ import {
   MyLeaveView,
   TeamCalendarView,
   AttendanceView,
+  ApprovalsView,
 } from './components/views';
 import '../../styles/hr.css';
 
@@ -50,7 +52,7 @@ import '../../styles/hr.css';
 
 type NavSection = 'dashboard' | 'employees' | 'employee-detail' | 'departments' | 'org-chart' | 'time-off'
   | 'attendance' | 'my-leave' | 'my-profile' | 'team-calendar' | 'leave-types' | 'holidays' | 'policies'
-  | `dept:${string}`;
+  | 'approvals' | `dept:${string}`;
 
 const PORTAL_VIEWS = new Set<string>(['my-profile', 'my-leave', 'team-calendar', 'holidays']);
 
@@ -116,6 +118,9 @@ export function HrPage() {
   const { data: timeOffData } = useTimeOffList();
   const timeOffRequests = timeOffData?.timeOffRequests ?? [];
 
+  const { data: pendingApprovalsData } = usePendingApprovals();
+  const pendingApprovalCount = pendingApprovalsData?.length ?? 0;
+
   const updateTimeOff = useUpdateTimeOff();
   const deleteTimeOff = useDeleteTimeOff();
   const deleteDepartment = useDeleteDepartment();
@@ -177,6 +182,7 @@ export function HrPage() {
     if (activeNav === 'time-off') return t('hr.sidebar.timeOff');
     if (activeNav === 'attendance') return t('hr.sidebar.attendance');
     if (activeNav === 'my-profile') return t('hr.sidebar.myProfile');
+    if (activeNav === 'approvals') return t('hr.sidebar.approvals');
     if (activeNav === 'my-leave') return t('hr.sidebar.myLeave');
     if (activeNav === 'team-calendar') return t('hr.sidebar.teamCalendar');
     if (activeNav === 'leave-types') return t('hr.sidebar.leaveTypes');
@@ -336,6 +342,14 @@ export function HrPage() {
                 onClick={() => { setActiveNav('my-leave'); setSelectedEmployeeId(null); }}
               />
               <SidebarItem
+                label={t('hr.sidebar.approvals')}
+                icon={<CheckSquare size={14} />}
+                iconColor="#f59e0b"
+                isActive={activeNav === 'approvals'}
+                count={pendingApprovalCount}
+                onClick={() => { setActiveNav('approvals'); setSelectedEmployeeId(null); }}
+              />
+              <SidebarItem
                 label={t('hr.sidebar.teamCalendar')}
                 icon={<Calendar size={14} />}
                 iconColor="#f59e0b"
@@ -455,6 +469,7 @@ export function HrPage() {
             </div>
           );
         })()}
+        {activeNav === 'approvals' && <ApprovalsView />}
         {activeNav === 'attendance' && <AttendanceView employees={allEmployees} />}
         {activeNav === 'my-leave' && <MyLeaveView employees={allEmployees} />}
         {activeNav === 'team-calendar' && <TeamCalendarView />}

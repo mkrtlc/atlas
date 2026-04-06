@@ -835,7 +835,20 @@ export function usePendingApprovals() {
     queryKey: queryKeys.hr.pendingApprovals,
     queryFn: async () => {
       const { data } = await api.get('/hr/leave-applications/pending');
-      return data.data as HrLeaveApplication[];
+      return data.data as Array<{
+        id: string;
+        employeeId: string;
+        employeeName: string;
+        leaveTypeId: string;
+        leaveTypeName: string;
+        leaveTypeColor: string;
+        startDate: string;
+        endDate: string;
+        totalDays: number;
+        reason: string | null;
+        status: string;
+        createdAt: string;
+      }>;
     },
     staleTime: 15_000,
   });

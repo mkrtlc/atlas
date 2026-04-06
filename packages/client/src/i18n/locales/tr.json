@@ -2009,7 +2009,8 @@
       "teamCalendar": "Takım takvimi",
       "leaveTypes": "İzin türleri",
       "holidays": "Tatiller",
-      "policies": "Politikalar"
+      "policies": "Politikalar",
+      "approvals": "Onaylar"
     },
     "status": {
       "active": "Aktif",
@@ -2279,6 +2280,16 @@
     },
     "teamCalendar": {
       "noLeaves": "Bu ay için onaylanmış izin yok."
+    },
+    "approvals": {
+      "title": "Bekleyen onaylar",
+      "empty": "Bekleyen onay yok",
+      "approve": "Onayla",
+      "reject": "Reddet",
+      "approved": "İzin onaylandı",
+      "rejected": "İzin reddedildi",
+      "rejectComment": "Red nedeni (isteğe bağlı)",
+      "days": "{{count}} gün"
     },
     "leaveAppStatus": {
       "draft": "Taslak",

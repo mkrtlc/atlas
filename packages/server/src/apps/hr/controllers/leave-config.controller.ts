@@ -243,6 +243,27 @@ export async function seedLeavePolicies(req: Request, res: Response) {
   }
 }
 
+// ─── Leave Balance Allocation ────────────────────────────────────
+
+export async function triggerBalanceAllocation(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to manage HR records' });
+      return;
+    }
+
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+    const result = await hrService.allocateBalancesForYear(accountId, year);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error({ error }, 'Failed to trigger balance allocation');
+    res.status(500).json({ success: false, error: 'Failed to trigger balance allocation' });
+  }
+}
+
 // ─── Holiday Calendars ────────────────────────────────────────────
 
 export async function listHolidayCalendars(req: Request, res: Response) {

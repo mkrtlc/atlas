@@ -2042,7 +2042,8 @@
       "teamCalendar": "Team calendar",
       "leaveTypes": "Leave types",
       "holidays": "Holidays",
-      "policies": "Policies"
+      "policies": "Policies",
+      "approvals": "Approvals"
     },
     "status": {
       "active": "Active",
@@ -2315,6 +2316,16 @@
     },
     "teamCalendar": {
       "noLeaves": "No approved leaves for this month."
+    },
+    "approvals": {
+      "title": "Pending approvals",
+      "empty": "No pending approvals",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approved": "Leave approved",
+      "rejected": "Leave rejected",
+      "rejectComment": "Rejection reason (optional)",
+      "days": "{{count}} days"
     },
     "leaveAppStatus": {
       "draft": "Draft",

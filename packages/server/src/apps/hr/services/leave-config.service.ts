@@ -3,7 +3,8 @@ import {
   hrLeaveTypes, hrLeavePolicies, hrLeavePolicyAssignments,
   hrHolidayCalendars, hrHolidays, leaveBalances,
 } from '../../../db/schema';
-import { eq, and, asc, desc, sql, gte, lte } from 'drizzle-orm';
+import { eq, and, asc, desc, sql, gte, lte, ne } from 'drizzle-orm';
+import { logger } from '../../../utils/logger';
 
 // ─── Leave Types ──────────────────────────────────────────────────
 
@@ -217,9 +218,19 @@ export async function assignPolicy(accountId: string, employeeId: string, policy
     const leaveTypesData = await db.select().from(hrLeaveTypes)
       .where(and(eq(hrLeaveTypes.accountId, accountId), eq(hrLeaveTypes.isArchived, false)));
 
+    // Prorate allocation if assigning mid-year
+    const currentMonth = now.getMonth() + 1; // 1-12
+
     for (const alloc of policy.allocations) {
       const lt = leaveTypesData.find(t => t.id === alloc.leaveTypeId);
       if (!lt) continue;
+
+      // Prorate: if we're past January, allocate proportionally for remaining months
+      let allocatedDays = alloc.daysPerYear;
+      if (currentMonth > 1) {
+        const monthsRemaining = 13 - currentMonth; // includes current month
+        allocatedDays = Math.ceil(alloc.daysPerYear * monthsRemaining / 12);
+      }
 
       // Check if balance already exists
       const existing = await db.select().from(leaveBalances)
@@ -229,12 +240,12 @@ export async function assignPolicy(accountId: string, employeeId: string, policy
         )).limit(1);
 
       if (existing.length > 0) {
-        await db.update(leaveBalances).set({ allocated: alloc.daysPerYear, leaveTypeId: lt.id, updatedAt: now })
+        await db.update(leaveBalances).set({ allocated: allocatedDays, leaveTypeId: lt.id, updatedAt: now })
           .where(eq(leaveBalances.id, existing[0].id));
       } else {
         await db.insert(leaveBalances).values({
           accountId, employeeId, leaveType: lt.slug, year: currentYear,
-          allocated: alloc.daysPerYear, used: 0, carried: 0, leaveTypeId: lt.id,
+          allocated: allocatedDays, used: 0, carried: 0, leaveTypeId: lt.id,
           createdAt: now, updatedAt: now,
         });
       }
@@ -263,6 +274,100 @@ export async function getEmployeePolicy(accountId: string, employeeId: string) {
     .limit(1);
 
   return assignment || null;
+}
+
+// ─── Leave Balance Allocation (Accrual Engine) ──────────────────
+
+export async function allocateBalancesForYear(accountId: string, year: number) {
+  const now = new Date();
+
+  // 1. Get all active policy assignments for this account
+  const assignments = await db.select({
+    employeeId: hrLeavePolicyAssignments.employeeId,
+    policyId: hrLeavePolicyAssignments.policyId,
+  })
+    .from(hrLeavePolicyAssignments)
+    .where(and(
+      eq(hrLeavePolicyAssignments.accountId, accountId),
+      eq(hrLeavePolicyAssignments.isArchived, false),
+    ));
+
+  if (assignments.length === 0) return { allocated: 0, skipped: 0 };
+
+  // 2. Get all active leave types for this account
+  const leaveTypesData = await db.select().from(hrLeaveTypes)
+    .where(and(eq(hrLeaveTypes.accountId, accountId), eq(hrLeaveTypes.isArchived, false)));
+  const leaveTypeById = new Map(leaveTypesData.map(lt => [lt.id, lt]));
+  const leaveTypeBySlug = new Map(leaveTypesData.map(lt => [lt.slug, lt]));
+
+  // 3. Get all policies referenced by assignments
+  const policyIds = [...new Set(assignments.map(a => a.policyId))];
+  const policies = await db.select().from(hrLeavePolicies)
+    .where(and(eq(hrLeavePolicies.accountId, accountId), eq(hrLeavePolicies.isArchived, false)));
+  const policyById = new Map(policies.map(p => [p.id, p]));
+
+  // 4. Get existing balances for this year to check idempotency
+  const existingBalances = await db.select({
+    employeeId: leaveBalances.employeeId,
+    leaveType: leaveBalances.leaveType,
+  })
+    .from(leaveBalances)
+    .where(and(eq(leaveBalances.accountId, accountId), eq(leaveBalances.year, year)));
+  const existingSet = new Set(existingBalances.map(b => `${b.employeeId}::${b.leaveType}`));
+
+  // 5. Get previous year balances for carryover calculation
+  const previousYear = year - 1;
+  const prevBalances = await db.select().from(leaveBalances)
+    .where(and(eq(leaveBalances.accountId, accountId), eq(leaveBalances.year, previousYear)));
+  const prevBalanceMap = new Map(prevBalances.map(b => [`${b.employeeId}::${b.leaveType}`, b]));
+
+  let allocated = 0;
+  let skipped = 0;
+
+  for (const assignment of assignments) {
+    const policy = policyById.get(assignment.policyId);
+    if (!policy) continue;
+
+    for (const alloc of policy.allocations) {
+      const lt = leaveTypeById.get(alloc.leaveTypeId);
+      if (!lt) continue;
+
+      const key = `${assignment.employeeId}::${lt.slug}`;
+
+      // Skip if balance already exists for this employee + type + year
+      if (existingSet.has(key)) {
+        skipped++;
+        continue;
+      }
+
+      // Calculate carryover from previous year
+      let carried = 0;
+      const prevBalance = prevBalanceMap.get(key);
+      if (prevBalance && lt.maxCarryForward > 0) {
+        const unused = prevBalance.allocated + prevBalance.carried - prevBalance.used;
+        carried = Math.min(Math.max(unused, 0), lt.maxCarryForward);
+      }
+
+      await db.insert(leaveBalances).values({
+        accountId,
+        employeeId: assignment.employeeId,
+        leaveType: lt.slug,
+        year,
+        allocated: alloc.daysPerYear,
+        used: 0,
+        carried,
+        leaveTypeId: lt.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      existingSet.add(key); // prevent duplicates within this run
+      allocated++;
+    }
+  }
+
+  logger.info({ accountId, year, allocated, skipped }, 'Leave balance allocation completed');
+  return { allocated, skipped };
 }
 
 // ─── Holiday Calendars ────────────────────────────────────────────

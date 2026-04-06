@@ -99,6 +99,7 @@ router.delete('/time-off/:id', hrController.deleteTimeOffRequest);
 
 // Leave balances summary (before /:id)
 router.get('/leave-balances/summary', hrController.getLeaveBalancesSummary);
+router.post('/leave-balances/allocate', hrController.triggerBalanceAllocation);
 
 // Onboarding templates (before /:id)
 router.get('/onboarding-templates', hrController.listOnboardingTemplates);

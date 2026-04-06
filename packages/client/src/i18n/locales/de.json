@@ -2009,7 +2009,8 @@
       "teamCalendar": "Teamkalender",
       "leaveTypes": "Urlaubsarten",
       "holidays": "Feiertage",
-      "policies": "Richtlinien"
+      "policies": "Richtlinien",
+      "approvals": "Genehmigungen"
     },
     "status": {
       "active": "Aktiv",
@@ -2279,6 +2280,16 @@
     },
     "teamCalendar": {
       "noLeaves": "Keine genehmigten Abwesenheiten fuer diesen Monat."
+    },
+    "approvals": {
+      "title": "Ausstehende Genehmigungen",
+      "empty": "Keine ausstehenden Genehmigungen",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen",
+      "approved": "Urlaub genehmigt",
+      "rejected": "Urlaub abgelehnt",
+      "rejectComment": "Ablehnungsgrund (optional)",
+      "days": "{{count}} Tage"
     },
     "leaveAppStatus": {
       "draft": "Entwurf",

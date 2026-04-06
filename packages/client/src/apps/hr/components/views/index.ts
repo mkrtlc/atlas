@@ -8,3 +8,4 @@ export { HolidaysView } from './holidays-view';
 export { MyLeaveView } from './my-leave-view';
 export { TeamCalendarView } from './team-calendar-view';
 export { AttendanceView } from './attendance-view';
+export { ApprovalsView } from './approvals-view';

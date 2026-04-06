@@ -2009,7 +2009,8 @@
       "teamCalendar": "Calendrier equipe",
       "leaveTypes": "Types de conge",
       "holidays": "Jours feries",
-      "policies": "Politiques"
+      "policies": "Politiques",
+      "approvals": "Approbations"
     },
     "status": {
       "active": "Actif",
@@ -2279,6 +2280,16 @@
     },
     "teamCalendar": {
       "noLeaves": "Aucun conge approuve pour ce mois."
+    },
+    "approvals": {
+      "title": "Approbations en attente",
+      "empty": "Aucune approbation en attente",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "approved": "Conge approuve",
+      "rejected": "Conge rejete",
+      "rejectComment": "Motif du rejet (facultatif)",
+      "days": "{{count}} jours"
     },
     "leaveAppStatus": {
       "draft": "Brouillon",

@@ -2009,7 +2009,8 @@
       "teamCalendar": "Calendario team",
       "leaveTypes": "Tipi di permesso",
       "holidays": "Festivita",
-      "policies": "Politiche"
+      "policies": "Politiche",
+      "approvals": "Approvazioni"
     },
     "status": {
       "active": "Attivo",
@@ -2279,6 +2280,16 @@
     },
     "teamCalendar": {
       "noLeaves": "Nessun permesso approvato per questo mese."
+    },
+    "approvals": {
+      "title": "Approvazioni in sospeso",
+      "empty": "Nessuna approvazione in sospeso",
+      "approve": "Approva",
+      "reject": "Rifiuta",
+      "approved": "Permesso approvato",
+      "rejected": "Permesso rifiutato",
+      "rejectComment": "Motivo del rifiuto (facoltativo)",
+      "days": "{{count}} giorni"
     },
     "leaveAppStatus": {
       "draft": "Bozza",
