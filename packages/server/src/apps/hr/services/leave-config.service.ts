@@ -74,12 +74,28 @@ export async function seedDefaultLeaveTypes(accountId: string) {
   const toCreate = DEFAULT_LEAVE_TYPES.filter(lt => !existingSlugs.has(lt.slug));
   if (toCreate.length === 0) return null;
 
-  const created = [];
-  for (const lt of toCreate) {
-    const result = await createLeaveType(accountId, lt);
-    created.push(result);
-  }
+  // Get current max sortOrder to pre-compute values
+  const [maxSort] = await db
+    .select({ max: sql<number>`COALESCE(MAX(${hrLeaveTypes.sortOrder}), -1)` })
+    .from(hrLeaveTypes).where(eq(hrLeaveTypes.accountId, accountId));
+  const baseSort = (maxSort?.max ?? -1) + 1;
 
+  const now = new Date();
+  const rows = toCreate.map((lt, i) => ({
+    accountId,
+    name: lt.name,
+    slug: lt.slug,
+    color: lt.color,
+    defaultDaysPerYear: lt.defaultDaysPerYear,
+    maxCarryForward: lt.maxCarryForward,
+    requiresApproval: lt.requiresApproval,
+    isPaid: lt.isPaid,
+    sortOrder: baseSort + i,
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  const created = await db.insert(hrLeaveTypes).values(rows).returning();
   return { leaveTypes: created };
 }
 
@@ -319,6 +335,20 @@ export async function updateHoliday(accountId: string, id: string, input: Partia
 
 export async function deleteHoliday(accountId: string, id: string) {
   return updateHoliday(accountId, id, { isArchived: true });
+}
+
+export async function bulkCreateHolidays(accountId: string, calendarId: string, holidays: Array<{ name: string; date: string; type: string }>) {
+  const now = new Date();
+  const rows = holidays.map(h => ({
+    accountId,
+    calendarId,
+    name: h.name,
+    date: h.date,
+    type: h.type || 'public',
+    createdAt: now,
+    updatedAt: now,
+  }));
+  return db.insert(hrHolidays).values(rows).returning();
 }
 
 export async function calculateWorkingDays(accountId: string, startDate: string, endDate: string, calendarId?: string) {

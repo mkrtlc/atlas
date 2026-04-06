@@ -709,6 +709,17 @@ export function useDeleteHoliday() {
   });
 }
 
+export function useBulkImportHolidays() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { calendarId: string; holidays: Array<{ name: string; date: string; type: string }> }) => {
+      const { data } = await api.post('/hr/holidays/bulk-import', input);
+      return data.data as HrHoliday[];
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.hr.all }); },
+  });
+}
+
 // ─── Leave Applications ───────────────────────────────────────────
 
 export interface HrLeaveApplication {

@@ -2264,6 +2264,7 @@
       "importTitle": "Importa festività nazionali",
       "importDesc": "Seleziona un paese per importare le festività pubbliche del 2026",
       "importSuccess": "Importate {{count}} festività da {{country}}",
+      "importFailed": "Impossibile importare le festività",
       "holidayCount": "festività"
     },
     "myLeave": {

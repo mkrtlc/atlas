@@ -54,6 +54,7 @@ router.get('/holiday-calendars/:id/holidays', hrController.listHolidays);
 
 // Holidays (before /:id)
 router.post('/holidays', hrController.createHoliday);
+router.post('/holidays/bulk-import', hrController.bulkImportHolidays);
 router.patch('/holidays/:id', hrController.updateHoliday);
 router.delete('/holidays/:id', hrController.deleteHoliday);
 

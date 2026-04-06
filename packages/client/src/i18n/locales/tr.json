@@ -2264,6 +2264,7 @@
       "importTitle": "Ülke tatillerini içe aktar",
       "importDesc": "2026 resmi tatillerini içe aktarmak için bir ülke seçin",
       "importSuccess": "{{country}} ülkesinden {{count}} tatil içe aktarıldı",
+      "importFailed": "Tatiller içe aktarılamadı",
       "holidayCount": "tatil"
     },
     "myLeave": {

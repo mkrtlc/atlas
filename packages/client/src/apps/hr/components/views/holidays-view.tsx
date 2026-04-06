@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Download } from 'lucide-react';
-import { useHolidayCalendars, useCreateHolidayCalendar, useHolidays, useCreateHoliday, useDeleteHoliday } from '../../hooks';
+import { useHolidayCalendars, useCreateHolidayCalendar, useHolidays, useCreateHoliday, useDeleteHoliday, useBulkImportHolidays } from '../../hooks';
 import { useMyAppPermission } from '../../../../hooks/use-app-permissions';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
@@ -14,6 +14,8 @@ import { useToastStore } from '../../../../stores/toast-store';
 import { formatDate } from '../../../../lib/format';
 import { COUNTRY_HOLIDAY_PACKS } from '../../lib/country-holidays';
 
+const typeColors: Record<string, string> = { public: 'var(--color-error)', company: 'var(--color-accent-primary)', optional: 'var(--color-warning)' };
+
 export function HolidaysView() {
   const { t } = useTranslation();
   const { addToast } = useToastStore();
@@ -25,6 +27,7 @@ export function HolidaysView() {
   const { data: holidays } = useHolidays(selectedCalendarId ?? undefined);
   const createHoliday = useCreateHoliday();
   const deleteHoliday = useDeleteHoliday();
+  const bulkImport = useBulkImportHolidays();
   const [showAddHoliday, setShowAddHoliday] = useState(false);
   const [hName, setHName] = useState('');
   const [hDate, setHDate] = useState('');
@@ -55,32 +58,29 @@ export function HolidaysView() {
     importingRef.current = true;
     setImporting(countryCode);
     const pack = COUNTRY_HOLIDAY_PACKS.find((p) => p.countryCode === countryCode);
-    if (!pack) return;
-
-    let imported = 0;
-    for (const holiday of pack.holidays) {
-      try {
-        await new Promise<void>((resolve, reject) => {
-          createHoliday.mutate(
-            { calendarId: selectedCalendarId, name: holiday.name, date: holiday.date, type: holiday.type },
-            { onSuccess: () => { imported++; resolve(); }, onError: reject },
-          );
-        });
-      } catch {
-        // skip failed ones
-      }
+    if (!pack) {
+      importingRef.current = false;
+      setImporting(null);
+      return;
     }
 
-    addToast({
-      type: 'success',
-      message: t('hr.holidays.importSuccess', { count: imported, country: pack.countryName }),
-    });
-    setImporting(null);
-    setImportOpen(false);
-    importingRef.current = false;
+    try {
+      const result = await bulkImport.mutateAsync({
+        calendarId: selectedCalendarId,
+        holidays: pack.holidays.map(h => ({ name: h.name, date: h.date, type: h.type })),
+      });
+      addToast({
+        type: 'success',
+        message: t('hr.holidays.importSuccess', { count: result.length, country: pack.countryName }),
+      });
+    } catch {
+      addToast({ type: 'error', message: t('hr.holidays.importFailed') });
+    } finally {
+      setImporting(null);
+      setImportOpen(false);
+      importingRef.current = false;
+    }
   };
-
-  const typeColors: Record<string, string> = { public: 'var(--color-error)', company: 'var(--color-accent-primary)', optional: 'var(--color-warning)' };
 
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-xl)' }}>

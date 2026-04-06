@@ -1,11 +1,10 @@
 // Country holiday packs for 2026
-// Easter 2026: April 5 → Good Friday: April 3, Easter Monday: April 6
-// Ascension: May 14 (39 days after Easter), Whit Monday: May 25 (49 days after Easter + 1)
 
 export interface CountryHolidayPack {
   countryCode: string;
   countryName: string;
   flag: string;
+  year: number;
   holidays: Array<{ name: string; date: string; type: 'public' | 'company' | 'optional' }>;
 }
 
@@ -14,6 +13,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'US',
     countryName: 'United States',
     flag: '\u{1F1FA}\u{1F1F8}',
+    year: 2026,
     holidays: [
       { name: "New Year's Day", date: '2026-01-01', type: 'public' },
       { name: 'Martin Luther King Jr. Day', date: '2026-01-19', type: 'public' },
@@ -32,6 +32,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'GB',
     countryName: 'United Kingdom',
     flag: '\u{1F1EC}\u{1F1E7}',
+    year: 2026,
     holidays: [
       { name: "New Year's Day", date: '2026-01-01', type: 'public' },
       { name: 'Good Friday', date: '2026-04-03', type: 'public' },
@@ -47,6 +48,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'DE',
     countryName: 'Germany',
     flag: '\u{1F1E9}\u{1F1EA}',
+    year: 2026,
     holidays: [
       { name: 'Neujahr', date: '2026-01-01', type: 'public' },
       { name: 'Karfreitag', date: '2026-04-03', type: 'public' },
@@ -63,6 +65,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'FR',
     countryName: 'France',
     flag: '\u{1F1EB}\u{1F1F7}',
+    year: 2026,
     holidays: [
       { name: "Jour de l'An", date: '2026-01-01', type: 'public' },
       { name: 'Lundi de P\u00e2ques', date: '2026-04-06', type: 'public' },
@@ -81,6 +84,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'IT',
     countryName: 'Italy',
     flag: '\u{1F1EE}\u{1F1F9}',
+    year: 2026,
     holidays: [
       { name: 'Capodanno', date: '2026-01-01', type: 'public' },
       { name: 'Epifania', date: '2026-01-06', type: 'public' },
@@ -99,6 +103,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'TR',
     countryName: 'Turkey',
     flag: '\u{1F1F9}\u{1F1F7}',
+    year: 2026,
     holidays: [
       { name: 'Y\u0131lba\u015f\u0131', date: '2026-01-01', type: 'public' },
       { name: 'Ulusal Egemenlik ve \u00c7ocuk Bayram\u0131', date: '2026-04-23', type: 'public' },
@@ -119,6 +124,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'CA',
     countryName: 'Canada',
     flag: '\u{1F1E8}\u{1F1E6}',
+    year: 2026,
     holidays: [
       { name: "New Year's Day", date: '2026-01-01', type: 'public' },
       { name: 'Family Day', date: '2026-02-16', type: 'public' },
@@ -135,6 +141,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'AU',
     countryName: 'Australia',
     flag: '\u{1F1E6}\u{1F1FA}',
+    year: 2026,
     holidays: [
       { name: "New Year's Day", date: '2026-01-01', type: 'public' },
       { name: 'Australia Day', date: '2026-01-26', type: 'public' },
@@ -151,6 +158,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'IN',
     countryName: 'India',
     flag: '\u{1F1EE}\u{1F1F3}',
+    year: 2026,
     holidays: [
       { name: 'Republic Day', date: '2026-01-26', type: 'public' },
       { name: 'Holi', date: '2026-03-17', type: 'public' },
@@ -165,6 +173,7 @@ export const COUNTRY_HOLIDAY_PACKS: CountryHolidayPack[] = [
     countryCode: 'BR',
     countryName: 'Brazil',
     flag: '\u{1F1E7}\u{1F1F7}',
+    year: 2026,
     holidays: [
       { name: 'Confraterniza\u00e7\u00e3o Universal', date: '2026-01-01', type: 'public' },
       { name: 'Carnaval', date: '2026-02-17', type: 'public' },

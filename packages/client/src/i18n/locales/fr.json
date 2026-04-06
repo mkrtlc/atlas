@@ -2264,6 +2264,7 @@
       "importTitle": "Importer les jours fériés d'un pays",
       "importDesc": "Sélectionnez un pays pour importer ses jours fériés 2026",
       "importSuccess": "{{count}} jours fériés importés depuis {{country}}",
+      "importFailed": "Échec de l'importation des jours fériés",
       "holidayCount": "jours fériés"
     },
     "myLeave": {

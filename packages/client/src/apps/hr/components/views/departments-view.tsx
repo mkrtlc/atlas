@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Building2, Trash2, Edit3, Users } from 'lucide-react';
 import { type HrDepartment, type HrEmployee } from '../../hooks';
@@ -21,6 +22,25 @@ export function DepartmentsView({
   const { t } = useTranslation();
   const { data: hrPerm } = useMyAppPermission('hr');
   const canDelete = !hrPerm || hrPerm.role === 'admin';
+
+  const employeesByDepartment = useMemo(() => {
+    const map = new Map<string, HrEmployee[]>();
+    for (const e of employees) {
+      if (e.departmentId) {
+        const list = map.get(e.departmentId);
+        if (list) list.push(e);
+        else map.set(e.departmentId, [e]);
+      }
+    }
+    return map;
+  }, [employees]);
+
+  const employeeById = useMemo(() => {
+    const map = new Map<string, HrEmployee>();
+    for (const e of employees) map.set(e.id, e);
+    return map;
+  }, [employees]);
+
   if (departments.length === 0) {
     return (
       <div className="hr-empty-state">
@@ -38,8 +58,8 @@ export function DepartmentsView({
       gap: 'var(--spacing-lg)',
     }}>
       {departments.map((dept) => {
-        const deptEmployees = employees.filter((e) => e.departmentId === dept.id);
-        const headEmployee = dept.headEmployeeId ? employees.find((e) => e.id === dept.headEmployeeId) : null;
+        const deptEmployees = employeesByDepartment.get(dept.id) ?? [];
+        const headEmployee = dept.headEmployeeId ? employeeById.get(dept.headEmployeeId) ?? null : null;
 
         return (
           <div

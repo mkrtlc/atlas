@@ -398,6 +398,29 @@ export async function deleteHoliday(req: Request, res: Response) {
   }
 }
 
+export async function bulkImportHolidays(req: Request, res: Response) {
+  try {
+    const accountId = req.auth!.accountId;
+
+    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
+    if (!canAccess(perm.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+      return;
+    }
+
+    const { calendarId, holidays } = req.body;
+    if (!calendarId || !Array.isArray(holidays) || holidays.length === 0) {
+      res.status(400).json({ success: false, error: 'calendarId and a non-empty holidays array are required' });
+      return;
+    }
+    const data = await hrService.bulkCreateHolidays(accountId, calendarId, holidays);
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error({ error }, 'Failed to bulk import holidays');
+    res.status(500).json({ success: false, error: 'Failed to bulk import holidays' });
+  }
+}
+
 export async function getWorkingDays(req: Request, res: Response) {
   try {
     const accountId = req.auth!.accountId;

@@ -2300,6 +2300,7 @@
       "importTitle": "Import country holidays",
       "importDesc": "Select a country to import its 2026 public holidays",
       "importSuccess": "Imported {{count}} holidays from {{country}}",
+      "importFailed": "Failed to import holidays",
       "holidayCount": "holidays"
     },
     "myLeave": {

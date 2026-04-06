@@ -2264,6 +2264,7 @@
       "importTitle": "Landesfeiertage importieren",
       "importDesc": "Wählen Sie ein Land aus, um die gesetzlichen Feiertage 2026 zu importieren",
       "importSuccess": "{{count}} Feiertage aus {{country}} importiert",
+      "importFailed": "Feiertage konnten nicht importiert werden",
       "holidayCount": "Feiertage"
     },
     "myLeave": {
