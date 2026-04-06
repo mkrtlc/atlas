@@ -10,6 +10,7 @@ import { closeRedis } from './config/redis';
 import { startUpdateChecker, stopUpdateChecker } from './apps/marketplace/update-checker';
 import { startReminderScheduler, stopReminderScheduler } from './apps/sign/reminder';
 import { startTaskReminderScheduler, stopTaskReminderScheduler } from './apps/tasks/reminder';
+import { startCrmReminderScheduler, stopCrmReminderScheduler } from './apps/crm/activity-reminder';
 import { startLeaveBalanceScheduler, stopLeaveBalanceScheduler } from './apps/hr/services/leave-balance-scheduler';
 
 const PURGE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
@@ -59,6 +60,9 @@ app.listen(env.PORT, async () => {
   // Tasks: due-date reminders — runs hourly
   startTaskReminderScheduler();
 
+  // CRM: activity reminders + deal close-date alerts — runs hourly
+  startCrmReminderScheduler();
+
   // CRM: daily digest emails to CRM users
   const { startDigestScheduler } = await import('./apps/crm/digest');
   startDigestScheduler();
@@ -77,6 +81,7 @@ function handleShutdown(signal: string) {
   stopUpdateChecker();
   stopReminderScheduler();
   stopTaskReminderScheduler();
+  stopCrmReminderScheduler();
 
   stopSyncWorker()
     .catch((err) => logger.warn({ err }, 'Error stopping sync worker'));

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import * as crmService from '../services/deal.service';
 import { logger } from '../../../utils/logger';
-import { emitAppEvent, getTenantMemberUserIds } from '../../../services/event.service';
+import { emitAppEvent } from '../../../services/event.service';
 import { getAppPermission, canAccessEntity } from '../../../services/app-permissions.service';
 
 // ─── Deal Stages ────────────────────────────────────────────────────
@@ -221,6 +221,13 @@ export async function updateDeal(req: Request, res: Response) {
       return;
     }
 
+    // Capture old deal state before update for change detection
+    let oldDeal: { stageId: string; assignedUserId: string | null } | null = null;
+    if (stageId || assignedUserId !== undefined) {
+      const existing = await crmService.getDeal(userId, accountId, id, perm.recordAccess);
+      if (existing) oldDeal = { stageId: existing.stageId, assignedUserId: existing.assignedUserId };
+    }
+
     const deal = await crmService.updateDeal(userId, accountId, id, {
       title, value, stageId, contactId, companyId, assignedUserId,
       probability, expectedCloseDate, tags, sortOrder, isArchived,
@@ -229,6 +236,38 @@ export async function updateDeal(req: Request, res: Response) {
     if (!deal) {
       res.status(404).json({ success: false, error: 'Deal not found' });
       return;
+    }
+
+    // Emit notification events for meaningful changes
+    if (req.auth!.tenantId && oldDeal) {
+      // Stage change notification
+      if (stageId && oldDeal.stageId && oldDeal.stageId !== stageId) {
+        const stages = await crmService.listDealStages(accountId);
+        const newStageName = stages.find(s => s.id === stageId)?.name ?? 'Unknown';
+        emitAppEvent({
+          tenantId: req.auth!.tenantId,
+          userId,
+          appId: 'crm',
+          eventType: 'deal.stageChanged',
+          title: `moved "${deal.title}" to ${newStageName}`,
+          metadata: { dealId: deal.id, oldStageId: oldDeal.stageId, newStageId: stageId },
+          ...(deal.assignedUserId && deal.assignedUserId !== userId
+            ? { notifyUserIds: [deal.assignedUserId] } : {}),
+        }).catch(() => {});
+      }
+
+      // Assignment change notification
+      if (assignedUserId && assignedUserId !== userId && assignedUserId !== oldDeal.assignedUserId) {
+        emitAppEvent({
+          tenantId: req.auth!.tenantId,
+          userId,
+          appId: 'crm',
+          eventType: 'deal.assigned',
+          title: `assigned deal "${deal.title}" to you`,
+          metadata: { dealId: deal.id },
+          notifyUserIds: [assignedUserId],
+        }).catch(() => {});
+      }
     }
 
     res.json({ success: true, data: deal });
@@ -277,6 +316,8 @@ export async function markDealWon(req: Request, res: Response) {
     }
 
     if (req.auth!.tenantId) {
+      const notifyIds: string[] = [];
+      if (deal.assignedUserId && deal.assignedUserId !== userId) notifyIds.push(deal.assignedUserId);
       emitAppEvent({
         tenantId: req.auth!.tenantId,
         userId,
@@ -284,7 +325,7 @@ export async function markDealWon(req: Request, res: Response) {
         eventType: 'deal.won',
         title: `won deal: ${deal.title}`,
         metadata: { dealId: deal.id, value: deal.value },
-        notifyUserIds: await getTenantMemberUserIds(req.auth!.tenantId),
+        ...(notifyIds.length > 0 ? { notifyUserIds: notifyIds } : {}),
       }).catch(() => {});
     }
 
@@ -315,6 +356,8 @@ export async function markDealLost(req: Request, res: Response) {
     }
 
     if (req.auth!.tenantId) {
+      const notifyIds: string[] = [];
+      if (deal.assignedUserId && deal.assignedUserId !== userId) notifyIds.push(deal.assignedUserId);
       emitAppEvent({
         tenantId: req.auth!.tenantId,
         userId,
@@ -322,7 +365,7 @@ export async function markDealLost(req: Request, res: Response) {
         eventType: 'deal.lost',
         title: `lost deal: ${deal.title}`,
         metadata: { dealId: deal.id, value: deal.value, reason },
-        notifyUserIds: await getTenantMemberUserIds(req.auth!.tenantId),
+        ...(notifyIds.length > 0 ? { notifyUserIds: notifyIds } : {}),
       }).catch(() => {});
     }
 

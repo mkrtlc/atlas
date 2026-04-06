@@ -1,6 +1,10 @@
 import type { Request, Response } from 'express';
 import * as crmService from '../services/note.service';
 import { logger } from '../../../utils/logger';
+import { emitAppEvent } from '../../../services/event.service';
+import { db } from '../../../config/database';
+import { crmDeals } from '../../../db/schema';
+import { eq } from 'drizzle-orm';
 
 // ─── Notes ──────────────────────────────────────────────────────────
 
@@ -36,6 +40,25 @@ export async function createNote(req: Request, res: Response) {
     const note = await crmService.createNote(userId, accountId, {
       title, content, dealId, contactId, companyId,
     });
+
+    // Notify deal owner when a note is added to their deal
+    if (req.auth!.tenantId && dealId) {
+      const [deal] = await db.select({ assignedUserId: crmDeals.assignedUserId, title: crmDeals.title })
+        .from(crmDeals).where(eq(crmDeals.id, dealId)).limit(1);
+
+      if (deal?.assignedUserId && deal.assignedUserId !== userId) {
+        emitAppEvent({
+          tenantId: req.auth!.tenantId,
+          userId,
+          appId: 'crm',
+          eventType: 'note.created',
+          title: `added a note on "${deal.title}"`,
+          metadata: { noteId: note.id, dealId },
+          notifyUserIds: [deal.assignedUserId],
+        }).catch(() => {});
+      }
+    }
+
     res.json({ success: true, data: note });
   } catch (error) {
     logger.error({ error }, 'Failed to create CRM note');

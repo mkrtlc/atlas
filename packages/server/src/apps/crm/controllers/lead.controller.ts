@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import * as crmService from '../services/lead.service';
 import { logger } from '../../../utils/logger';
 import { getAppPermission, canAccessEntity } from '../../../services/app-permissions.service';
+import { emitAppEvent, getTenantMemberUserIds } from '../../../services/event.service';
 
 // ─── Leads ──────────────────────────────────────────────────────────
 
@@ -69,6 +70,19 @@ export async function createLead(req: Request, res: Response) {
     const lead = await crmService.createLead(userId, accountId, {
       name: name.trim(), email, phone, companyName, source, notes,
     });
+
+    if (req.auth!.tenantId) {
+      emitAppEvent({
+        tenantId: req.auth!.tenantId,
+        userId,
+        appId: 'crm',
+        eventType: 'lead.created',
+        title: `new lead: ${lead.name}`,
+        metadata: { leadId: lead.id, source: lead.source },
+        notifyUserIds: await getTenantMemberUserIds(req.auth!.tenantId),
+      }).catch(() => {});
+    }
+
     res.json({ success: true, data: lead });
   } catch (error) {
     logger.error({ error }, 'Failed to create CRM lead');
@@ -156,9 +170,24 @@ export async function convertLead(req: Request, res: Response) {
       return;
     }
 
+    // Fetch lead name before conversion for the notification title
+    const leadBeforeConvert = await crmService.getLead(userId, accountId, id, 'all');
+
     const result = await crmService.convertLead(userId, accountId, id, {
       dealTitle: dealTitle.trim(), dealStageId, dealValue,
     });
+
+    if (req.auth!.tenantId && leadBeforeConvert) {
+      emitAppEvent({
+        tenantId: req.auth!.tenantId,
+        userId,
+        appId: 'crm',
+        eventType: 'lead.converted',
+        title: `converted lead "${leadBeforeConvert.name}" to deal`,
+        metadata: { leadId: id, dealId: result.deal.id },
+      }).catch(() => {});
+    }
+
     res.json({ success: true, data: result });
   } catch (error: any) {
     if (error?.message?.includes('not found') || error?.message?.includes('already converted')) {

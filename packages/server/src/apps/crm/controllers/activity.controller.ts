@@ -2,6 +2,10 @@ import type { Request, Response } from 'express';
 import * as crmService from '../services/activity.service';
 import { logger } from '../../../utils/logger';
 import { getAppPermission, canAccessEntity } from '../../../services/app-permissions.service';
+import { emitAppEvent } from '../../../services/event.service';
+import { db } from '../../../config/database';
+import { crmDeals } from '../../../db/schema';
+import { eq } from 'drizzle-orm';
 
 // ─── Activities ─────────────────────────────────────────────────────
 
@@ -52,6 +56,24 @@ export async function createActivity(req: Request, res: Response) {
     const activity = await crmService.createActivity(userId, accountId, {
       type: type ?? 'note', body: body.trim(), dealId, contactId, companyId, scheduledAt,
     });
+
+    // Notify deal owner when activity is logged on their deal
+    if (req.auth!.tenantId && dealId) {
+      const [deal] = await db.select({ assignedUserId: crmDeals.assignedUserId, title: crmDeals.title })
+        .from(crmDeals).where(eq(crmDeals.id, dealId)).limit(1);
+
+      if (deal?.assignedUserId && deal.assignedUserId !== userId) {
+        emitAppEvent({
+          tenantId: req.auth!.tenantId,
+          userId,
+          appId: 'crm',
+          eventType: 'activity.created',
+          title: `logged ${type ?? 'note'} on "${deal.title}"`,
+          metadata: { activityId: activity.id, dealId },
+          notifyUserIds: [deal.assignedUserId],
+        }).catch(() => {});
+      }
+    }
 
     res.json({ success: true, data: activity });
   } catch (error) {
