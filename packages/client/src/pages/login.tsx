@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../lib/api-client';
 import { useAuthStore } from '../stores/auth-store';
 import { ROUTES } from '../config/routes';
@@ -17,6 +18,7 @@ const glassInputStyle = {
 };
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const addAccount = useAuthStore((s) => s.addAccount);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -71,10 +73,10 @@ export function LoginPage() {
       {/* Glass card */}
       <div className="glass-card" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 400, padding: 32, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 600, textAlign: 'center', marginBottom: 8, color: '#fff' }}>
-          Sign in to Atlas
+          {t('login.title', 'Sign in to Atlas')}
         </h1>
         <p style={{ fontSize: 'var(--font-size-sm)', textAlign: 'center', marginBottom: 24, color: 'rgba(255,255,255,0.65)' }}>
-          Enter your credentials to continue
+          {t('login.subtitle', 'Enter your credentials to continue')}
         </p>
 
         {error && (
@@ -85,40 +87,40 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Input
-            label="Email"
+            label={t('login.email', 'Email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
+            placeholder={t('login.emailPlaceholder', 'you@company.com')}
             required
-            size="lg"
+            size="md"
             style={glassInputStyle}
           />
           <Input
-            label="Password"
+            label={t('login.password', 'Password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            placeholder={t('login.passwordPlaceholder', 'Enter your password')}
             required
-            size="lg"
+            size="md"
             style={glassInputStyle}
           />
 
           <div style={{ textAlign: 'right', marginTop: -8 }}>
             <Link to={ROUTES.FORGOT_PASSWORD} style={{ fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
-              Forgot password?
+              {t('login.forgotPassword', 'Forgot password?')}
             </Link>
           </div>
 
           <Button
             type="submit"
             variant="primary"
-            size="lg"
+            size="md"
             disabled={loading}
             style={{ width: '100%', background: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.25)' }}
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? t('login.signingIn', 'Signing in...') : t('login.signIn', 'Sign in')}
           </Button>
         </form>
       </div>
