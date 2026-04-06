@@ -1213,12 +1213,6 @@ export function HomePage() {
                 onDragStart={(e) => {
                   setDockDragId(app.id);
                   e.dataTransfer.effectAllowed = 'move';
-                  // Set a transparent drag image to avoid the default ghost blocking drop targets
-                  const ghost = document.createElement('div');
-                  ghost.style.cssText = 'width:52px;height:52px;opacity:0;position:absolute;top:-9999px';
-                  document.body.appendChild(ghost);
-                  e.dataTransfer.setDragImage(ghost, 26, 26);
-                  setTimeout(() => document.body.removeChild(ghost), 0);
                 }}
                 onDragEnd={() => {
                   if (dockDragId && dockDragOverId && dockDragId !== dockDragOverId) {
