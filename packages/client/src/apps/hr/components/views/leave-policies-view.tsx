@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Download } from 'lucide-react';
 import { useLeaveTypes, useLeavePolicies, useCreateLeavePolicy, useSeedLeavePolicies } from '../../hooks';
@@ -18,6 +18,15 @@ export function LeavePoliciesView() {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+
+  // Auto-seed policies on first visit when list is empty
+  const hasSeeded = useRef(false);
+  useEffect(() => {
+    if (!isLoading && (!policies || policies.length === 0) && !hasSeeded.current) {
+      hasSeeded.current = true;
+      seedPolicies.mutate();
+    }
+  }, [isLoading, policies, seedPolicies]);
 
   const handleCreate = () => {
     if (!name.trim()) return;

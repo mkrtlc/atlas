@@ -1,7 +1,7 @@
 // ─── HR types ───────────────────────────────────────────────────────
 
 export type EmployeeStatus = 'active' | 'on-leave' | 'terminated';
-export type TimeOffType = 'vacation' | 'sick' | 'personal';
+export type TimeOffType = string;
 export type TimeOffStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Employee {

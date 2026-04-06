@@ -49,7 +49,7 @@ export interface HrTimeOff {
   id: string;
   employeeId: string;
   employeeName: string;
-  type: 'vacation' | 'sick' | 'personal';
+  type: string;
   startDate: string;
   endDate: string;
   status: 'pending' | 'approved' | 'rejected';

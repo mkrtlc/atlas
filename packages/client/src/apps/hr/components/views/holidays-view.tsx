@@ -92,6 +92,7 @@ export function HolidaysView() {
             onChange={(v) => setSelectedCalendarId(v)}
             options={calendars.map(c => ({ value: c.id, label: `${c.name} (${c.year})` }))}
             size="sm"
+            width={220}
           />
         ) : (
           <Button variant="secondary" size="sm" onClick={handleCreateCalendar}>{t('hr.holidays.createCalendar')}</Button>

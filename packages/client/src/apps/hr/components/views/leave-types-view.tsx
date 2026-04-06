@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Check, XCircle, Trash2, Download } from 'lucide-react';
 import { useLeaveTypes, useCreateLeaveType, useUpdateLeaveType, useDeleteLeaveType, useSeedLeaveTypes } from '../../hooks';
@@ -26,6 +26,15 @@ export function LeaveTypesView() {
   const [color, setColor] = useState('#3b82f6');
   const [days, setDays] = useState(0);
   const [carryForward, setCarryForward] = useState(0);
+
+  // Auto-seed leave types on first visit when list is empty
+  const hasSeeded = useRef(false);
+  useEffect(() => {
+    if (!isLoading && (!leaveTypes || leaveTypes.length === 0) && !hasSeeded.current) {
+      hasSeeded.current = true;
+      seedLeaveTypes.mutate();
+    }
+  }, [isLoading, leaveTypes, seedLeaveTypes]);
 
   const handleCreate = () => {
     if (!name.trim()) return;
@@ -62,51 +71,96 @@ export function LeaveTypesView() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {leaveTypes?.map((lt) => (
-          <div key={lt.id} style={{
-            display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: 'var(--spacing-md) var(--spacing-lg)',
-            borderBottom: '1px solid var(--color-border-secondary)',
+      {/* Leave types table */}
+      {leaveTypes && leaveTypes.length > 0 && (
+        <div style={{ border: '1px solid var(--color-border-secondary)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--color-bg-primary)' }}>
+          {/* Table header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: 'var(--spacing-sm) var(--spacing-lg)',
+            background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border-secondary)',
           }}>
-            <StatusDot color={lt.color} size={12} />
-            <span style={{ flex: 1, fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-              {lt.name}
+            <span style={{ width: 12 }} />
+            <span style={{ flex: 1, fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('hr.fields.name')}
             </span>
-            <span style={{ width: 80, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-              {lt.defaultDaysPerYear} {t('hr.leaveBalance.days').toLowerCase()}/{t('hr.period.yearly').toLowerCase()}
+            <span style={{ width: 100, fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('hr.leaveTypes.daysPerYear')}
             </span>
-            <span style={{ width: 80, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-              {t('hr.leaveTypes.carry')}: {lt.maxCarryForward}
+            <span style={{ width: 80, fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('hr.leaveTypes.carry')}
             </span>
-            <Badge variant={lt.isPaid ? 'success' : 'default'}>{lt.isPaid ? t('hr.leaveTypes.paid') : t('hr.leaveTypes.unpaid')}</Badge>
-            <Badge variant={lt.isActive ? 'primary' : 'default'}>{lt.isActive ? t('hr.status.active') : t('hr.leaveTypes.inactive')}</Badge>
-            <IconButton
-              icon={lt.isActive ? <XCircle size={14} /> : <Check size={14} />}
-              label={lt.isActive ? t('hr.leaveTypes.deactivate') : t('hr.leaveTypes.activate')}
-              size={26}
-              onClick={() => updateLeaveType.mutate({ id: lt.id, isActive: !lt.isActive })}
-            />
-            {canDelete && <IconButton icon={<Trash2 size={14} />} label={t('common.delete')} size={26} destructive onClick={() => deleteLeaveType.mutate(lt.id)} />}
+            <span style={{ width: 60, fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('hr.fields.type')}
+            </span>
+            <span style={{ width: 64, fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('hr.fields.status')}
+            </span>
+            <span style={{ width: canDelete ? 60 : 30 }} />
           </div>
-        ))}
-      </div>
 
+          {/* Table rows */}
+          {leaveTypes.map((lt, idx) => (
+            <div key={lt.id} style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: 'var(--spacing-md) var(--spacing-lg)',
+              borderBottom: idx < leaveTypes.length - 1 ? '1px solid var(--color-border-secondary)' : 'none',
+              transition: 'background 0.1s',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <StatusDot color={lt.color} size={12} />
+              <span style={{ flex: 1, fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
+                {lt.name}
+              </span>
+              <span style={{ width: 100, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+                {lt.defaultDaysPerYear} {t('hr.leaveBalance.days').toLowerCase()}/{t('hr.period.yearly').toLowerCase()}
+              </span>
+              <span style={{ width: 80, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                {lt.maxCarryForward} {t('hr.leaveBalance.days').toLowerCase()}
+              </span>
+              <span style={{ width: 60 }}>
+                <Badge variant={lt.isPaid ? 'success' : 'default'}>{lt.isPaid ? t('hr.leaveTypes.paid') : t('hr.leaveTypes.unpaid')}</Badge>
+              </span>
+              <span style={{ width: 64 }}>
+                <Badge variant={lt.isActive ? 'primary' : 'default'}>{lt.isActive ? t('hr.status.active') : t('hr.leaveTypes.inactive')}</Badge>
+              </span>
+              <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
+                <IconButton
+                  icon={lt.isActive ? <XCircle size={14} /> : <Check size={14} />}
+                  label={lt.isActive ? t('hr.leaveTypes.deactivate') : t('hr.leaveTypes.activate')}
+                  size={26}
+                  onClick={() => updateLeaveType.mutate({ id: lt.id, isActive: !lt.isActive })}
+                />
+                {canDelete && <IconButton icon={<Trash2 size={14} />} label={t('common.delete')} size={26} destructive onClick={() => deleteLeaveType.mutate(lt.id)} />}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create form */}
       {showCreate && (
-        <div style={{ marginTop: 'var(--spacing-lg)', padding: 'var(--spacing-lg)', border: '1px solid var(--color-border-primary)', borderRadius: 'var(--radius-lg)' }}>
+        <div style={{ marginTop: 'var(--spacing-lg)', padding: 'var(--spacing-lg)', border: '1px solid var(--color-border-primary)', borderRadius: 'var(--radius-lg)', background: 'var(--color-bg-primary)' }}>
+          <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', marginBottom: 'var(--spacing-lg)' }}>
+            {t('hr.leaveTypes.add')}
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-            <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
-              <Input label={t('hr.fields.name')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('hr.placeholder.leaveTypeName')} style={{ flex: 1 }} autoFocus />
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+                <label className="hr-field-label">{t('hr.fields.color')}</label>
+                <div style={{ width: 34, height: 34, borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border-secondary)', overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: color, borderRadius: 'var(--radius-sm)' }} />
+                  <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                </div>
+              </div>
+              <Input label={t('hr.fields.name')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('hr.placeholder.leaveTypeName')} style={{ flex: 2 }} autoFocus />
               <Input label={t('hr.leaveTypes.slug')} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder={t('hr.placeholder.leaveTypeSlug')} style={{ flex: 1 }} />
             </div>
             <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
               <Input label={t('hr.leaveTypes.daysPerYear')} type="number" value={String(days)} onChange={(e) => setDays(Number(e.target.value))} style={{ flex: 1 }} />
               <Input label={t('hr.leaveTypes.maxCarry')} type="number" value={String(carryForward)} onChange={(e) => setCarryForward(Number(e.target.value))} style={{ flex: 1 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
-                <label className="hr-field-label">{t('hr.fields.color')}</label>
-                <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 34, height: 34, border: 'none', background: 'none', cursor: 'pointer' }} />
-              </div>
             </div>
-            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', justifyContent: 'flex-end', paddingTop: 'var(--spacing-sm)', borderTop: '1px solid var(--color-border-secondary)' }}>
               <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>{t('common.cancel')}</Button>
               <Button variant="primary" size="sm" onClick={handleCreate} disabled={!name.trim()}>{t('common.save')}</Button>
             </div>
@@ -114,7 +168,7 @@ export function LeaveTypesView() {
         </div>
       )}
 
-      {!showCreate && (
+      {!showCreate && leaveTypes && leaveTypes.length > 0 && (
         <div style={{ marginTop: 'var(--spacing-lg)' }}>
           <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={() => setShowCreate(true)}>
             {t('hr.leaveTypes.add')}
