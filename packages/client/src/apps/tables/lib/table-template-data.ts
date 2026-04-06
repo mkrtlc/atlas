@@ -32,7 +32,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'projectTracker',
     name: 'Project tracker',
-    icon: '📋',
+    icon: 'ClipboardList',
     description: 'Tasks, assignees, priorities, due dates, progress',
     category: 'Business',
     tags: ['project', 'tasks', 'management'],
@@ -58,7 +58,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'crmContacts',
     name: 'CRM contacts',
-    icon: '👥',
+    icon: 'Users',
     description: 'Leads, deals, pipeline stages, contact info',
     category: 'Business',
     tags: ['crm', 'sales', 'contacts', 'pipeline'],
@@ -83,7 +83,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'inventory',
     name: 'Inventory',
-    icon: '📦',
+    icon: 'Package',
     description: 'Products, SKUs, quantities, prices, stock status',
     category: 'Business',
     tags: ['inventory', 'stock', 'products', 'warehouse'],
@@ -109,7 +109,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'expenseTracker',
     name: 'Expense tracker',
-    icon: '💰',
+    icon: 'DollarSign',
     description: 'Track spending by category, date, and status',
     category: 'Business',
     tags: ['expenses', 'finance', 'budget', 'spending'],
@@ -134,7 +134,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'meetingNotes',
     name: 'Meeting notes',
-    icon: '🗓️',
+    icon: 'CalendarDays',
     description: 'Meeting log with attendees, decisions, action items',
     category: 'Business',
     tags: ['meetings', 'notes', 'agenda', 'decisions'],
@@ -160,7 +160,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'bugTracker',
     name: 'Bug tracker',
-    icon: '🐛',
+    icon: 'Bug',
     description: 'Bugs, severity, status, descriptions, reporters',
     category: 'Engineering',
     tags: ['bugs', 'issues', 'qa', 'testing'],
@@ -185,7 +185,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'apiEndpoints',
     name: 'API endpoints',
-    icon: '🔌',
+    icon: 'Plug',
     description: 'Document REST endpoints, methods, auth, status',
     category: 'Engineering',
     tags: ['api', 'rest', 'documentation', 'endpoints'],
@@ -210,7 +210,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'releaseLog',
     name: 'Release log',
-    icon: '🚀',
+    icon: 'Rocket',
     description: 'Track releases, versions, changelog, deploy status',
     category: 'Engineering',
     tags: ['releases', 'changelog', 'deploys', 'versions'],
@@ -234,7 +234,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'techDebt',
     name: 'Tech debt',
-    icon: '🔧',
+    icon: 'Wrench',
     description: 'Track technical debt, effort, impact, ownership',
     category: 'Engineering',
     tags: ['tech debt', 'refactoring', 'maintenance'],
@@ -261,7 +261,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'contentCalendar',
     name: 'Content calendar',
-    icon: '📅',
+    icon: 'Calendar',
     description: 'Plan blog posts, social media, newsletters',
     category: 'Marketing',
     tags: ['content', 'calendar', 'social media', 'blog'],
@@ -286,7 +286,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'campaignTracker',
     name: 'Campaign tracker',
-    icon: '📣',
+    icon: 'Megaphone',
     description: 'Marketing campaigns, budgets, channels, KPIs',
     category: 'Marketing',
     tags: ['campaigns', 'ads', 'budget', 'performance'],
@@ -311,7 +311,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'competitorAnalysis',
     name: 'Competitor analysis',
-    icon: '🔍',
+    icon: 'Search',
     description: 'Compare competitors by features, pricing, positioning',
     category: 'Marketing',
     tags: ['competitors', 'analysis', 'research', 'market'],
@@ -337,7 +337,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'hiringPipeline',
     name: 'Hiring pipeline',
-    icon: '🎯',
+    icon: 'Target',
     description: 'Track candidates, roles, interview stages',
     category: 'HR & People',
     tags: ['hiring', 'recruiting', 'candidates', 'interviews'],
@@ -362,7 +362,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'teamDirectory',
     name: 'Team directory',
-    icon: '🏢',
+    icon: 'Building2',
     description: 'Employee list with roles, departments, contacts',
     category: 'HR & People',
     tags: ['team', 'directory', 'employees', 'org chart'],
@@ -387,7 +387,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'onboardingChecklist',
     name: 'Onboarding checklist',
-    icon: '✅',
+    icon: 'CheckSquare',
     description: 'New hire tasks, deadlines, owners, completion',
     category: 'HR & People',
     tags: ['onboarding', 'checklist', 'new hire'],
@@ -414,7 +414,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'habitTracker',
     name: 'Habit tracker',
-    icon: '🎯',
+    icon: 'Target',
     description: 'Daily habits with frequency, streaks, categories',
     category: 'Personal',
     tags: ['habits', 'goals', 'daily', 'health'],
@@ -439,7 +439,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'readingList',
     name: 'Reading list',
-    icon: '📚',
+    icon: 'BookOpen',
     description: 'Books, status, ratings, genres, notes',
     category: 'Personal',
     tags: ['books', 'reading', 'library'],
@@ -464,7 +464,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'travelPlanner',
     name: 'Travel planner',
-    icon: '✈️',
+    icon: 'Plane',
     description: 'Trips, destinations, dates, budgets, bookings',
     category: 'Personal',
     tags: ['travel', 'trips', 'vacation', 'planning'],
@@ -490,7 +490,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'eventPlanner',
     name: 'Event planner',
-    icon: '🎉',
+    icon: 'PartyPopper',
     description: 'Plan events with tasks, vendors, timelines',
     category: 'General',
     tags: ['events', 'planning', 'coordination'],
@@ -515,7 +515,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'prosAndCons',
     name: 'Decision matrix',
-    icon: '⚖️',
+    icon: 'Scale',
     description: 'Compare options with weighted criteria and scores',
     category: 'General',
     tags: ['decisions', 'comparison', 'evaluation'],
@@ -539,7 +539,7 @@ export const TABLE_TEMPLATES: TableTemplate[] = [
   {
     key: 'resourceLibrary',
     name: 'Resource library',
-    icon: '🔗',
+    icon: 'Link2',
     description: 'Curated links, tools, articles by topic',
     category: 'General',
     tags: ['resources', 'links', 'bookmarks', 'tools'],

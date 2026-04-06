@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, FileText } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import {
   TABLE_TEMPLATES,
@@ -9,6 +9,7 @@ import {
   type TableTemplate,
   type TableTemplateCategory,
 } from '../lib/table-template-data';
+import { getTemplateIcon } from '../lib/table-constants';
 
 // ─── Card preview lines ─────────────────────────────────────────────
 
@@ -41,7 +42,7 @@ function TableTemplateCard({
       </div>
       <div className="tg-card-body">
         <div className="tg-card-name-row">
-          <span className="tg-card-icon">{template.icon}</span>
+          <span className="tg-card-icon">{(() => { const Icon = getTemplateIcon(template.icon); return <Icon size={16} />; })()}</span>
           <span className="tg-card-name">{template.name}</span>
         </div>
         <p className="tg-card-desc">{template.description}</p>
@@ -160,7 +161,7 @@ export function TableTemplateGallery({
                     </div>
                     <div className="tg-card-body">
                       <div className="tg-card-name-row">
-                        <span className="tg-card-icon">📄</span>
+                        <span className="tg-card-icon"><FileText size={16} /></span>
                         <span className="tg-card-name">{t('tables.blankTable')}</span>
                       </div>
                       <p className="tg-card-desc">{t('tables.blankTableDesc')}</p>

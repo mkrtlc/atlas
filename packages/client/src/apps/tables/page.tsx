@@ -45,7 +45,7 @@ import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 
 // Extracted modules
-import { PLACEHOLDER_ROW_ID, ROW_HEIGHT_MAP } from './lib/table-constants';
+import { PLACEHOLDER_ROW_ID, ROW_HEIGHT_MAP, getTemplateIcon } from './lib/table-constants';
 import { buildColDefs, type BuildColDefsSettings } from './lib/build-col-defs';
 import { TABLE_TEMPLATES } from './lib/table-template-data';
 import { RowNumberHeader, AddColumnHeader } from './components/renderers/row-number-renderer';
@@ -302,7 +302,7 @@ function EmptyState({ state }: { state: ReturnType<typeof useTablesPageState> })
         actionLabel={t('tables.newTable')} actionIcon={<Plus size={14} />} onAction={handleCreateTable} />
       <div className="tables-templates-section">
         <div className="tables-templates-label">{t('tables.startFromTemplate')}</div>
-        <div className="tables-templates-grid">{TABLE_TEMPLATES.slice(0, 6).map((tpl) => (<button key={tpl.key} className="tables-template-card" onClick={() => handleCreateFromTemplate(tpl)}><span className="tables-template-icon">{tpl.icon}</span><span className="tables-template-name">{tpl.name}</span></button>))}</div>
+        <div className="tables-templates-grid">{TABLE_TEMPLATES.slice(0, 6).map((tpl) => { const Icon = getTemplateIcon(tpl.icon); return (<button key={tpl.key} className="tables-template-card" onClick={() => handleCreateFromTemplate(tpl)}><Icon size={24} style={{ color: 'var(--color-text-secondary)' }} /><span className="tables-template-name">{tpl.name}</span></button>); })}</div>
       </div>
     </div>
   );

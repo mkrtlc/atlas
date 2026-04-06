@@ -1,4 +1,10 @@
 import type { TableColumn, TableRow, TableFieldType } from '@atlasmail/shared';
+import {
+  ClipboardList, Users, Package, DollarSign, CalendarDays, Bug, Plug, Rocket,
+  Wrench, Calendar, Megaphone, Search, Target, Building2, CheckSquare, BookOpen,
+  Plane, PartyPopper, Scale, Link2, Table2,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ─── Constants ──────────────────────────────────────────────────────
 
@@ -25,6 +31,18 @@ export const FIELD_TYPES: { value: TableFieldType; label: string }[] = [
   { value: 'lookup', label: 'Lookup' },
   { value: 'rollup', label: 'Rollup' },
 ];
+
+// ─── Template icon resolver ────────────────────────────────────────
+
+export const TEMPLATE_ICONS: Record<string, LucideIcon> = {
+  ClipboardList, Users, Package, DollarSign, CalendarDays, Bug, Plug, Rocket,
+  Wrench, Calendar, Megaphone, Search, Target, Building2, CheckSquare, BookOpen,
+  Plane, PartyPopper, Scale, Link2,
+};
+
+export function getTemplateIcon(iconName: string): LucideIcon {
+  return TEMPLATE_ICONS[iconName] || Table2;
+}
 
 // ─── Default columns/rows for new tables ────────────────────────────
 
