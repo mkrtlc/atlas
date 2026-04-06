@@ -738,11 +738,8 @@ export function HomePage() {
       ...old,
       homeDockOrder: JSON.stringify(currentOrder),
     }));
-    // Delay state reset so slide animation completes
-    setTimeout(() => {
-      setDockDragId(null);
-      setDockDragOverId(null);
-    }, 250);
+    setDockDragId(null);
+    setDockDragOverId(null);
   }, [orderedDockApps, queryClient]);
 
   // Calculate smooth slide transform for dock items during drag
@@ -1213,6 +1210,12 @@ export function HomePage() {
                 onDragStart={(e) => {
                   setDockDragId(app.id);
                   e.dataTransfer.effectAllowed = 'move';
+                  // Use a tiny transparent ghost so browser snap-back is invisible
+                  const ghost = document.createElement('div');
+                  ghost.style.cssText = 'width:1px;height:1px;opacity:0.01;position:fixed;top:-9999px';
+                  document.body.appendChild(ghost);
+                  e.dataTransfer.setDragImage(ghost, 0, 0);
+                  requestAnimationFrame(() => document.body.removeChild(ghost));
                 }}
                 onDragEnd={() => {
                   if (dockDragId && dockDragOverId && dockDragId !== dockDragOverId) {
