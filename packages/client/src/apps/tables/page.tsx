@@ -215,7 +215,7 @@ export function TablesPage() {
                       onColumnResized={handleColumnResized} onColumnMoved={handleColumnMoved}
                       rowDragManaged={false} onRowDragEnd={handleRowDragEnd} animateRows={true} undoRedoCellEditing={false}
                       suppressMoveWhenRowDragging={true} rowSelection={{ mode: 'multiRow', checkboxes: false, headerCheckbox: false }}
-                      onSelectionChanged={handleSelectionChanged} enterNavigatesVertically={true} enterNavigatesVerticallyAfterEdit={true}
+                      onSelectionChanged={handleSelectionChanged}
                       ensureDomOrder={true} suppressContextMenu={true} onCellContextMenu={handleCellContextMenu}
                       pinnedBottomRowData={isGrouped ? undefined : pinnedBottomRowData} getRowStyle={getRowStyle} quickFilterText={searchText}
                       isFullWidthRow={(params) => isGroupHeaderRow(params.rowNode.data as MaybeGroupedRow)}

@@ -762,6 +762,68 @@ export function useTablesPageState() {
     if (!kbEvent) return;
     handleRangeKeyDown(event);
     const isEditing = gridRef.current?.api?.getEditingCells()?.length ?? 0;
+    // Space = expand record (open row detail modal)
+    if (kbEvent.key === ' ' && isEditing === 0 && !kbEvent.shiftKey) {
+      kbEvent.preventDefault();
+      const rowId = (event.data as TableRow)?._id;
+      if (rowId && rowId !== PLACEHOLDER_ROW_ID) {
+        setExpandedRowId(rowId);
+      }
+      return;
+    }
+    // Shift+Space = expand cell (start editing)
+    if (kbEvent.key === ' ' && isEditing === 0 && kbEvent.shiftKey) {
+      kbEvent.preventDefault();
+      const colId = event.colDef.field;
+      if (colId) {
+        gridRef.current?.api?.startEditingCell({ rowIndex: event.rowIndex!, colKey: colId });
+      }
+      return;
+    }
+    // Ctrl/Cmd+Shift+D = delete record (must be before Ctrl+D)
+    if (kbEvent.key === 'd' && (kbEvent.metaKey || kbEvent.ctrlKey) && kbEvent.shiftKey && isEditing === 0) {
+      kbEvent.preventDefault();
+      const rowId = (event.data as TableRow)?._id;
+      if (rowId && rowId !== PLACEHOLDER_ROW_ID) {
+        handleDeleteRow(rowId);
+      }
+      return;
+    }
+    // Ctrl/Cmd+D = duplicate record
+    if (kbEvent.key === 'd' && (kbEvent.metaKey || kbEvent.ctrlKey) && isEditing === 0) {
+      kbEvent.preventDefault();
+      const rowId = (event.data as TableRow)?._id;
+      if (rowId && rowId !== PLACEHOLDER_ROW_ID) {
+        pushUndoState();
+        const sourceRow = localRows.find(r => r._id === rowId);
+        if (sourceRow) {
+          const newRow = { ...sourceRow, _id: crypto.randomUUID(), _createdAt: new Date().toISOString() };
+          const idx = localRows.findIndex(r => r._id === rowId);
+          const updated = [...localRows];
+          updated.splice(idx + 1, 0, newRow);
+          setLocalRows(updated);
+          triggerAutoSave({ rows: updated });
+        }
+      }
+      return;
+    }
+    // Ctrl/Cmd+; = insert today's date
+    if (kbEvent.key === ';' && (kbEvent.metaKey || kbEvent.ctrlKey) && isEditing === 0) {
+      kbEvent.preventDefault();
+      const colId = event.colDef.field;
+      const col = localColumns.find(c => c.id === colId);
+      if (col && col.type === 'date') {
+        const rowId = (event.data as TableRow)?._id;
+        if (rowId && rowId !== PLACEHOLDER_ROW_ID) {
+          pushUndoState();
+          const today = new Date().toISOString().slice(0, 10);
+          const updatedRows = localRows.map(r => r._id === rowId ? { ...r, [colId!]: today } : r);
+          setLocalRows(updatedRows);
+          triggerAutoSave({ rows: updatedRows });
+        }
+      }
+      return;
+    }
     if (isEditing === 0 && getSelectedCellCount() > 1 && kbEvent.key.length === 1 && !kbEvent.metaKey && !kbEvent.ctrlKey && !kbEvent.altKey) {
       kbEvent.preventDefault(); setShowBatchEdit(true); return;
     }
@@ -792,7 +854,7 @@ export function useTablesPageState() {
       const updatedRows = localRows.map((r) => r._id === rowId ? { ...r, [colId]: undefined } : r);
       setLocalRows(updatedRows); triggerAutoSave({ rows: updatedRows });
     }
-  }, [localRows, triggerAutoSave, pushUndoState, handleRangeKeyDown, getCellsInRange, clearRange]);
+  }, [localRows, localColumns, triggerAutoSave, pushUndoState, handleRangeKeyDown, getCellsInRange, clearRange, setExpandedRowId, handleDeleteRow, getSelectedCellCount]);
 
   const handleRowDragEnd = useCallback((event: RowDragEndEvent) => {
     const movedData = event.node.data as TableRow;
