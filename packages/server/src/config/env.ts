@@ -1,7 +1,10 @@
 import { config as dotenvConfig } from 'dotenv';
 import { z } from 'zod';
 
-dotenvConfig();
+// Load .env from monorepo root (tsx watch may change CWD)
+import path from 'path';
+const rootEnv = path.resolve(__dirname, '../../../../.env');
+dotenvConfig({ path: rootEnv });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
