@@ -41,7 +41,7 @@ docker compose -f docker-compose.production.yml up -d
 
 Open **http://localhost:3001** and create your admin account. Secrets are auto-generated on first run.
 
-To pin a specific version: `IMAGE_TAG=1.6.0 docker compose -f docker-compose.production.yml up -d`
+To pin a specific version: `IMAGE_TAG=1.7.0 docker compose -f docker-compose.production.yml up -d`
 
 ## HTTPS with Caddy (optional)
 
