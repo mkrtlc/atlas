@@ -166,8 +166,11 @@ export function WidgetGrid() {
       setLocalOrder(currentOrder);
       // Persist to server
       api.put('/settings', { homeWidgetOrder: JSON.stringify(currentOrder) }).catch(() => {});
-      setDraggedId(null);
-      setDragOverId(null);
+      // Delay state reset so animation completes
+      setTimeout(() => {
+        setDraggedId(null);
+        setDragOverId(null);
+      }, 250);
     },
     [orderedWidgetKeys],
   );
@@ -218,13 +221,14 @@ export function WidgetGrid() {
                   backdropFilter: 'blur(20px)',
                   WebkitBackdropFilter: 'blur(20px)',
                   border: isDragOver
-                    ? '2px dashed rgba(255,255,255,0.4)'
+                    ? '1px solid rgba(255,255,255,0.4)'
                     : '1px solid rgba(255,255,255,0.12)',
                   borderRadius: 'var(--radius-xl)',
                   overflow: 'hidden',
-                  opacity: isDragged ? 0.4 : 1,
+                  opacity: isDragged ? 0.3 : 1,
                   cursor: isDragged ? 'grabbing' : 'grab',
-                  transition: 'opacity 0.2s, border-color 0.2s',
+                  transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s, border-color 0.15s',
+                  transform: isDragOver ? 'scale(1.03)' : 'scale(1)',
                 }}
               >
                 <item.widget.component width={WIDGET_W} height={WIDGET_H} />
@@ -264,16 +268,16 @@ export function WidgetGrid() {
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 border: isDragOver
-                  ? '2px dashed rgba(255,255,255,0.4)'
+                  ? '1px solid rgba(255,255,255,0.4)'
                   : isHovered
                     ? '1px solid rgba(255,255,255,0.25)'
                     : '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 'var(--radius-xl)',
                 overflow: 'hidden',
-                opacity: isDragged ? 0.4 : 1,
+                opacity: isDragged ? 0.3 : 1,
                 cursor: isDragged ? 'grabbing' : 'grab',
-                transition: 'opacity 0.2s, border-color 0.2s, transform 0.2s',
-                transform: isHovered && !isDragged ? 'translateY(-2px)' : 'translateY(0)',
+                transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s, border-color 0.15s',
+                transform: isDragOver ? 'scale(1.03)' : isHovered && !isDragged ? 'translateY(-2px)' : 'none',
               }}
             >
               <item.widget.component width={WIDGET_W} height={WIDGET_H} appId={item.widget.appId} />

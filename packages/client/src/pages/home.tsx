@@ -738,9 +738,30 @@ export function HomePage() {
       ...old,
       homeDockOrder: JSON.stringify(currentOrder),
     }));
-    setDockDragId(null);
-    setDockDragOverId(null);
+    // Delay state reset so slide animation completes
+    setTimeout(() => {
+      setDockDragId(null);
+      setDockDragOverId(null);
+    }, 250);
   }, [orderedDockApps, queryClient]);
+
+  // Calculate smooth slide transform for dock items during drag
+  const getDockItemTransform = useCallback((itemId: string) => {
+    if (!dockDragId || !dockDragOverId || dockDragId === itemId) return 'none';
+    const order = orderedDockApps.map(a => a.id);
+    const dragIdx = order.indexOf(dockDragId);
+    const overIdx = order.indexOf(dockDragOverId);
+    const itemIdx = order.indexOf(itemId);
+
+    if (dragIdx < overIdx) {
+      // Dragging right — items between drag and over shift left
+      if (itemIdx > dragIdx && itemIdx <= overIdx) return 'translateX(-64px)';
+    } else if (dragIdx > overIdx) {
+      // Dragging left — items between over and drag shift right
+      if (itemIdx >= overIdx && itemIdx < dragIdx) return 'translateX(64px)';
+    }
+    return 'none';
+  }, [dockDragId, dockDragOverId, orderedDockApps]);
 
   return (
     <div
@@ -1198,8 +1219,8 @@ export function HomePage() {
                 onDrop={(e) => { e.preventDefault(); if (dockDragId) handleDockReorder(dockDragId, app.id); }}
                 style={{
                   opacity: dockDragId === app.id ? 0.3 : 1,
-                  transform: dockDragOverId === app.id && dockDragId !== app.id ? 'translateX(10px)' : undefined,
-                  transition: 'opacity 0.15s, transform 0.15s',
+                  transform: getDockItemTransform(app.id),
+                  transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s',
                 }}
               >
                 <div
