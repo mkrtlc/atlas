@@ -60,11 +60,11 @@ function persistRefreshedTokens(newAccessToken: string, newRefreshToken?: string
 }
 
 /**
- * Perform a proper logout via the auth store instead of a hard redirect.
- * This correctly cleans up state and lets the app route to the login screen.
+ * Show the session-expired modal instead of immediately logging out.
+ * The modal's "Sign back in" button calls logout() to complete the redirect.
  */
 function handleAuthFailure() {
-  useAuthStore.getState().logout();
+  useAuthStore.getState().setSessionExpired(true);
 }
 
 api.interceptors.response.use(

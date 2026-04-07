@@ -55,7 +55,11 @@
     "signInWithGoogle": "Google ile giriş yap",
     "addingAccount": "Hesap ekleniyor...",
     "signingIn": "Giriş yapılıyor...",
-    "connectingToGmail": "Gmail hesabınıza bağlanılıyor"
+    "connectingToGmail": "Gmail hesabınıza bağlanılıyor",
+    "sessionExpiredTitle": "Oturum süresi doldu",
+    "sessionExpiredMessage": "Güvenliğiniz için oturumunuz sonlandırıldı.",
+    "sessionExpiredPickUp": "Oturumunuz sona erdi, ancak kaldığınız yerden devam edebilirsiniz.",
+    "signBackIn": "Tekrar giriş yap"
   },
   "sidebar": {
     "important": "Önemli",

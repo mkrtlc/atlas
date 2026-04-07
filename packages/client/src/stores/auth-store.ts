@@ -86,6 +86,9 @@ interface AuthState {
   updateAccount: (account: Account) => void;
 
   logout: () => void;
+
+  sessionExpired: boolean;
+  setSessionExpired: (expired: boolean) => void;
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -142,6 +145,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // deriveInitialState() always resolves to a definite state — no async step needed.
   isLoading: false,
 
+  sessionExpired: false,
+  setSessionExpired: (expired) => set({ sessionExpired: expired }),
+
   setAccount: (account) => {
     set({ account, isAuthenticated: !!account, isLoading: false });
   },
@@ -162,7 +168,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     writeActiveTokens(account.id, accessToken, refreshToken);
 
     const payload = decodeJwtPayload(accessToken);
-    set({ accounts: updated, account, tenantId: (payload?.tenantId as string) ?? null, tenantRole: (payload?.tenantRole as string) ?? null, isSuperAdmin: !!(payload?.isSuperAdmin), isAuthenticated: true, isLoading: false });
+    set({ accounts: updated, account, tenantId: (payload?.tenantId as string) ?? null, tenantRole: (payload?.tenantRole as string) ?? null, isSuperAdmin: !!(payload?.isSuperAdmin), isAuthenticated: true, isLoading: false, sessionExpired: false });
   },
 
   // ── switchAccount ────────────────────────────────────────────────────────

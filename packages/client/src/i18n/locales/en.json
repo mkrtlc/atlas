@@ -55,7 +55,11 @@
     "signInWithGoogle": "Sign in with Google",
     "addingAccount": "Adding account...",
     "signingIn": "Signing you in...",
-    "connectingToGmail": "Connecting to your Gmail account"
+    "connectingToGmail": "Connecting to your Gmail account",
+    "sessionExpiredTitle": "Session has expired",
+    "sessionExpiredMessage": "For your security, you have been signed out.",
+    "sessionExpiredPickUp": "Your session has ended, but you can pick up right where you left off.",
+    "signBackIn": "Sign back in"
   },
   "sidebar": {
     "allMail": "All mail",

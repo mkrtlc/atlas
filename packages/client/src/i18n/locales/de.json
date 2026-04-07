@@ -55,7 +55,11 @@
     "signInWithGoogle": "Mit Google anmelden",
     "addingAccount": "Konto wird hinzugefügt…",
     "signingIn": "Sie werden angemeldet…",
-    "connectingToGmail": "Verbindung zu Ihrem Gmail-Konto wird hergestellt"
+    "connectingToGmail": "Verbindung zu Ihrem Gmail-Konto wird hergestellt",
+    "sessionExpiredTitle": "Sitzung abgelaufen",
+    "sessionExpiredMessage": "Zu Ihrer Sicherheit wurden Sie abgemeldet.",
+    "sessionExpiredPickUp": "Ihre Sitzung ist beendet, aber Sie können dort weitermachen, wo Sie aufgehört haben.",
+    "signBackIn": "Erneut anmelden"
   },
   "sidebar": {
     "important": "Wichtig",

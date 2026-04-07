@@ -55,7 +55,11 @@
     "signInWithGoogle": "Accedi con Google",
     "addingAccount": "Aggiunta account...",
     "signingIn": "Accesso in corso...",
-    "connectingToGmail": "Connessione al tuo account Gmail"
+    "connectingToGmail": "Connessione al tuo account Gmail",
+    "sessionExpiredTitle": "Sessione scaduta",
+    "sessionExpiredMessage": "Per la tua sicurezza, sei stato disconnesso.",
+    "sessionExpiredPickUp": "La tua sessione è terminata, ma puoi riprendere da dove avevi lasciato.",
+    "signBackIn": "Accedi di nuovo"
   },
   "sidebar": {
     "important": "Importanti",

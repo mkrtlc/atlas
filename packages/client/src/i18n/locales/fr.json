@@ -55,7 +55,11 @@
     "signInWithGoogle": "Se connecter avec Google",
     "addingAccount": "Ajout du compte...",
     "signingIn": "Connexion en cours...",
-    "connectingToGmail": "Connexion à votre compte Gmail"
+    "connectingToGmail": "Connexion à votre compte Gmail",
+    "sessionExpiredTitle": "Session expirée",
+    "sessionExpiredMessage": "Pour votre sécurité, vous avez été déconnecté.",
+    "sessionExpiredPickUp": "Votre session a expiré, mais vous pouvez reprendre là où vous en étiez.",
+    "signBackIn": "Se reconnecter"
   },
   "sidebar": {
     "important": "Important",

@@ -15,6 +15,7 @@ import { HomePage } from './pages/home';
 import { CommandPalette } from './components/ui/command-palette';
 import { ToastContainer } from './components/ui/toast';
 import { ErrorBoundary } from './components/ui/error-boundary';
+import { SessionExpiredModal } from './components/ui/session-expired-modal';
 import { type ReactNode } from 'react';
 import { useMyAccessibleApps } from './hooks/use-app-permissions';
 import { OrgLayout } from './pages/org/org-layout';
@@ -138,6 +139,7 @@ export function App() {
           </ShortcutProvider>
         </TooltipProvider>
         <ToastContainer />
+        <SessionExpiredModal />
       </ThemeProvider>
     </QueryProvider>
   );
