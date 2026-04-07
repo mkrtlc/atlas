@@ -39,6 +39,10 @@ export interface CalendarEvent {
   reminders: { useDefault: boolean; overrides?: Array<{ method: string; minutes: number }> } | null;
   createdAt: string;
   updatedAt: string;
+  // Aggregation fields (set by calendar aggregator, absent for pure Google events)
+  _source?: 'google' | 'crm' | 'hr-leave' | 'task';
+  _color?: string;
+  _route?: string;
 }
 
 export interface CalendarEventCreateInput {

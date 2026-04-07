@@ -886,8 +886,7 @@ export function WeekGrid({
               }}
             >
               {allDayEvs.map((ev) => {
-                const adAny = ev as any;
-                const pillBg = adAny._color
+                const pillBg = ev._color
                   || (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
                   || calendarColorMap.get(ev.calendarId)
                   || 'var(--color-accent-primary)';
@@ -924,7 +923,7 @@ export function WeekGrid({
                     onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    {adAny._source && adAny._source !== 'google' && (
+                    {ev._source && ev._source !== 'google' && (
                       <span
                         style={{
                           width: 6,
@@ -1264,13 +1263,11 @@ export function WeekGrid({
 
                   const colWidth = 100 / pe.totalColumns;
                   const left = pe.column * colWidth;
-                  const evAny = pe.event as any;
-                  const bgColor = evAny._color
+                  const bgColor = pe.event._color
                     || (pe.event.colorId && EVENT_COLOR_MAP[pe.event.colorId])
                     || calendarColorMap.get(pe.event.calendarId)
                     || 'var(--color-accent-primary)';
                   const textColor = isLightColor(bgColor) ? '#1a1a1a' : bgColor;
-                  const evSource: string | undefined = evAny._source;
 
                   return (
                     <div
@@ -1328,7 +1325,7 @@ export function WeekGrid({
                           gap: 3,
                         }}
                       >
-                        {evSource && evSource !== 'google' && (
+                        {pe.event._source && pe.event._source !== 'google' && (
                           <span
                             style={{
                               width: 6,

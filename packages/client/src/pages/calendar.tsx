@@ -24,6 +24,7 @@ import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select';
 import { useCalendars, useCalendarEvents, useAggregatedEvents, useSyncCalendar, useToggleCalendar, useCreateCalendar, useUpdateCalendarEvent, useCreateCalendarEvent, useDeleteCalendarEvent, useSearchCalendarEvents } from '../hooks/use-calendar';
 import type { AggregatedEvent } from '../hooks/use-calendar';
+import type { CalendarEvent } from '@atlasmail/shared';
 import { useCalendarStore } from '../stores/calendar-store';
 import { useCalendarSettingsStore } from '../stores/calendar-settings-store';
 import { useToastStore } from '../stores/toast-store';
@@ -78,13 +79,6 @@ function formatWeekRange(weekStart: Date): string {
   }
   return `${sMonth} ${sDay} \u2013 ${eMonth} ${eDay}, ${year}`;
 }
-
-// Extended CalendarEvent type with aggregation fields
-type DisplayEvent = import('@atlasmail/shared').CalendarEvent & {
-  _source?: AggregatedEvent['source'];
-  _color?: string;
-  _route?: string;
-};
 
 export function CalendarPage() {
   const { t } = useTranslation();
@@ -313,7 +307,7 @@ export function CalendarPage() {
   );
 
   const handleEventClick = useCallback(
-    (event: import('@atlasmail/shared').CalendarEvent) => {
+    (event: CalendarEvent) => {
       // If this is an aggregated app event with a route, navigate instead of opening modal
       const evAny = event as any;
       if (evAny._route) {
@@ -432,7 +426,7 @@ export function CalendarPage() {
   );
 
   const handleEventDuplicate = useCallback(
-    (event: import('@atlasmail/shared').CalendarEvent) => {
+    (event: CalendarEvent) => {
       createEvent.mutate({
         calendarId: event.calendarId,
         summary: `${event.summary || '(No title)'} (copy)`,
@@ -615,12 +609,12 @@ export function CalendarPage() {
   }, [events, searchQuery]);
 
   // Merge aggregated events (from other apps) into the display list
-  const displayEvents: DisplayEvent[] = useMemo(() => {
-    const base = filteredEvents as DisplayEvent[];
+  const displayEvents: CalendarEvent[] = useMemo(() => {
+    const base = filteredEvents;
     if (!showAllApps || !aggregatedEvents) return base;
 
     // Map aggregated non-google events to CalendarEvent-compatible shape
-    const appEvents: DisplayEvent[] = aggregatedEvents
+    const appEvents: CalendarEvent[] = aggregatedEvents
       .filter((evt) => evt.source !== 'google')
       .map((evt) => ({
         id: evt.id,

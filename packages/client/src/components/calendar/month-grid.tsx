@@ -219,13 +219,11 @@ export function MonthGrid({
                   {/* Event pills */}
                   <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {visible.map((ev) => {
-                      const evAny = ev as any;
-                      const bgColor = evAny._color
+                      const bgColor = ev._color
                         || (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
                         || calendarColorMap.get(ev.calendarId)
                         || 'var(--color-accent-primary)';
                       const isDeclined = ev.selfResponseStatus === 'declined';
-                      const evSource: string | undefined = evAny._source;
 
                       if (ev.isAllDay) {
                         const textColor = isLightColor(bgColor) ? '#1a1a1a' : '#fff';
@@ -256,7 +254,7 @@ export function MonthGrid({
                               textDecoration: isDeclined ? 'line-through' : 'none',
                             }}
                           >
-                            {evSource && evSource !== 'google' && (
+                            {ev._source && ev._source !== 'google' && (
                               <span
                                 style={{
                                   width: 5,
@@ -413,8 +411,7 @@ export function MonthGrid({
                             {/* All events for this day */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: '0 4px' }}>
                               {sorted.map((ev) => {
-                                const popEvAny = ev as any;
-                                const bgColor = popEvAny._color
+                                const bgColor = ev._color
                                   || (ev.colorId && EVENT_COLOR_MAP[ev.colorId])
                                   || calendarColorMap.get(ev.calendarId)
                                   || 'var(--color-accent-primary)';

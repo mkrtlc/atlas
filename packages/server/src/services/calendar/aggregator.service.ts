@@ -3,7 +3,7 @@ import {
   accounts, crmActivities, crmDeals, crmContacts,
   hrLeaveApplications, employees, hrLeaveTypes, tasks,
 } from '../../db/schema';
-import { eq, and, gte, lte, isNotNull, not, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, isNotNull, not, inArray, or } from 'drizzle-orm';
 import { listEvents } from './crud.service';
 import { getAppPermission, type ResolvedAppPermission } from '../app-permissions.service';
 import { logger } from '../../utils/logger';
@@ -132,17 +132,13 @@ export async function getAggregatedEvents(
 
       // For HR viewer role, filter to only their own leave
       let filtered = rows;
-      if (hrPerm?.role === 'viewer') {
+      if (hrPerm?.role === 'viewer' && rows.length > 0) {
         const [emp] = await db.select({ id: employees.id })
           .from(employees)
           .innerJoin(accounts, eq(employees.email, accounts.email))
           .where(eq(accounts.userId, userId))
           .limit(1);
-        if (emp) {
-          filtered = rows.filter(r => r.employeeId === emp.id);
-        } else {
-          filtered = [];
-        }
+        filtered = emp ? rows.filter(r => r.employeeId === emp.id) : [];
       }
 
       return filtered.map(r => ({
@@ -173,12 +169,10 @@ export async function getAggregatedEvents(
           lte(tasks.dueDate, timeMax.slice(0, 10)),
           not(inArray(tasks.status, ['completed', 'cancelled'])),
           eq(tasks.isArchived, false),
+          or(eq(tasks.userId, userId), eq(tasks.visibility, 'team')),
         ));
 
-      // Filter: user's own tasks + team visible tasks
-      const filtered = rows.filter(r => r.userId === userId || r.visibility === 'team');
-
-      return filtered.map(r => ({
+      return rows.map(r => ({
         id: `task:${r.id}`,
         source: 'task' as const,
         sourceId: r.id,
