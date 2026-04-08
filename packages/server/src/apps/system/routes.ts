@@ -14,7 +14,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 const router = Router();
 router.use(authMiddleware);
 
-router.get('/metrics', systemController.getMetrics);
+router.get('/metrics', requireAdmin, systemController.getMetrics);
 router.get('/email-settings', requireAdmin, systemController.getEmailSettings);
 router.put('/email-settings', requireAdmin, systemController.updateEmailSettings);
 router.post('/email-test', requireAdmin, systemController.testEmail);

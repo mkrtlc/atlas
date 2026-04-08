@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../stores/settings-store';
+import { useAuthStore } from '../../stores/auth-store';
 import { AccountSwitcher } from './account-switcher';
 import { appRegistry } from '../../apps';
 import { ROUTES } from '../../config/routes';
@@ -18,7 +19,7 @@ import type { ThemeMode } from '@atlasmail/shared';
 import type { CSSProperties } from 'react';
 
 const THEME_CYCLE: ThemeMode[] = ['light', 'dark', 'system'];
-const ALWAYS_SHOW_NAV = new Set(['org', 'settings', 'system']);
+const ALWAYS_SHOW_NAV = new Set(['org', 'settings']);
 
 const THEME_ICONS: Record<ThemeMode, typeof Sun> = {
   light: Sun,
@@ -183,12 +184,16 @@ export function Sidebar() {
   const location = useLocation();
   const { data: myApps } = useMyAccessibleApps();
 
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
+
   const navItems = useMemo(() => {
     const all = getNavItems();
-    if (!myApps || myApps.appIds === '__all__') return all;
+    // Hide system app from non-super-admins
+    const filtered = isSuperAdmin ? all : all.filter((item) => item.id !== 'system');
+    if (!myApps || myApps.appIds === '__all__') return filtered;
     const allowedSet = new Set(myApps.appIds);
-    return all.filter((item) => ALWAYS_SHOW_NAV.has(item.id) || allowedSet.has(item.id));
-  }, [myApps]);
+    return filtered.filter((item) => ALWAYS_SHOW_NAV.has(item.id) || allowedSet.has(item.id));
+  }, [myApps, isSuperAdmin]);
 
   // Detect Electron desktop shell (set by preload script)
   const isDesktop = !!('atlasDesktop' in window);

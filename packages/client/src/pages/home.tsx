@@ -702,7 +702,7 @@ export function HomePage() {
       ? null
       : new Set(myApps?.appIds ?? []);
     return appRegistry.getAll()
-      .filter(app => app.id !== 'system' || isAdmin)
+      .filter(app => app.id !== 'system' || isSuperAdmin)
       .filter(app => !accessibleSet || accessibleSet.has(app.id))
       .map(app => ({
         id: app.id,

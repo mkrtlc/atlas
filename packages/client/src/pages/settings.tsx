@@ -50,17 +50,20 @@ export function SettingsModal() {
   const { t } = useTranslation();
   const { settingsOpen, settingsApp, settingsPanel, closeSettings } = useUIStore();
   const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const isAdmin = tenantRole === 'owner' || tenantRole === 'admin';
 
   const settingsCategories = useMemo(() => {
     const all = getSettingsCategories(appRegistry.getSettingsCategories());
-    if (isAdmin) return all;
-    // Non-admins: filter out admin-only panels, hide categories with no visible panels
     return all.map(cat => ({
       ...cat,
-      panels: cat.panels.filter(p => !p.adminOnly),
+      panels: cat.panels.filter(p => {
+        if (p.superAdminOnly && !isSuperAdmin) return false;
+        if (p.adminOnly && !isAdmin) return false;
+        return true;
+      }),
     })).filter(cat => cat.panels.length > 0);
-  }, [isAdmin]);
+  }, [isAdmin, isSuperAdmin]);
 
   // Resolve initial category from store
   const resolvedCategory = settingsCategories.find((c) => c.id === settingsApp) ?? settingsCategories[0];
