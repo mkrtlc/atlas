@@ -570,11 +570,12 @@ export function HomePage() {
     crossfadeTimerRef.current = setTimeout(() => setPrevImageIndex(null), 2200);
   }, [imageIndex]);
 
-  // Auto-cycle every 5 minutes
+  // Auto-cycle every 5 minutes (only when no specific background is selected)
   useEffect(() => {
+    if (backgroundStyle) return;
     const id = setInterval(cycleImage, 5 * 60 * 1000);
     return () => clearInterval(id);
-  }, [cycleImage]);
+  }, [cycleImage, backgroundStyle]);
 
   // Preload next image
   useEffect(() => {
