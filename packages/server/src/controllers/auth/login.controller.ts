@@ -30,20 +30,18 @@ export async function loginWithPassword(req: Request, res: Response) {
       return;
     }
 
-    let tenantId: string | undefined;
-    let tenantRole: string | undefined;
-    try {
-      const tenants = await tenantService.listTenantsForUser(account.userId);
-      if (tenants.length > 0) {
-        tenantId = tenants[0].id;
-        // Look up tenant member role
-        const [member] = await db.select({ role: tenantMembers.role })
-          .from(tenantMembers)
-          .where(and(eq(tenantMembers.tenantId, tenantId), eq(tenantMembers.userId, account.userId)))
-          .limit(1);
-        tenantRole = member?.role;
-      }
-    } catch { /* proceed without tenantId */ }
+    const tenants = await tenantService.listTenantsForUser(account.userId);
+    if (tenants.length === 0) {
+      res.status(403).json({ success: false, error: 'No organization found for this account' });
+      return;
+    }
+    const tenantId = tenants[0].id;
+
+    const [member] = await db.select({ role: tenantMembers.role })
+      .from(tenantMembers)
+      .where(and(eq(tenantMembers.tenantId, tenantId), eq(tenantMembers.userId, account.userId)))
+      .limit(1);
+    const tenantRole = member?.role;
 
     const isSuperAdmin = await authService.isUserSuperAdmin(account.userId);
     const jwtTokens = authService.generateTokens(account, tenantId, isSuperAdmin, tenantRole);
@@ -82,39 +80,25 @@ export async function refreshToken(req: Request, res: Response) {
     }
 
     const payload = authService.verifyRefreshToken(refreshToken);
+    const userId = payload.userId;
 
-    let userId = payload.userId;
-    if (!userId) {
-      const [acct] = await db.select({ userId: accounts.userId })
-        .from(accounts)
-        .where(eq(accounts.id, payload.accountId))
-        .limit(1);
-      userId = acct?.userId;
-      if (!userId) {
-        res.status(401).json({ success: false, error: 'Account not found' });
-        return;
-      }
+    const tenants = await tenantService.listTenantsForUser(userId);
+    if (tenants.length === 0) {
+      res.status(403).json({ success: false, error: 'No organization found for this account' });
+      return;
     }
+    const tenantId = tenants[0].id;
 
-    let tenantId: string | undefined;
-    let tenantRole: string | undefined;
-    try {
-      const tenants = await tenantService.listTenantsForUser(userId);
-      if (tenants.length > 0) {
-        tenantId = tenants[0].id;
-        // Look up tenant member role
-        const [member] = await db.select({ role: tenantMembers.role })
-          .from(tenantMembers)
-          .where(and(eq(tenantMembers.tenantId, tenantId), eq(tenantMembers.userId, userId)))
-          .limit(1);
-        tenantRole = member?.role;
-      }
-    } catch { /* proceed without tenantId */ }
+    const [member] = await db.select({ role: tenantMembers.role })
+      .from(tenantMembers)
+      .where(and(eq(tenantMembers.tenantId, tenantId), eq(tenantMembers.userId, userId)))
+      .limit(1);
+    const tenantRole = member?.role;
 
     const isSuperAdmin = await authService.isUserSuperAdmin(userId);
 
     const newTokens = authService.generateTokens({
-      id: payload.accountId,
+      id: tenantId,
       email: payload.email,
       userId,
     }, tenantId, isSuperAdmin, tenantRole);
@@ -138,7 +122,7 @@ export async function getMe(req: Request, res: Response) {
       provider: accounts.provider,
     })
       .from(accounts)
-      .where(eq(accounts.id, req.auth!.accountId))
+      .where(eq(accounts.userId, req.auth!.userId))
       .limit(1);
 
     if (!account) {
@@ -223,15 +207,16 @@ export async function acceptInvitation(req: Request, res: Response) {
 
     const result = await tenantUserService.acceptInvitation(token, { name, password });
 
-    // Look up tenant member role for the newly accepted user
-    let tenantRole: string | undefined;
-    if (result.tenantId) {
-      const [member] = await db.select({ role: tenantMembers.role })
-        .from(tenantMembers)
-        .where(and(eq(tenantMembers.tenantId, result.tenantId), eq(tenantMembers.userId, result.account.userId)))
-        .limit(1);
-      tenantRole = member?.role;
+    if (!result.tenantId) {
+      res.status(500).json({ success: false, error: 'No organization associated with this invitation' });
+      return;
     }
+
+    const [member] = await db.select({ role: tenantMembers.role })
+      .from(tenantMembers)
+      .where(and(eq(tenantMembers.tenantId, result.tenantId), eq(tenantMembers.userId, result.account.userId)))
+      .limit(1);
+    const tenantRole = member?.role;
 
     const jwtTokens = authService.generateTokens(result.account, result.tenantId, undefined, tenantRole);
 

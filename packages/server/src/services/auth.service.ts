@@ -7,9 +7,8 @@ import { encrypt } from '../utils/crypto';
 import type { AuthPayload } from '../middleware/auth';
 import crypto from 'node:crypto';
 
-export function generateTokens(account: { id: string; email: string; userId: string }, tenantId?: string, isSuperAdmin?: boolean, tenantRole?: string) {
-  const payload: AuthPayload = { userId: account.userId, accountId: account.id, email: account.email };
-  if (tenantId) payload.tenantId = tenantId;
+export function generateTokens(account: { id: string; email: string; userId: string }, tenantId: string, isSuperAdmin?: boolean, tenantRole?: string) {
+  const payload: AuthPayload = { userId: account.userId, tenantId, email: account.email };
   if (isSuperAdmin) payload.isSuperAdmin = true;
   if (tenantRole) payload.tenantRole = tenantRole;
   const accessToken = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '1h' });

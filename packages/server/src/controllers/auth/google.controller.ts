@@ -17,8 +17,16 @@ export async function googleConnect(req: Request, res: Response) {
       return;
     }
 
+    // Look up current account for the user
+    const [userAccount] = await db.select({ id: accounts.id })
+      .from(accounts).where(eq(accounts.userId, req.auth!.userId)).limit(1);
+    if (!userAccount) {
+      res.status(404).json({ success: false, error: 'Account not found' });
+      return;
+    }
+
     const state = jwt.sign(
-      { userId: req.auth!.userId, accountId: req.auth!.accountId },
+      { userId: req.auth!.userId, accountId: userAccount.id },
       env.JWT_SECRET,
       { expiresIn: '10m' },
     );
@@ -68,7 +76,14 @@ export async function googleCallback(req: Request, res: Response) {
 
 export async function googleDisconnect(req: Request, res: Response) {
   try {
-    const accountId = req.auth!.accountId;
+    // Look up account by userId since accountId is no longer in JWT
+    const [userAccount] = await db.select({ id: accounts.id })
+      .from(accounts).where(eq(accounts.userId, req.auth!.userId)).limit(1);
+    if (!userAccount) {
+      res.status(404).json({ success: false, error: 'Account not found' });
+      return;
+    }
+    const accountId = userAccount.id;
 
     // Best effort: revoke the token
     try {
