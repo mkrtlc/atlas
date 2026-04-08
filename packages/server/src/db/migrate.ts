@@ -48,6 +48,21 @@ export async function runMigrations() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS tenants (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug VARCHAR(63) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        plan VARCHAR(50) NOT NULL DEFAULT 'starter',
+        status VARCHAR(50) NOT NULL DEFAULT 'active',
+        owner_id UUID NOT NULL,
+        k8s_namespace VARCHAR(63) UNIQUE NOT NULL,
+        quota_cpu INTEGER NOT NULL DEFAULT 2000,
+        quota_memory_mb INTEGER NOT NULL DEFAULT 4096,
+        quota_storage_mb INTEGER NOT NULL DEFAULT 20480,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
       CREATE TABLE IF NOT EXISTS threads (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -320,6 +335,10 @@ export async function runMigrations() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+    `);
+
+    // ─── Collaborative tables (require tenants table) ──────────────
+    await client.query(`
       CREATE TABLE IF NOT EXISTS documents (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id UUID NOT NULL REFERENCES tenants(id),
@@ -583,21 +602,6 @@ export async function runMigrations() {
     // ─── Platform tables ────────────────────────────────────────────
 
     await client.query(`
-      CREATE TABLE IF NOT EXISTS tenants (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        slug VARCHAR(63) UNIQUE NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        plan VARCHAR(50) NOT NULL DEFAULT 'starter',
-        status VARCHAR(50) NOT NULL DEFAULT 'active',
-        owner_id UUID NOT NULL,
-        k8s_namespace VARCHAR(63) UNIQUE NOT NULL,
-        quota_cpu INTEGER NOT NULL DEFAULT 2000,
-        quota_memory_mb INTEGER NOT NULL DEFAULT 4096,
-        quota_storage_mb INTEGER NOT NULL DEFAULT 20480,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
       CREATE TABLE IF NOT EXISTS tenant_members (
         tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
         user_id UUID NOT NULL,
@@ -659,9 +663,11 @@ export async function runMigrations() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE(record_id, field_definition_id)
       );
-      CREATE INDEX IF NOT EXISTS idx_cfv_field ON custom_field_values(field_definition_id);
-      CREATE INDEX IF NOT EXISTS idx_cfv_record ON custom_field_values(record_id);
-      CREATE INDEX IF NOT EXISTS idx_cfv_tenant ON custom_field_values(tenant_id);
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cfv_field ON custom_field_values(field_definition_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cfv_record ON custom_field_values(record_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cfv_tenant ON custom_field_values(tenant_id)`);
+    await client.query(`
 
       CREATE TABLE IF NOT EXISTS record_links (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1751,7 +1757,6 @@ export async function runMigrations() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID,
         tenant_id UUID REFERENCES tenants(id),
-        tenant_id UUID,
         action VARCHAR(20) NOT NULL,
         entity VARCHAR(100) NOT NULL,
         entity_id VARCHAR(255),
@@ -1879,23 +1884,13 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_presence_lookup ON presence_heartbeats(tenant_id, app_id, record_id);
     `);
 
-    // ─── Shared Workspaces: visibility + tenantId columns ──────────────
+    // ─── Shared Workspaces: visibility columns ──────────────
     await client.query(`
-      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tenant_id UUID;
       ALTER TABLE tasks ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
-
-      ALTER TABLE documents ADD COLUMN IF NOT EXISTS tenant_id UUID;
       ALTER TABLE documents ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
-
-      ALTER TABLE drawings ADD COLUMN IF NOT EXISTS tenant_id UUID;
       ALTER TABLE drawings ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
-
-      ALTER TABLE task_projects ADD COLUMN IF NOT EXISTS tenant_id UUID;
       ALTER TABLE task_projects ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
-
-      ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS tenant_id UUID;
       ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS visibility VARCHAR(10) NOT NULL DEFAULT 'private';
-
       ALTER TABLE signature_fields ADD COLUMN IF NOT EXISTS options JSONB NOT NULL DEFAULT '{}';
     `);
 
