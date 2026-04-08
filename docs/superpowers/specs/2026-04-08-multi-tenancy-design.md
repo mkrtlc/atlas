@@ -18,16 +18,16 @@ No production deployment exists. No data migration or backward compatibility req
 
 **Collaborative tables** (shared within an organization) get `tenantId` replacing `accountId`:
 
-- CRM: `crmLeads`, `crmDeals`, `crmContacts`, `crmCompanies`, `crmActivities`, `crmPipelines`, `crmPipelineStages`, `crmEmailSync`, `crmGoogleTokens`
-- HR: `employees`, `departments`, `leaveRequests`, `attendance`, `holidays`, `leavePolicies`, `leaveTypes`, `leaveBalances`
-- Tasks: `tasks`, `taskProjects`, `taskLabels`, `taskComments`
-- Projects: `projects`, `projectMilestones`, `projectTasks`, `projectInvoices`, `projectExpenses`, `projectTimeEntries`
-- Drive: `driveItems`
-- Documents: `documents`
-- Tables: `spreadsheets`
-- Sign: `signDocuments`, `signSigners`, `signAuditLog`, `signTemplates`
+- CRM: `crmLeads`, `crmDeals`, `crmContacts`, `crmCompanies`, `crmActivities`, `crmActivityTypes`, `crmDealStages`, `crmWorkflows`, `crmTeams`, `crmTeamMembers`, `crmPermissions`, `crmNotes`, `crmSavedViews`, `crmLeadForms`
+- HR: `employees`, `departments`, `leaveBalances`, `onboardingTasks`, `onboardingTemplates`, `employeeDocuments`, `timeOffRequests`, `hrLeaveTypes`, `hrLeavePolicies`, `hrLeavePolicyAssignments`, `hrHolidayCalendars`, `hrHolidays`, `hrLeaveApplications`, `hrAttendance`, `hrLifecycleEvents`
+- Tasks: `tasks`, `taskProjects`, `subtasks`, `taskActivities`, `taskTemplates`, `taskComments`, `taskAttachments`, `taskDependencies`
+- Projects: `projectClients`, `projectProjects`, `projectMembers`, `projectTimeEntries`, `projectInvoices`, `projectInvoiceLineItems`, `projectSettings`
+- Drive: `driveItems`, `driveItemVersions`, `driveShareLinks`, `driveItemShares`, `driveActivityLog`, `driveComments`
+- Documents: `documents`, `documentVersions`, `documentComments`, `documentLinks`
+- Tables: `spreadsheets`, `tableRowComments`
+- Sign: `signatureDocuments`, `signatureFields`, `signingTokens`, `signAuditLog`, `signTemplates`
 - Draw: `drawings`
-- Shared: `customFieldDefinitions`, `customFieldValues`, `recordLinks`, `activityFeed`, `notifications`
+- Shared: `customFieldDefinitions`, `customFieldValues`, `recordLinks`, `activityFeed`, `notifications`, `auditLog`, `presenceHeartbeats`
 
 Each collaborative table:
 - Drops `accountId` column
@@ -37,11 +37,21 @@ Each collaborative table:
 
 **Personal tables** (per-user, not shared) keep `accountId` as-is:
 
-- `gmailThreads`, `gmailEmails`, `gmailContacts`, `gmailAttachments`
-- `calendarEvents`
-- `googleSyncState`
+- `threads`, `emails`, `attachments`, `contacts` (Gmail contacts)
+- `categoryRules`, `emailTracking`, `trackingEvents`
+- `calendars`, `calendarEvents`
 - `userSettings`
 - `passwordResetTokens`
+- `pushSubscriptions`
+- `crmEmailSync`, `crmGoogleTokens` (tied to user's Google account)
+
+**System-wide tables** (no tenant or account scoping):
+
+- `users`, `accounts` (auth infrastructure)
+- `tenants`, `tenantMembers`, `tenantInvitations`, `tenantApps` (platform layer)
+- `appPermissions` (already uses tenantId)
+- `marketplaceApps` (global catalog)
+- `systemSettings` (global config)
 
 ### Standard collaborative table columns
 
@@ -181,7 +191,9 @@ Since tenantId is server-side via JWT, all existing app pages, sidebars, widgets
 
 ## Database Schema
 
-No migration scripts for existing data. Fresh schema in `schema.ts` and matching `CREATE TABLE IF NOT EXISTS` in `migrate.ts`.
+No migration scripts for existing data. Both `schema.ts` and `migrate.ts` are rewritten:
+- `schema.ts`: Replace `accountId` with `tenantId` in all collaborative table definitions
+- `migrate.ts`: Update all `CREATE TABLE IF NOT EXISTS` statements to use `tenant_id` instead of `account_id`, add FK references and indexes
 
 ## Out of Scope
 
