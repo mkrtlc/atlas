@@ -147,7 +147,7 @@ export async function getContactEmails(req: Request, res: Response) {
     const contactId = req.params.id as string;
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const emailList = await crmEmailService.getContactEmails(tenantId, contactId, limit);
+    const emailList = await crmEmailService.getContactEmails(tenantId, req.auth!.userId, contactId, limit);
     res.json({ success: true, data: { emails: emailList } });
   } catch (error) {
     logger.error({ error }, 'Failed to get contact emails');
@@ -161,7 +161,7 @@ export async function getDealEmails(req: Request, res: Response) {
     const dealId = req.params.id as string;
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const emailList = await crmEmailService.getDealEmails(tenantId, dealId, limit);
+    const emailList = await crmEmailService.getDealEmails(tenantId, req.auth!.userId, dealId, limit);
     res.json({ success: true, data: { emails: emailList } });
   } catch (error) {
     logger.error({ error }, 'Failed to get deal emails');
@@ -175,7 +175,7 @@ export async function getCompanyEmails(req: Request, res: Response) {
     const companyId = req.params.id as string;
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const emailList = await crmEmailService.getCompanyEmails(tenantId, companyId, limit);
+    const emailList = await crmEmailService.getCompanyEmails(tenantId, req.auth!.userId, companyId, limit);
     res.json({ success: true, data: { emails: emailList } });
   } catch (error) {
     logger.error({ error }, 'Failed to get company emails');
@@ -220,7 +220,7 @@ export async function getContactEvents(req: Request, res: Response) {
     const contactId = req.params.id as string;
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const events = await crmCalendarService.getContactEvents(tenantId, contactId, limit);
+    const events = await crmCalendarService.getContactEvents(tenantId, req.auth!.userId, contactId, limit);
     res.json({ success: true, data: { events } });
   } catch (error) {
     logger.error({ error }, 'Failed to get contact events');
@@ -234,7 +234,7 @@ export async function getDealEvents(req: Request, res: Response) {
     const dealId = req.params.id as string;
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const events = await crmCalendarService.getDealEvents(tenantId, dealId, limit);
+    const events = await crmCalendarService.getDealEvents(tenantId, req.auth!.userId, dealId, limit);
     res.json({ success: true, data: { events } });
   } catch (error) {
     logger.error({ error }, 'Failed to get deal events');
@@ -253,8 +253,13 @@ export async function createCrmEvent(req: Request, res: Response) {
       return;
     }
 
+    const accountId = await (await import('../../../utils/account-lookup')).getAccountIdForUser(userId);
+    if (!accountId) {
+      res.status(404).json({ success: false, error: 'Account not found' });
+      return;
+    }
     const event = await crmCalendarService.createCalendarEvent(
-      tenantId, summary, startTime, endTime,
+      accountId, summary, startTime, endTime,
       attendees ?? [], location, description,
     );
 

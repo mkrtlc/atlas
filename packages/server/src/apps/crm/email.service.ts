@@ -4,16 +4,20 @@ import { crmContacts, crmDeals, emails } from '../../db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { getAuthenticatedClient } from '../../services/google-auth';
 import { logger } from '../../utils/logger';
+import { getAccountIdForUser } from '../../utils/account-lookup';
 
 // ─── Get emails for a CRM contact ─────────────────────────────────────
 
-export async function getContactEmails(tenantId: string, contactId: string, limit = 50) {
+export async function getContactEmails(tenantId: string, userId: string, contactId: string, limit = 50) {
   const [contact] = await db.select({ email: crmContacts.email })
     .from(crmContacts)
     .where(and(eq(crmContacts.id, contactId), eq(crmContacts.tenantId, tenantId)))
     .limit(1);
 
   if (!contact?.email) return [];
+
+  const accountId = await getAccountIdForUser(userId);
+  if (!accountId) return [];
 
   const contactEmail = contact.email.toLowerCase();
 
@@ -23,7 +27,7 @@ export async function getContactEmails(tenantId: string, contactId: string, limi
            e.subject, e.snippet, e.body_text, e.internal_date,
            e.is_unread, e.is_starred, e.gmail_labels
     FROM emails e
-    WHERE e.account_id = ${tenantId}
+    WHERE e.account_id = ${accountId}
     AND (
       e.from_address = ${contactEmail}
       OR e.to_addresses @> ${JSON.stringify([{ address: contactEmail }])}::jsonb
@@ -38,7 +42,7 @@ export async function getContactEmails(tenantId: string, contactId: string, limi
 
 // ─── Get emails for a CRM deal ─────────────────────────────────────────
 
-export async function getDealEmails(tenantId: string, dealId: string, limit = 50) {
+export async function getDealEmails(tenantId: string, userId: string, dealId: string, limit = 50) {
   const [deal] = await db.select({
     contactId: crmDeals.contactId,
     companyId: crmDeals.companyId,
@@ -49,14 +53,12 @@ export async function getDealEmails(tenantId: string, dealId: string, limit = 50
 
   if (!deal) return [];
 
-  // If deal has a contact, use contact emails
   if (deal.contactId) {
-    return getContactEmails(tenantId, deal.contactId, limit);
+    return getContactEmails(tenantId, userId, deal.contactId, limit);
   }
 
-  // If deal has a company but no contact, get all company contact emails
   if (deal.companyId) {
-    return getCompanyEmails(tenantId, deal.companyId, limit);
+    return getCompanyEmails(tenantId, userId, deal.companyId, limit);
   }
 
   return [];
@@ -64,7 +66,7 @@ export async function getDealEmails(tenantId: string, dealId: string, limit = 50
 
 // ─── Get emails for a CRM company ──────────────────────────────────────
 
-export async function getCompanyEmails(tenantId: string, companyId: string, limit = 50) {
+export async function getCompanyEmails(tenantId: string, userId: string, companyId: string, limit = 50) {
   // Get all contacts for this company
   const contacts = await db.select({ email: crmContacts.email })
     .from(crmContacts)
@@ -80,7 +82,9 @@ export async function getCompanyEmails(tenantId: string, companyId: string, limi
 
   if (contactEmails.length === 0) return [];
 
-  // Build a dynamic OR query for all contact emails
+  const accountId = await getAccountIdForUser(userId);
+  if (!accountId) return [];
+
   const emailConditions = contactEmails.map((email) =>
     sql`(e.from_address = ${email} OR e.to_addresses @> ${JSON.stringify([{ address: email }])}::jsonb OR e.cc_addresses @> ${JSON.stringify([{ address: email }])}::jsonb)`,
   );
@@ -93,7 +97,7 @@ export async function getCompanyEmails(tenantId: string, companyId: string, limi
            e.subject, e.snippet, e.body_text, e.internal_date,
            e.is_unread, e.is_starred, e.gmail_labels
     FROM emails e
-    WHERE e.account_id = ${tenantId}
+    WHERE e.account_id = ${accountId}
     AND (${combinedCondition})
     ORDER BY e.internal_date DESC
     LIMIT ${limit}

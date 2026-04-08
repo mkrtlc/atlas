@@ -4,16 +4,20 @@ import { crmContacts, crmDeals, calendarEvents, calendars } from '../../db/schem
 import { eq, and, sql } from 'drizzle-orm';
 import { getAuthenticatedClient } from '../../services/google-auth';
 import { logger } from '../../utils/logger';
+import { getAccountIdForUser } from '../../utils/account-lookup';
 
 // ─── Get calendar events for a CRM contact ────────────────────────────
 
-export async function getContactEvents(tenantId: string, contactId: string, limit = 50) {
+export async function getContactEvents(tenantId: string, userId: string, contactId: string, limit = 50) {
   const [contact] = await db.select({ email: crmContacts.email })
     .from(crmContacts)
     .where(and(eq(crmContacts.id, contactId), eq(crmContacts.tenantId, tenantId)))
     .limit(1);
 
   if (!contact?.email) return [];
+
+  const accountId = await getAccountIdForUser(userId);
+  if (!accountId) return [];
 
   const contactEmail = contact.email.toLowerCase();
 
@@ -24,7 +28,7 @@ export async function getContactEvents(tenantId: string, contactId: string, limi
            ce.status, ce.self_response_status, ce.html_link,
            ce.hangout_link, ce.organizer, ce.attendees
     FROM calendar_events ce
-    WHERE ce.account_id = ${tenantId}
+    WHERE ce.account_id = ${accountId}
     AND ce.attendees @> ${JSON.stringify([{ email: contactEmail }])}::jsonb
     ORDER BY ce.start_time DESC
     LIMIT ${limit}
@@ -35,7 +39,7 @@ export async function getContactEvents(tenantId: string, contactId: string, limi
 
 // ─── Get calendar events for a CRM deal ────────────────────────────────
 
-export async function getDealEvents(tenantId: string, dealId: string, limit = 50) {
+export async function getDealEvents(tenantId: string, userId: string, dealId: string, limit = 50) {
   const [deal] = await db.select({
     contactId: crmDeals.contactId,
     companyId: crmDeals.companyId,
@@ -47,7 +51,7 @@ export async function getDealEvents(tenantId: string, dealId: string, limit = 50
   if (!deal) return [];
 
   if (deal.contactId) {
-    return getContactEvents(tenantId, deal.contactId, limit);
+    return getContactEvents(tenantId, userId, deal.contactId, limit);
   }
 
   // If deal has a company, get events for all contacts in that company
@@ -66,6 +70,9 @@ export async function getDealEvents(tenantId: string, dealId: string, limit = 50
 
     if (contactEmails.length === 0) return [];
 
+    const accountId = await getAccountIdForUser(userId);
+    if (!accountId) return [];
+
     const emailConditions = contactEmails.map((email) =>
       sql`ce.attendees @> ${JSON.stringify([{ email }])}::jsonb`,
     );
@@ -79,7 +86,7 @@ export async function getDealEvents(tenantId: string, dealId: string, limit = 50
              ce.status, ce.self_response_status, ce.html_link,
              ce.hangout_link, ce.organizer, ce.attendees
       FROM calendar_events ce
-      WHERE ce.account_id = ${tenantId}
+      WHERE ce.account_id = ${accountId}
       AND (${combinedCondition})
       ORDER BY ce.start_time DESC
       LIMIT ${limit}

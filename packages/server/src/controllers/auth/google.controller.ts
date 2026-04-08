@@ -7,6 +7,7 @@ import { logger } from '../../utils/logger';
 import { isGoogleConfigured, getAuthUrl, exchangeCode, createOAuth2Client } from '../../services/google-auth';
 import { encrypt, decrypt } from '../../utils/crypto';
 import { env } from '../../config/env';
+import { getAccountIdForUser } from '../../utils/account-lookup';
 
 // ─── Google OAuth (CRM email/calendar sync) ────────────────────────
 
@@ -17,16 +18,14 @@ export async function googleConnect(req: Request, res: Response) {
       return;
     }
 
-    // Look up current account for the user
-    const [userAccount] = await db.select({ id: accounts.id })
-      .from(accounts).where(eq(accounts.userId, req.auth!.userId)).limit(1);
-    if (!userAccount) {
+    const accountId = await getAccountIdForUser(req.auth!.userId);
+    if (!accountId) {
       res.status(404).json({ success: false, error: 'Account not found' });
       return;
     }
 
     const state = jwt.sign(
-      { userId: req.auth!.userId, accountId: userAccount.id },
+      { userId: req.auth!.userId, accountId },
       env.JWT_SECRET,
       { expiresIn: '10m' },
     );
@@ -76,14 +75,11 @@ export async function googleCallback(req: Request, res: Response) {
 
 export async function googleDisconnect(req: Request, res: Response) {
   try {
-    // Look up account by userId since accountId is no longer in JWT
-    const [userAccount] = await db.select({ id: accounts.id })
-      .from(accounts).where(eq(accounts.userId, req.auth!.userId)).limit(1);
-    if (!userAccount) {
+    const accountId = await getAccountIdForUser(req.auth!.userId);
+    if (!accountId) {
       res.status(404).json({ success: false, error: 'Account not found' });
       return;
     }
-    const accountId = userAccount.id;
 
     // Best effort: revoke the token
     try {

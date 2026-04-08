@@ -2,27 +2,22 @@ import { Router } from 'express';
 import { eq } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../config/database';
-import { userSettings, accounts, crmDeals, crmContacts, crmCompanies, crmLeads, crmActivities, crmNotes, crmWorkflows, crmLeadForms } from '../db/schema';
+import { userSettings, crmDeals, crmContacts, crmCompanies, crmLeads, crmActivities, crmNotes, crmWorkflows, crmLeadForms } from '../db/schema';
 import { employees, departments } from '../db/schema';
 import { settingsSchema } from '@atlasmail/shared';
 import { encrypt, decrypt } from '../utils/crypto';
 import { testApiKey } from '../services/ai.service';
 import { logger } from '../utils/logger';
+import { getAccountIdForUser } from '../utils/account-lookup';
 
 import type { Request, Response } from 'express';
-
-/** Look up the user's primary account ID from the accounts table. */
-async function getAccountId(userId: string): Promise<string | null> {
-  const [row] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.userId, userId)).limit(1);
-  return row?.id ?? null;
-}
 
 const router = Router();
 router.use(authMiddleware);
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const accountId = await getAccountId(req.auth!.userId);
+    const accountId = await getAccountIdForUser(req.auth!.userId);
     if (!accountId) { res.status(404).json({ success: false, error: 'Account not found' }); return; }
 
     let [settings] = await db.select().from(userSettings)
@@ -50,7 +45,7 @@ router.put('/', async (req: Request, res: Response) => {
     res.status(400).json({ success: false, error: parsed.error.message });
     return;
   }
-  const accountId = await getAccountId(req.auth!.userId);
+  const accountId = await getAccountIdForUser(req.auth!.userId);
   if (!accountId) { res.status(404).json({ success: false, error: 'Account not found' }); return; }
 
   const existing = await db.select().from(userSettings)
@@ -70,7 +65,7 @@ router.put('/', async (req: Request, res: Response) => {
 router.post('/clear-demo', async (req: Request, res: Response) => {
   try {
     const tenantId = req.auth!.tenantId;
-    const accountId = await getAccountId(req.auth!.userId);
+    const accountId = await getAccountIdForUser(req.auth!.userId);
 
     // Delete CRM data
     await db.delete(crmActivities).where(eq(crmActivities.tenantId, tenantId));
@@ -116,7 +111,7 @@ function maskKey(encryptedKey: string): string {
 router.get('/ai', async (req: Request, res: Response) => {
   try {
     const [settings] = await db.select().from(userSettings)
-      .where(eq(userSettings.accountId, await getAccountId(req.auth!.userId) as string)).limit(1);
+      .where(eq(userSettings.accountId, await getAccountIdForUser(req.auth!.userId) as string)).limit(1);
 
     const aiApiKeys = (settings?.aiApiKeys as Record<string, string>) || {};
     const keys: Record<string, { hasKey: boolean; maskedKey: string | null }> = {};
@@ -143,7 +138,7 @@ router.get('/ai', async (req: Request, res: Response) => {
 router.put('/ai', async (req: Request, res: Response) => {
   try {
     const { enabled, provider, apiKey } = req.body;
-    const accountId = await getAccountId(req.auth!.userId) as string;
+    const accountId = await getAccountIdForUser(req.auth!.userId) as string;
 
     const [existing] = await db.select().from(userSettings)
       .where(eq(userSettings.accountId, accountId)).limit(1);
@@ -177,7 +172,7 @@ router.put('/ai', async (req: Request, res: Response) => {
 
 router.delete('/ai/key/:provider', async (req: Request, res: Response) => {
   try {
-    const accountId = await getAccountId(req.auth!.userId) as string;
+    const accountId = await getAccountIdForUser(req.auth!.userId) as string;
     const provider = req.params.provider as string;
 
     const [existing] = await db.select().from(userSettings)

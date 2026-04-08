@@ -1,18 +1,11 @@
 import type { Request, Response } from 'express';
-import { eq } from 'drizzle-orm';
-import { db } from '../config/database';
-import { accounts } from '../db/schema';
 import * as calendarService from '../services/calendar.service';
 import { logger } from '../utils/logger';
-
-async function getAccountId(userId: string): Promise<string | null> {
-  const [row] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.userId, userId)).limit(1);
-  return row?.id ?? null;
-}
+import { getAccountIdForUser } from '../utils/account-lookup';
 
 export async function listCalendars(req: Request, res: Response) {
   try {
-    const cals = await calendarService.listCalendars(await getAccountId(req.auth!.userId) as string);
+    const cals = await calendarService.listCalendars(await getAccountIdForUser(req.auth!.userId) as string);
     res.json({ success: true, data: cals });
   } catch (error: any) {
     logger.error({ error }, 'Failed to list calendars');
@@ -22,7 +15,7 @@ export async function listCalendars(req: Request, res: Response) {
 
 export async function syncCalendars(req: Request, res: Response) {
   try {
-    const accountId = await getAccountId(req.auth!.userId) as string;
+    const accountId = await getAccountIdForUser(req.auth!.userId) as string;
 
     // Sync the calendar list first
     await calendarService.syncCalendarList(accountId);
@@ -93,7 +86,7 @@ export async function listEvents(req: Request, res: Response) {
       : undefined;
 
     const events = await calendarService.listEvents(
-      await getAccountId(req.auth!.userId) as string,
+      await getAccountIdForUser(req.auth!.userId) as string,
       timeMin as string,
       timeMax as string,
       calIds,
@@ -115,7 +108,7 @@ export async function createEvent(req: Request, res: Response) {
       return;
     }
 
-    const event = await calendarService.createEvent(await getAccountId(req.auth!.userId) as string, {
+    const event = await calendarService.createEvent(await getAccountIdForUser(req.auth!.userId) as string, {
       calendarId,
       summary,
       description,
@@ -140,7 +133,7 @@ export async function createEvent(req: Request, res: Response) {
 export async function updateEvent(req: Request, res: Response) {
   try {
     const eventId = req.params.eventId as string;
-    const event = await calendarService.updateEvent(await getAccountId(req.auth!.userId) as string, eventId, req.body);
+    const event = await calendarService.updateEvent(await getAccountIdForUser(req.auth!.userId) as string, eventId, req.body);
     res.json({ success: true, data: event });
   } catch (error) {
     logger.error({ error }, 'Failed to update calendar event');
@@ -152,7 +145,7 @@ export async function deleteEvent(req: Request, res: Response) {
   try {
     const eventId = req.params.eventId as string;
     const scope = (req.query.scope as string) === 'all' ? 'all' : 'single';
-    await calendarService.deleteEvent(await getAccountId(req.auth!.userId) as string, eventId, scope);
+    await calendarService.deleteEvent(await getAccountIdForUser(req.auth!.userId) as string, eventId, scope);
     res.json({ success: true, data: null });
   } catch (error) {
     logger.error({ error }, 'Failed to delete calendar event');
@@ -168,7 +161,7 @@ export async function searchEvents(req: Request, res: Response) {
       return;
     }
     const limit = parseInt(req.query.limit as string) || 50;
-    const events = await calendarService.searchEvents(await getAccountId(req.auth!.userId) as string, q.trim(), limit);
+    const events = await calendarService.searchEvents(await getAccountIdForUser(req.auth!.userId) as string, q.trim(), limit);
     res.json({ success: true, data: events });
   } catch (error) {
     logger.error({ error }, 'Failed to search calendar events');
@@ -185,7 +178,7 @@ export async function createCalendar(req: Request, res: Response) {
       return;
     }
 
-    const calendar = await calendarService.createCalendar(await getAccountId(req.auth!.userId) as string, {
+    const calendar = await calendarService.createCalendar(await getAccountIdForUser(req.auth!.userId) as string, {
       summary: summary.trim(),
       description,
       backgroundColor,
@@ -211,7 +204,7 @@ export async function getFreeBusy(req: Request, res: Response) {
       return;
     }
 
-    const data = await calendarService.getFreeBusy(await getAccountId(req.auth!.userId) as string, emails, timeMin, timeMax);
+    const data = await calendarService.getFreeBusy(await getAccountIdForUser(req.auth!.userId) as string, emails, timeMin, timeMax);
     res.json({ success: true, data });
   } catch (error) {
     logger.error({ error }, 'Failed to get free/busy data');
@@ -229,7 +222,7 @@ export async function toggleCalendar(req: Request, res: Response) {
       return;
     }
 
-    await calendarService.toggleCalendarSelected(await getAccountId(req.auth!.userId) as string, calendarId, isSelected);
+    await calendarService.toggleCalendarSelected(await getAccountIdForUser(req.auth!.userId) as string, calendarId, isSelected);
     res.json({ success: true, data: null });
   } catch (error) {
     logger.error({ error }, 'Failed to toggle calendar');

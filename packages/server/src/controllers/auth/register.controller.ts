@@ -5,6 +5,7 @@ import { db } from '../../config/database';
 import { accounts } from '../../db/schema';
 import { logger } from '../../utils/logger';
 import { hashPassword, validatePasswordStrength } from '../../utils/password';
+import { slugify } from '../../utils/slugify';
 import * as tenantService from '../../services/platform/tenant.service';
 
 export async function register(req: Request, res: Response) {
@@ -29,14 +30,7 @@ export async function register(req: Request, res: Response) {
       return;
     }
 
-    // Generate slug from company name
-    const slug = companyName
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .substring(0, 63);
+    const slug = slugify(companyName);
 
     if (!slug) {
       res.status(400).json({ success: false, error: 'Company name must contain at least one alphanumeric character' });
