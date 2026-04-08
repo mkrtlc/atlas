@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TrendingUp } from 'lucide-react';
 import { api } from '../../../lib/api-client';
 import type { WidgetDefinition, WidgetProps } from './types';
@@ -11,6 +12,7 @@ interface StockQuote {
 }
 
 function StocksWidgetComponent({ width, height }: WidgetProps) {
+  const { t } = useTranslation();
   const [quotes, setQuotes] = useState<StockQuote[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +53,7 @@ function StocksWidgetComponent({ width, height }: WidgetProps) {
   if (quotes.length === 0) {
     return (
       <div style={{ width, height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 'var(--font-size-sm)' }}>
-        No data
+        {t('widgets.stocksNoData')}
       </div>
     );
   }

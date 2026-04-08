@@ -15,7 +15,6 @@ const WIDGET_I18N: Record<string, { name: string; desc: string }> = {
   quote: { name: 'widgets.quoteName', desc: 'widgets.quoteDesc' },
   stocks: { name: 'widgets.stocksName', desc: 'widgets.stocksDesc' },
   pomodoro: { name: 'widgets.pomodoroName', desc: 'widgets.pomodoroDesc' },
-  game: { name: 'widgets.gameName', desc: 'widgets.gameDesc' },
 };
 import { PET_OPTIONS, PetPreview, type PetType } from './dock-pet';
 

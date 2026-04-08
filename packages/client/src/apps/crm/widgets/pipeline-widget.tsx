@@ -52,7 +52,7 @@ export function PipelineWidget(_props: AppWidgetProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
         <Briefcase size={12} style={{ color: 'rgba(255,255,255,0.7)' }} />
         <span style={{ fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.7)' }}>
-          {t('crm.widgetTitle', 'Pipeline')}
+          {t('crm.widgetTitle')}
         </span>
       </div>
 
@@ -63,16 +63,16 @@ export function PipelineWidget(_props: AppWidgetProps) {
 
       {/* Subtitle */}
       <div style={{ fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.75)' }}>
-        {dealCount} {t('crm.widgetActiveDeals', 'active deals')}
+        {dealCount} {t('crm.widgetActiveDeals')}
       </div>
 
       {/* Won/Lost indicators */}
       <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: 14, marginTop: 2 }}>
         <span style={{ color: '#10b981' }}>
-          {wonThisMonth} {t('crm.widgetWon', 'won')}
+          {wonThisMonth} {t('crm.widgetWon')}
         </span>
         <span style={{ color: lostThisMonth > 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.6)' }}>
-          {lostThisMonth} {t('crm.widgetLost', 'lost')}
+          {lostThisMonth} {t('crm.widgetLost')}
         </span>
       </div>
     </div>

@@ -61,6 +61,15 @@
     "sessionExpiredPickUp": "Your session has ended, but you can pick up right where you left off.",
     "signBackIn": "Sign back in"
   },
+  "login": {
+    "backendUnreachable": "Cannot connect to server",
+    "backendUnreachableDesc": "Atlas could not reach the backend server. This usually means the server is not running or is misconfigured.",
+    "backendTroubleshoot": "Things to check:",
+    "backendCheck1": "Make sure the Atlas server is running (port 3001 by default)",
+    "backendCheck2": "Check that DATABASE_URL is set correctly in your .env file",
+    "backendCheck3": "If using Docker, run: docker compose up -d",
+    "retryConnection": "Retry connection"
+  },
   "sidebar": {
     "allMail": "All mail",
     "important": "Important",
@@ -1698,7 +1707,11 @@
       "syncStatus": "Sync status",
       "lastSynced": "Last synced",
       "notYetSynced": "Not yet synced"
-    }
+    },
+    "widgetTitle": "Pipeline",
+    "widgetActiveDeals": "active deals",
+    "widgetWon": "won",
+    "widgetLost": "lost"
   },
   "drive": {
     "empty": {
@@ -2413,7 +2426,11 @@
       "leaveTypeName": "Vacation",
       "leaveTypeSlug": "vacation",
       "policyName": "Standard"
-    }
+    },
+    "widgetTitle": "Team",
+    "widgetDepartments": "departments",
+    "widgetOnLeave": "on leave today",
+    "widgetNoLeave": "No one on leave today"
   },
   "sign": {
     "title": "Sign",
@@ -2635,7 +2652,11 @@
       "deleteTemplate": "Delete template",
       "fieldCount": "{{count}} fields",
       "createdFrom": "Created from template"
-    }
+    },
+    "widgetTitle": "Sign",
+    "widgetAwaiting": "awaiting signature",
+    "widgetCompleted": "completed",
+    "widgetDraft": "draft"
   },
   "system": {
     "title": "System",
@@ -2728,9 +2749,8 @@
     "pomodoroDesc": "Focus and break timer",
     "pomodoroFocus": "Focus",
     "pomodoroBreak": "Break",
-    "gameName": "Reaction game",
-    "gameDesc": "Quick reaction time test",
-    "gameRetry": "Click to retry",
+    "pomodoroClickStart": "click to start",
+    "pomodoroClickPause": "click to pause",
     "petNone": "None",
     "petCat": "Cat",
     "petFox": "Fox",

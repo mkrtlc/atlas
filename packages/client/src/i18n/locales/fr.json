@@ -61,6 +61,15 @@
     "sessionExpiredPickUp": "Votre session a expiré, mais vous pouvez reprendre là où vous en étiez.",
     "signBackIn": "Se reconnecter"
   },
+  "login": {
+    "backendUnreachable": "Impossible de se connecter au serveur",
+    "backendUnreachableDesc": "Atlas n'a pas pu atteindre le serveur backend. Le serveur n'est peut-être pas en cours d'exécution ou est mal configuré.",
+    "backendTroubleshoot": "Points à vérifier :",
+    "backendCheck1": "Assurez-vous que le serveur Atlas est en cours d'exécution (port 3001 par défaut)",
+    "backendCheck2": "Vérifiez que DATABASE_URL est correctement défini dans votre fichier .env",
+    "backendCheck3": "Si vous utilisez Docker : docker compose up -d",
+    "retryConnection": "Réessayer la connexion"
+  },
   "sidebar": {
     "important": "Important",
     "other": "Autre",
@@ -1667,7 +1676,11 @@
       "syncStatus": "Statut de synchro",
       "lastSynced": "Dernière synchro",
       "notYetSynced": "Pas encore synchronisé"
-    }
+    },
+    "widgetTitle": "Pipeline",
+    "widgetActiveDeals": "affaires actives",
+    "widgetWon": "gagnées",
+    "widgetLost": "perdues"
   },
   "drive": {
     "empty": {
@@ -2380,7 +2393,11 @@
       "leaveTypeName": "Congés",
       "leaveTypeSlug": "conges",
       "policyName": "Standard"
-    }
+    },
+    "widgetTitle": "Équipe",
+    "widgetDepartments": "départements",
+    "widgetOnLeave": "en congé aujourd'hui",
+    "widgetNoLeave": "Personne en congé aujourd'hui"
   },
   "sign": {
     "title": "Sign",
@@ -2602,7 +2619,11 @@
       "deleteTemplate": "Supprimer le modèle",
       "fieldCount": "{{count}} champs",
       "createdFrom": "Créé à partir d'un modèle"
-    }
+    },
+    "widgetTitle": "Signer",
+    "widgetAwaiting": "en attente de signature",
+    "widgetCompleted": "terminé",
+    "widgetDraft": "brouillon"
   },
   "system": {
     "title": "Système",
@@ -2693,9 +2714,8 @@
     "pomodoroDesc": "Minuteur de concentration et pause",
     "pomodoroFocus": "Concentration",
     "pomodoroBreak": "Pause",
-    "gameName": "Jeu de réaction",
-    "gameDesc": "Test de temps de réaction",
-    "gameRetry": "Cliquez pour réessayer",
+    "pomodoroClickStart": "cliquez pour démarrer",
+    "pomodoroClickPause": "cliquez pour mettre en pause",
     "petNone": "Aucun",
     "petCat": "Chat",
     "petFox": "Renard",

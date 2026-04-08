@@ -45,7 +45,7 @@ export function SignWidget(_props: AppWidgetProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
         <PenTool size={12} style={{ color: 'rgba(255,255,255,0.5)' }} />
         <span style={{ fontSize: 'var(--font-size-xs)', color: 'rgba(255,255,255,0.5)' }}>
-          {t('sign.widgetTitle', 'Sign')}
+          {t('sign.widgetTitle')}
         </span>
       </div>
 
@@ -56,16 +56,16 @@ export function SignWidget(_props: AppWidgetProps) {
 
       {/* Subtitle */}
       <div style={{ fontSize: 'var(--font-size-xs)', color: 'rgba(255,255,255,0.6)' }}>
-        {t('sign.widgetAwaiting', 'awaiting signature')}
+        {t('sign.widgetAwaiting')}
       </div>
 
       {/* Signed / Draft indicators */}
       <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: 10, marginTop: 2 }}>
         <span style={{ color: '#10b981' }}>
-          {signed} {t('sign.widgetCompleted', 'completed')}
+          {signed} {t('sign.widgetCompleted')}
         </span>
         <span style={{ color: 'rgba(255,255,255,0.4)' }}>
-          {draft} {t('sign.widgetDraft', 'draft')}
+          {draft} {t('sign.widgetDraft')}
         </span>
       </div>
     </div>

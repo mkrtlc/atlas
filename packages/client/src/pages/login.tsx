@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { WifiOff } from 'lucide-react';
 import { api } from '../lib/api-client';
 import { useAuthStore } from '../stores/auth-store';
 import { ROUTES } from '../config/routes';
@@ -28,6 +29,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingSetup, setCheckingSetup] = useState(true);
+  const [backendUnreachable, setBackendUnreachable] = useState(false);
 
   useEffect(() => {
     api.get('/auth/setup-status')
@@ -36,7 +38,9 @@ export function LoginPage() {
           navigate(ROUTES.SETUP, { replace: true });
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setBackendUnreachable(true);
+      })
       .finally(() => setCheckingSetup(false));
   }, [navigate]);
 
@@ -46,6 +50,45 @@ export function LoginPage() {
 
   if (checkingSetup) {
     return null;
+  }
+
+  if (backendUnreachable) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-family)', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: '-20px', backgroundImage: `url(${BG_IMAGE})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.5)', animation: 'loginKenBurns 30s ease-in-out infinite alternate' }} />
+        <div className="glass-card" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 480, padding: 32, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <WifiOff size={24} color="#fca5a5" />
+            </div>
+            <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 600, color: '#fff', margin: 0 }}>
+              {t('login.backendUnreachable')}
+            </h1>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.65)', textAlign: 'center', margin: 0 }}>
+              {t('login.backendUnreachableDesc')}
+            </p>
+            <div style={{ width: '100%', padding: '12px 16px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: 'rgba(255,255,255,0.9)' }}>
+                {t('login.backendTroubleshoot')}
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <li>{t('login.backendCheck1')}</li>
+                <li>{t('login.backendCheck2')}</li>
+                <li>{t('login.backendCheck3')}</li>
+              </ul>
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => window.location.reload()}
+              style={{ width: '100%', marginTop: 4, background: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.25)' }}
+            >
+              {t('login.retryConnection')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {

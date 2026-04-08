@@ -61,6 +61,15 @@
     "sessionExpiredPickUp": "Oturumunuz sona erdi, ancak kaldığınız yerden devam edebilirsiniz.",
     "signBackIn": "Tekrar giriş yap"
   },
+  "login": {
+    "backendUnreachable": "Sunucuya bağlanılamıyor",
+    "backendUnreachableDesc": "Atlas arka uç sunucusuna ulaşamadı. Sunucu çalışmıyor veya yapılandırması hatalı olabilir.",
+    "backendTroubleshoot": "Kontrol edilecekler:",
+    "backendCheck1": "Atlas sunucusunun çalıştığından emin olun (varsayılan port: 3001)",
+    "backendCheck2": "DATABASE_URL değerinin .env dosyasında doğru ayarlandığını kontrol edin",
+    "backendCheck3": "Docker kullanıyorsanız: docker compose up -d komutunu çalıştırın",
+    "retryConnection": "Bağlantıyı tekrar dene"
+  },
   "sidebar": {
     "important": "Önemli",
     "other": "Diğer",
@@ -1667,7 +1676,11 @@
       "syncStatus": "Senkronizasyon durumu",
       "lastSynced": "Son senkronizasyon",
       "notYetSynced": "Henüz senkronize edilmedi"
-    }
+    },
+    "widgetTitle": "Satış hattı",
+    "widgetActiveDeals": "aktif anlaşma",
+    "widgetWon": "kazanılan",
+    "widgetLost": "kaybedilen"
   },
   "drive": {
     "empty": {
@@ -2380,7 +2393,11 @@
       "leaveTypeName": "Yıllık izin",
       "leaveTypeSlug": "yillik-izin",
       "policyName": "Standart"
-    }
+    },
+    "widgetTitle": "Ekip",
+    "widgetDepartments": "departman",
+    "widgetOnLeave": "bugün izinli",
+    "widgetNoLeave": "Bugün izinli kimse yok"
   },
   "sign": {
     "title": "Sign",
@@ -2602,7 +2619,11 @@
       "deleteTemplate": "Şablonu sil",
       "fieldCount": "{{count}} alan",
       "createdFrom": "Şablondan oluşturuldu"
-    }
+    },
+    "widgetTitle": "İmza",
+    "widgetAwaiting": "imza bekliyor",
+    "widgetCompleted": "tamamlandı",
+    "widgetDraft": "taslak"
   },
   "system": {
     "title": "Sistem",
@@ -2693,9 +2714,8 @@
     "pomodoroDesc": "Odaklanma ve mola zamanlayıcısı",
     "pomodoroFocus": "Odak",
     "pomodoroBreak": "Mola",
-    "gameName": "Reaksiyon oyunu",
-    "gameDesc": "Hızlı reaksiyon testi",
-    "gameRetry": "Tekrar denemek için tıklayın",
+    "pomodoroClickStart": "başlatmak için tıklayın",
+    "pomodoroClickPause": "duraklatmak için tıklayın",
     "petNone": "Yok",
     "petCat": "Kedi",
     "petFox": "Tilki",

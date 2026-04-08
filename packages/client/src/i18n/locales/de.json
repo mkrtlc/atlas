@@ -61,6 +61,15 @@
     "sessionExpiredPickUp": "Ihre Sitzung ist beendet, aber Sie können dort weitermachen, wo Sie aufgehört haben.",
     "signBackIn": "Erneut anmelden"
   },
+  "login": {
+    "backendUnreachable": "Keine Verbindung zum Server",
+    "backendUnreachableDesc": "Atlas konnte den Backend-Server nicht erreichen. Der Server läuft möglicherweise nicht oder ist falsch konfiguriert.",
+    "backendTroubleshoot": "Bitte überprüfen:",
+    "backendCheck1": "Stellen Sie sicher, dass der Atlas-Server läuft (Standard-Port: 3001)",
+    "backendCheck2": "Prüfen Sie, ob DATABASE_URL in der .env-Datei korrekt gesetzt ist",
+    "backendCheck3": "Bei Docker: docker compose up -d ausführen",
+    "retryConnection": "Verbindung erneut versuchen"
+  },
   "sidebar": {
     "important": "Wichtig",
     "other": "Sonstige",
@@ -1667,7 +1676,11 @@
       "syncStatus": "Sync-Status",
       "lastSynced": "Zuletzt synchronisiert",
       "notYetSynced": "Noch nicht synchronisiert"
-    }
+    },
+    "widgetTitle": "Pipeline",
+    "widgetActiveDeals": "aktive Deals",
+    "widgetWon": "gewonnen",
+    "widgetLost": "verloren"
   },
   "drive": {
     "empty": {
@@ -2380,7 +2393,11 @@
       "leaveTypeName": "Urlaub",
       "leaveTypeSlug": "urlaub",
       "policyName": "Standard"
-    }
+    },
+    "widgetTitle": "Team",
+    "widgetDepartments": "Abteilungen",
+    "widgetOnLeave": "heute abwesend",
+    "widgetNoLeave": "Heute niemand abwesend"
   },
   "sign": {
     "title": "Sign",
@@ -2602,7 +2619,11 @@
       "deleteTemplate": "Vorlage löschen",
       "fieldCount": "{{count}} Felder",
       "createdFrom": "Aus Vorlage erstellt"
-    }
+    },
+    "widgetTitle": "Signieren",
+    "widgetAwaiting": "warten auf Unterschrift",
+    "widgetCompleted": "abgeschlossen",
+    "widgetDraft": "Entwurf"
   },
   "system": {
     "title": "System",
@@ -2693,9 +2714,8 @@
     "pomodoroDesc": "Fokus- und Pausen-Timer",
     "pomodoroFocus": "Fokus",
     "pomodoroBreak": "Pause",
-    "gameName": "Reaktionsspiel",
-    "gameDesc": "Schneller Reaktionstest",
-    "gameRetry": "Klicken zum Wiederholen",
+    "pomodoroClickStart": "Klicken zum Starten",
+    "pomodoroClickPause": "Klicken zum Pausieren",
     "petNone": "Keins",
     "petCat": "Katze",
     "petFox": "Fuchs",

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Timer } from 'lucide-react';
 import type { WidgetDefinition, WidgetProps } from './types';
 
@@ -14,6 +15,7 @@ function formatTimer(seconds: number): string {
 }
 
 function PomodoroWidgetComponent({ width, height }: WidgetProps) {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>('work');
   const [remaining, setRemaining] = useState(WORK_SECONDS);
   const [running, setRunning] = useState(false);
@@ -78,7 +80,7 @@ function PomodoroWidgetComponent({ width, height }: WidgetProps) {
           color: phase === 'work' ? 'rgba(255,255,255,0.6)' : 'rgba(134,239,172,0.8)',
         }}
       >
-        {phase === 'work' ? 'Focus' : 'Break'}
+        {phase === 'work' ? t('widgets.pomodoroFocus') : t('widgets.pomodoroBreak')}
       </span>
       <span style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 600, color: 'var(--color-text-inverse)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
         {formatTimer(remaining)}
@@ -96,7 +98,7 @@ function PomodoroWidgetComponent({ width, height }: WidgetProps) {
         />
       </div>
       <span style={{ fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.4)' }}>
-        {running ? 'click to pause' : 'click to start'}
+        {running ? t('widgets.pomodoroClickPause') : t('widgets.pomodoroClickStart')}
       </span>
       {(running || remaining !== WORK_SECONDS || phase !== 'work') && (
         <button

@@ -40,7 +40,13 @@ export function createApp() {
   const allowedOrigins = env.CORS_ORIGINS.split(',').map(o => o.trim());
   app.use(cors({
     origin: (origin, callback) => {
+      // Allow: no origin (same-origin, curl), whitelisted origins,
+      // and in production any request to the same server (client is served from here)
       if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else if (env.NODE_ENV === 'production') {
+        // In production the server serves the client, so allow the requesting origin
+        // when it matches the server's own port (user may access via IP, domain, or localhost)
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
