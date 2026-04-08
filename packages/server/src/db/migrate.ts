@@ -322,7 +322,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS documents (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         parent_id UUID REFERENCES documents(id) ON DELETE SET NULL,
         title TEXT NOT NULL DEFAULT 'Untitled',
@@ -338,7 +338,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS document_versions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title TEXT NOT NULL,
         content JSONB,
@@ -347,7 +347,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS task_projects (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title TEXT NOT NULL DEFAULT 'Untitled project',
         description TEXT,
@@ -361,7 +361,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS tasks (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         project_id UUID REFERENCES task_projects(id) ON DELETE SET NULL,
         title TEXT NOT NULL DEFAULT '',
@@ -388,7 +388,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS spreadsheets (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title TEXT NOT NULL DEFAULT 'Untitled table',
         columns JSONB NOT NULL DEFAULT '[]',
@@ -405,7 +405,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS drive_items (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
         type TEXT NOT NULL DEFAULT 'file',
@@ -427,7 +427,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS drive_item_versions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         drive_item_id UUID NOT NULL REFERENCES drive_items(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
         mime_type TEXT,
@@ -458,7 +458,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS drive_activity_log (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         drive_item_id UUID NOT NULL REFERENCES drive_items(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         action VARCHAR(100) NOT NULL,
         metadata JSONB NOT NULL DEFAULT '{}',
@@ -468,7 +468,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS drive_comments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         drive_item_id UUID NOT NULL REFERENCES drive_items(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         body TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -477,7 +477,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS drawings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title TEXT NOT NULL DEFAULT 'Untitled drawing',
         content JSONB,
@@ -491,7 +491,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS notifications (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         type TEXT NOT NULL DEFAULT 'reminder',
         title TEXT NOT NULL,
         body TEXT,
@@ -545,7 +545,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS task_templates (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         title TEXT NOT NULL DEFAULT 'Untitled template',
         description TEXT,
         icon TEXT,
@@ -561,7 +561,7 @@ export async function runMigrations() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         content TEXT NOT NULL,
         selection_from INTEGER,
         selection_to INTEGER,
@@ -651,7 +651,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS custom_field_values (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         field_definition_id UUID NOT NULL REFERENCES custom_field_definitions(id) ON DELETE CASCADE,
         record_id UUID NOT NULL,
         value JSONB,
@@ -661,7 +661,7 @@ export async function runMigrations() {
       );
       CREATE INDEX IF NOT EXISTS idx_cfv_field ON custom_field_values(field_definition_id);
       CREATE INDEX IF NOT EXISTS idx_cfv_record ON custom_field_values(record_id);
-      CREATE INDEX IF NOT EXISTS idx_cfv_account ON custom_field_values(account_id);
+      CREATE INDEX IF NOT EXISTS idx_cfv_tenant ON custom_field_values(tenant_id);
 
       CREATE TABLE IF NOT EXISTS record_links (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -679,7 +679,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS departments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         name TEXT NOT NULL DEFAULT 'Untitled department',
         head_employee_id UUID,
@@ -693,7 +693,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS employees (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         linked_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
         name TEXT NOT NULL DEFAULT '',
@@ -727,7 +727,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS leave_balances (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         leave_type VARCHAR(50) NOT NULL,
         year INTEGER NOT NULL,
@@ -740,7 +740,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS onboarding_tasks (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         title VARCHAR(500) NOT NULL,
         description TEXT,
@@ -756,7 +756,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS onboarding_templates (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         name VARCHAR(255) NOT NULL,
         tasks JSONB NOT NULL DEFAULT '[]',
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -765,7 +765,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS employee_documents (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         name VARCHAR(500) NOT NULL,
         type VARCHAR(100) NOT NULL DEFAULT 'other',
@@ -782,7 +782,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS time_off_requests (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         type TEXT NOT NULL DEFAULT 'vacation',
@@ -900,7 +900,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS signature_documents (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         title VARCHAR(500) NOT NULL,
         file_name VARCHAR(500) NOT NULL,
@@ -989,7 +989,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS sign_templates (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         title VARCHAR(500) NOT NULL,
         file_name VARCHAR(500) NOT NULL,
@@ -1028,7 +1028,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS crm_companies (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         name VARCHAR(500) NOT NULL,
         domain VARCHAR(255),
@@ -1045,7 +1045,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_contacts (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         name VARCHAR(500) NOT NULL,
         email VARCHAR(255),
@@ -1062,7 +1062,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_deal_stages (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         name VARCHAR(100) NOT NULL,
         color VARCHAR(20) NOT NULL DEFAULT '#6b7280',
         probability INTEGER NOT NULL DEFAULT 0,
@@ -1072,7 +1072,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_deals (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         title VARCHAR(500) NOT NULL,
         value REAL NOT NULL DEFAULT 0,
@@ -1094,7 +1094,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_activities (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         type VARCHAR(50) NOT NULL DEFAULT 'note',
         body TEXT NOT NULL DEFAULT '',
@@ -1110,7 +1110,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_workflows (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         name VARCHAR(500) NOT NULL,
         trigger VARCHAR(100) NOT NULL,
@@ -1126,7 +1126,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_permissions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         role VARCHAR(50) NOT NULL DEFAULT 'sales',
         record_access VARCHAR(50) NOT NULL DEFAULT 'own',
@@ -1136,7 +1136,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_leads (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         name VARCHAR(500) NOT NULL,
         email VARCHAR(255),
@@ -1156,7 +1156,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_notes (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         title VARCHAR(500) NOT NULL DEFAULT '',
         content JSONB NOT NULL DEFAULT '{}',
@@ -1175,7 +1175,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS crm_saved_views (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         app_section VARCHAR(50) NOT NULL,
         name VARCHAR(255) NOT NULL,
@@ -1189,7 +1189,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS crm_lead_forms (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         name VARCHAR(255) NOT NULL DEFAULT 'Default Lead Form',
         token VARCHAR(64) NOT NULL UNIQUE,
@@ -1206,7 +1206,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS project_clients (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         name VARCHAR(500) NOT NULL,
         email VARCHAR(255),
@@ -1228,7 +1228,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS project_projects (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         client_id UUID REFERENCES project_clients(id) ON DELETE SET NULL,
         name VARCHAR(500) NOT NULL,
@@ -1258,7 +1258,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS project_time_entries (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         project_id UUID NOT NULL REFERENCES project_projects(id) ON DELETE CASCADE,
         duration_minutes INTEGER NOT NULL DEFAULT 0,
@@ -1279,7 +1279,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS project_invoices (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         client_id UUID NOT NULL REFERENCES project_clients(id) ON DELETE CASCADE,
         invoice_number VARCHAR(50) NOT NULL,
@@ -1315,7 +1315,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS project_settings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         invoice_prefix VARCHAR(20) NOT NULL DEFAULT 'INV',
         default_hourly_rate REAL NOT NULL DEFAULT 0,
         company_name VARCHAR(500),
@@ -1332,7 +1332,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS hr_leave_types (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         name VARCHAR(255) NOT NULL,
         slug VARCHAR(100) NOT NULL,
         color VARCHAR(20) NOT NULL DEFAULT '#3b82f6',
@@ -1345,12 +1345,12 @@ export async function runMigrations() {
         is_archived BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        UNIQUE(account_id, slug)
+        UNIQUE(tenant_id, slug)
       );
 
       CREATE TABLE IF NOT EXISTS hr_leave_policies (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         name VARCHAR(255) NOT NULL,
         description TEXT,
         is_default BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1362,7 +1362,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS hr_leave_policy_assignments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         policy_id UUID NOT NULL REFERENCES hr_leave_policies(id) ON DELETE CASCADE,
         effective_from TEXT,
@@ -1373,7 +1373,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS hr_holiday_calendars (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         name VARCHAR(255) NOT NULL,
         year INTEGER NOT NULL,
         description TEXT,
@@ -1385,7 +1385,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS hr_holidays (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         calendar_id UUID NOT NULL REFERENCES hr_holiday_calendars(id) ON DELETE CASCADE,
         name VARCHAR(255) NOT NULL,
         date TEXT NOT NULL,
@@ -1399,7 +1399,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS hr_leave_applications (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         leave_type_id UUID NOT NULL REFERENCES hr_leave_types(id),
         start_date TEXT NOT NULL,
@@ -1422,7 +1422,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS hr_attendance (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         date TEXT NOT NULL,
         status VARCHAR(50) NOT NULL DEFAULT 'present',
@@ -1439,7 +1439,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS hr_lifecycle_events (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         event_type VARCHAR(50) NOT NULL,
         event_date TEXT NOT NULL,
@@ -1495,10 +1495,10 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_cal_events_calendar ON calendar_events(calendar_id)',
       'CREATE INDEX IF NOT EXISTS idx_cal_events_time_range ON calendar_events(account_id, start_time, end_time)',
       // Documents
-      'CREATE INDEX IF NOT EXISTS idx_documents_account ON documents(account_id, is_archived)',
+      'CREATE INDEX IF NOT EXISTS idx_documents_tenant ON documents(tenant_id, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_documents_parent ON documents(parent_id, sort_order)',
-      'CREATE INDEX IF NOT EXISTS idx_documents_account_parent ON documents(account_id, parent_id, sort_order)',
+      'CREATE INDEX IF NOT EXISTS idx_documents_tenant_parent ON documents(tenant_id, parent_id, sort_order)',
       'CREATE INDEX IF NOT EXISTS idx_documents_user_parent ON documents(user_id, parent_id, sort_order)',
       // Document versions
       'CREATE INDEX IF NOT EXISTS idx_document_versions_doc ON document_versions(document_id, created_at)',
@@ -1511,7 +1511,7 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(user_id, due_date)',
       // Spreadsheets
       'CREATE INDEX IF NOT EXISTS idx_spreadsheets_user ON spreadsheets(user_id, is_archived)',
-      'CREATE INDEX IF NOT EXISTS idx_spreadsheets_account ON spreadsheets(account_id, is_archived)',
+      'CREATE INDEX IF NOT EXISTS idx_spreadsheets_tenant ON spreadsheets(tenant_id, is_archived)',
       // Drive items
       'CREATE INDEX IF NOT EXISTS idx_drive_items_user_parent ON drive_items(user_id, parent_id, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_drive_items_user_archived ON drive_items(user_id, is_archived)',
@@ -1528,7 +1528,7 @@ export async function runMigrations() {
       // Drive comments
       'CREATE INDEX IF NOT EXISTS idx_drive_comments_item ON drive_comments(drive_item_id)',
       // Drawings
-      'CREATE INDEX IF NOT EXISTS idx_drawings_account ON drawings(account_id, is_archived)',
+      'CREATE INDEX IF NOT EXISTS idx_drawings_tenant ON drawings(tenant_id, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_drawings_user ON drawings(user_id, is_archived)',
       // Notifications
       'CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read)',
@@ -1565,7 +1565,7 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_provisioning_log_user ON provisioning_log(user_id)',
       'CREATE INDEX IF NOT EXISTS idx_provisioning_log_status ON provisioning_log(status)',
       // Signature documents
-      'CREATE INDEX IF NOT EXISTS idx_sig_docs_account ON signature_documents(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_sig_docs_tenant ON signature_documents(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_sig_docs_status ON signature_documents(status)',
       // Signature fields
       'CREATE INDEX IF NOT EXISTS idx_sig_fields_document ON signature_fields(document_id)',
@@ -1575,38 +1575,38 @@ export async function runMigrations() {
       // Sign audit log
       'CREATE INDEX IF NOT EXISTS idx_sign_audit_document ON sign_audit_log(document_id)',
       // Sign templates
-      'CREATE INDEX IF NOT EXISTS idx_sign_templates_account ON sign_templates(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_sign_templates_tenant ON sign_templates(tenant_id)',
       // Departments
       'CREATE INDEX IF NOT EXISTS idx_departments_user ON departments(user_id, is_archived)',
-      'CREATE INDEX IF NOT EXISTS idx_departments_account ON departments(account_id, is_archived)',
+      'CREATE INDEX IF NOT EXISTS idx_departments_tenant ON departments(tenant_id, is_archived)',
       // Employees
       'CREATE INDEX IF NOT EXISTS idx_employees_user_status ON employees(user_id, status, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_employees_department ON employees(department_id, sort_order)',
-      'CREATE INDEX IF NOT EXISTS idx_employees_account ON employees(account_id, is_archived)',
+      'CREATE INDEX IF NOT EXISTS idx_employees_tenant ON employees(tenant_id, is_archived)',
       // Time-off requests
       'CREATE INDEX IF NOT EXISTS idx_time_off_employee ON time_off_requests(employee_id, status)',
       'CREATE INDEX IF NOT EXISTS idx_time_off_status ON time_off_requests(user_id, status, is_archived)',
       'CREATE INDEX IF NOT EXISTS idx_time_off_approver ON time_off_requests(approver_id)',
       // Leave balances
       'CREATE INDEX IF NOT EXISTS idx_leave_balances_employee_year ON leave_balances(employee_id, year)',
-      'CREATE INDEX IF NOT EXISTS idx_leave_balances_account ON leave_balances(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_leave_balances_tenant ON leave_balances(tenant_id)',
       // Onboarding tasks
       'CREATE INDEX IF NOT EXISTS idx_onboarding_tasks_employee ON onboarding_tasks(employee_id, is_archived)',
-      'CREATE INDEX IF NOT EXISTS idx_onboarding_tasks_account ON onboarding_tasks(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_onboarding_tasks_tenant ON onboarding_tasks(tenant_id)',
       // Onboarding templates
-      'CREATE INDEX IF NOT EXISTS idx_onboarding_templates_account ON onboarding_templates(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_onboarding_templates_tenant ON onboarding_templates(tenant_id)',
       // Employee documents
       'CREATE INDEX IF NOT EXISTS idx_employee_documents_employee ON employee_documents(employee_id, is_archived)',
-      'CREATE INDEX IF NOT EXISTS idx_employee_documents_account ON employee_documents(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_employee_documents_tenant ON employee_documents(tenant_id)',
       // CRM Companies
-      'CREATE INDEX IF NOT EXISTS idx_crm_companies_account ON crm_companies(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_companies_tenant ON crm_companies(tenant_id)',
       // CRM Contacts
-      'CREATE INDEX IF NOT EXISTS idx_crm_contacts_account ON crm_contacts(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_contacts_tenant ON crm_contacts(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_contacts_company ON crm_contacts(company_id)',
       // CRM Deal Stages
-      'CREATE INDEX IF NOT EXISTS idx_crm_stages_account ON crm_deal_stages(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_stages_tenant ON crm_deal_stages(tenant_id)',
       // CRM Deals
-      'CREATE INDEX IF NOT EXISTS idx_crm_deals_account ON crm_deals(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_deals_tenant ON crm_deals(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_deals_stage ON crm_deals(stage_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_deals_contact ON crm_deals(contact_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_deals_company ON crm_deals(company_id)',
@@ -1615,76 +1615,76 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_crm_activities_contact ON crm_activities(contact_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_activities_company ON crm_activities(company_id)',
       // CRM Workflows
-      'CREATE INDEX IF NOT EXISTS idx_crm_workflows_account ON crm_workflows(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_workflows_tenant ON crm_workflows(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_workflows_trigger ON crm_workflows(trigger)',
       // CRM Permissions
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_permissions_user ON crm_permissions(account_id, user_id)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_permissions_user ON crm_permissions(tenant_id, user_id)',
       // CRM Leads
-      'CREATE INDEX IF NOT EXISTS idx_crm_leads_account ON crm_leads(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_leads_status ON crm_leads(status)',
       // CRM Notes
       'CREATE INDEX IF NOT EXISTS idx_crm_notes_deal ON crm_notes(deal_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_notes_contact ON crm_notes(contact_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_notes_company ON crm_notes(company_id)',
       // CRM Saved Views
-      'CREATE INDEX IF NOT EXISTS idx_crm_saved_views_account ON crm_saved_views(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_saved_views_tenant ON crm_saved_views(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_saved_views_user ON crm_saved_views(user_id, app_section)',
       // CRM Lead Forms
       'CREATE INDEX IF NOT EXISTS idx_crm_lead_forms_token ON crm_lead_forms(token)',
-      'CREATE INDEX IF NOT EXISTS idx_crm_lead_forms_account ON crm_lead_forms(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_crm_lead_forms_tenant ON crm_lead_forms(tenant_id)',
       // Project Clients
-      'CREATE INDEX IF NOT EXISTS idx_project_clients_account ON project_clients(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_project_clients_tenant ON project_clients(tenant_id)',
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_clients_portal_token ON project_clients(portal_token)',
       // Project Projects
-      'CREATE INDEX IF NOT EXISTS idx_project_projects_account ON project_projects(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_project_projects_tenant ON project_projects(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_projects_client ON project_projects(client_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_projects_status ON project_projects(status)',
       // Project Members
       'CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id)',
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_members_user_project ON project_members(user_id, project_id)',
       // Project Time Entries
-      'CREATE INDEX IF NOT EXISTS idx_project_time_entries_account ON project_time_entries(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_project_time_entries_tenant ON project_time_entries(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_time_entries_project ON project_time_entries(project_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_time_entries_user_date ON project_time_entries(user_id, work_date)',
       'CREATE INDEX IF NOT EXISTS idx_project_time_entries_billed ON project_time_entries(billed, billable)',
       // Project Invoices
-      'CREATE INDEX IF NOT EXISTS idx_project_invoices_account ON project_invoices(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_project_invoices_tenant ON project_invoices(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_invoices_client ON project_invoices(client_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_invoices_status ON project_invoices(status)',
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_invoices_number ON project_invoices(account_id, invoice_number)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_invoices_number ON project_invoices(tenant_id, invoice_number)',
       // Project Invoice Line Items
       'CREATE INDEX IF NOT EXISTS idx_project_line_items_invoice ON project_invoice_line_items(invoice_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_line_items_time_entry ON project_invoice_line_items(time_entry_id)',
       // Project Settings
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_settings_account ON project_settings(account_id)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_settings_tenant ON project_settings(tenant_id)',
       // CRM Email/Calendar GIN indexes for JSONB containment queries
       'CREATE INDEX IF NOT EXISTS idx_emails_from ON emails(from_address)',
       // HR Leave Types
-      'CREATE INDEX IF NOT EXISTS idx_hr_leave_types_account_active ON hr_leave_types(account_id, is_active)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_leave_types_tenant_active ON hr_leave_types(tenant_id, is_active)',
       // HR Leave Policies
-      'CREATE INDEX IF NOT EXISTS idx_hr_leave_policies_account ON hr_leave_policies(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_leave_policies_tenant ON hr_leave_policies(tenant_id)',
       // HR Leave Policy Assignments
       'CREATE INDEX IF NOT EXISTS idx_hr_policy_assignments_employee ON hr_leave_policy_assignments(employee_id)',
-      'CREATE INDEX IF NOT EXISTS idx_hr_policy_assignments_account ON hr_leave_policy_assignments(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_policy_assignments_tenant ON hr_leave_policy_assignments(tenant_id)',
       // HR Holiday Calendars
-      'CREATE INDEX IF NOT EXISTS idx_hr_holiday_calendars_account ON hr_holiday_calendars(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_holiday_calendars_tenant ON hr_holiday_calendars(tenant_id)',
       // HR Holidays
       'CREATE INDEX IF NOT EXISTS idx_hr_holidays_calendar ON hr_holidays(calendar_id)',
-      'CREATE INDEX IF NOT EXISTS idx_hr_holidays_account_date ON hr_holidays(account_id, date)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_holidays_tenant_date ON hr_holidays(tenant_id, date)',
       // HR Leave Applications
       'CREATE INDEX IF NOT EXISTS idx_hr_leave_apps_employee_status ON hr_leave_applications(employee_id, status)',
       'CREATE INDEX IF NOT EXISTS idx_hr_leave_apps_approver_status ON hr_leave_applications(approver_id, status)',
-      'CREATE INDEX IF NOT EXISTS idx_hr_leave_apps_account_status ON hr_leave_applications(account_id, status)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_leave_apps_tenant_status ON hr_leave_applications(tenant_id, status)',
       // HR Attendance
-      'CREATE INDEX IF NOT EXISTS idx_hr_attendance_account_date ON hr_attendance(account_id, date)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_attendance_tenant_date ON hr_attendance(tenant_id, date)',
       'CREATE INDEX IF NOT EXISTS idx_hr_attendance_employee_status ON hr_attendance(employee_id, status)',
       // HR Lifecycle Events
       'CREATE INDEX IF NOT EXISTS idx_hr_lifecycle_employee_date ON hr_lifecycle_events(employee_id, event_date)',
-      'CREATE INDEX IF NOT EXISTS idx_hr_lifecycle_account ON hr_lifecycle_events(account_id)',
+      'CREATE INDEX IF NOT EXISTS idx_hr_lifecycle_tenant ON hr_lifecycle_events(tenant_id)',
       // Additional HR composite indexes for common query patterns
-      'CREATE INDEX IF NOT EXISTS idx_employees_account_status ON employees(account_id, status)',
-      'CREATE INDEX IF NOT EXISTS idx_employees_account_dept ON employees(account_id, department_id)',
-      'CREATE INDEX IF NOT EXISTS idx_leave_balances_account_emp_year ON leave_balances(account_id, employee_id, year)',
+      'CREATE INDEX IF NOT EXISTS idx_employees_tenant_status ON employees(tenant_id, status)',
+      'CREATE INDEX IF NOT EXISTS idx_employees_tenant_dept ON employees(tenant_id, department_id)',
+      'CREATE INDEX IF NOT EXISTS idx_leave_balances_tenant_emp_year ON leave_balances(tenant_id, employee_id, year)',
     ];
 
     for (const idx of indexes) {
@@ -1750,7 +1750,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS audit_log (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID,
-        account_id UUID,
+        tenant_id UUID REFERENCES tenants(id),
         tenant_id UUID,
         action VARCHAR(20) NOT NULL,
         entity VARCHAR(100) NOT NULL,
@@ -1836,7 +1836,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS task_comments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         body TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -1849,7 +1849,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS marketplace_apps (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         app_id VARCHAR(50) NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'stopped',
         assigned_port INTEGER NOT NULL,
@@ -1860,9 +1860,9 @@ export async function runMigrations() {
         env_overrides JSONB,
         installed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        UNIQUE(account_id, app_id)
+        UNIQUE(tenant_id, app_id)
       );
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_marketplace_apps_unique ON marketplace_apps(account_id, app_id);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_marketplace_apps_unique ON marketplace_apps(tenant_id, app_id);
     `);
 
     // ─── Presence Heartbeats ────────────────────────────────────────────
@@ -1905,7 +1905,7 @@ export async function runMigrations() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         spreadsheet_id UUID NOT NULL REFERENCES spreadsheets(id) ON DELETE CASCADE,
         row_id TEXT NOT NULL,
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         body TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -1919,7 +1919,7 @@ export async function runMigrations() {
       CREATE TABLE IF NOT EXISTS task_attachments (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         user_id UUID NOT NULL,
         file_name VARCHAR(500) NOT NULL,
         storage_path TEXT NOT NULL,
@@ -1954,7 +1954,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS crm_activity_types (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         name VARCHAR(100) NOT NULL,
         icon VARCHAR(50) NOT NULL DEFAULT 'sticky-note',
         color VARCHAR(20) NOT NULL DEFAULT '#6b7280',
@@ -1964,7 +1964,7 @@ export async function runMigrations() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_crm_activity_types_account ON crm_activity_types(account_id);
+      CREATE INDEX IF NOT EXISTS idx_crm_activity_types_tenant ON crm_activity_types(tenant_id);
     `);
 
     // ─── CRM: Lead enrichment ────────────────────────────────────────
@@ -1985,7 +1985,7 @@ export async function runMigrations() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS crm_teams (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        account_id UUID NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
         name VARCHAR(100) NOT NULL,
         color VARCHAR(20) NOT NULL DEFAULT '#3b82f6',
         leader_user_id UUID,
@@ -1993,7 +1993,7 @@ export async function runMigrations() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_crm_teams_account ON crm_teams(account_id);
+      CREATE INDEX IF NOT EXISTS idx_crm_teams_tenant ON crm_teams(tenant_id);
 
       CREATE TABLE IF NOT EXISTS crm_team_members (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -2017,7 +2017,7 @@ export async function runMigrations() {
 
     // ─── Index: employees.email for permission-based filtering ────────
     await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(account_id, email);
+      CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(tenant_id, email);
     `);
 
     // ─── e-Fatura: schema extensions ──────────────────────────────────
