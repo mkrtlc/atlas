@@ -1451,85 +1451,9 @@ export function useCrmTeams() {
   });
 }
 
-// ─── Proposal Types ─────────────────────────────────────────────
-
-export type ProposalStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
-
-export interface ProposalLineItem {
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  taxRate: number;
-}
-
-export interface Proposal {
-  id: string;
-  tenantId: string;
-  userId: string;
-  dealId?: string | null;
-  contactId?: string | null;
-  companyId?: string | null;
-  title: string;
-  status: ProposalStatus;
-  content?: unknown | null;
-  lineItems: ProposalLineItem[];
-  subtotal: number;
-  taxPercent: number;
-  taxAmount: number;
-  discountPercent: number;
-  discountAmount: number;
-  total: number;
-  currency: string;
-  validUntil?: string | null;
-  publicToken: string;
-  sentAt?: string | null;
-  viewedAt?: string | null;
-  acceptedAt?: string | null;
-  declinedAt?: string | null;
-  notes?: string | null;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-  companyName?: string;
-  contactName?: string;
-  dealTitle?: string;
-}
-
-export interface CreateProposalInput {
-  dealId?: string;
-  contactId?: string;
-  companyId?: string;
-  title: string;
-  content?: unknown;
-  lineItems?: ProposalLineItem[];
-  subtotal?: number;
-  taxPercent?: number;
-  taxAmount?: number;
-  discountPercent?: number;
-  discountAmount?: number;
-  total?: number;
-  currency?: string;
-  validUntil?: string;
-  notes?: string;
-}
-
-export interface UpdateProposalInput {
-  dealId?: string | null;
-  contactId?: string | null;
-  companyId?: string | null;
-  title?: string;
-  content?: unknown | null;
-  lineItems?: ProposalLineItem[];
-  subtotal?: number;
-  taxPercent?: number;
-  taxAmount?: number;
-  discountPercent?: number;
-  discountAmount?: number;
-  total?: number;
-  currency?: string;
-  validUntil?: string | null;
-  notes?: string | null;
-}
+// ─── Proposal Types (from shared package) ───────────────────────
+import type { Proposal, ProposalStatus, ProposalLineItem, CreateProposalInput, UpdateProposalInput } from '@atlasmail/shared';
+export type { Proposal, ProposalStatus, ProposalLineItem, CreateProposalInput, UpdateProposalInput };
 
 // ─── Proposal Queries ───────────────────────────────────────────
 

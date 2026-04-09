@@ -667,7 +667,7 @@ export async function runMigrations() {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cfv_field ON custom_field_values(field_definition_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cfv_record ON custom_field_values(record_id)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_cfv_tenant ON custom_field_values(tenant_id)`);
+    // custom_field_values has no tenant_id column — tenant is on the field_definition
     await client.query(`
 
       CREATE TABLE IF NOT EXISTS record_links (
@@ -1692,11 +1692,9 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_crm_proposals_company ON crm_proposals(company_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_proposals_status ON crm_proposals(status)',
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_proposals_token ON crm_proposals(public_token)',
-      // Project Clients
-      'CREATE INDEX IF NOT EXISTS idx_project_projects_company ON project_projects(company_id)',
       // Project Projects
       'CREATE INDEX IF NOT EXISTS idx_project_projects_tenant ON project_projects(tenant_id)',
-      'CREATE INDEX IF NOT EXISTS idx_project_projects_client ON project_projects(client_id)',
+      'CREATE INDEX IF NOT EXISTS idx_project_projects_company ON project_projects(company_id)',
       'CREATE INDEX IF NOT EXISTS idx_project_projects_status ON project_projects(status)',
       // Project Members
       'CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id)',
@@ -1746,7 +1744,11 @@ export async function runMigrations() {
     ];
 
     for (const idx of indexes) {
-      await client.query(idx);
+      try {
+        await client.query(idx);
+      } catch (err: any) {
+        logger.warn(`Index creation failed: ${idx} — ${err.message}`);
+      }
     }
 
     // ─── Full-text search: tsvector GIN index + auto-update trigger ──
@@ -2063,9 +2065,11 @@ export async function runMigrations() {
     `);
 
     // ─── Index: employees.email for permission-based filtering ────────
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(tenant_id, email);
-    `);
+    try {
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(tenant_id, email);`);
+    } catch (err: any) {
+      logger.warn(`Index creation failed: idx_employees_email — ${err.message}`);
+    }
 
     // ─── CRM billing extensions ──────────────────────────────────────
     await client.query(`

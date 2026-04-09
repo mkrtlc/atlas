@@ -1,10 +1,11 @@
 import { db } from '../../../config/database';
 import {
   crmProposals, crmCompanies, crmContacts, crmDeals,
-  invoices, invoiceLineItems, invoiceSettings,
+  invoices, invoiceLineItems,
 } from '../../../db/schema';
 import { eq, and, desc, sql, ilike } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
+import { getNextInvoiceNumber } from '../../invoices/services/invoice.service';
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -291,30 +292,6 @@ export async function getProposalByPublicToken(token: string) {
 }
 
 // ─── Public: accept ────────────────────────────────────────────────
-
-async function getNextInvoiceNumber(tenantId: string): Promise<string> {
-  const [settings] = await db
-    .select()
-    .from(invoiceSettings)
-    .where(eq(invoiceSettings.tenantId, tenantId))
-    .limit(1);
-
-  const prefix = settings?.invoicePrefix || 'INV';
-
-  const [updated] = await db
-    .update(invoiceSettings)
-    .set({ nextInvoiceNumber: sql`COALESCE(${invoiceSettings.nextInvoiceNumber}, 1) + 1`, updatedAt: new Date() })
-    .where(eq(invoiceSettings.tenantId, tenantId))
-    .returning({ num: invoiceSettings.nextInvoiceNumber });
-
-  if (!updated) {
-    await db.insert(invoiceSettings).values({ tenantId, nextInvoiceNumber: 2 } as any).onConflictDoNothing();
-    return `${prefix}-${String(1).padStart(3, '0')}`;
-  }
-
-  const num = updated.num - 1;
-  return `${prefix}-${String(num).padStart(3, '0')}`;
-}
 
 export async function acceptProposal(token: string) {
   return db.transaction(async (tx) => {
