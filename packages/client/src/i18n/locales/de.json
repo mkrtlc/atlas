@@ -115,6 +115,7 @@
     "darkMode": "Dunkles Design",
     "systemMode": "Systemdesign",
     "themeAriaLabel": "Design: {{label}}. Klicken, um das Design zu wechseln",
+    "invoices": "Rechnungen",
     "allMail": "Alle E-Mails",
     "starred": "Markiert",
     "unread": "Ungelesen"
@@ -3285,6 +3286,86 @@
       "behavior": "Verhalten",
       "updates": "Aktualisierungen",
       "integrations": "Integrationen"
+    }
+  },
+  "invoices": {
+    "title": "Rechnungen",
+    "sidebar": {
+      "all": "Alle Rechnungen",
+      "draft": "Entwurf",
+      "sent": "Gesendet",
+      "overdue": "Überfällig",
+      "paid": "Bezahlt",
+      "waived": "Erlassen",
+      "settings": "Einstellungen"
+    },
+    "list": {
+      "invoiceNumber": "Rechnungsnummer",
+      "company": "Unternehmen",
+      "amount": "Betrag",
+      "status": "Status",
+      "issueDate": "Ausstellungsdatum",
+      "dueDate": "Fälligkeitsdatum",
+      "items": "Positionen",
+      "totalAmount": "Gesamt"
+    },
+    "builder": {
+      "createInvoice": "Neue Rechnung",
+      "editInvoice": "Rechnung bearbeiten",
+      "company": "Unternehmen",
+      "contact": "Kontakt",
+      "issueDate": "Ausstellungsdatum",
+      "dueDate": "Fälligkeitsdatum",
+      "notes": "Notizen",
+      "saveDraft": "Als Entwurf speichern",
+      "send": "Senden"
+    },
+    "detail": {
+      "invoiceDetail": "Rechnungsdetail",
+      "markPaid": "Als bezahlt markieren",
+      "waive": "Erlassen",
+      "duplicate": "Duplizieren",
+      "delete": "Löschen",
+      "fromDeal": "Vom Geschäft",
+      "fromProposal": "Vom Angebot",
+      "nextAction": "Nächste Aktion",
+      "lineItems": "Positionen",
+      "source": "Quelle"
+    },
+    "settings": {
+      "invoicePrefix": "Rechnungspräfix",
+      "defaultCurrency": "Standardwährung",
+      "defaultTaxRate": "Standard-Steuersatz",
+      "eFatura": "e-Fatura",
+      "companyDetails": "Unternehmensdetails",
+      "companyName": "Unternehmensname",
+      "companyTaxId": "Steuer-ID",
+      "companyTaxOffice": "Finanzamt",
+      "companyAddress": "Adresse",
+      "companyCity": "Stadt",
+      "companyCountry": "Land",
+      "companyPhone": "Telefon",
+      "companyEmail": "E-Mail"
+    },
+    "status": {
+      "draft": "Entwurf",
+      "sent": "Gesendet",
+      "viewed": "Angesehen",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig",
+      "waived": "Erlassen"
+    },
+    "empty": {
+      "noInvoices": "Noch keine Rechnungen",
+      "noInvoicesDescription": "Erstellen Sie Ihre erste Rechnung, um Zahlungen zu verfolgen",
+      "noMatchingInvoices": "Keine passenden Rechnungen",
+      "tryDifferentSearch": "Versuchen Sie einen anderen Suchbegriff",
+      "createTitle": "Rechnungen erstellen",
+      "createDesc": "Erstellen Sie professionelle Rechnungen für Ihre Kunden",
+      "trackTitle": "Zahlungen verfolgen",
+      "trackDesc": "Überwachen Sie den Zahlungsstatus von Entwurf bis bezahlt",
+      "companyTitle": "Mit Unternehmen verknüpfen",
+      "companyDesc": "Verknüpfen Sie Rechnungen mit CRM-Unternehmen"
     }
   }
 }

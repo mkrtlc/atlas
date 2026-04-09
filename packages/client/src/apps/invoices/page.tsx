@@ -1,0 +1,180 @@
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Plus, Search, X } from 'lucide-react';
+import { useInvoices } from './hooks';
+import { InvoicesSidebar } from './components/invoices-sidebar';
+import { InvoicesListView } from './components/invoices-list-view';
+import { InvoiceDetailPanel } from './components/invoice-detail-panel';
+import { InvoiceBuilderModal } from '../../components/shared/invoice-builder-modal';
+import { ContentArea } from '../../components/ui/content-area';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { IconButton } from '../../components/ui/icon-button';
+import type { Invoice } from '@atlasmail/shared';
+
+export function InvoicesPage() {
+  const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+
+  // State
+  const [activeView, setActiveView] = useState('all');
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(searchParams.get('id'));
+  const [showBuilder, setShowBuilder] = useState(searchParams.get('new') === 'true');
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Prefill from URL params
+  const prefillCompanyId = searchParams.get('companyId') ?? undefined;
+  const prefillDealId = searchParams.get('dealId') ?? undefined;
+
+  // Data — filter by status when a sidebar view is selected
+  const statusFilter = activeView === 'all' ? undefined : activeView;
+  const { data: invoicesData } = useInvoices(statusFilter ? { status: statusFilter } : undefined);
+  const invoices = invoicesData?.invoices ?? [];
+
+  // Counts for sidebar (fetch all to get counts)
+  const { data: allData } = useInvoices();
+  const allInvoices = allData?.invoices ?? [];
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { all: allInvoices.length };
+    for (const inv of allInvoices) {
+      c[inv.status] = (c[inv.status] ?? 0) + 1;
+    }
+    return c;
+  }, [allInvoices]);
+
+  // Selected invoice
+  const selectedInvoice = selectedInvoiceId ? invoices.find((i) => i.id === selectedInvoiceId) : null;
+
+  // Reset selection on view change
+  useEffect(() => {
+    setSelectedInvoiceId(null);
+    setSearchQuery('');
+    setShowSearch(false);
+  }, [activeView]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (showSearch) {
+          setShowSearch(false);
+          setSearchQuery('');
+        } else {
+          setSelectedInvoiceId(null);
+        }
+      }
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      if (e.key === '/' && !isInput) {
+        e.preventDefault();
+        setShowSearch(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSearch]);
+
+  const sectionTitle = useMemo(() => {
+    switch (activeView) {
+      case 'all': return t('invoices.sidebar.all');
+      case 'draft': return t('invoices.sidebar.draft');
+      case 'sent': return t('invoices.sidebar.sent');
+      case 'overdue': return t('invoices.sidebar.overdue');
+      case 'paid': return t('invoices.sidebar.paid');
+      case 'waived': return t('invoices.sidebar.waived');
+      default: return t('invoices.title');
+    }
+  }, [activeView, t]);
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <InvoicesSidebar activeView={activeView} setActiveView={setActiveView} counts={counts} />
+
+      <ContentArea
+        title={sectionTitle}
+        actions={
+          <>
+            <IconButton
+              icon={<Search size={14} />}
+              label={t('common.search')}
+              size={28}
+              active={showSearch}
+              onClick={() => {
+                setShowSearch(!showSearch);
+                if (!showSearch) setTimeout(() => searchInputRef.current?.focus(), 50);
+              }}
+            />
+            <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => { setEditingInvoice(null); setShowBuilder(true); }}>
+              {t('invoices.builder.createInvoice')}
+            </Button>
+          </>
+        }
+      >
+        {/* Search bar */}
+        {showSearch && (
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0 var(--spacing-lg)', borderBottom: '1px solid var(--color-border-secondary)' }}>
+            <Input
+              ref={searchInputRef}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('common.search')}
+              iconLeft={<Search size={14} />}
+              size="sm"
+              style={{ border: 'none', background: 'transparent' }}
+            />
+            <IconButton
+              icon={<X size={14} />}
+              label={t('common.close')}
+              size={24}
+              onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+            />
+          </div>
+        )}
+
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <InvoicesListView
+              invoices={invoices}
+              searchQuery={searchQuery}
+              selectedId={selectedInvoiceId}
+              onSelect={(id) => setSelectedInvoiceId(id)}
+              onAdd={() => { setEditingInvoice(null); setShowBuilder(true); }}
+            />
+          </div>
+
+          {/* Detail panel */}
+          {selectedInvoice && (
+            <div style={{ width: 360, borderLeft: '1px solid var(--color-border-secondary)', flexShrink: 0, overflow: 'hidden' }}>
+              <InvoiceDetailPanel
+                invoice={selectedInvoice}
+                onClose={() => setSelectedInvoiceId(null)}
+                onEdit={() => { setEditingInvoice(selectedInvoice); setShowBuilder(true); }}
+              />
+            </div>
+          )}
+        </div>
+      </ContentArea>
+
+      {/* Builder modal */}
+      <InvoiceBuilderModal
+        open={showBuilder}
+        onClose={() => { setShowBuilder(false); setEditingInvoice(null); }}
+        invoice={editingInvoice}
+        prefill={{
+          companyId: prefillCompanyId,
+          dealId: prefillDealId,
+        }}
+        onCreated={(invoice) => {
+          setSelectedInvoiceId(invoice.id);
+          setShowBuilder(false);
+          setEditingInvoice(null);
+        }}
+      />
+    </div>
+  );
+}

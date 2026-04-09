@@ -115,6 +115,7 @@
     "darkMode": "Koyu tema",
     "systemMode": "Sistem teması",
     "themeAriaLabel": "Tema: {{label}}. Tema değiştirmek için tıklayın",
+    "invoices": "Faturalar",
     "allMail": "Tüm postalar",
     "starred": "Yıldızlı",
     "unread": "Okunmamış"
@@ -3285,6 +3286,86 @@
       "behavior": "Davranış",
       "updates": "Güncellemeler",
       "integrations": "Entegrasyonlar"
+    }
+  },
+  "invoices": {
+    "title": "Faturalar",
+    "sidebar": {
+      "all": "Tüm faturalar",
+      "draft": "Taslak",
+      "sent": "Gönderilmiş",
+      "overdue": "Vadesi geçmiş",
+      "paid": "Ödenmiş",
+      "waived": "Feragat edilmiş",
+      "settings": "Ayarlar"
+    },
+    "list": {
+      "invoiceNumber": "Fatura numarası",
+      "company": "Şirket",
+      "amount": "Tutar",
+      "status": "Durum",
+      "issueDate": "Düzenleme tarihi",
+      "dueDate": "Vade tarihi",
+      "items": "Kalemler",
+      "totalAmount": "Toplam"
+    },
+    "builder": {
+      "createInvoice": "Yeni fatura",
+      "editInvoice": "Faturayı düzenle",
+      "company": "Şirket",
+      "contact": "İletişim",
+      "issueDate": "Düzenleme tarihi",
+      "dueDate": "Vade tarihi",
+      "notes": "Notlar",
+      "saveDraft": "Taslak olarak kaydet",
+      "send": "Gönder"
+    },
+    "detail": {
+      "invoiceDetail": "Fatura detayı",
+      "markPaid": "Ödenmiş olarak işaretle",
+      "waive": "Feragat et",
+      "duplicate": "Kopyala",
+      "delete": "Sil",
+      "fromDeal": "Anlaşmadan",
+      "fromProposal": "Tekliften",
+      "nextAction": "Sonraki işlem",
+      "lineItems": "Kalemler",
+      "source": "Kaynak"
+    },
+    "settings": {
+      "invoicePrefix": "Fatura ön eki",
+      "defaultCurrency": "Varsayılan para birimi",
+      "defaultTaxRate": "Varsayılan vergi oranı",
+      "eFatura": "e-Fatura",
+      "companyDetails": "Şirket bilgileri",
+      "companyName": "Şirket adı",
+      "companyTaxId": "Vergi numarası",
+      "companyTaxOffice": "Vergi dairesi",
+      "companyAddress": "Adres",
+      "companyCity": "Şehir",
+      "companyCountry": "Ülke",
+      "companyPhone": "Telefon",
+      "companyEmail": "E-posta"
+    },
+    "status": {
+      "draft": "Taslak",
+      "sent": "Gönderilmiş",
+      "viewed": "Görüntülenmiş",
+      "paid": "Ödenmiş",
+      "overdue": "Vadesi geçmiş",
+      "waived": "Feragat edilmiş"
+    },
+    "empty": {
+      "noInvoices": "Henüz fatura yok",
+      "noInvoicesDescription": "Ödemeleri takip etmek için ilk faturanızı oluşturun",
+      "noMatchingInvoices": "Eşleşen fatura bulunamadı",
+      "tryDifferentSearch": "Farklı bir arama terimi deneyin",
+      "createTitle": "Fatura oluşturun",
+      "createDesc": "Müşterileriniz için profesyonel faturalar oluşturun",
+      "trackTitle": "Ödemeleri takip edin",
+      "trackDesc": "Taslaktan ödemeye kadar ödeme durumunu izleyin",
+      "companyTitle": "Şirketlere bağlayın",
+      "companyDesc": "Faturaları CRM şirketleriyle ilişkilendirin"
     }
   }
 }

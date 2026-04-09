@@ -1,0 +1,215 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '../../lib/api-client';
+import { queryKeys } from '../../config/query-keys';
+import type { Invoice, InvoiceSettings, UpdateInvoiceSettingsInput } from '@atlasmail/shared';
+
+// ─── Invoice Queries ─────────────────────────────────────────────
+
+export function useInvoices(filters?: {
+  companyId?: string;
+  dealId?: string;
+  status?: string;
+  search?: string;
+  includeArchived?: boolean;
+}) {
+  return useQuery({
+    queryKey: queryKeys.invoices.list(filters as Record<string, unknown> | undefined),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.companyId) params.set('companyId', filters.companyId);
+      if (filters?.dealId) params.set('dealId', filters.dealId);
+      if (filters?.status) params.set('status', filters.status);
+      if (filters?.search) params.set('search', filters.search);
+      if (filters?.includeArchived) params.set('includeArchived', 'true');
+      const qs = params.toString();
+      const { data } = await api.get(`/invoices/list${qs ? `?${qs}` : ''}`);
+      return data.data as { invoices: Invoice[] };
+    },
+    staleTime: 15_000,
+  });
+}
+
+export function useInvoice(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.invoices.detail(id!),
+    queryFn: async () => {
+      const { data } = await api.get(`/invoices/${id}`);
+      return data.data as Invoice;
+    },
+    enabled: !!id,
+    staleTime: 10_000,
+  });
+}
+
+// ─── Invoice Mutations ───────────────────────────────────────────
+
+export function useCreateInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      companyId: string;
+      contactId?: string;
+      dealId?: string;
+      proposalId?: string;
+      currency?: string;
+      issueDate: string;
+      dueDate: string;
+      lineItems: Array<{ description: string; quantity: number; unitPrice: number; taxRate?: number }>;
+      taxPercent?: number;
+      discountPercent?: number;
+      notes?: string | null;
+      eFaturaType?: string;
+    }) => {
+      const { data } = await api.post('/invoices', input);
+      return data.data as Invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useUpdateInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: { id: string } & Partial<{
+      companyId: string;
+      contactId: string | null;
+      dealId: string | null;
+      currency: string;
+      issueDate: string;
+      dueDate: string;
+      lineItems: Array<{ description: string; quantity: number; unitPrice: number; taxRate?: number }>;
+      taxPercent: number;
+      discountPercent: number;
+      notes: string | null;
+      eFaturaType: string;
+    }>) => {
+      const { data } = await api.patch(`/invoices/${id}`, input);
+      return data.data as Invoice;
+    },
+    onSuccess: (invoice) => {
+      queryClient.setQueryData(queryKeys.invoices.detail(invoice.id), invoice);
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useDeleteInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/invoices/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useSendInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/invoices/${id}/send`);
+      return data.data as Invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useMarkInvoicePaid() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/invoices/${id}/paid`);
+      return data.data as Invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useWaiveInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/invoices/${id}/waive`);
+      return data.data as Invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useDuplicateInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/invoices/${id}/duplicate`);
+      return data.data as Invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+// ─── Settings ────────────────────────────────────────────────────
+
+export function useInvoiceSettings() {
+  return useQuery({
+    queryKey: queryKeys.invoices.settings,
+    queryFn: async () => {
+      const { data } = await api.get('/invoices/settings');
+      return data.data as InvoiceSettings;
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateInvoiceSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UpdateInvoiceSettingsInput) => {
+      const { data } = await api.patch('/invoices/settings', input);
+      return data.data as InvoiceSettings;
+    },
+    onSuccess: (settings) => {
+      queryClient.setQueryData(queryKeys.invoices.settings, settings);
+    },
+  });
+}
+
+// ─── Next Invoice Number ─────────────────────────────────────────
+
+export function useNextInvoiceNumber() {
+  return useQuery({
+    queryKey: queryKeys.invoices.nextNumber,
+    queryFn: async () => {
+      const { data } = await api.get('/invoices/next-number');
+      return data.data as { invoiceNumber: string };
+    },
+    staleTime: 5_000,
+  });
+}
+
+// ─── E-Fatura ────────────────────────────────────────────────────
+
+export function useGenerateEFatura() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { data } = await api.post(`/invoices/${invoiceId}/efatura/generate`);
+      return data.data as Invoice;
+    },
+    onSuccess: (invoice) => {
+      queryClient.setQueryData(queryKeys.invoices.detail(invoice.id), invoice);
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}

@@ -117,7 +117,8 @@
     "lightMode": "Light mode",
     "darkMode": "Dark mode",
     "systemMode": "System mode",
-    "themeAriaLabel": "Theme: {{label}}. Click to cycle theme"
+    "themeAriaLabel": "Theme: {{label}}. Click to cycle theme",
+    "invoices": "Invoices"
   },
   "inbox": {
     "selectConversation": "Select a conversation",
@@ -3291,6 +3292,86 @@
       "behavior": "Behavior",
       "updates": "Updates",
       "integrations": "Integrations"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "sidebar": {
+      "all": "All invoices",
+      "draft": "Draft",
+      "sent": "Sent",
+      "overdue": "Overdue",
+      "paid": "Paid",
+      "waived": "Waived",
+      "settings": "Settings"
+    },
+    "list": {
+      "invoiceNumber": "Invoice number",
+      "company": "Company",
+      "amount": "Amount",
+      "status": "Status",
+      "issueDate": "Issue date",
+      "dueDate": "Due date",
+      "items": "Items",
+      "totalAmount": "Total"
+    },
+    "builder": {
+      "createInvoice": "New invoice",
+      "editInvoice": "Edit invoice",
+      "company": "Company",
+      "contact": "Contact",
+      "issueDate": "Issue date",
+      "dueDate": "Due date",
+      "notes": "Notes",
+      "saveDraft": "Save as draft",
+      "send": "Send"
+    },
+    "detail": {
+      "invoiceDetail": "Invoice detail",
+      "markPaid": "Mark as paid",
+      "waive": "Waive",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "fromDeal": "From deal",
+      "fromProposal": "From proposal",
+      "nextAction": "Next action",
+      "lineItems": "Line items",
+      "source": "Source"
+    },
+    "settings": {
+      "invoicePrefix": "Invoice prefix",
+      "defaultCurrency": "Default currency",
+      "defaultTaxRate": "Default tax rate",
+      "eFatura": "e-Fatura",
+      "companyDetails": "Company details",
+      "companyName": "Company name",
+      "companyTaxId": "Tax ID",
+      "companyTaxOffice": "Tax office",
+      "companyAddress": "Address",
+      "companyCity": "City",
+      "companyCountry": "Country",
+      "companyPhone": "Phone",
+      "companyEmail": "Email"
+    },
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "viewed": "Viewed",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "waived": "Waived"
+    },
+    "empty": {
+      "noInvoices": "No invoices yet",
+      "noInvoicesDescription": "Create your first invoice to start tracking payments",
+      "noMatchingInvoices": "No matching invoices",
+      "tryDifferentSearch": "Try a different search term",
+      "createTitle": "Create invoices",
+      "createDesc": "Generate professional invoices for your clients",
+      "trackTitle": "Track payments",
+      "trackDesc": "Monitor payment status from draft to paid",
+      "companyTitle": "Link to companies",
+      "companyDesc": "Associate invoices with CRM companies"
     }
   }
 }

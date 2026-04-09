@@ -115,6 +115,7 @@
     "darkMode": "Mode sombre",
     "systemMode": "Mode système",
     "themeAriaLabel": "Thème : {{label}}. Cliquez pour changer de thème",
+    "invoices": "Factures",
     "allMail": "Tous les e-mails",
     "starred": "Favoris",
     "unread": "Non lus"
@@ -3285,6 +3286,86 @@
       "behavior": "Comportement",
       "updates": "Mises à jour",
       "integrations": "Intégrations"
+    }
+  },
+  "invoices": {
+    "title": "Factures",
+    "sidebar": {
+      "all": "Toutes les factures",
+      "draft": "Brouillon",
+      "sent": "Envoyée",
+      "overdue": "En retard",
+      "paid": "Payée",
+      "waived": "Annulée",
+      "settings": "Paramètres"
+    },
+    "list": {
+      "invoiceNumber": "Numéro de facture",
+      "company": "Entreprise",
+      "amount": "Montant",
+      "status": "Statut",
+      "issueDate": "Date d'émission",
+      "dueDate": "Date d'échéance",
+      "items": "Postes",
+      "totalAmount": "Total"
+    },
+    "builder": {
+      "createInvoice": "Nouvelle facture",
+      "editInvoice": "Modifier la facture",
+      "company": "Entreprise",
+      "contact": "Contact",
+      "issueDate": "Date d'émission",
+      "dueDate": "Date d'échéance",
+      "notes": "Notes",
+      "saveDraft": "Enregistrer comme brouillon",
+      "send": "Envoyer"
+    },
+    "detail": {
+      "invoiceDetail": "Détail de la facture",
+      "markPaid": "Marquer comme payée",
+      "waive": "Annuler",
+      "duplicate": "Dupliquer",
+      "delete": "Supprimer",
+      "fromDeal": "De l'affaire",
+      "fromProposal": "De la proposition",
+      "nextAction": "Action suivante",
+      "lineItems": "Postes",
+      "source": "Source"
+    },
+    "settings": {
+      "invoicePrefix": "Préfixe de facture",
+      "defaultCurrency": "Devise par défaut",
+      "defaultTaxRate": "Taux de taxe par défaut",
+      "eFatura": "e-Fatura",
+      "companyDetails": "Détails de l'entreprise",
+      "companyName": "Nom de l'entreprise",
+      "companyTaxId": "Numéro fiscal",
+      "companyTaxOffice": "Centre des impôts",
+      "companyAddress": "Adresse",
+      "companyCity": "Ville",
+      "companyCountry": "Pays",
+      "companyPhone": "Téléphone",
+      "companyEmail": "E-mail"
+    },
+    "status": {
+      "draft": "Brouillon",
+      "sent": "Envoyée",
+      "viewed": "Consultée",
+      "paid": "Payée",
+      "overdue": "En retard",
+      "waived": "Annulée"
+    },
+    "empty": {
+      "noInvoices": "Pas encore de factures",
+      "noInvoicesDescription": "Créez votre première facture pour commencer à suivre les paiements",
+      "noMatchingInvoices": "Aucune facture correspondante",
+      "tryDifferentSearch": "Essayez un autre terme de recherche",
+      "createTitle": "Créer des factures",
+      "createDesc": "Générez des factures professionnelles pour vos clients",
+      "trackTitle": "Suivre les paiements",
+      "trackDesc": "Surveillez le statut de paiement du brouillon au payé",
+      "companyTitle": "Lier aux entreprises",
+      "companyDesc": "Associez les factures aux entreprises CRM"
     }
   }
 }

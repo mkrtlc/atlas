@@ -115,6 +115,7 @@
     "darkMode": "Tema scuro",
     "systemMode": "Tema di sistema",
     "themeAriaLabel": "Tema: {{label}}. Clicca per cambiare tema",
+    "invoices": "Fatture",
     "allMail": "Tutte le email",
     "starred": "Speciali",
     "unread": "Non letti"
@@ -3285,6 +3286,86 @@
       "behavior": "Comportamento",
       "updates": "Aggiornamenti",
       "integrations": "Integrazioni"
+    }
+  },
+  "invoices": {
+    "title": "Fatture",
+    "sidebar": {
+      "all": "Tutte le fatture",
+      "draft": "Bozza",
+      "sent": "Inviata",
+      "overdue": "Scaduta",
+      "paid": "Pagata",
+      "waived": "Annullata",
+      "settings": "Impostazioni"
+    },
+    "list": {
+      "invoiceNumber": "Numero fattura",
+      "company": "Azienda",
+      "amount": "Importo",
+      "status": "Stato",
+      "issueDate": "Data di emissione",
+      "dueDate": "Data di scadenza",
+      "items": "Voci",
+      "totalAmount": "Totale"
+    },
+    "builder": {
+      "createInvoice": "Nuova fattura",
+      "editInvoice": "Modifica fattura",
+      "company": "Azienda",
+      "contact": "Contatto",
+      "issueDate": "Data di emissione",
+      "dueDate": "Data di scadenza",
+      "notes": "Note",
+      "saveDraft": "Salva come bozza",
+      "send": "Invia"
+    },
+    "detail": {
+      "invoiceDetail": "Dettaglio fattura",
+      "markPaid": "Segna come pagata",
+      "waive": "Annulla",
+      "duplicate": "Duplica",
+      "delete": "Elimina",
+      "fromDeal": "Dall'affare",
+      "fromProposal": "Dalla proposta",
+      "nextAction": "Prossima azione",
+      "lineItems": "Voci",
+      "source": "Fonte"
+    },
+    "settings": {
+      "invoicePrefix": "Prefisso fattura",
+      "defaultCurrency": "Valuta predefinita",
+      "defaultTaxRate": "Aliquota fiscale predefinita",
+      "eFatura": "e-Fatura",
+      "companyDetails": "Dettagli azienda",
+      "companyName": "Nome azienda",
+      "companyTaxId": "Partita IVA",
+      "companyTaxOffice": "Ufficio delle imposte",
+      "companyAddress": "Indirizzo",
+      "companyCity": "Città",
+      "companyCountry": "Paese",
+      "companyPhone": "Telefono",
+      "companyEmail": "E-mail"
+    },
+    "status": {
+      "draft": "Bozza",
+      "sent": "Inviata",
+      "viewed": "Visualizzata",
+      "paid": "Pagata",
+      "overdue": "Scaduta",
+      "waived": "Annullata"
+    },
+    "empty": {
+      "noInvoices": "Nessuna fattura ancora",
+      "noInvoicesDescription": "Crea la tua prima fattura per iniziare a monitorare i pagamenti",
+      "noMatchingInvoices": "Nessuna fattura corrispondente",
+      "tryDifferentSearch": "Prova un termine di ricerca diverso",
+      "createTitle": "Crea fatture",
+      "createDesc": "Genera fatture professionali per i tuoi clienti",
+      "trackTitle": "Monitora i pagamenti",
+      "trackDesc": "Monitora lo stato del pagamento dalla bozza al pagato",
+      "companyTitle": "Collega alle aziende",
+      "companyDesc": "Associa le fatture alle aziende CRM"
     }
   }
 }
