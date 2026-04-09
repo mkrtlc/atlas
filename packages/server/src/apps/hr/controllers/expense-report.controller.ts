@@ -1,20 +1,8 @@
 import type { Request, Response } from 'express';
 import * as expenseReportService from '../services/expense-report.service';
-import { db } from '../../../config/database';
-import { employees } from '../../../db/schema';
-import { eq, and } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
 import { getAppPermission, canAccess } from '../../../services/app-permissions.service';
-
-// ─── Helper: find employeeId from userId ───────────────────────
-
-async function getEmployeeId(userId: string, tenantId: string): Promise<string | null> {
-  const [emp] = await db.select({ id: employees.id })
-    .from(employees)
-    .where(and(eq(employees.linkedUserId, userId), eq(employees.tenantId, tenantId), eq(employees.isArchived, false)))
-    .limit(1);
-  return emp?.id ?? null;
-}
+import { findEmployeeIdByLinkedUser } from '../services/employee.service';
 
 // ─── List Expense Reports ──────────────────────────────────────
 
@@ -91,7 +79,7 @@ export async function createExpenseReport(req: Request, res: Response) {
       return;
     }
 
-    const employeeId = await getEmployeeId(userId, tenantId);
+    const employeeId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!employeeId) {
       res.status(400).json({ success: false, error: 'No linked employee profile found' });
       return;
@@ -170,7 +158,7 @@ export async function submitExpenseReport(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const userId = req.auth!.userId;
 
-    const employeeId = await getEmployeeId(userId, tenantId);
+    const employeeId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!employeeId) {
       res.status(400).json({ success: false, error: 'No linked employee profile found' });
       return;
@@ -201,7 +189,7 @@ export async function approveExpenseReport(req: Request, res: Response) {
       return;
     }
 
-    const approverId = await getEmployeeId(userId, tenantId);
+    const approverId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!approverId) {
       res.status(400).json({ success: false, error: 'No linked employee profile found' });
       return;
@@ -232,7 +220,7 @@ export async function refuseExpenseReport(req: Request, res: Response) {
       return;
     }
 
-    const approverId = await getEmployeeId(userId, tenantId);
+    const approverId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!approverId) {
       res.status(400).json({ success: false, error: 'No linked employee profile found' });
       return;

@@ -2,18 +2,7 @@ import type { Request, Response } from 'express';
 import * as expenseService from '../services/expense.service';
 import { logger } from '../../../utils/logger';
 import { getAppPermission, canAccess } from '../../../services/app-permissions.service';
-import { db } from '../../../config/database';
-import { employees } from '../../../db/schema';
-import { eq, and } from 'drizzle-orm';
-
-// ─── Helper: find employeeId for current user ───────────────────
-
-async function findEmployeeId(userId: string, tenantId: string) {
-  const [emp] = await db.select().from(employees).where(
-    and(eq(employees.userId, userId), eq(employees.tenantId, tenantId)),
-  );
-  return emp?.id ?? null;
-}
+import { findEmployeeIdByLinkedUser } from '../services/employee.service';
 
 // ─── List Expenses (admin) ──────────────────────────────────────
 
@@ -104,7 +93,7 @@ export async function createExpense(req: Request, res: Response) {
       return;
     }
 
-    const employeeId = await findEmployeeId(userId, tenantId);
+    const employeeId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!employeeId) {
       res.status(400).json({ success: false, error: 'No employee record found for current user' });
       return;
@@ -179,7 +168,7 @@ export async function submitExpense(req: Request, res: Response) {
       return;
     }
 
-    const employeeId = await findEmployeeId(userId, tenantId);
+    const employeeId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!employeeId) {
       res.status(400).json({ success: false, error: 'No employee record found for current user' });
       return;
@@ -235,7 +224,7 @@ export async function approveExpense(req: Request, res: Response) {
       return;
     }
 
-    const approverId = await findEmployeeId(userId, tenantId);
+    const approverId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!approverId) {
       res.status(400).json({ success: false, error: 'No employee record found for current user' });
       return;
@@ -266,7 +255,7 @@ export async function refuseExpense(req: Request, res: Response) {
       return;
     }
 
-    const approverId = await findEmployeeId(userId, tenantId);
+    const approverId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!approverId) {
       res.status(400).json({ success: false, error: 'No employee record found for current user' });
       return;
@@ -324,7 +313,7 @@ export async function getPendingExpenses(req: Request, res: Response) {
       return;
     }
 
-    const approverId = await findEmployeeId(userId, tenantId);
+    const approverId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!approverId) {
       res.status(400).json({ success: false, error: 'No employee record found for current user' });
       return;
@@ -345,7 +334,7 @@ export async function getPendingExpenseCount(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const userId = req.auth!.userId;
 
-    const approverId = await findEmployeeId(userId, tenantId);
+    const approverId = await findEmployeeIdByLinkedUser(userId, tenantId);
     if (!approverId) {
       res.json({ success: true, data: { count: 0 } });
       return;

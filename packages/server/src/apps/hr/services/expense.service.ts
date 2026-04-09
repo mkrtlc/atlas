@@ -9,6 +9,19 @@ import { sendEmail } from '../../../services/email.service';
 import { getEmployeePolicy } from './expense-policy.service';
 import type { CreateExpenseInput, UpdateExpenseInput } from '@atlasmail/shared';
 
+// ─── Email helper ───────────────────────────────────────────────
+
+async function notifyEmployee(employeeId: string, subject: string, text: string) {
+  try {
+    const [emp] = await db.select({ email: employees.email }).from(employees).where(eq(employees.id, employeeId));
+    if (emp?.email) {
+      await sendEmail({ to: emp.email, subject, text });
+    }
+  } catch (err) {
+    logger.warn({ err, employeeId }, 'Failed to send expense notification');
+  }
+}
+
 // ─── Shared select fields & joins ────────────────────────────────
 
 const expenseSelectFields = {
@@ -310,6 +323,9 @@ export async function submitExpense(tenantId: string, id: string, employeeId: st
 
   // e. Set status to submitted with approver = manager
   const approverId = employee.managerId ?? null;
+  if (!approverId) {
+    throw new Error('Cannot submit expense: no manager assigned to approve. Please contact your HR admin.');
+  }
   const [updated] = await db.update(hrExpenses).set({
     status: 'submitted',
     approverId,
@@ -319,26 +335,11 @@ export async function submitExpense(tenantId: string, id: string, employeeId: st
   }).where(eq(hrExpenses.id, id)).returning();
 
   // f. Send email to approver
-  if (approverId) {
-    try {
-      const [approverEmployee] = await db.select({
-        email: employees.email,
-        name: employees.name,
-      }).from(employees)
-        .where(eq(employees.id, approverId))
-        .limit(1);
-
-      if (approverEmployee?.email) {
-        await sendEmail({
-          to: approverEmployee.email,
-          subject: `New expense to review: ${expense.description}`,
-          text: `${employee.name} submitted an expense of ${expense.amount} ${expense.currency} for "${expense.description}". Please review it in Atlas.`,
-        });
-      }
-    } catch (err) {
-      logger.error({ err }, 'Failed to send expense submission email to approver');
-    }
-  }
+  await notifyEmployee(
+    approverId,
+    `New expense to review: ${expense.description}`,
+    `${employee.name} submitted an expense of ${expense.amount} ${expense.currency} for "${expense.description}". Please review it in Atlas.`,
+  );
 
   return updated;
 }
@@ -380,19 +381,11 @@ export async function approveExpense(tenantId: string, id: string, approverId: s
   }).where(eq(hrExpenses.id, id)).returning();
 
   // Send email to employee
-  try {
-    const [emp] = await db.select({ email: employees.email, name: employees.name })
-      .from(employees).where(eq(employees.id, expense.employeeId)).limit(1);
-    if (emp?.email) {
-      await sendEmail({
-        to: emp.email,
-        subject: `Expense approved: ${expense.description}`,
-        text: `Your expense of ${expense.amount} ${expense.currency} for "${expense.description}" has been approved.`,
-      });
-    }
-  } catch (err) {
-    logger.error({ err }, 'Failed to send expense approval email');
-  }
+  await notifyEmployee(
+    expense.employeeId,
+    `Expense approved: ${expense.description}`,
+    `Your expense of ${expense.amount} ${expense.currency} for "${expense.description}" has been approved.`,
+  );
 
   return updated;
 }
@@ -416,19 +409,11 @@ export async function refuseExpense(tenantId: string, id: string, approverId: st
   }).where(eq(hrExpenses.id, id)).returning();
 
   // Send email to employee
-  try {
-    const [emp] = await db.select({ email: employees.email, name: employees.name })
-      .from(employees).where(eq(employees.id, expense.employeeId)).limit(1);
-    if (emp?.email) {
-      await sendEmail({
-        to: emp.email,
-        subject: `Expense refused: ${expense.description}`,
-        text: `Your expense of ${expense.amount} ${expense.currency} for "${expense.description}" has been refused.${comment ? ` Reason: ${comment}` : ''}`,
-      });
-    }
-  } catch (err) {
-    logger.error({ err }, 'Failed to send expense refusal email');
-  }
+  await notifyEmployee(
+    expense.employeeId,
+    `Expense refused: ${expense.description}`,
+    `Your expense of ${expense.amount} ${expense.currency} for "${expense.description}" has been refused.${comment ? ` Reason: ${comment}` : ''}`,
+  );
 
   return updated;
 }
@@ -451,19 +436,11 @@ export async function bulkPayExpenses(tenantId: string, expenseIds: string[]) {
 
   // Send email to each affected employee
   for (const expense of updated) {
-    try {
-      const [emp] = await db.select({ email: employees.email, name: employees.name })
-        .from(employees).where(eq(employees.id, expense.employeeId)).limit(1);
-      if (emp?.email) {
-        await sendEmail({
-          to: emp.email,
-          subject: `Expense paid: ${expense.description}`,
-          text: `Your expense of ${expense.amount} ${expense.currency} for "${expense.description}" has been marked as paid.`,
-        });
-      }
-    } catch (err) {
-      logger.error({ err, expenseId: expense.id }, 'Failed to send expense payment email');
-    }
+    await notifyEmployee(
+      expense.employeeId,
+      `Expense paid: ${expense.description}`,
+      `Your expense of ${expense.amount} ${expense.currency} for "${expense.description}" has been marked as paid.`,
+    );
   }
 
   return updated;

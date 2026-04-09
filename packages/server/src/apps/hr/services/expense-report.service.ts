@@ -3,7 +3,7 @@ import {
   hrExpenseReports, hrExpenses,
   employees, hrExpenseCategories,
 } from '../../../db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
 import { sendEmail } from '../../../services/email.service';
 import { getEmployeePolicy } from './expense-policy.service';
@@ -223,16 +223,14 @@ export async function submitExpenseReport(tenantId: string, id: string, employee
 
     const managerId = employee.managerId ?? null;
 
-    // 4. Update each expense
+    // 4. Batch-update all expenses
     const expenseIds = reportExpenses.map(e => e.id);
-    for (const expenseId of expenseIds) {
-      await tx.update(hrExpenses).set({
-        status: 'submitted',
-        approverId: managerId,
-        submittedAt: now,
-        updatedAt: now,
-      }).where(eq(hrExpenses.id, expenseId));
-    }
+    await tx.update(hrExpenses).set({
+      status: 'submitted',
+      approverId: managerId,
+      submittedAt: now,
+      updatedAt: now,
+    }).where(inArray(hrExpenses.id, expenseIds));
 
     // 5. Update report
     const [updated] = await tx.update(hrExpenseReports).set({

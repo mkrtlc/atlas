@@ -326,6 +326,14 @@ export async function deleteEmployee(userId: string, id: string) {
   await updateEmployee(userId, id, { isArchived: true });
 }
 
+export async function findEmployeeIdByLinkedUser(userId: string, tenantId: string): Promise<string | null> {
+  const [emp] = await db.select({ id: employees.id })
+    .from(employees)
+    .where(and(eq(employees.linkedUserId, userId), eq(employees.tenantId, tenantId), eq(employees.isArchived, false)))
+    .limit(1);
+  return emp?.id ?? null;
+}
+
 export async function getLinkedUserIdForEmployee(employeeId: string): Promise<string | null> {
   try {
     const [row] = await db.select({ linkedUserId: employees.linkedUserId })
