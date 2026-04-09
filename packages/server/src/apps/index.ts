@@ -9,6 +9,7 @@ import { tasksServerManifest } from './tasks/manifest';
 import { docsServerManifest } from './docs/manifest';
 import { drawServerManifest } from './draw/manifest';
 import { systemServerManifest } from './system/manifest';
+import { invoicesServerManifest } from './invoices/manifest';
 serverAppRegistry.register(crmServerManifest);
 serverAppRegistry.register(hrServerManifest);
 serverAppRegistry.register(projectsServerManifest);
@@ -19,5 +20,6 @@ serverAppRegistry.register(tasksServerManifest);
 serverAppRegistry.register(docsServerManifest);
 serverAppRegistry.register(drawServerManifest);
 serverAppRegistry.register(systemServerManifest);
+serverAppRegistry.register(invoicesServerManifest);
 
 export { serverAppRegistry };
