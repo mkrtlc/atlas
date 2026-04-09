@@ -3355,7 +3355,14 @@
     "notes": "Notes",
     "notesPlaceholder": "Add notes for the client...",
     "saveDraft": "Save draft",
+    "save": "Save",
     "send": "Send",
+    "contact": "Contact",
+    "selectContact": "Select a contact",
+    "share": "Share",
+    "copyLink": "Copy invoice link",
+    "linkCopied": "Link copied!",
+    "sendByEmail": "Send by email",
     "efatura": {
       "type": "e-Fatura type",
       "typeOptions": {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText } from 'lucide-react';
-import { useCompanies } from '../../apps/crm/hooks';
+import { useCompanies, useContacts } from '../../apps/crm/hooks';
 import {
   useCreateInvoice,
   useUpdateInvoice,
@@ -79,6 +79,8 @@ export function InvoiceBuilderModal({
 
   // Form state
   const [companyId, setCompanyId] = useState('');
+  const { data: contactsData } = useContacts(companyId ? { companyId } : undefined);
+  const contacts = contactsData?.contacts ?? [];
   const [contactId, setContactId] = useState('');
   const [dealId, setDealId] = useState('');
   const [proposalId, setProposalId] = useState('');
@@ -220,7 +222,7 @@ export function InvoiceBuilderModal({
               <label style={labelStyle}>{t('invoices.company')}</label>
               <Select
                 value={companyId}
-                onChange={setCompanyId}
+                onChange={(val) => { setCompanyId(val); setContactId(''); }}
                 options={[
                   { value: '', label: t('invoices.selectCompany') },
                   ...companies.map((c) => ({ value: c.id, label: c.name })),
@@ -241,6 +243,32 @@ export function InvoiceBuilderModal({
               onChange={(e) => setDueDate(e.target.value)}
               style={{ flex: 1 }}
             />
+          </div>
+
+          {/* Contact */}
+          <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--spacing-xs)',
+              }}
+            >
+              <label style={labelStyle}>{t('invoices.contact')}</label>
+              <Select
+                value={contactId}
+                onChange={setContactId}
+                options={[
+                  { value: '', label: t('invoices.selectContact') },
+                  ...contacts.map((c) => ({
+                    value: c.id,
+                    label: c.email ? `${c.name} (${c.email})` : c.name,
+                  })),
+                ]}
+                disabled={!companyId}
+              />
+            </div>
           </div>
 
           {/* Currency */}
@@ -330,18 +358,11 @@ export function InvoiceBuilderModal({
           {t('common.cancel')}
         </Button>
         <Button
-          variant="secondary"
+          variant="primary"
           onClick={() => handleSave()}
           disabled={!canSave || isSaving}
         >
-          {t('invoices.saveDraft')}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => handleSave('sent')}
-          disabled={!canSave || isSaving}
-        >
-          {t('invoices.send')}
+          {t('invoices.save')}
         </Button>
         {eFaturaEnabled && invoice && (
           <Button

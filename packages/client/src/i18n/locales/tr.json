@@ -3349,7 +3349,14 @@
     "notes": "Notlar",
     "notesPlaceholder": "Müşteri için notlar ekleyin...",
     "saveDraft": "Taslak olarak kaydet",
+    "save": "Kaydet",
     "send": "Gönder",
+    "contact": "Kişi",
+    "selectContact": "Bir kişi seçin",
+    "share": "Paylaş",
+    "copyLink": "Fatura bağlantısını kopyala",
+    "linkCopied": "Bağlantı kopyalandı!",
+    "sendByEmail": "E-posta ile gönder",
     "efatura": {
       "type": "e-Fatura türü",
       "typeOptions": {

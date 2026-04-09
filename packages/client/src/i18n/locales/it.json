@@ -3349,7 +3349,14 @@
     "notes": "Note",
     "notesPlaceholder": "Aggiungi note per il cliente...",
     "saveDraft": "Salva bozza",
+    "save": "Salva",
     "send": "Invia",
+    "contact": "Contatto",
+    "selectContact": "Seleziona un contatto",
+    "share": "Condividi",
+    "copyLink": "Copia link fattura",
+    "linkCopied": "Link copiato!",
+    "sendByEmail": "Invia per e-mail",
     "efatura": {
       "type": "Tipo e-Fatura",
       "typeOptions": {

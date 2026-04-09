@@ -44,6 +44,7 @@ export interface Invoice {
   updatedAt: string;
   companyName?: string;
   contactName?: string;
+  contactEmail?: string;
   dealTitle?: string;
   lineItems?: InvoiceLineItem[];
   lineItemCount?: number;

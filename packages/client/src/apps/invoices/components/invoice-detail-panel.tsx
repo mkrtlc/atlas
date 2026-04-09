@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../../lib/format';
 import {
-  X, Trash2, DollarSign, Send, FileCode, FileDown,
+  X, Trash2, DollarSign, FileCode, FileDown, Link, Mail,
 } from 'lucide-react';
 import type { Invoice } from '@atlasmail/shared';
 import { getInvoiceStatusVariant } from '@atlasmail/shared';
@@ -11,6 +12,7 @@ import {
   useInvoiceSettings,
 } from '../hooks';
 import { api } from '../../../lib/api-client';
+import { useCompanies } from '../../crm/hooks';
 import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
 import { Badge } from '../../../components/ui/badge';
@@ -38,6 +40,10 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invo
   const duplicate = useDuplicateInvoice();
   const { data: settings } = useInvoiceSettings();
   const eFaturaEnabled = settings?.eFaturaEnabled ?? false;
+  const { data: companiesData } = useCompanies();
+  const companies = companiesData?.companies ?? [];
+  const company = companies.find((c) => c.id === invoice.companyId);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const statusOrder: Record<string, number> = { draft: 0, sent: 1, viewed: 2, paid: 3, overdue: 1, waived: 3 };
   const currentOrder = statusOrder[invoice.status] ?? 0;
@@ -93,9 +99,7 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invo
           </span>
           <div style={{ marginTop: 'var(--spacing-xs)' }}>
             {invoice.status === 'draft' && (
-              <Button variant="primary" size="sm" icon={<Send size={13} />} onClick={() => sendInvoice.mutate(invoice.id)}>
-                {t('invoices.builder.send')}
-              </Button>
+              <Badge variant="default">{t('invoices.status.draft')}</Badge>
             )}
             {(invoice.status === 'sent' || invoice.status === 'viewed') && (
               <Button variant="primary" size="sm" icon={<DollarSign size={13} />} onClick={() => markPaid.mutate(invoice.id)}>
@@ -128,6 +132,23 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invo
             {invoice.companyName || '-'}
           </div>
         </div>
+
+        {/* Contact info */}
+        {invoice.contactName && (
+          <div>
+            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)' }}>
+              {t('invoices.contact')}
+            </span>
+            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', marginTop: 'var(--spacing-xs)' }}>
+              {invoice.contactName}
+              {invoice.contactEmail && (
+                <span style={{ color: 'var(--color-text-tertiary)', marginLeft: 'var(--spacing-xs)' }}>
+                  ({invoice.contactEmail})
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Source link */}
         {invoice.dealId && invoice.dealTitle && (
@@ -220,13 +241,55 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invo
           </div>
         )}
 
+        {/* Share section */}
+        {(invoice.status === 'draft' || invoice.status === 'sent') && company?.portalToken && (
+          <div>
+            <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)' }}>
+              {t('invoices.share')}
+            </span>
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-xs)' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Link size={13} />}
+                onClick={() => {
+                  const portalUrl = `${window.location.origin}/api/invoices/portal/${company.portalToken}/${invoice.id}`;
+                  navigator.clipboard.writeText(portalUrl);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 2000);
+                  if (invoice.status === 'draft') {
+                    sendInvoice.mutate(invoice.id);
+                  }
+                }}
+              >
+                {linkCopied ? t('invoices.linkCopied') : t('invoices.copyLink')}
+              </Button>
+              {invoice.contactEmail && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<Mail size={13} />}
+                  onClick={() => {
+                    const portalUrl = `${window.location.origin}/api/invoices/portal/${company.portalToken}/${invoice.id}`;
+                    const subject = encodeURIComponent(`${invoice.invoiceNumber} from ${invoice.companyName || ''}`);
+                    const body = encodeURIComponent(`You can view your invoice here:\n\n${portalUrl}`);
+                    window.open(`mailto:${invoice.contactEmail}?subject=${subject}&body=${body}`);
+                    if (invoice.status === 'draft') {
+                      sendInvoice.mutate(invoice.id);
+                    }
+                  }}
+                >
+                  {t('invoices.sendByEmail')}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
           {invoice.status === 'draft' && (
-            <>
-              <Button variant="secondary" size="sm" onClick={onEdit}>{t('common.edit')}</Button>
-              <Button variant="primary" size="sm" onClick={() => sendInvoice.mutate(invoice.id)}>{t('invoices.builder.send')}</Button>
-            </>
+            <Button variant="secondary" size="sm" onClick={onEdit}>{t('common.edit')}</Button>
           )}
           {(invoice.status === 'sent' || invoice.status === 'viewed' || invoice.status === 'overdue') && (
             <>

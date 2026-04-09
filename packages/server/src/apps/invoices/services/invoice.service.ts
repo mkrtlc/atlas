@@ -119,6 +119,7 @@ export async function listInvoices(userId: string, tenantId: string, filters?: {
       eFaturaStatus: invoices.eFaturaStatus,
       companyName: crmCompanies.name,
       contactName: crmContacts.name,
+      contactEmail: crmContacts.email,
       dealTitle: crmDeals.title,
       lineItemCount: sql<number>`(SELECT COUNT(*) FROM invoice_line_items WHERE invoice_id = ${invoices.id})`.as('line_item_count'),
     })
@@ -163,6 +164,7 @@ export async function getInvoice(userId: string, tenantId: string, id: string) {
       eFaturaStatus: invoices.eFaturaStatus,
       companyName: crmCompanies.name,
       contactName: crmContacts.name,
+      contactEmail: crmContacts.email,
       dealTitle: crmDeals.title,
     })
     .from(invoices)

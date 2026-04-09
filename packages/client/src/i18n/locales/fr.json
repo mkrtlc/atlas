@@ -3349,7 +3349,14 @@
     "notes": "Notes",
     "notesPlaceholder": "Ajouter des notes pour le client...",
     "saveDraft": "Enregistrer le brouillon",
+    "save": "Enregistrer",
     "send": "Envoyer",
+    "contact": "Contact",
+    "selectContact": "Sélectionner un contact",
+    "share": "Partager",
+    "copyLink": "Copier le lien de facture",
+    "linkCopied": "Lien copié !",
+    "sendByEmail": "Envoyer par e-mail",
     "efatura": {
       "type": "Type e-Fatura",
       "typeOptions": {
