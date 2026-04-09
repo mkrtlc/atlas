@@ -82,6 +82,30 @@ export const queryKeys = {
     attendanceReport: (month: string) => ['hr', 'attendance-report', month] as const,
     employeeAttendance: (employeeId: string) => ['hr', 'employee-attendance', employeeId] as const,
     lifecycle: (employeeId: string) => ['hr', 'lifecycle', employeeId] as const,
+    expenses: {
+      all: ['hr', 'expenses'] as const,
+      list: (filters?: Record<string, unknown>) => ['hr', 'expenses', 'list', filters] as const,
+      my: ['hr', 'expenses', 'my'] as const,
+      detail: (id: string) => ['hr', 'expenses', id] as const,
+      pending: ['hr', 'expenses', 'pending'] as const,
+      pendingCount: ['hr', 'expenses', 'pending-count'] as const,
+      dashboard: ['hr', 'expenses', 'dashboard'] as const,
+    },
+    expenseReports: {
+      all: ['hr', 'expense-reports'] as const,
+      list: (filters?: Record<string, unknown>) => ['hr', 'expense-reports', 'list', filters] as const,
+      my: ['hr', 'expense-reports', 'my'] as const,
+      detail: (id: string) => ['hr', 'expense-reports', id] as const,
+    },
+    expenseCategories: {
+      all: ['hr', 'expense-categories'] as const,
+      list: ['hr', 'expense-categories', 'list'] as const,
+    },
+    expensePolicies: {
+      all: ['hr', 'expense-policies'] as const,
+      list: ['hr', 'expense-policies', 'list'] as const,
+      detail: (id: string) => ['hr', 'expense-policies', id] as const,
+    },
   },
   tables: {
     all: ['tables'] as const,
