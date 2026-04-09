@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { ActiveView, EditingCell, SortState } from '../lib/crm-helpers';
 import type {
@@ -20,6 +21,10 @@ import { ActivitiesListView } from './views/activities-list-view';
 import { DealDetailPanel } from './panels/deal-detail-panel';
 import { ContactDetailPanel } from './panels/contact-detail-panel';
 import { CompanyDetailPanel } from './panels/company-detail-panel';
+import { ProposalsListView } from './proposals-list-view';
+import { ProposalDetailPanel } from './proposal-detail-panel';
+import { ProposalEditor } from './proposal-editor';
+import type { Proposal } from '../hooks';
 
 export function CrmContent({
   activeView, setActiveView,
@@ -211,6 +216,22 @@ export function CrmContent({
         {activeView === 'permissions' && (
           <PermissionsView />
         )}
+
+        {activeView === 'proposals' && (
+          <ProposalsListViewWrapper
+            setActiveView={setActiveView}
+            setSearchParams={setSearchParams}
+          />
+        )}
+
+        {activeView === 'proposal-detail' && searchParams.get('proposalId') && (
+          <ProposalDetailWrapper
+            proposalId={searchParams.get('proposalId')!}
+            onBack={() => setActiveView('proposals')}
+            setActiveView={setActiveView}
+            setSearchParams={setSearchParams}
+          />
+        )}
       </div>
 
       {/* Slide-out detail drawer */}
@@ -250,5 +271,68 @@ export function CrmContent({
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Proposals wrappers ─────────────────────────────────────────
+
+function ProposalsListViewWrapper({
+  setActiveView,
+  setSearchParams,
+}: {
+  setActiveView: (view: ActiveView) => void;
+  setSearchParams: ReturnType<typeof useSearchParams>[1];
+}) {
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorPrefill, setEditorPrefill] = useState<{ dealId?: string; companyId?: string; contactId?: string } | undefined>();
+
+  return (
+    <>
+      <ProposalsListView
+        onSelect={(id) => setSearchParams({ view: 'proposal-detail', proposalId: id }, { replace: true })}
+        onCreateNew={(prefill) => {
+          setEditorPrefill(prefill);
+          setEditorOpen(true);
+        }}
+      />
+      <ProposalEditor
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        prefill={editorPrefill}
+      />
+    </>
+  );
+}
+
+function ProposalDetailWrapper({
+  proposalId,
+  onBack,
+  setActiveView,
+  setSearchParams,
+}: {
+  proposalId: string;
+  onBack: () => void;
+  setActiveView: (view: ActiveView) => void;
+  setSearchParams: ReturnType<typeof useSearchParams>[1];
+}) {
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
+
+  return (
+    <>
+      <ProposalDetailPanel
+        proposalId={proposalId}
+        onBack={onBack}
+        onEdit={(proposal) => {
+          setEditingProposal(proposal);
+          setEditorOpen(true);
+        }}
+      />
+      <ProposalEditor
+        open={editorOpen}
+        onClose={() => { setEditorOpen(false); setEditingProposal(null); }}
+        proposal={editingProposal}
+      />
+    </>
   );
 }

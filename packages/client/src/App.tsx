@@ -28,6 +28,7 @@ import { OrgSettingsPage } from './pages/org/org-settings';
 import { ForgotPasswordPage } from './pages/forgot-password';
 import { ResetPasswordPage } from './pages/reset-password';
 import { SignPublicPage } from './pages/sign-public';
+import { ProposalPublicPage } from './pages/proposal-public';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -87,6 +88,7 @@ export function App() {
                 <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
                 <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
                 <Route path="/sign/:token" element={<SignPublicPage />} />
+                <Route path="/proposal/:token" element={<ProposalPublicPage />} />
                 <Route
                   path={ROUTES.HOME}
                   element={

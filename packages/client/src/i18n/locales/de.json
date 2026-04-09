@@ -1712,7 +1712,45 @@
     "widgetTitle": "Pipeline",
     "widgetActiveDeals": "aktive Deals",
     "widgetWon": "gewonnen",
-    "widgetLost": "verloren"
+    "widgetLost": "verloren",
+    "proposals": {
+      "title": "Angebote",
+      "titleLabel": "Titel",
+      "create": "Neues Angebot",
+      "edit": "Angebot bearbeiten",
+      "send": "Senden",
+      "duplicate": "Duplizieren",
+      "delete": "Löschen",
+      "deleteConfirm": "Sind Sie sicher, dass Sie \"{{title}}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "scopeAndTerms": "Umfang und Bedingungen",
+      "pricing": "Preisgestaltung",
+      "validUntil": "Gültig bis",
+      "publicLink": "Öffentlicher Link",
+      "copyLink": "Link kopieren",
+      "linkCopied": "Link kopiert",
+      "saveDraft": "Entwurf speichern",
+      "statusLabel": "Status",
+      "sentDate": "Sendedatum",
+      "emptyTitle": "Noch keine Angebote",
+      "emptyDesc": "Erstellen Sie ein Angebot, um es an Ihre Kunden zu senden",
+      "notFound": "Angebot nicht gefunden",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "acceptConfirmTitle": "Angebot annehmen",
+      "acceptConfirmDesc": "Sind Sie sicher, dass Sie dieses Angebot annehmen möchten?",
+      "declineConfirmTitle": "Angebot ablehnen",
+      "declineConfirmDesc": "Sind Sie sicher, dass Sie dieses Angebot ablehnen möchten?",
+      "acceptedMessage": "Dieses Angebot wurde angenommen",
+      "declinedMessage": "Dieses Angebot wurde abgelehnt",
+      "status": {
+        "draft": "Entwurf",
+        "sent": "Gesendet",
+        "viewed": "Angesehen",
+        "accepted": "Angenommen",
+        "declined": "Abgelehnt",
+        "expired": "Abgelaufen"
+      }
+    }
   },
   "drive": {
     "empty": {

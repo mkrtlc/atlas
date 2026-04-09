@@ -4,7 +4,7 @@ import {
   LayoutGrid, List,
   BarChart3, Zap, Shield,
   UserPlus, TrendingUp,
-  Eye, FileText,
+  Eye, FileText, FileSignature,
 } from 'lucide-react';
 import { canAccess, type CrmRole } from '../hooks';
 import type { ActiveView } from '../lib/crm-helpers';
@@ -146,6 +146,16 @@ export function CrmSidebar({
             style={{ paddingLeft: 'var(--spacing-xl)' }}
           />
         ))}
+      </SidebarSection>
+
+      <SidebarSection>
+        <SidebarItem
+          label={t('crm.proposals.title')}
+          icon={<FileSignature size={14} />}
+          iconColor="#8b5cf6"
+          isActive={activeView === 'proposals' || activeView === 'proposal-detail'}
+          onClick={() => setActiveView('proposals')}
+        />
       </SidebarSection>
 
       <SidebarSection>

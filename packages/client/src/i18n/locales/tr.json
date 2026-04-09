@@ -1712,7 +1712,45 @@
     "widgetTitle": "Satış hattı",
     "widgetActiveDeals": "aktif anlaşma",
     "widgetWon": "kazanılan",
-    "widgetLost": "kaybedilen"
+    "widgetLost": "kaybedilen",
+    "proposals": {
+      "title": "Teklifler",
+      "titleLabel": "Başlık",
+      "create": "Yeni teklif",
+      "edit": "Teklifi düzenle",
+      "send": "Gönder",
+      "duplicate": "Kopyala",
+      "delete": "Sil",
+      "deleteConfirm": "\"{{title}}\" teklifini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      "scopeAndTerms": "Kapsam ve koşullar",
+      "pricing": "Fiyatlandırma",
+      "validUntil": "Geçerlilik tarihi",
+      "publicLink": "Herkese açık bağlantı",
+      "copyLink": "Bağlantıyı kopyala",
+      "linkCopied": "Bağlantı kopyalandı",
+      "saveDraft": "Taslak kaydet",
+      "statusLabel": "Durum",
+      "sentDate": "Gönderim tarihi",
+      "emptyTitle": "Henüz teklif yok",
+      "emptyDesc": "Müşterilerinize göndermek için bir teklif oluşturun",
+      "notFound": "Teklif bulunamadı",
+      "accept": "Kabul et",
+      "decline": "Reddet",
+      "acceptConfirmTitle": "Teklifi kabul et",
+      "acceptConfirmDesc": "Bu teklifi kabul etmek istediğinizden emin misiniz?",
+      "declineConfirmTitle": "Teklifi reddet",
+      "declineConfirmDesc": "Bu teklifi reddetmek istediğinizden emin misiniz?",
+      "acceptedMessage": "Bu teklif kabul edildi",
+      "declinedMessage": "Bu teklif reddedildi",
+      "status": {
+        "draft": "Taslak",
+        "sent": "Gönderildi",
+        "viewed": "Görüntülendi",
+        "accepted": "Kabul edildi",
+        "declined": "Reddedildi",
+        "expired": "Süresi doldu"
+      }
+    }
   },
   "drive": {
     "empty": {

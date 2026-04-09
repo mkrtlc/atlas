@@ -1712,7 +1712,45 @@
     "widgetTitle": "Pipeline",
     "widgetActiveDeals": "affaires actives",
     "widgetWon": "gagnées",
-    "widgetLost": "perdues"
+    "widgetLost": "perdues",
+    "proposals": {
+      "title": "Propositions",
+      "titleLabel": "Titre",
+      "create": "Nouvelle proposition",
+      "edit": "Modifier la proposition",
+      "send": "Envoyer",
+      "duplicate": "Dupliquer",
+      "delete": "Supprimer",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer \"{{title}}\" ? Cette action est irréversible.",
+      "scopeAndTerms": "Portée et conditions",
+      "pricing": "Tarification",
+      "validUntil": "Valable jusqu'au",
+      "publicLink": "Lien public",
+      "copyLink": "Copier le lien",
+      "linkCopied": "Lien copié",
+      "saveDraft": "Enregistrer le brouillon",
+      "statusLabel": "Statut",
+      "sentDate": "Date d'envoi",
+      "emptyTitle": "Aucune proposition",
+      "emptyDesc": "Créez une proposition à envoyer à vos clients",
+      "notFound": "Proposition introuvable",
+      "accept": "Accepter",
+      "decline": "Refuser",
+      "acceptConfirmTitle": "Accepter la proposition",
+      "acceptConfirmDesc": "Êtes-vous sûr de vouloir accepter cette proposition ?",
+      "declineConfirmTitle": "Refuser la proposition",
+      "declineConfirmDesc": "Êtes-vous sûr de vouloir refuser cette proposition ?",
+      "acceptedMessage": "Cette proposition a été acceptée",
+      "declinedMessage": "Cette proposition a été refusée",
+      "status": {
+        "draft": "Brouillon",
+        "sent": "Envoyée",
+        "viewed": "Consultée",
+        "accepted": "Acceptée",
+        "declined": "Refusée",
+        "expired": "Expirée"
+      }
+    }
   },
   "drive": {
     "empty": {

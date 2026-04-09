@@ -1430,3 +1430,180 @@ export function useCrmTeams() {
     staleTime: 30_000,
   });
 }
+
+// ─── Proposal Types ─────────────────────────────────────────────
+
+export type ProposalStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
+
+export interface ProposalLineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+}
+
+export interface Proposal {
+  id: string;
+  tenantId: string;
+  userId: string;
+  dealId?: string | null;
+  contactId?: string | null;
+  companyId?: string | null;
+  title: string;
+  status: ProposalStatus;
+  content?: unknown | null;
+  lineItems: ProposalLineItem[];
+  subtotal: number;
+  taxPercent: number;
+  taxAmount: number;
+  discountPercent: number;
+  discountAmount: number;
+  total: number;
+  currency: string;
+  validUntil?: string | null;
+  publicToken: string;
+  sentAt?: string | null;
+  viewedAt?: string | null;
+  acceptedAt?: string | null;
+  declinedAt?: string | null;
+  notes?: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+  companyName?: string;
+  contactName?: string;
+  dealTitle?: string;
+}
+
+export interface CreateProposalInput {
+  dealId?: string;
+  contactId?: string;
+  companyId?: string;
+  title: string;
+  content?: unknown;
+  lineItems?: ProposalLineItem[];
+  subtotal?: number;
+  taxPercent?: number;
+  taxAmount?: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  total?: number;
+  currency?: string;
+  validUntil?: string;
+  notes?: string;
+}
+
+export interface UpdateProposalInput {
+  dealId?: string | null;
+  contactId?: string | null;
+  companyId?: string | null;
+  title?: string;
+  content?: unknown | null;
+  lineItems?: ProposalLineItem[];
+  subtotal?: number;
+  taxPercent?: number;
+  taxAmount?: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  total?: number;
+  currency?: string;
+  validUntil?: string | null;
+  notes?: string | null;
+}
+
+// ─── Proposal Queries ───────────────────────────────────────────
+
+export function useProposals(filters?: { dealId?: string; companyId?: string; contactId?: string; status?: string }) {
+  const filterKey = filters ? JSON.stringify(filters) : '';
+  return useQuery({
+    queryKey: [...(queryKeys.crm.proposals.list(filters as Record<string, unknown> | undefined) as readonly unknown[]), filterKey],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.dealId) params.set('dealId', filters.dealId);
+      if (filters?.companyId) params.set('companyId', filters.companyId);
+      if (filters?.contactId) params.set('contactId', filters.contactId);
+      if (filters?.status) params.set('status', filters.status);
+      const qs = params.toString();
+      const { data } = await api.get(`/crm/proposals/list${qs ? `?${qs}` : ''}`);
+      return data.data as { proposals: Proposal[] };
+    },
+    staleTime: 15_000,
+  });
+}
+
+export function useProposal(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.crm.proposals.detail(id!),
+    queryFn: async () => {
+      const { data } = await api.get(`/crm/proposals/${id}`);
+      return data.data as Proposal;
+    },
+    enabled: !!id,
+    staleTime: 10_000,
+  });
+}
+
+export function useCreateProposal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateProposalInput) => {
+      const { data } = await api.post('/crm/proposals', input);
+      return data.data as Proposal;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.all });
+    },
+  });
+}
+
+export function useUpdateProposal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: { id: string } & UpdateProposalInput) => {
+      const { data } = await api.patch(`/crm/proposals/${id}`, input);
+      return data.data as Proposal;
+    },
+    onSuccess: (proposal) => {
+      queryClient.setQueryData(queryKeys.crm.proposals.detail(proposal.id), proposal);
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.all });
+    },
+  });
+}
+
+export function useDeleteProposal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/crm/proposals/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.all });
+    },
+  });
+}
+
+export function useSendProposal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/crm/proposals/${id}/send`);
+      return data.data as Proposal;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.all });
+    },
+  });
+}
+
+export function useDuplicateProposal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/crm/proposals/${id}/duplicate`);
+      return data.data as Proposal;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.all });
+    },
+  });
+}

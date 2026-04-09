@@ -1712,7 +1712,45 @@
     "widgetTitle": "Pipeline",
     "widgetActiveDeals": "trattative attive",
     "widgetWon": "vinte",
-    "widgetLost": "perse"
+    "widgetLost": "perse",
+    "proposals": {
+      "title": "Proposte",
+      "titleLabel": "Titolo",
+      "create": "Nuova proposta",
+      "edit": "Modifica proposta",
+      "send": "Invia",
+      "duplicate": "Duplica",
+      "delete": "Elimina",
+      "deleteConfirm": "Sei sicuro di voler eliminare \"{{title}}\"? Questa azione non può essere annullata.",
+      "scopeAndTerms": "Ambito e condizioni",
+      "pricing": "Prezzi",
+      "validUntil": "Valido fino al",
+      "publicLink": "Link pubblico",
+      "copyLink": "Copia link",
+      "linkCopied": "Link copiato",
+      "saveDraft": "Salva bozza",
+      "statusLabel": "Stato",
+      "sentDate": "Data di invio",
+      "emptyTitle": "Nessuna proposta",
+      "emptyDesc": "Crea una proposta da inviare ai tuoi clienti",
+      "notFound": "Proposta non trovata",
+      "accept": "Accetta",
+      "decline": "Rifiuta",
+      "acceptConfirmTitle": "Accetta proposta",
+      "acceptConfirmDesc": "Sei sicuro di voler accettare questa proposta?",
+      "declineConfirmTitle": "Rifiuta proposta",
+      "declineConfirmDesc": "Sei sicuro di voler rifiutare questa proposta?",
+      "acceptedMessage": "Questa proposta è stata accettata",
+      "declinedMessage": "Questa proposta è stata rifiutata",
+      "status": {
+        "draft": "Bozza",
+        "sent": "Inviata",
+        "viewed": "Visualizzata",
+        "accepted": "Accettata",
+        "declined": "Rifiutata",
+        "expired": "Scaduta"
+      }
+    }
   },
   "drive": {
     "empty": {

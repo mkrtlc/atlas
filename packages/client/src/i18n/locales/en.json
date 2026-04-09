@@ -1743,7 +1743,45 @@
     "widgetTitle": "Pipeline",
     "widgetActiveDeals": "active deals",
     "widgetWon": "won",
-    "widgetLost": "lost"
+    "widgetLost": "lost",
+    "proposals": {
+      "title": "Proposals",
+      "titleLabel": "Title",
+      "create": "New proposal",
+      "edit": "Edit proposal",
+      "send": "Send",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "deleteConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
+      "scopeAndTerms": "Scope and terms",
+      "pricing": "Pricing",
+      "validUntil": "Valid until",
+      "publicLink": "Public link",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "saveDraft": "Save draft",
+      "statusLabel": "Status",
+      "sentDate": "Sent date",
+      "emptyTitle": "No proposals yet",
+      "emptyDesc": "Create a proposal to send to your clients",
+      "notFound": "Proposal not found",
+      "accept": "Accept",
+      "decline": "Decline",
+      "acceptConfirmTitle": "Accept proposal",
+      "acceptConfirmDesc": "Are you sure you want to accept this proposal?",
+      "declineConfirmTitle": "Decline proposal",
+      "declineConfirmDesc": "Are you sure you want to decline this proposal?",
+      "acceptedMessage": "This proposal has been accepted",
+      "declinedMessage": "This proposal has been declined",
+      "status": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "viewed": "Viewed",
+        "accepted": "Accepted",
+        "declined": "Declined",
+        "expired": "Expired"
+      }
+    }
   },
   "drive": {
     "empty": {

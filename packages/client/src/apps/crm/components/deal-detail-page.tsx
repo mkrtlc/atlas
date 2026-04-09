@@ -17,12 +17,17 @@ import { MarkLostModal } from './mark-lost-modal';
 import { getActivityIcon } from '../utils';
 import { NotesSection } from './notes-section';
 import { EmailTimeline } from './email-timeline';
+import { LinkedInvoicesList } from '../../../components/shared/linked-invoices-list';
+import { ProposalEditor } from './proposal-editor';
 import {
   useDeals, useUpdateDeal, useDeleteDeal, useMarkDealWon, useMarkDealLost,
   useStages, useContacts, useCompanies,
   useActivities, useCreateActivity, useUpdateActivity, useDeleteActivity, useCompleteActivity,
-  type CrmDeal, type CrmDealStage,
+  useProposals,
+  type CrmDeal, type CrmDealStage, type Proposal,
 } from '../hooks';
+import { useInvoices } from '../../invoices/hooks';
+import { getProposalStatusVariant } from '@atlasmail/shared';
 import { formatDate, formatCurrency } from '../../../lib/format';
 
 // ─── Stage pipeline with arrows ─────────────────────────────────
@@ -109,10 +114,16 @@ export function DealDetailPage({ dealId, onBack, onNavigate }: DealDetailPagePro
   const activities = activitiesData?.activities ?? [];
   const createActivity = useCreateActivity();
 
+  const { data: proposalsData } = useProposals({ dealId });
+  const dealProposals = proposalsData?.proposals ?? [];
+  const { data: invoicesData } = useInvoices({ dealId });
+  const dealInvoices = invoicesData?.invoices ?? [];
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMarkLost, setShowMarkLost] = useState(false);
   const [newActivityType, setNewActivityType] = useState('note');
   const [newActivityBody, setNewActivityBody] = useState('');
+  const [showProposalEditor, setShowProposalEditor] = useState(false);
 
   // Navigation
   const currentIdx = deals.findIndex(d => d.id === dealId);
@@ -267,6 +278,61 @@ export function DealDetailPage({ dealId, onBack, onNavigate }: DealDetailPagePro
             <NotesSection dealId={deal.id} />
           </div>
 
+          {/* Proposals */}
+          <div style={{ borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-lg)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)' as never, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)' }}>
+                {t('crm.proposals.title')}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setShowProposalEditor(true)}>
+                {t('crm.proposals.create')}
+              </Button>
+            </div>
+            {dealProposals.length === 0 ? (
+              <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                {t('crm.proposals.emptyTitle')}
+              </span>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {dealProposals.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)',
+                      padding: 'var(--spacing-sm) var(--spacing-xs)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)',
+                    }}
+                  >
+                    <span style={{ fontWeight: 'var(--font-weight-medium)' as never, color: 'var(--color-text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.title}
+                    </span>
+                    <Badge variant={getProposalStatusVariant(p.status)}>
+                      {t(`crm.proposals.status.${p.status}`)}
+                    </Badge>
+                    <span style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)', whiteSpace: 'nowrap' }}>
+                      {formatCurrency(p.total)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Invoices */}
+          <div style={{ borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-lg)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
+              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)' as never, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)' }}>
+                {t('invoices.title')}
+              </span>
+            </div>
+            <LinkedInvoicesList
+              invoices={dealInvoices}
+              isLoading={false}
+              showCreateButton={false}
+            />
+          </div>
+
           {/* Delete */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 'var(--spacing-lg)' }}>
             <Button variant="danger" size="sm" icon={<Trash2 size={14} />} onClick={() => setShowDeleteConfirm(true)}>
@@ -359,6 +425,11 @@ export function DealDetailPage({ dealId, onBack, onNavigate }: DealDetailPagePro
         confirmLabel={t('common.delete')}
         destructive
         onConfirm={() => { deleteDeal.mutate(deal.id); onBack(); }}
+      />
+      <ProposalEditor
+        open={showProposalEditor}
+        onClose={() => setShowProposalEditor(false)}
+        prefill={{ dealId: deal.id, companyId: deal.companyId || undefined, contactId: deal.contactId || undefined }}
       />
     </div>
   );
