@@ -6,15 +6,18 @@ import type { SlashCommandItem } from './slash-commands';
 /**
  * Encapsulates all menu state and logic for slash commands, @ mentions,
  * and drawing/table embed pickers in the doc editor.
+ *
+ * Accepts an editorRef (MutableRefObject) so the hook can be called once
+ * before useEditor, then the ref is populated after useEditor returns.
  */
 export function useEditorMenus({
-  editor,
+  editorRef,
   docList,
   drawingList,
   tableList,
   editorContainerRef,
 }: {
-  editor: ReturnType<typeof useEditor>;
+  editorRef: React.MutableRefObject<ReturnType<typeof useEditor>>;
   docList?: Array<{ id: string; title: string; icon: string | null }>;
   drawingList?: Array<{ id: string; title: string }>;
   tableList?: Array<{ id: string; title: string }>;
@@ -98,6 +101,7 @@ export function useEditorMenus({
   }
 
   function executeSlashCommand(item: SlashCommandItem) {
+    const editor = editorRef.current;
     if (!editor) return;
     if (slashStartRef.current !== null) {
       const { from } = editor.state.selection;
@@ -144,6 +148,7 @@ export function useEditorMenus({
   }
 
   function executeMentionInsert(doc: { id: string; title: string; icon: string | null }) {
+    const editor = editorRef.current;
     if (!editor) return;
     if (mentionStartRef.current !== null) {
       const { from } = editor.state.selection;
@@ -161,12 +166,14 @@ export function useEditorMenus({
   // ── Drawing/Table embed pickers ──
 
   function insertDrawingEmbed(drawing: { id: string; title: string }) {
+    const editor = editorRef.current;
     if (!editor) return;
     editor.chain().focus().insertDrawingEmbed({ drawingId: drawing.id, title: drawing.title }).run();
     setDrawingPickerOpen(false);
   }
 
   function insertTableEmbed(table: { id: string; title: string }) {
+    const editor = editorRef.current;
     if (!editor) return;
     editor.chain().focus().insertTableEmbed({ tableId: table.id, title: table.title }).run();
     setTablePickerOpen(false);

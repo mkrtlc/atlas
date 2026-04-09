@@ -71,6 +71,7 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
   const spellCheck = useDocSettingsStore((s) => s.spellCheck);
 
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
   const [floatingMenuOpen, setFloatingMenuOpen] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
@@ -82,9 +83,9 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
   const [showReplace, setShowReplace] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
-  // Menu state is managed by a custom hook
+  // Single menu hook instance using editorRef — ref is populated after useEditor
   const menus = useEditorMenus({
-    editor: null, // will be set after useEditor
+    editorRef,
     docList,
     drawingList,
     tableList,
@@ -188,24 +189,17 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
     },
   });
 
-  // Re-initialize menus with actual editor instance (menus ref the same state)
-  // The hook returns stable references, editor is used via closure in handlers
-  const menuState = useEditorMenus({
-    editor,
-    docList,
-    drawingList,
-    tableList,
-    editorContainerRef,
-  });
+  // Populate editorRef after useEditor so the single menus hook can access it
+  editorRef.current = editor;
 
   // All editor side-effects
   useEditorEffects({
     editor, readOnly, fontStyle, smallText, spellCheck, onNavigate,
     editorContainerRef,
-    slashMenuOpen: menuState.slashMenuOpen,
-    closeSlashMenu: menuState.closeSlashMenu,
-    mentionMenuOpen: menuState.mentionMenuOpen,
-    closeMentionMenu: menuState.closeMentionMenu,
+    slashMenuOpen: menus.slashMenuOpen,
+    closeSlashMenu: menus.closeSlashMenu,
+    mentionMenuOpen: menus.mentionMenuOpen,
+    closeMentionMenu: menus.closeMentionMenu,
     floatingMenuOpen, setFloatingMenuOpen,
     setTableToolbarPos, setSearchOpen, setWordCount, setCharCount,
   });
@@ -304,20 +298,20 @@ export function DocEditor({ value, onChange, readOnly = false, documents: docLis
 
         <EditorContent editor={editor} />
 
-        {menuState.slashMenuOpen && menuState.slashMenuPos && (
-          <SlashCommandMenu items={menuState.getFilteredCommands(menuState.slashQuery)} selectedIndex={menuState.slashSelectedIdx} onSelect={menuState.executeSlashCommand} position={menuState.slashMenuPos} />
+        {menus.slashMenuOpen && menus.slashMenuPos && (
+          <SlashCommandMenu items={menus.getFilteredCommands(menus.slashQuery)} selectedIndex={menus.slashSelectedIdx} onSelect={menus.executeSlashCommand} position={menus.slashMenuPos} />
         )}
 
-        {menuState.mentionMenuOpen && menuState.mentionMenuPos && (
-          <MentionMenu items={menuState.getFilteredMentions(menuState.mentionQuery)} selectedIndex={menuState.mentionSelectedIdx} onSelect={menuState.executeMentionInsert} position={menuState.mentionMenuPos} />
+        {menus.mentionMenuOpen && menus.mentionMenuPos && (
+          <MentionMenu items={menus.getFilteredMentions(menus.mentionQuery)} selectedIndex={menus.mentionSelectedIdx} onSelect={menus.executeMentionInsert} position={menus.mentionMenuPos} />
         )}
 
-        {menuState.drawingPickerOpen && drawingList && (
-          <DrawingPicker drawings={drawingList} onSelect={menuState.insertDrawingEmbed} onClose={() => menuState.setDrawingPickerOpen(false)} />
+        {menus.drawingPickerOpen && drawingList && (
+          <DrawingPicker drawings={drawingList} onSelect={menus.insertDrawingEmbed} onClose={() => menus.setDrawingPickerOpen(false)} />
         )}
 
-        {menuState.tablePickerOpen && tableList && (
-          <TablePicker tables={tableList} onSelect={menuState.insertTableEmbed} onClose={() => menuState.setTablePickerOpen(false)} />
+        {menus.tablePickerOpen && tableList && (
+          <TablePicker tables={tableList} onSelect={menus.insertTableEmbed} onClose={() => menus.setTablePickerOpen(false)} />
         )}
 
         {!readOnly && tableToolbarPos && <TableToolbar editor={editor} position={tableToolbarPos} />}

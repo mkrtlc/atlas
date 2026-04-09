@@ -56,12 +56,20 @@ export function DocumentView({
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const docFullWidth = useDocSettingsStore((s) => s.fullWidth);
 
+  // Local state for title to prevent React Query cache from fighting keystrokes
+  const [titleValue, setTitleValue] = useState(doc.title || '');
+
+  // Only reset local title when switching documents, not on every cache update
+  useEffect(() => {
+    setTitleValue(doc.title || '');
+  }, [doc.id]);
+
   useEffect(() => {
     if (titleRef.current) {
       titleRef.current.style.height = 'auto';
       titleRef.current.style.height = titleRef.current.scrollHeight + 'px';
     }
-  }, [doc.title]);
+  }, [titleValue]);
 
   return (
     <div style={{ height: '100%', overflow: 'auto' }}>
@@ -163,8 +171,11 @@ export function DocumentView({
         <textarea
           ref={titleRef}
           className="doc-inline-title"
-          value={doc.title}
-          onChange={(e) => onTitleChange(e.target.value)}
+          value={titleValue}
+          onChange={(e) => {
+            setTitleValue(e.target.value);
+            onTitleChange(e.target.value);
+          }}
           placeholder={t('docs.untitled')}
           rows={1}
           style={{ resize: 'none' }}
