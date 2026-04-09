@@ -114,6 +114,50 @@ router.delete('/onboarding/:taskId', hrController.deleteOnboardingTask);
 router.delete('/documents/:docId', hrController.deleteEmployeeDocument);
 router.get('/documents/:docId/download', hrController.downloadEmployeeDocument);
 
+// ─── Expense Categories ─────────────────────────────────────────
+router.get('/expense-categories/list', hrController.listExpenseCategories);
+router.post('/expense-categories', hrController.createExpenseCategory);
+router.post('/expense-categories/seed', hrController.seedExpenseCategories);
+router.post('/expense-categories/reorder', hrController.reorderExpenseCategories);
+router.patch('/expense-categories/:id', hrController.updateExpenseCategory);
+router.delete('/expense-categories/:id', hrController.deleteExpenseCategory);
+
+// ─── Expense Policies ───────────────────────────────────────────
+router.get('/expense-policies/list', hrController.listExpensePolicies);
+router.post('/expense-policies', hrController.createExpensePolicy);
+router.get('/expense-policies/:id', hrController.getExpensePolicy);
+router.patch('/expense-policies/:id', hrController.updateExpensePolicy);
+router.delete('/expense-policies/:id', hrController.deleteExpensePolicy);
+router.post('/expense-policies/:id/assign', hrController.assignPolicy);
+router.delete('/expense-policies/:id/assign/:assignmentId', hrController.removeAssignment);
+
+// ─── Expenses ───────────────────────────────────────────────────
+router.get('/expenses/list', hrController.listExpenses);
+router.get('/expenses/my', hrController.listMyExpenses);
+router.get('/expenses/pending', hrController.getPendingExpenses);
+router.get('/expenses/pending/count', hrController.getPendingExpenseCount);
+router.get('/expenses/dashboard', hrController.getExpenseDashboard);
+router.post('/expenses', hrController.createExpense);
+router.post('/expenses/bulk-pay', hrController.bulkPayExpenses);
+router.get('/expenses/:id', hrController.getExpense);
+router.patch('/expenses/:id', hrController.updateExpense);
+router.delete('/expenses/:id', hrController.deleteExpense);
+router.post('/expenses/:id/submit', hrController.submitExpense);
+router.post('/expenses/:id/recall', hrController.recallExpense);
+router.post('/expenses/:id/approve', hrController.approveExpense);
+router.post('/expenses/:id/refuse', hrController.refuseExpense);
+
+// ─── Expense Reports ────────────────────────────────────────────
+router.get('/expense-reports/list', hrController.listExpenseReports);
+router.get('/expense-reports/my', hrController.listMyExpenseReports);
+router.post('/expense-reports', hrController.createExpenseReport);
+router.get('/expense-reports/:id', hrController.getExpenseReport);
+router.patch('/expense-reports/:id', hrController.updateExpenseReport);
+router.delete('/expense-reports/:id', hrController.deleteExpenseReport);
+router.post('/expense-reports/:id/submit', hrController.submitExpenseReport);
+router.post('/expense-reports/:id/approve', hrController.approveExpenseReport);
+router.post('/expense-reports/:id/refuse', hrController.refuseExpenseReport);
+
 // Employees
 router.get('/', hrController.listEmployees);
 router.post('/', hrController.createEmployee);

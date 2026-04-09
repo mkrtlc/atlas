@@ -116,6 +116,7 @@ export const hrServerManifest: ServerAppManifest = {
     'hr_leave_types', 'hr_leave_policies', 'hr_leave_policy_assignments',
     'hr_holiday_calendars', 'hr_holidays', 'hr_leave_applications',
     'hr_attendance', 'hr_lifecycle_events',
+    'hr_expense_categories', 'hr_expense_policies', 'hr_expense_policy_assignments', 'hr_expense_reports', 'hr_expenses',
   ],
   objects,
 };

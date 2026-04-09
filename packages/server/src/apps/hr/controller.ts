@@ -8,3 +8,8 @@ export * from './controllers/document.controller';
 export * from './controllers/lifecycle.controller';
 export * from './controllers/leave-application.controller';
 export * from './controllers/attendance.controller';
+export * from './controllers/expense.controller';
+export * from './controllers/expense-category.controller';
+export * from './controllers/expense-policy.controller';
+export * from './controllers/expense-report.controller';
+export * from './controllers/expense-dashboard.controller';
