@@ -2476,7 +2476,114 @@
     "widgetTitle": "Team",
     "widgetDepartments": "Abteilungen",
     "widgetOnLeave": "heute abwesend",
-    "widgetNoLeave": "Heute niemand abwesend"
+    "widgetNoLeave": "Heute niemand abwesend",
+    "expenses": {
+      "sidebar": {
+        "myExpenses": "Meine Ausgaben",
+        "expenseApprovals": "Ausgabengenehmigungen",
+        "allExpenses": "Alle Ausgaben",
+        "expenseReports": "Ausgabenberichte",
+        "expenseCategories": "Ausgabenkategorien",
+        "expensePolicies": "Ausgabenrichtlinien"
+      },
+      "form": {
+        "category": "Kategorie",
+        "expenseDate": "Ausgabendatum",
+        "description": "Beschreibung",
+        "merchant": "Händler",
+        "amount": "Betrag",
+        "tax": "Steuer",
+        "quantity": "Menge",
+        "currency": "Währung",
+        "paymentMethod": "Zahlungsmethode",
+        "project": "Projekt",
+        "receipt": "Beleg",
+        "uploadReceipt": "Beleg hochladen",
+        "addToReport": "Zum Bericht hinzufügen",
+        "notes": "Notizen",
+        "newExpense": "Neue Ausgabe",
+        "editExpense": "Ausgabe bearbeiten"
+      },
+      "paymentMethods": {
+        "personal_card": "Persönliche Karte",
+        "company_card": "Firmenkarte",
+        "cash": "Bargeld"
+      },
+      "status": {
+        "draft": "Entwurf",
+        "submitted": "Eingereicht",
+        "approved": "Genehmigt",
+        "refused": "Abgelehnt",
+        "paid": "Bezahlt"
+      },
+      "actions": {
+        "save": "Speichern",
+        "submit": "Einreichen",
+        "recall": "Zurückrufen",
+        "approve": "Genehmigen",
+        "refuse": "Ablehnen",
+        "markPaid": "Als bezahlt markieren",
+        "bulkPay": "Ausgewählte als bezahlt markieren",
+        "delete": "Löschen",
+        "edit": "Bearbeiten",
+        "resubmit": "Erneut einreichen"
+      },
+      "empty": {
+        "noExpenses": "Noch keine Ausgaben",
+        "noExpensesDescription": "Erstellen Sie Ihre erste Ausgabe, um zu beginnen",
+        "noPendingApprovals": "Keine ausstehenden Genehmigungen",
+        "noPendingApprovalsDescription": "Alles erledigt! Keine Ausgaben warten auf Ihre Überprüfung."
+      },
+      "dashboard": {
+        "title": "Ausgabenübersicht",
+        "totalExpenses": "Gesamtausgaben",
+        "pendingApprovals": "Ausstehende Genehmigungen",
+        "unpaidAmount": "Unbezahlter Betrag",
+        "reimbursed": "Erstattet",
+        "spendByCategory": "Ausgaben nach Kategorie",
+        "monthlyTrend": "Monatlicher Trend",
+        "topSpenders": "Höchste Ausgaben",
+        "policyViolations": "Richtlinienverstöße",
+        "pendingPayments": "Ausstehende Zahlungen",
+        "vsLastMonth": "ggü. Vormonat"
+      },
+      "policy": {
+        "monthlyLimit": "Monatliches Limit",
+        "requireReceiptAbove": "Beleg erforderlich ab",
+        "autoApproveBelow": "Automatisch genehmigen unter",
+        "exceedsLimit": "Überschreitet {{category}}-Limit von {{amount}}",
+        "receiptRequired": "Beleg erforderlich für Ausgaben über {{amount}}",
+        "monthlyLimitExceeded": "Monatliches Limit von {{amount}} überschritten",
+        "assignToEmployee": "Mitarbeiter zuweisen",
+        "assignToDepartment": "Abteilung zuweisen",
+        "noAssignments": "Noch keine Zuweisungen"
+      },
+      "reports": {
+        "createReport": "Bericht erstellen",
+        "reportTitle": "Berichtstitel",
+        "addExpenses": "Ausgaben hinzufügen",
+        "submitReport": "Bericht einreichen",
+        "totalAmount": "Gesamtbetrag",
+        "expenseCount": "{{count}} Ausgaben"
+      },
+      "categories": {
+        "title": "Ausgabenkategorien",
+        "addCategory": "Kategorie hinzufügen",
+        "seedCategories": "Standardkategorien hinzufügen",
+        "maxAmount": "Höchstbetrag",
+        "receiptRequired": "Beleg erforderlich",
+        "noCategories": "Noch keine Kategorien"
+      },
+      "detail": {
+        "expenseDetail": "Ausgabendetail",
+        "refusedBy": "Abgelehnt von {{name}}",
+        "receiptAttached": "Beleg angehängt",
+        "noReceipt": "Kein Beleg",
+        "policyViolation": "Richtlinienverstoß",
+        "refuseComment": "Ablehnungsgrund",
+        "refuseCommentPlaceholder": "Grund eingeben..."
+      }
+    }
   },
   "sign": {
     "title": "Sign",

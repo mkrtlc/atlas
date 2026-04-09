@@ -2476,7 +2476,114 @@
     "widgetTitle": "Ekip",
     "widgetDepartments": "departman",
     "widgetOnLeave": "bugün izinli",
-    "widgetNoLeave": "Bugün izinli kimse yok"
+    "widgetNoLeave": "Bugün izinli kimse yok",
+    "expenses": {
+      "sidebar": {
+        "myExpenses": "Harcamalarım",
+        "expenseApprovals": "Harcama onayları",
+        "allExpenses": "Tüm harcamalar",
+        "expenseReports": "Harcama raporları",
+        "expenseCategories": "Harcama kategorileri",
+        "expensePolicies": "Harcama politikaları"
+      },
+      "form": {
+        "category": "Kategori",
+        "expenseDate": "Harcama tarihi",
+        "description": "Açıklama",
+        "merchant": "İşyeri",
+        "amount": "Tutar",
+        "tax": "Vergi",
+        "quantity": "Miktar",
+        "currency": "Para birimi",
+        "paymentMethod": "Ödeme yöntemi",
+        "project": "Proje",
+        "receipt": "Fiş",
+        "uploadReceipt": "Fiş yükle",
+        "addToReport": "Rapora ekle",
+        "notes": "Notlar",
+        "newExpense": "Yeni harcama",
+        "editExpense": "Harcamayı düzenle"
+      },
+      "paymentMethods": {
+        "personal_card": "Kişisel kart",
+        "company_card": "Şirket kartı",
+        "cash": "Nakit"
+      },
+      "status": {
+        "draft": "Taslak",
+        "submitted": "Gönderildi",
+        "approved": "Onaylandı",
+        "refused": "Reddedildi",
+        "paid": "Ödendi"
+      },
+      "actions": {
+        "save": "Kaydet",
+        "submit": "Gönder",
+        "recall": "Geri çek",
+        "approve": "Onayla",
+        "refuse": "Reddet",
+        "markPaid": "Ödendi olarak işaretle",
+        "bulkPay": "Seçilenleri ödendi olarak işaretle",
+        "delete": "Sil",
+        "edit": "Düzenle",
+        "resubmit": "Tekrar gönder"
+      },
+      "empty": {
+        "noExpenses": "Henüz harcama yok",
+        "noExpensesDescription": "Başlamak için ilk harcamanızı oluşturun",
+        "noPendingApprovals": "Bekleyen onay yok",
+        "noPendingApprovalsDescription": "Her şey tamam! İncelemenizi bekleyen harcama yok."
+      },
+      "dashboard": {
+        "title": "Harcama özeti",
+        "totalExpenses": "Toplam harcamalar",
+        "pendingApprovals": "Bekleyen onaylar",
+        "unpaidAmount": "Ödenmemiş tutar",
+        "reimbursed": "Geri ödenen",
+        "spendByCategory": "Kategoriye göre harcama",
+        "monthlyTrend": "Aylık trend",
+        "topSpenders": "En çok harcayanlar",
+        "policyViolations": "Politika ihlalleri",
+        "pendingPayments": "Bekleyen ödemeler",
+        "vsLastMonth": "geçen aya göre"
+      },
+      "policy": {
+        "monthlyLimit": "Aylık limit",
+        "requireReceiptAbove": "Üzerinde fiş gerekli",
+        "autoApproveBelow": "Altında otomatik onayla",
+        "exceedsLimit": "{{category}} limiti olan {{amount}} aşıldı",
+        "receiptRequired": "{{amount}} üzerindeki harcamalar için fiş gereklidir",
+        "monthlyLimitExceeded": "{{amount}} aylık limit aşıldı",
+        "assignToEmployee": "Çalışana ata",
+        "assignToDepartment": "Departmana ata",
+        "noAssignments": "Henüz atama yok"
+      },
+      "reports": {
+        "createReport": "Rapor oluştur",
+        "reportTitle": "Rapor başlığı",
+        "addExpenses": "Harcama ekle",
+        "submitReport": "Raporu gönder",
+        "totalAmount": "Toplam tutar",
+        "expenseCount": "{{count}} harcama"
+      },
+      "categories": {
+        "title": "Harcama kategorileri",
+        "addCategory": "Kategori ekle",
+        "seedCategories": "Varsayılan kategorileri ekle",
+        "maxAmount": "Maksimum tutar",
+        "receiptRequired": "Fiş gerekli",
+        "noCategories": "Henüz kategori yok"
+      },
+      "detail": {
+        "expenseDetail": "Harcama detayı",
+        "refusedBy": "{{name}} tarafından reddedildi",
+        "receiptAttached": "Fiş eklendi",
+        "noReceipt": "Fiş yok",
+        "policyViolation": "Politika ihlali",
+        "refuseComment": "Ret nedeni",
+        "refuseCommentPlaceholder": "Nedenini girin..."
+      }
+    }
   },
   "sign": {
     "title": "Sign",

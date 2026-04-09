@@ -2476,7 +2476,114 @@
     "widgetTitle": "Équipe",
     "widgetDepartments": "départements",
     "widgetOnLeave": "en congé aujourd'hui",
-    "widgetNoLeave": "Personne en congé aujourd'hui"
+    "widgetNoLeave": "Personne en congé aujourd'hui",
+    "expenses": {
+      "sidebar": {
+        "myExpenses": "Mes dépenses",
+        "expenseApprovals": "Approbations de dépenses",
+        "allExpenses": "Toutes les dépenses",
+        "expenseReports": "Rapports de dépenses",
+        "expenseCategories": "Catégories de dépenses",
+        "expensePolicies": "Politiques de dépenses"
+      },
+      "form": {
+        "category": "Catégorie",
+        "expenseDate": "Date de la dépense",
+        "description": "Description",
+        "merchant": "Commerçant",
+        "amount": "Montant",
+        "tax": "Taxe",
+        "quantity": "Quantité",
+        "currency": "Devise",
+        "paymentMethod": "Mode de paiement",
+        "project": "Projet",
+        "receipt": "Reçu",
+        "uploadReceipt": "Télécharger le reçu",
+        "addToReport": "Ajouter au rapport",
+        "notes": "Notes",
+        "newExpense": "Nouvelle dépense",
+        "editExpense": "Modifier la dépense"
+      },
+      "paymentMethods": {
+        "personal_card": "Carte personnelle",
+        "company_card": "Carte entreprise",
+        "cash": "Espèces"
+      },
+      "status": {
+        "draft": "Brouillon",
+        "submitted": "Soumise",
+        "approved": "Approuvée",
+        "refused": "Refusée",
+        "paid": "Payée"
+      },
+      "actions": {
+        "save": "Enregistrer",
+        "submit": "Soumettre",
+        "recall": "Rappeler",
+        "approve": "Approuver",
+        "refuse": "Refuser",
+        "markPaid": "Marquer comme payée",
+        "bulkPay": "Marquer la sélection comme payée",
+        "delete": "Supprimer",
+        "edit": "Modifier",
+        "resubmit": "Soumettre à nouveau"
+      },
+      "empty": {
+        "noExpenses": "Aucune dépense pour le moment",
+        "noExpensesDescription": "Créez votre première dépense pour commencer",
+        "noPendingApprovals": "Aucune approbation en attente",
+        "noPendingApprovalsDescription": "Tout est à jour ! Aucune dépense en attente de votre examen."
+      },
+      "dashboard": {
+        "title": "Aperçu des dépenses",
+        "totalExpenses": "Total des dépenses",
+        "pendingApprovals": "Approbations en attente",
+        "unpaidAmount": "Montant impayé",
+        "reimbursed": "Remboursé",
+        "spendByCategory": "Dépenses par catégorie",
+        "monthlyTrend": "Tendance mensuelle",
+        "topSpenders": "Plus gros dépensiers",
+        "policyViolations": "Violations de politique",
+        "pendingPayments": "Paiements en attente",
+        "vsLastMonth": "par rapport au mois dernier"
+      },
+      "policy": {
+        "monthlyLimit": "Limite mensuelle",
+        "requireReceiptAbove": "Reçu requis au-dessus de",
+        "autoApproveBelow": "Approbation automatique en dessous de",
+        "exceedsLimit": "Dépasse la limite de {{category}} de {{amount}}",
+        "receiptRequired": "Reçu requis pour les dépenses supérieures à {{amount}}",
+        "monthlyLimitExceeded": "Limite mensuelle de {{amount}} dépassée",
+        "assignToEmployee": "Attribuer à un employé",
+        "assignToDepartment": "Attribuer à un département",
+        "noAssignments": "Aucune attribution pour le moment"
+      },
+      "reports": {
+        "createReport": "Créer un rapport",
+        "reportTitle": "Titre du rapport",
+        "addExpenses": "Ajouter des dépenses",
+        "submitReport": "Soumettre le rapport",
+        "totalAmount": "Montant total",
+        "expenseCount": "{{count}} dépenses"
+      },
+      "categories": {
+        "title": "Catégories de dépenses",
+        "addCategory": "Ajouter une catégorie",
+        "seedCategories": "Ajouter les catégories par défaut",
+        "maxAmount": "Montant maximum",
+        "receiptRequired": "Reçu requis",
+        "noCategories": "Aucune catégorie pour le moment"
+      },
+      "detail": {
+        "expenseDetail": "Détail de la dépense",
+        "refusedBy": "Refusée par {{name}}",
+        "receiptAttached": "Reçu joint",
+        "noReceipt": "Pas de reçu",
+        "policyViolation": "Violation de politique",
+        "refuseComment": "Motif du refus",
+        "refuseCommentPlaceholder": "Saisissez le motif..."
+      }
+    }
   },
   "sign": {
     "title": "Sign",

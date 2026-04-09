@@ -2509,7 +2509,114 @@
     "widgetTitle": "Team",
     "widgetDepartments": "departments",
     "widgetOnLeave": "on leave today",
-    "widgetNoLeave": "No one on leave today"
+    "widgetNoLeave": "No one on leave today",
+    "expenses": {
+      "sidebar": {
+        "myExpenses": "My expenses",
+        "expenseApprovals": "Expense approvals",
+        "allExpenses": "All expenses",
+        "expenseReports": "Expense reports",
+        "expenseCategories": "Expense categories",
+        "expensePolicies": "Expense policies"
+      },
+      "form": {
+        "category": "Category",
+        "expenseDate": "Expense date",
+        "description": "Description",
+        "merchant": "Merchant",
+        "amount": "Amount",
+        "tax": "Tax",
+        "quantity": "Quantity",
+        "currency": "Currency",
+        "paymentMethod": "Payment method",
+        "project": "Project",
+        "receipt": "Receipt",
+        "uploadReceipt": "Upload receipt",
+        "addToReport": "Add to report",
+        "notes": "Notes",
+        "newExpense": "New expense",
+        "editExpense": "Edit expense"
+      },
+      "paymentMethods": {
+        "personal_card": "Personal card",
+        "company_card": "Company card",
+        "cash": "Cash"
+      },
+      "status": {
+        "draft": "Draft",
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "refused": "Refused",
+        "paid": "Paid"
+      },
+      "actions": {
+        "save": "Save",
+        "submit": "Submit",
+        "recall": "Recall",
+        "approve": "Approve",
+        "refuse": "Refuse",
+        "markPaid": "Mark as paid",
+        "bulkPay": "Mark selected as paid",
+        "delete": "Delete",
+        "edit": "Edit",
+        "resubmit": "Resubmit"
+      },
+      "empty": {
+        "noExpenses": "No expenses yet",
+        "noExpensesDescription": "Create your first expense to get started",
+        "noPendingApprovals": "No pending approvals",
+        "noPendingApprovalsDescription": "All caught up! No expenses waiting for your review."
+      },
+      "dashboard": {
+        "title": "Expense overview",
+        "totalExpenses": "Total expenses",
+        "pendingApprovals": "Pending approvals",
+        "unpaidAmount": "Unpaid amount",
+        "reimbursed": "Reimbursed",
+        "spendByCategory": "Spend by category",
+        "monthlyTrend": "Monthly trend",
+        "topSpenders": "Top spenders",
+        "policyViolations": "Policy violations",
+        "pendingPayments": "Pending payments",
+        "vsLastMonth": "vs last month"
+      },
+      "policy": {
+        "monthlyLimit": "Monthly limit",
+        "requireReceiptAbove": "Require receipt above",
+        "autoApproveBelow": "Auto-approve below",
+        "exceedsLimit": "Exceeds {{category}} limit of {{amount}}",
+        "receiptRequired": "Receipt required for expenses over {{amount}}",
+        "monthlyLimitExceeded": "Monthly limit of {{amount}} exceeded",
+        "assignToEmployee": "Assign to employee",
+        "assignToDepartment": "Assign to department",
+        "noAssignments": "No assignments yet"
+      },
+      "reports": {
+        "createReport": "Create report",
+        "reportTitle": "Report title",
+        "addExpenses": "Add expenses",
+        "submitReport": "Submit report",
+        "totalAmount": "Total amount",
+        "expenseCount": "{{count}} expenses"
+      },
+      "categories": {
+        "title": "Expense categories",
+        "addCategory": "Add category",
+        "seedCategories": "Add default categories",
+        "maxAmount": "Max amount",
+        "receiptRequired": "Receipt required",
+        "noCategories": "No categories yet"
+      },
+      "detail": {
+        "expenseDetail": "Expense detail",
+        "refusedBy": "Refused by {{name}}",
+        "receiptAttached": "Receipt attached",
+        "noReceipt": "No receipt",
+        "policyViolation": "Policy violation",
+        "refuseComment": "Reason for refusal",
+        "refuseCommentPlaceholder": "Enter reason..."
+      }
+    }
   },
   "sign": {
     "title": "Sign",

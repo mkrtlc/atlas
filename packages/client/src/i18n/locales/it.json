@@ -2476,7 +2476,114 @@
     "widgetTitle": "Team",
     "widgetDepartments": "dipartimenti",
     "widgetOnLeave": "in ferie oggi",
-    "widgetNoLeave": "Nessuno in ferie oggi"
+    "widgetNoLeave": "Nessuno in ferie oggi",
+    "expenses": {
+      "sidebar": {
+        "myExpenses": "Le mie spese",
+        "expenseApprovals": "Approvazioni spese",
+        "allExpenses": "Tutte le spese",
+        "expenseReports": "Report spese",
+        "expenseCategories": "Categorie spese",
+        "expensePolicies": "Politiche spese"
+      },
+      "form": {
+        "category": "Categoria",
+        "expenseDate": "Data della spesa",
+        "description": "Descrizione",
+        "merchant": "Esercente",
+        "amount": "Importo",
+        "tax": "Imposta",
+        "quantity": "Quantità",
+        "currency": "Valuta",
+        "paymentMethod": "Metodo di pagamento",
+        "project": "Progetto",
+        "receipt": "Ricevuta",
+        "uploadReceipt": "Carica ricevuta",
+        "addToReport": "Aggiungi al report",
+        "notes": "Note",
+        "newExpense": "Nuova spesa",
+        "editExpense": "Modifica spesa"
+      },
+      "paymentMethods": {
+        "personal_card": "Carta personale",
+        "company_card": "Carta aziendale",
+        "cash": "Contanti"
+      },
+      "status": {
+        "draft": "Bozza",
+        "submitted": "Inviata",
+        "approved": "Approvata",
+        "refused": "Rifiutata",
+        "paid": "Pagata"
+      },
+      "actions": {
+        "save": "Salva",
+        "submit": "Invia",
+        "recall": "Ritira",
+        "approve": "Approva",
+        "refuse": "Rifiuta",
+        "markPaid": "Segna come pagata",
+        "bulkPay": "Segna selezionate come pagate",
+        "delete": "Elimina",
+        "edit": "Modifica",
+        "resubmit": "Invia di nuovo"
+      },
+      "empty": {
+        "noExpenses": "Nessuna spesa ancora",
+        "noExpensesDescription": "Crea la tua prima spesa per iniziare",
+        "noPendingApprovals": "Nessuna approvazione in sospeso",
+        "noPendingApprovalsDescription": "Tutto in ordine! Nessuna spesa in attesa di revisione."
+      },
+      "dashboard": {
+        "title": "Panoramica spese",
+        "totalExpenses": "Spese totali",
+        "pendingApprovals": "Approvazioni in sospeso",
+        "unpaidAmount": "Importo non pagato",
+        "reimbursed": "Rimborsato",
+        "spendByCategory": "Spese per categoria",
+        "monthlyTrend": "Tendenza mensile",
+        "topSpenders": "Maggiori spenditori",
+        "policyViolations": "Violazioni delle politiche",
+        "pendingPayments": "Pagamenti in sospeso",
+        "vsLastMonth": "rispetto al mese scorso"
+      },
+      "policy": {
+        "monthlyLimit": "Limite mensile",
+        "requireReceiptAbove": "Ricevuta richiesta sopra",
+        "autoApproveBelow": "Approvazione automatica sotto",
+        "exceedsLimit": "Supera il limite di {{category}} di {{amount}}",
+        "receiptRequired": "Ricevuta richiesta per spese superiori a {{amount}}",
+        "monthlyLimitExceeded": "Limite mensile di {{amount}} superato",
+        "assignToEmployee": "Assegna a dipendente",
+        "assignToDepartment": "Assegna a reparto",
+        "noAssignments": "Nessuna assegnazione ancora"
+      },
+      "reports": {
+        "createReport": "Crea report",
+        "reportTitle": "Titolo del report",
+        "addExpenses": "Aggiungi spese",
+        "submitReport": "Invia report",
+        "totalAmount": "Importo totale",
+        "expenseCount": "{{count}} spese"
+      },
+      "categories": {
+        "title": "Categorie spese",
+        "addCategory": "Aggiungi categoria",
+        "seedCategories": "Aggiungi categorie predefinite",
+        "maxAmount": "Importo massimo",
+        "receiptRequired": "Ricevuta richiesta",
+        "noCategories": "Nessuna categoria ancora"
+      },
+      "detail": {
+        "expenseDetail": "Dettaglio spesa",
+        "refusedBy": "Rifiutata da {{name}}",
+        "receiptAttached": "Ricevuta allegata",
+        "noReceipt": "Nessuna ricevuta",
+        "policyViolation": "Violazione della politica",
+        "refuseComment": "Motivo del rifiuto",
+        "refuseCommentPlaceholder": "Inserisci il motivo..."
+      }
+    }
   },
   "sign": {
     "title": "Sign",
