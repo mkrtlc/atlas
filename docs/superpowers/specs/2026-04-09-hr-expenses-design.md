@@ -9,14 +9,18 @@
 
 Add expense management to the HR app as a new sidebar section. Employees submit expenses for approval, managers approve/refuse, admins process payments. Expenses can optionally be grouped into reports and linked to projects.
 
-Follows the same patterns as the existing leave management system: status machine with dedicated action endpoints, auto-assigned approver (manager), pending approvals queue with badge count, and the card-based approve/refuse UI.
+Follows similar patterns to the existing leave management system (status machine with dedicated action endpoints, auto-assigned approver via `employees.managerId`, pending approvals queue with badge count, card-based approve/refuse UI) with these intentional differences:
+
+- **Status names:** Expenses use `submitted` / `refused` (not `pending` / `rejected` as in leave). This reflects the different lifecycle semantics — a submitted expense can be recalled; a refused expense returns to draft for correction.
+- **Email notifications:** This is the first HR feature to send email. Uses the global `sendEmail` service from `packages/server/src/services/email.service.ts` (already used by CRM/Sign). This is net-new wiring for the HR module.
+- **StatusTimeline limitation:** The shared `StatusTimeline` component is linear-only. For expense detail, use it for the happy path (Draft → Submitted → Approved → Paid) and show refused status separately as a callout/badge, not as a timeline step.
 
 ---
 
 ## 2. Workflow & Statuses
 
 ```
-Draft → Submitted → Approved → Paid → Done
+Draft → Submitted → Approved → Paid
   ↑         ↓           ↓
   └── Refused ←── Refused
 ```
@@ -29,7 +33,11 @@ Draft → Submitted → Approved → Paid → Done
 | `refused` | Manager (refuse action) | Rejected with comment. Returns to Draft for employee to fix and resubmit. |
 | `paid` | Admin (mark paid action) | Reimbursement processed. Terminal state. Bulk action supported. |
 
-**Approver assignment:** Auto-set to `employees.managerId` on submit (same as leave applications).
+**Approver assignment:** Auto-set to `employees.managerId` on submit (same as leave). The `/expenses/pending` endpoint returns expenses where `approverId` matches the current user's employee record.
+
+**Manager detection:** A user is a "manager" if any employee has them as `managerId`. The "Expense approvals" sidebar item is visible when `pendingCount > 0` OR when the user's HR app permission role is `admin`. This matches how leave approvals work — there is no separate "manager" role.
+
+**Admin detection:** Uses `useMyAppPermission('hr')` — role `admin` sees All expenses, Categories, and Policies sidebar items. Role `editor` or `viewer` sees only My expenses and Expense reports.
 
 **Expense reports:** When expenses are grouped into a report, the report has its own status. Submitting the report submits all its draft expenses. Approving the report approves all. Individual expenses within a report cannot be approved/refused separately — the report is the unit of approval.
 
@@ -95,7 +103,7 @@ Optional grouping of expenses.
 |--------|------|-------|
 | `id` | uuid | PK, defaultRandom |
 | `tenantId` | uuid | FK → tenants, NOT NULL |
-| `userId` | uuid | NOT NULL |
+| `userId` | uuid | NOT NULL (creator's user ID, no FK — matches HR pattern) |
 | `employeeId` | uuid | FK → employees, NOT NULL |
 | `title` | varchar(500) | NOT NULL |
 | `status` | varchar(20) | NOT NULL, default `'draft'` |
@@ -111,6 +119,8 @@ Optional grouping of expenses.
 | `createdAt` | timestamp | NOT NULL, defaultNow |
 | `updatedAt` | timestamp | NOT NULL, defaultNow |
 
+Note: `userId` has no FK constraint, matching the pattern used by `hr_leave_applications` and other HR tables where `userId` stores the acting user but doesn't enforce a FK to the `users` table.
+
 ### 3.5 `hr_expenses`
 
 Individual expense records.
@@ -119,7 +129,7 @@ Individual expense records.
 |--------|------|-------|
 | `id` | uuid | PK, defaultRandom |
 | `tenantId` | uuid | FK → tenants, NOT NULL |
-| `userId` | uuid | NOT NULL |
+| `userId` | uuid | NOT NULL (no FK, matches HR pattern) |
 | `employeeId` | uuid | FK → employees, NOT NULL |
 | `categoryId` | uuid | FK → hr_expense_categories, set null on delete |
 | `projectId` | uuid | nullable FK → projectProjects, set null on delete |
@@ -133,7 +143,7 @@ Individual expense records.
 | `expenseDate` | timestamp | NOT NULL |
 | `merchantName` | varchar(255) | nullable |
 | `paymentMethod` | varchar(20) | NOT NULL, default `'personal_card'` |
-| `receiptPath` | text | nullable — server file path |
+| `receiptPath` | text | nullable — file path from global `/api/upload` endpoint |
 | `status` | varchar(20) | NOT NULL, default `'draft'` |
 | `submittedAt` | timestamp | nullable |
 | `approvedAt` | timestamp | nullable |
@@ -150,7 +160,17 @@ Indexes: `tenantId`, `employeeId`, `categoryId`, `status`, `reportId`, `projectI
 
 ---
 
-## 4. API Routes
+## 4. Receipt Upload
+
+Receipts use the existing global upload endpoint at `POST /api/upload` (multer, disk storage, `/uploads/` directory, 25 MB limit). The expense form uploads the file first via this global route, receives the file path in the response, then stores the path in `hr_expenses.receiptPath`.
+
+No HR-specific upload route is needed. The `POST /expenses/:id/upload-receipt` route from the initial design is **removed** — use the global upload instead.
+
+Updated API routes in section 5 reflect this removal.
+
+---
+
+## 5. API Routes
 
 All under `/api/hr`, auth required.
 
@@ -185,16 +205,15 @@ All under `/api/hr`, auth required.
 | GET | `/expenses/my` | List current user's expenses |
 | POST | `/expenses` | Create expense |
 | GET | `/expenses/:id` | Get expense detail |
-| PATCH | `/expenses/:id` | Update expense (draft only) |
+| PATCH | `/expenses/:id` | Update expense (draft/refused only) |
 | DELETE | `/expenses/:id` | Soft delete (draft only) |
 | POST | `/expenses/:id/submit` | Submit for approval |
 | POST | `/expenses/:id/recall` | Recall to draft (submitted only) |
-| POST | `/expenses/:id/approve` | Approve (manager) |
-| POST | `/expenses/:id/refuse` | Refuse with comment (manager) |
+| POST | `/expenses/:id/approve` | Approve (manager/admin) |
+| POST | `/expenses/:id/refuse` | Refuse with comment (manager/admin) |
 | POST | `/expenses/bulk-pay` | Mark multiple as paid (admin) |
 | GET | `/expenses/pending` | Pending approvals for current manager |
 | GET | `/expenses/pending/count` | Count of pending approvals |
-| POST | `/expenses/:id/upload-receipt` | Upload receipt file |
 
 ### Expense Reports
 
@@ -218,30 +237,36 @@ All under `/api/hr`, auth required.
 
 ---
 
-## 5. HR Sidebar Additions
+## 6. HR Sidebar Additions
 
-New "Expenses" section in the HR sidebar, placed after the "Leave" section:
+New "Expenses" section in the HR sidebar, placed after the "Leave" section.
+
+The sidebar already has 13+ items. To manage this, the Expenses section should be **collapsible** (same as how the "Leave" section groups its items under a `SidebarSection` with a label). Admin-only items are only rendered when `appPermission.role === 'admin'`.
 
 | Item | Icon | Visible to | Badge |
 |------|------|------------|-------|
 | My expenses | `Receipt` | All employees | — |
-| Expense approvals | `ClipboardCheck` | Managers/admins | Pending count |
-| All expenses | `LayoutList` | Admins only | — |
+| Expense approvals | `ClipboardCheck` | Users with pending items OR admins | Pending count |
+| All expenses | `LayoutList` | Admin only (`appPermission.role === 'admin'`) | — |
 | Expense reports | `FolderOpen` | All employees | — |
-| Expense categories | `Tag` | Admins only | — |
-| Expense policies | `Shield` | Admins only | — |
+| Expense categories | `Tag` | Admin only | — |
+| Expense policies | `Shield` | Admin only | — |
+
+**Portal views:** Add `my-expenses` and `expense-reports` to the `PORTAL_VIEWS` set so employees using the portal sidebar can access their expenses.
+
+**NavSection type:** Add all 6 new view names to the `NavSection` union type in `page.tsx`.
 
 ---
 
-## 6. Employee Views
+## 7. Employee Views
 
-### 6.1 My Expenses
+### 7.1 My Expenses
 
 DataTable with columns: date, category (icon + name), description, amount (formatted), project name, status badge. Client-side search. Filter tabs by status (All, Draft, Submitted, Approved, Refused, Paid).
 
 "New expense" button opens the expense form modal.
 
-### 6.2 Expense Form (modal)
+### 7.2 Expense Form (modal)
 
 Fields:
 - **Category** — select from active `hr_expense_categories`
@@ -251,10 +276,10 @@ Fields:
 - **Amount** — number input (required)
 - **Tax** — number input (default 0)
 - **Quantity** — number input (default 1)
-- **Currency** — select (default from tenant)
+- **Currency** — select with common options (USD, EUR, GBP, TRY), default `'USD'`
 - **Payment method** — select: Personal card, Company card, Cash
 - **Project** — optional select from `projectProjects`
-- **Receipt** — file upload (image/PDF)
+- **Receipt** — file upload via global `/api/upload`, stores returned path
 - **Add to report** — optional select/create a report
 - **Notes** — textarea (optional)
 
@@ -262,7 +287,7 @@ Footer: **Save** (draft) / **Submit** (saves + submits)
 
 Policy violations shown inline: if category has `maxAmount` and entered amount exceeds, show warning "Exceeds category limit of {amount}". If policy `requireReceiptAbove` and no receipt attached, block submit with error.
 
-### 6.3 Expense Reports
+### 7.3 Expense Reports
 
 List of reports with title, status badge, total amount, expense count, date range.
 
@@ -272,31 +297,31 @@ Report detail: shows grouped expenses as a list, with total. Submit button submi
 
 ---
 
-## 7. Admin/Manager Views
+## 8. Admin/Manager Views
 
-### 7.1 Expense Approvals
+### 8.1 Expense Approvals
 
-Follows the leave approvals pattern exactly.
+Follows the leave approvals UI pattern (card list in `approvals-view.tsx`).
 
-Card list showing: employee avatar + name, category icon + name, description, amount (large), expense date, merchant, policy violation warning (if any), receipt thumbnail (clickable to view full).
+Card list showing: employee avatar + name, category icon + name, description, amount (large), expense date, merchant, policy violation warning badge (if `policyViolation` is set), receipt thumbnail (clickable to view full image).
 
 Actions: **Approve** (green primary button) / **Refuse** (red, expands inline comment textarea).
 
 Auto-approve: if policy `autoApproveBelow` is set and expense amount is under the threshold, the expense skips the approvals queue and goes directly to `approved`.
 
-### 7.2 All Expenses
+### 8.2 All Expenses
 
 Org-wide DataTable: employee name, date, category, description, amount, project, status. Filters by status, employee, category, date range.
 
 **Bulk "Mark as paid"**: checkbox column, bulk action button for approved expenses. Sets status to `paid`, `paidAt` to now, sends email notification.
 
-### 7.3 Expense Categories
+### 8.3 Expense Categories
 
 CRUD list: name, icon preview, color swatch, max amount, receipt required toggle, active toggle. Add/edit inline or via modal.
 
 Seed button: "Add default categories" — creates the 10 standard categories if none exist.
 
-### 7.4 Expense Policies
+### 8.4 Expense Policies
 
 CRUD list: policy name, monthly limit, receipt threshold, auto-approve threshold, active toggle.
 
@@ -304,7 +329,7 @@ Policy detail: shows assignments (employees and departments). "Assign" button op
 
 ---
 
-## 8. HR Dashboard — Expenses Section
+## 9. HR Dashboard — Expenses Section
 
 Added to the existing HR Dashboard view as a new section:
 
@@ -325,9 +350,9 @@ Added to the existing HR Dashboard view as a new section:
 
 ---
 
-## 9. Email Notifications
+## 10. Email Notifications
 
-Using the existing email service (sends only if SMTP is configured):
+Uses the global email service at `packages/server/src/services/email.service.ts`. This is the first time the HR module sends email — import `sendEmail` directly. Sends only if SMTP is configured (the service handles this check internally).
 
 | Event | Recipient | Subject |
 |-------|-----------|---------|
@@ -339,9 +364,11 @@ Using the existing email service (sends only if SMTP is configured):
 | Report approved | Employee | "Your expense report '{title}' was approved" |
 | Report refused | Employee | "Your expense report '{title}' was refused" |
 
+Email body should include: expense/report details, amount, and a link to the HR app (`{CLIENT_PUBLIC_URL}/hr`).
+
 ---
 
-## 10. Policy Enforcement
+## 11. Policy Enforcement
 
 When an employee submits an expense (or a report):
 
@@ -351,7 +378,7 @@ When an employee submits an expense (or a report):
 
 3. **Receipt requirement**: if policy `requireReceiptAbove` is set and `expense.amount > requireReceiptAbove` and `receiptPath` is null, **block submit** with error "Receipt required for expenses over {amount}".
 
-4. **Auto-approve**: if policy `autoApproveBelow` is set and `expense.amount < autoApproveBelow`, auto-set status to `approved`, skip manager queue.
+4. **Auto-approve**: if policy `autoApproveBelow` is set and `expense.amount < autoApproveBelow`, auto-set status to `approved`, skip manager queue. Still send approval email to employee.
 
 5. **Monthly limit check**: if policy `monthlyLimit` is set, sum all non-draft expenses for the employee this month. If adding this expense would exceed the limit, set `policyViolation = "Monthly limit of {monthlyLimit} exceeded"`. Allow submit but flag.
 
@@ -359,17 +386,28 @@ Policy violations are informational flags for the approver, NOT blockers (except
 
 ---
 
-## 11. Shared Components Reused
+## 12. Status Display in Detail Panel
 
-- **StatusTimeline** — from `components/shared/status-timeline.tsx` for expense detail status progression
+The shared `StatusTimeline` component renders a linear progression. Since expenses have a branching status (refused loops back to draft), handle it as follows:
+
+**Happy path (status is not `refused`):** Show `StatusTimeline` with steps: Draft → Submitted → Approved → Paid. Set `currentIndex` based on current status (draft=0, submitted=1, approved=2, paid=3).
+
+**Refused state:** Show a red callout/alert above the timeline: "Refused by {approverName}: {approverComment}". The timeline resets to show Draft as current (since the expense returns to draft for correction). Employee sees the refusal reason and can edit + resubmit.
+
+---
+
+## 13. Shared Components Reused
+
+- **StatusTimeline** — for expense detail happy-path status progression
 - **DataTable** — from existing HR components for list views
 - **Badge** — for status badges
 - **Modal** — compound Modal for expense form
 - **FeatureEmptyState** — for empty state when no expenses
+- **TotalsBlock** — from `components/shared/totals-block.tsx` for report totals display
 
 ---
 
-## 12. File Structure
+## 14. File Structure
 
 ### Server
 ```
@@ -406,14 +444,54 @@ packages/client/src/apps/hr/components/
 
 ---
 
-## 13. Translations
+## 15. Shared Types
 
-New keys in all 5 locale files under `hr.expenses`:
-- Sidebar labels, form field labels, status labels, action buttons, empty states, dashboard labels, policy labels, notification messages, validation messages.
+Add to `packages/shared/src/types/hr.ts`:
+
+```typescript
+export type ExpenseStatus = 'draft' | 'submitted' | 'approved' | 'refused' | 'paid';
+
+export interface HrExpense { ... }
+export interface HrExpenseCategory { ... }
+export interface HrExpensePolicy { ... }
+export interface HrExpensePolicyAssignment { ... }
+export interface HrExpenseReport { ... }
+export interface CreateExpenseInput { ... }
+export interface UpdateExpenseInput { ... }
+export interface CreateExpenseReportInput { ... }
+export interface CreateExpenseCategoryInput { ... }
+export interface CreateExpensePolicyInput { ... }
+
+export function getExpenseStatusVariant(status: ExpenseStatus): 'default' | 'primary' | 'success' | 'warning' | 'error' {
+  switch (status) {
+    case 'draft': return 'default';
+    case 'submitted': return 'primary';
+    case 'approved': return 'success';
+    case 'refused': return 'error';
+    case 'paid': return 'success';
+    default: return 'default';
+  }
+}
+```
 
 ---
 
-## 14. Query Keys
+## 16. Translations
+
+New keys in all 5 locale files under `hr.expenses`:
+- Sidebar labels: myExpenses, expenseApprovals, allExpenses, expenseReports, expenseCategories, expensePolicies
+- Form labels: category, expenseDate, description, merchant, amount, tax, quantity, currency, paymentMethod, project, receipt, addToReport, notes
+- Payment methods: personalCard, companyCard, cash
+- Status labels: draft, submitted, approved, refused, paid
+- Actions: save, submit, recall, approve, refuse, markPaid, bulkPay, delete, edit, uploadReceipt
+- Empty states: noExpenses, noExpensesDescription, noPendingApprovals
+- Dashboard: totalExpenses, pendingApprovals, unpaidAmount, reimbursed, spendByCategory, monthlyTrend, topSpenders, policyViolations, pendingPayments
+- Policy: monthlyLimit, requireReceiptAbove, autoApproveBelow, exceedsLimit, receiptRequired, monthlyLimitExceeded
+- Reports: createReport, reportTitle, addExpenses, submitReport
+
+---
+
+## 17. Query Keys
 
 Add to `packages/client/src/config/query-keys.ts` under existing `hr` namespace:
 
@@ -446,7 +524,7 @@ expensePolicies: {
 
 ---
 
-## 15. Out of Scope (Future)
+## 18. Out of Scope (Future)
 
 - OCR receipt scanning / AI auto-fill
 - Mileage / per diem special expense types with rate calculation
