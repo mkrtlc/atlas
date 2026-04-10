@@ -414,11 +414,47 @@ export function useCopyLastWeek() {
 
 // ─── Time Billing (populate invoices from time entries) ──────────
 
-export function usePopulateFromTimeEntries() {
+export interface TimeEntryLineItemPreview {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  projectId: string;
+  projectName: string;
+  workDate: string;
+}
+
+export function usePreviewTimeEntries() {
   return useMutation({
-    mutationFn: async (input: { companyId: string; startDate: string; endDate: string }) => {
+    mutationFn: async (input: {
+      companyId: string;
+      startDate: string;
+      endDate: string;
+      timeEntryIds?: string[];
+    }) => {
       const { data } = await api.post('/projects/time-billing/preview', input);
-      return data.data as { lineItems: Array<{ description: string; quantity: number; unitPrice: number }> };
+      return (data.data?.lineItems ?? []) as TimeEntryLineItemPreview[];
+    },
+  });
+}
+
+export function usePopulateFromTimeEntries() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      invoiceId: string;
+      companyId: string;
+      startDate: string;
+      endDate: string;
+      timeEntryIds?: string[];
+    }) => {
+      const { data } = await api.post('/projects/time-billing/populate', input);
+      return data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.detail(variables.invoiceId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
   });
 }
