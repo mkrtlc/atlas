@@ -43,18 +43,32 @@ export async function getInvoicesDashboard(tenantId: string) {
 // ─── Receivables ────────────────────────────────────────────────────
 
 async function getReceivables(tenantId: string): Promise<ReceivablesBuckets> {
+  // Each bucket sums the outstanding balance (total - net payments) rather
+  // than the raw invoice total so partial payments reduce the aging amounts.
+  // Invoices with zero balance are excluded from every bucket.
   const result = await db.execute(sql`
+    WITH outstanding AS (
+      SELECT
+        i.id,
+        i.due_date,
+        i.total - COALESCE((
+          SELECT SUM(CASE WHEN p.type = 'payment' THEN p.amount ELSE -p.amount END)
+          FROM invoice_payments p
+          WHERE p.invoice_id = i.id
+        ), 0) AS balance_due
+      FROM invoices i
+      WHERE i.tenant_id = ${tenantId}
+        AND i.status IN ('sent', 'viewed', 'approved')
+        AND i.is_archived = false
+    )
     SELECT
-      COALESCE(SUM(total), 0) AS total,
-      COALESCE(SUM(CASE WHEN due_date >= NOW() THEN total ELSE 0 END), 0) AS current_amount,
-      COALESCE(SUM(CASE WHEN due_date < NOW() AND due_date >= NOW() - INTERVAL '15 days' THEN total ELSE 0 END), 0) AS overdue_1_15,
-      COALESCE(SUM(CASE WHEN due_date < NOW() - INTERVAL '15 days' AND due_date >= NOW() - INTERVAL '30 days' THEN total ELSE 0 END), 0) AS overdue_16_30,
-      COALESCE(SUM(CASE WHEN due_date < NOW() - INTERVAL '30 days' AND due_date >= NOW() - INTERVAL '45 days' THEN total ELSE 0 END), 0) AS overdue_31_45,
-      COALESCE(SUM(CASE WHEN due_date < NOW() - INTERVAL '45 days' THEN total ELSE 0 END), 0) AS overdue_45_plus
-    FROM invoices
-    WHERE tenant_id = ${tenantId}
-      AND status IN ('sent', 'viewed', 'approved')
-      AND is_archived = false
+      COALESCE(SUM(CASE WHEN balance_due > 0 THEN balance_due ELSE 0 END), 0) AS total,
+      COALESCE(SUM(CASE WHEN balance_due > 0 AND due_date >= NOW() THEN balance_due ELSE 0 END), 0) AS current_amount,
+      COALESCE(SUM(CASE WHEN balance_due > 0 AND due_date < NOW() AND due_date >= NOW() - INTERVAL '15 days' THEN balance_due ELSE 0 END), 0) AS overdue_1_15,
+      COALESCE(SUM(CASE WHEN balance_due > 0 AND due_date < NOW() - INTERVAL '15 days' AND due_date >= NOW() - INTERVAL '30 days' THEN balance_due ELSE 0 END), 0) AS overdue_16_30,
+      COALESCE(SUM(CASE WHEN balance_due > 0 AND due_date < NOW() - INTERVAL '30 days' AND due_date >= NOW() - INTERVAL '45 days' THEN balance_due ELSE 0 END), 0) AS overdue_31_45,
+      COALESCE(SUM(CASE WHEN balance_due > 0 AND due_date < NOW() - INTERVAL '45 days' THEN balance_due ELSE 0 END), 0) AS overdue_45_plus
+    FROM outstanding
   `);
 
   const row = result.rows[0] as Record<string, string>;
@@ -85,18 +99,18 @@ async function getMonthlyActivity(tenantId: string): Promise<MonthlyActivity[]> 
     ORDER BY month
   `);
 
-  // Get paid amounts by month (last 12 months)
+  // Get received amounts by month (last 12 months) from invoice_payments.
+  // Sum payments minus refunds so partial payments and refunds are reflected.
   const paidResult = await db.execute(sql`
     SELECT
-      TO_CHAR(DATE_TRUNC('month', paid_at), 'YYYY-MM') AS month,
-      COALESCE(SUM(total), 0) AS amount
-    FROM invoices
-    WHERE tenant_id = ${tenantId}
-      AND status = 'paid'
-      AND is_archived = false
-      AND paid_at IS NOT NULL
-      AND paid_at >= DATE_TRUNC('month', NOW()) - INTERVAL '11 months'
-    GROUP BY DATE_TRUNC('month', paid_at)
+      TO_CHAR(DATE_TRUNC('month', p.payment_date), 'YYYY-MM') AS month,
+      COALESCE(SUM(CASE WHEN p.type = 'payment' THEN p.amount ELSE -p.amount END), 0) AS amount
+    FROM invoice_payments p
+    INNER JOIN invoices i ON i.id = p.invoice_id
+    WHERE p.tenant_id = ${tenantId}
+      AND i.is_archived = false
+      AND p.payment_date >= DATE_TRUNC('month', NOW()) - INTERVAL '11 months'
+    GROUP BY DATE_TRUNC('month', p.payment_date)
     ORDER BY month
   `);
 
@@ -125,33 +139,38 @@ async function getMonthlyActivity(tenantId: string): Promise<MonthlyActivity[]> 
 // ─── Period Summary ─────────────────────────────────────────────────
 
 async function getPeriodSummary(tenantId: string): Promise<PeriodSummary> {
-  const result = await db.execute(sql`
+  // "Invoiced" totals come from the invoices table (by issue_date).
+  const invoicedResult = await db.execute(sql`
     SELECT
-      -- Today
       COALESCE(SUM(CASE WHEN issue_date::date = CURRENT_DATE AND status != 'draft' THEN total ELSE 0 END), 0) AS today_invoiced,
-      COALESCE(SUM(CASE WHEN paid_at::date = CURRENT_DATE AND status = 'paid' THEN total ELSE 0 END), 0) AS today_received,
-
-      -- This week (Monday-based)
       COALESCE(SUM(CASE WHEN issue_date >= DATE_TRUNC('week', NOW()) AND status != 'draft' THEN total ELSE 0 END), 0) AS week_invoiced,
-      COALESCE(SUM(CASE WHEN paid_at >= DATE_TRUNC('week', NOW()) AND status = 'paid' THEN total ELSE 0 END), 0) AS week_received,
-
-      -- This month
       COALESCE(SUM(CASE WHEN issue_date >= DATE_TRUNC('month', NOW()) AND status != 'draft' THEN total ELSE 0 END), 0) AS month_invoiced,
-      COALESCE(SUM(CASE WHEN paid_at >= DATE_TRUNC('month', NOW()) AND status = 'paid' THEN total ELSE 0 END), 0) AS month_received,
-
-      -- This quarter
       COALESCE(SUM(CASE WHEN issue_date >= DATE_TRUNC('quarter', NOW()) AND status != 'draft' THEN total ELSE 0 END), 0) AS quarter_invoiced,
-      COALESCE(SUM(CASE WHEN paid_at >= DATE_TRUNC('quarter', NOW()) AND status = 'paid' THEN total ELSE 0 END), 0) AS quarter_received,
-
-      -- This year
-      COALESCE(SUM(CASE WHEN issue_date >= DATE_TRUNC('year', NOW()) AND status != 'draft' THEN total ELSE 0 END), 0) AS year_invoiced,
-      COALESCE(SUM(CASE WHEN paid_at >= DATE_TRUNC('year', NOW()) AND status = 'paid' THEN total ELSE 0 END), 0) AS year_received
+      COALESCE(SUM(CASE WHEN issue_date >= DATE_TRUNC('year', NOW()) AND status != 'draft' THEN total ELSE 0 END), 0) AS year_invoiced
     FROM invoices
     WHERE tenant_id = ${tenantId}
       AND is_archived = false
   `);
 
-  const row = result.rows[0] as Record<string, string>;
+  // "Received" totals come from invoice_payments (by payment_date). Payments
+  // minus refunds so partial payments and refunds are reflected.
+  const receivedResult = await db.execute(sql`
+    SELECT
+      COALESCE(SUM(CASE WHEN p.payment_date::date = CURRENT_DATE THEN (CASE WHEN p.type = 'payment' THEN p.amount ELSE -p.amount END) ELSE 0 END), 0) AS today_received,
+      COALESCE(SUM(CASE WHEN p.payment_date >= DATE_TRUNC('week', NOW()) THEN (CASE WHEN p.type = 'payment' THEN p.amount ELSE -p.amount END) ELSE 0 END), 0) AS week_received,
+      COALESCE(SUM(CASE WHEN p.payment_date >= DATE_TRUNC('month', NOW()) THEN (CASE WHEN p.type = 'payment' THEN p.amount ELSE -p.amount END) ELSE 0 END), 0) AS month_received,
+      COALESCE(SUM(CASE WHEN p.payment_date >= DATE_TRUNC('quarter', NOW()) THEN (CASE WHEN p.type = 'payment' THEN p.amount ELSE -p.amount END) ELSE 0 END), 0) AS quarter_received,
+      COALESCE(SUM(CASE WHEN p.payment_date >= DATE_TRUNC('year', NOW()) THEN (CASE WHEN p.type = 'payment' THEN p.amount ELSE -p.amount END) ELSE 0 END), 0) AS year_received
+    FROM invoice_payments p
+    INNER JOIN invoices i ON i.id = p.invoice_id
+    WHERE p.tenant_id = ${tenantId}
+      AND i.is_archived = false
+  `);
+
+  const row = {
+    ...(invoicedResult.rows[0] as Record<string, string>),
+    ...(receivedResult.rows[0] as Record<string, string>),
+  };
 
   function buildPeriod(prefix: string): PeriodRow {
     const invoiced = Number(row[`${prefix}_invoiced`]) || 0;

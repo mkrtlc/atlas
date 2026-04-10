@@ -48,6 +48,9 @@ export interface Invoice {
   dealTitle?: string;
   lineItems?: InvoiceLineItem[];
   lineItemCount?: number;
+  // Computed at read time from invoice_payments (not stored on the invoice row)
+  amountPaid?: number;   // sum of payments minus sum of refunds
+  balanceDue?: number;   // total - amountPaid, rounded to 2 decimals
 }
 
 export interface CreateInvoiceInput {

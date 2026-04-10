@@ -1,6 +1,6 @@
 import { db } from '../../../config/database';
 import {
-  invoices, invoiceLineItems, invoiceSettings,
+  invoices, invoiceLineItems, invoiceSettings, invoicePayments,
   crmCompanies, crmContacts, crmDeals,
   projectTimeEntries,
 } from '../../../db/schema';
@@ -80,15 +80,41 @@ export async function listInvoices(userId: string, tenantId: string, filters?: {
   if (filters?.dealId) {
     conditions.push(eq(invoices.dealId, filters.dealId));
   }
+  // Status filter supports both stored statuses and computed virtual states
+  // ('overdue' and 'unpaid'), which are derived from balance_due + due_date.
   if (filters?.status) {
-    conditions.push(eq(invoices.status, filters.status));
+    if (filters.status === 'overdue') {
+      // Virtual: invoice has outstanding balance AND due date is in the past.
+      // The stored status column can still be 'sent' or 'viewed' for these rows.
+      conditions.push(sql`(
+        ${invoices.dueDate} < NOW()
+        AND ${invoices.status} NOT IN ('paid', 'waived', 'draft')
+        AND ${invoices.total} > COALESCE((
+          SELECT SUM(CASE WHEN ${invoicePayments.type} = 'payment' THEN ${invoicePayments.amount} ELSE -${invoicePayments.amount} END)
+          FROM ${invoicePayments}
+          WHERE ${invoicePayments.invoiceId} = ${invoices.id}
+        ), 0)
+      )`);
+    } else if (filters.status === 'unpaid') {
+      // Virtual: any invoice with a non-zero outstanding balance (and not draft/waived).
+      conditions.push(sql`(
+        ${invoices.status} NOT IN ('paid', 'waived', 'draft')
+        AND ${invoices.total} > COALESCE((
+          SELECT SUM(CASE WHEN ${invoicePayments.type} = 'payment' THEN ${invoicePayments.amount} ELSE -${invoicePayments.amount} END)
+          FROM ${invoicePayments}
+          WHERE ${invoicePayments.invoiceId} = ${invoices.id}
+        ), 0)
+      )`);
+    } else {
+      conditions.push(eq(invoices.status, filters.status));
+    }
   }
   if (filters?.search) {
     const searchTerm = `%${filters.search}%`;
     conditions.push(sql`(${invoices.invoiceNumber} ILIKE ${searchTerm} OR ${crmCompanies.name} ILIKE ${searchTerm})`);
   }
 
-  return db
+  const rows = await db
     .select({
       id: invoices.id,
       tenantId: invoices.tenantId,
@@ -123,6 +149,11 @@ export async function listInvoices(userId: string, tenantId: string, filters?: {
       contactEmail: crmContacts.email,
       dealTitle: crmDeals.title,
       lineItemCount: sql<number>`(SELECT COUNT(*) FROM invoice_line_items WHERE invoice_id = ${invoices.id})`.as('line_item_count'),
+      amountPaid: sql<number>`COALESCE((
+        SELECT SUM(CASE WHEN ${invoicePayments.type} = 'payment' THEN ${invoicePayments.amount} ELSE -${invoicePayments.amount} END)
+        FROM ${invoicePayments}
+        WHERE ${invoicePayments.invoiceId} = ${invoices.id}
+      ), 0)`.as('amount_paid'),
     })
     .from(invoices)
     .leftJoin(crmCompanies, eq(invoices.companyId, crmCompanies.id))
@@ -130,6 +161,13 @@ export async function listInvoices(userId: string, tenantId: string, filters?: {
     .leftJoin(crmDeals, eq(invoices.dealId, crmDeals.id))
     .where(and(...conditions))
     .orderBy(desc(invoices.createdAt));
+
+  return rows.map((row) => {
+    const total = Number(row.total) || 0;
+    const amountPaid = Math.round((Number(row.amountPaid) || 0) * 100) / 100;
+    const balanceDue = Math.round((total - amountPaid) * 100) / 100;
+    return { ...row, amountPaid, balanceDue };
+  });
 }
 
 export async function getInvoice(userId: string, tenantId: string, id: string) {
@@ -167,6 +205,11 @@ export async function getInvoice(userId: string, tenantId: string, id: string) {
       contactName: crmContacts.name,
       contactEmail: crmContacts.email,
       dealTitle: crmDeals.title,
+      amountPaid: sql<number>`COALESCE((
+        SELECT SUM(CASE WHEN ${invoicePayments.type} = 'payment' THEN ${invoicePayments.amount} ELSE -${invoicePayments.amount} END)
+        FROM ${invoicePayments}
+        WHERE ${invoicePayments.invoiceId} = ${invoices.id}
+      ), 0)`.as('amount_paid'),
     })
     .from(invoices)
     .leftJoin(crmCompanies, eq(invoices.companyId, crmCompanies.id))
@@ -184,7 +227,11 @@ export async function getInvoice(userId: string, tenantId: string, id: string) {
     .where(eq(invoiceLineItems.invoiceId, id))
     .orderBy(asc(invoiceLineItems.sortOrder), asc(invoiceLineItems.createdAt));
 
-  return { ...invoice, lineItems };
+  const total = Number(invoice.total) || 0;
+  const amountPaid = Math.round((Number(invoice.amountPaid) || 0) * 100) / 100;
+  const balanceDue = Math.round((total - amountPaid) * 100) / 100;
+
+  return { ...invoice, amountPaid, balanceDue, lineItems };
 }
 
 export async function getNextInvoiceNumber(tenantId: string): Promise<string> {
