@@ -1,17 +1,7 @@
 import React from 'react';
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import type { InvoiceTemplateProps } from './types';
-
-function formatCurrency(amount: number, currency: string): string {
-  return `${amount.toFixed(2)} ${currency}`;
-}
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-}
+import { formatCurrency, formatDate, getStatusColor, capitalizeStatus } from './utils';
 
 const styles = StyleSheet.create({
   page: {
@@ -207,14 +197,7 @@ const styles = StyleSheet.create({
 export function ClassicTemplate({ invoice, lineItems, branding, client }: InvoiceTemplateProps) {
   const accent = branding.accentColor || '#13715B';
 
-  const statusColors: Record<string, string> = {
-    paid: '#16a34a',
-    draft: '#6b7280',
-    sent: '#2563eb',
-    overdue: '#dc2626',
-    cancelled: '#9ca3af',
-  };
-  const statusColor = statusColors[invoice.status?.toLowerCase()] || '#6b7280';
+  const statusColor = getStatusColor(invoice.status);
 
   return (
     <Document>
@@ -224,7 +207,7 @@ export function ClassicTemplate({ invoice, lineItems, branding, client }: Invoic
         <View style={styles.header}>
           <View>
             {branding.logoBase64 ? (
-              <Image style={styles.logo} src={`data:image/png;base64,${branding.logoBase64}`} />
+              <Image style={styles.logo} src={branding.logoBase64} />
             ) : (
               <Text style={styles.companyName}>{branding.companyName || 'Company Name'}</Text>
             )}
@@ -288,7 +271,7 @@ export function ClassicTemplate({ invoice, lineItems, branding, client }: Invoic
             <View style={styles.metaRow}>
               <Text style={styles.metaKey}>Status</Text>
               <Text style={[styles.metaValue, { color: statusColor }]}>
-                {invoice.status ? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1) : ''}
+                {capitalizeStatus(invoice.status)}
               </Text>
             </View>
           </View>

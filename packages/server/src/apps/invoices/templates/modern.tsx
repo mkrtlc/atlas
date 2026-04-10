@@ -1,17 +1,7 @@
 import React from 'react';
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import type { InvoiceTemplateProps } from './types';
-
-function formatCurrency(amount: number, currency: string): string {
-  return `${amount.toFixed(2)} ${currency}`;
-}
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-}
+import { formatCurrency, formatDate, getStatusColor, capitalizeStatus } from './utils';
 
 const styles = StyleSheet.create({
   page: {
@@ -242,17 +232,8 @@ const styles = StyleSheet.create({
 export function ModernTemplate({ invoice, lineItems, branding, client }: InvoiceTemplateProps) {
   const accent = branding.accentColor || '#13715B';
 
-  const statusColors: Record<string, string> = {
-    paid: '#16a34a',
-    draft: '#6b7280',
-    sent: '#2563eb',
-    overdue: '#dc2626',
-    cancelled: '#9ca3af',
-  };
-  const statusColor = statusColors[invoice.status?.toLowerCase()] || '#6b7280';
-  const statusLabel = invoice.status
-    ? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)
-    : '';
+  const statusColor = getStatusColor(invoice.status);
+  const statusLabel = capitalizeStatus(invoice.status);
 
   return (
     <Document>
@@ -261,7 +242,7 @@ export function ModernTemplate({ invoice, lineItems, branding, client }: Invoice
         {/* Accent bar */}
         <View style={[styles.accentBar, { backgroundColor: accent }]}>
           {branding.logoBase64 ? (
-            <Image style={styles.accentBarLogo} src={`data:image/png;base64,${branding.logoBase64}`} />
+            <Image style={styles.accentBarLogo} src={branding.logoBase64} />
           ) : null}
           <Text style={styles.accentBarCompanyName}>
             {branding.companyName || 'Company Name'}

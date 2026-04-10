@@ -268,8 +268,8 @@ export function InvoiceSettingsPanel() {
 
       {/* E-Fatura company details */}
       {form.eFaturaEnabled && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)', padding: 'var(--spacing-lg)', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-          <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)' }}>
+        <div style={sectionBoxStyle}>
+          <span style={sectionLabelStyle}>
             {t('invoices.settings.companyDetails')}
           </span>
           <Input

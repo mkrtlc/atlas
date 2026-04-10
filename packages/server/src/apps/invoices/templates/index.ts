@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 import type { InvoiceTemplateProps } from './types';
 
-// Templates will be registered here as they are created
 const templateRegistry: Record<string, ComponentType<InvoiceTemplateProps>> = {};
 
 export function registerTemplate(id: string, component: ComponentType<InvoiceTemplateProps>) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Download, Printer } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
@@ -14,13 +14,16 @@ export function InvoicePreview({ invoiceId, onClose }: InvoicePreviewProps) {
   const { t } = useTranslation();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const blobRef = useRef<Blob | null>(null);
 
   useEffect(() => {
     let url: string | null = null;
     async function loadPdf() {
       try {
         const response = await api.get(`/invoices/${invoiceId}/pdf?inline=true`, { responseType: 'blob' });
-        url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        blobRef.current = blob;
+        url = URL.createObjectURL(blob);
         setPdfUrl(url);
       } catch (err) {
         console.error('Failed to load invoice PDF', err);
@@ -29,23 +32,22 @@ export function InvoicePreview({ invoiceId, onClose }: InvoicePreviewProps) {
       }
     }
     loadPdf();
-    return () => { if (url) URL.revokeObjectURL(url); };
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+      blobRef.current = null;
+    };
   }, [invoiceId]);
 
-  const handleDownload = async () => {
-    try {
-      const response = await api.get(`/invoices/${invoiceId}/pdf`, { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `invoice-${invoiceId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Failed to download PDF', err);
-    }
+  const handleDownload = () => {
+    if (!blobRef.current) return;
+    const url = URL.createObjectURL(blobRef.current);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `invoice-${invoiceId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (

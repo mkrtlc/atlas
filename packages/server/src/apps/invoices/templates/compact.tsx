@@ -1,17 +1,7 @@
 import React from 'react';
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import type { InvoiceTemplateProps } from './types';
-
-function formatCurrency(amount: number, currency: string): string {
-  return `${amount.toFixed(2)} ${currency}`;
-}
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-}
+import { formatCurrency, formatDate, getStatusColor } from './utils';
 
 const styles = StyleSheet.create({
   page: {
@@ -232,14 +222,7 @@ const styles = StyleSheet.create({
 export function CompactTemplate({ invoice, lineItems, branding, client }: InvoiceTemplateProps) {
   const accent = branding.accentColor || '#13715B';
 
-  const statusColors: Record<string, string> = {
-    paid: '#16a34a',
-    draft: '#6b7280',
-    sent: '#2563eb',
-    overdue: '#dc2626',
-    cancelled: '#9ca3af',
-  };
-  const statusColor = statusColors[invoice.status?.toLowerCase()] || '#6b7280';
+  const statusColor = getStatusColor(invoice.status);
 
   return (
     <Document>
@@ -249,7 +232,7 @@ export function CompactTemplate({ invoice, lineItems, branding, client }: Invoic
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             {branding.logoBase64 ? (
-              <Image style={styles.logo} src={`data:image/png;base64,${branding.logoBase64}`} />
+              <Image style={styles.logo} src={branding.logoBase64} />
             ) : null}
             <Text style={styles.companyName}>{branding.companyName || 'Company Name'}</Text>
           </View>
@@ -300,11 +283,11 @@ export function CompactTemplate({ invoice, lineItems, branding, client }: Invoic
             <Text style={styles.colLabel}>Details</Text>
             <View style={styles.metaLine}>
               <Text style={styles.metaKey}>Issue Date</Text>
-              <Text style={styles.metaVal}>{formatDate(invoice.issueDate)}</Text>
+              <Text style={styles.metaVal}>{formatDate(invoice.issueDate, 'short')}</Text>
             </View>
             <View style={styles.metaLine}>
               <Text style={styles.metaKey}>Due Date</Text>
-              <Text style={styles.metaVal}>{formatDate(invoice.dueDate)}</Text>
+              <Text style={styles.metaVal}>{formatDate(invoice.dueDate, 'short')}</Text>
             </View>
             <View style={styles.metaLine}>
               <Text style={styles.metaKey}>Status</Text>
