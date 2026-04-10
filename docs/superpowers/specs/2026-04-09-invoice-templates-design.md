@@ -36,12 +36,19 @@ Add new columns:
 | `templateId` | varchar(50) | `'classic'` | Selected template ID |
 | `logoPath` | text | null | Uploaded logo file path (via /api/upload) |
 | `accentColor` | varchar(20) | `'#13715B'` | Brand accent color |
-| `companyWebsite` | varchar(255) | null | Company website URL |
+| `companyName` | varchar(255) | null | Company name on invoice header |
+| `companyAddress` | text | null | Company street address |
+| `companyCity` | varchar(100) | null | City |
+| `companyCountry` | varchar(100) | null | Country |
+| `companyPhone` | varchar(50) | null | Phone number |
+| `companyEmail` | varchar(255) | null | Email |
+| `companyWebsite` | varchar(255) | null | Website URL |
+| `companyTaxId` | varchar(50) | null | Tax ID shown on invoice |
 | `paymentInstructions` | text | null | e.g. "Payment due within 30 days" |
 | `bankDetails` | text | null | IBAN, bank name, account info |
 | `footerText` | text | null | Legal disclaimers, thank you note |
 
-Existing e-Fatura company fields (`eFaturaCompanyName`, `eFaturaCompanyAddress`, `eFaturaCompanyPhone`, `eFaturaCompanyEmail`, `eFaturaCompanyTaxId`, `eFaturaCompanyTaxOffice`, `eFaturaCompanyCity`, `eFaturaCompanyCountry`) are reused as the company branding info. No renaming — just use them for both e-Fatura and invoice templates.
+**Important:** These company branding fields are completely separate from the existing e-Fatura fields (`eFaturaCompanyName`, etc.). e-Fatura is a Turkish regulatory system with its own legal requirements — invoice template branding is a separate concept. Both sets of fields coexist independently in the same table. The settings UI shows them in separate sections.
 
 ### Migration
 
@@ -205,7 +212,7 @@ Visual cards (3 across) showing template name and a small icon/description. The 
 ### Branding section
 - **Logo upload:** File input with image preview. Upload via `POST /api/upload`, store returned path. Show current logo with a "Remove" option.
 - **Accent color:** Color input (`<input type="color">`) or text input for hex value. Show a preview swatch.
-- **Company details:** Name, address, city, country, phone, email, website, tax ID, tax office. Reuse the existing e-Fatura fields — the UI just relabels them as "Company details" instead of "e-Fatura company details."
+- **Company details:** Name, address, city, country, phone, email, website, tax ID. These are the NEW branding fields — completely separate from e-Fatura company details which remain in their own section.
 
 ### Payment section
 - **Payment instructions:** Textarea. e.g., "Payment due within 30 days of invoice date."
