@@ -10,6 +10,7 @@ export async function sendEmail(options: {
   subject: string;
   text: string;
   html?: string;
+  attachments?: Array<{ filename: string; content: Buffer; contentType?: string }>;
 }): Promise<boolean> {
   try {
     const smtp = await getRawSmtpSettings();
@@ -27,13 +28,18 @@ export async function sendEmail(options: {
       auth: { user: smtp.user, pass: smtp.pass || '' },
     });
 
-    await transport.sendMail({
+    const mailOptions: Record<string, unknown> = {
       from: smtp.from,
       to: options.to,
       subject: options.subject,
       text: options.text,
       html: options.html,
-    });
+    };
+    if (options.attachments !== undefined) {
+      mailOptions.attachments = options.attachments;
+    }
+
+    await transport.sendMail(mailOptions as Parameters<typeof transport.sendMail>[0]);
 
     logger.info({ to: options.to, subject: options.subject }, 'Email sent');
     return true;
