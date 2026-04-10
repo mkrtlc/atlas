@@ -1,7 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api-client';
 import { queryKeys } from '../../config/query-keys';
-import type { Invoice, InvoiceSettings, InvoicePayment, RecordPaymentInput, UpdateInvoiceSettingsInput } from '@atlas-platform/shared';
+import type {
+  Invoice,
+  InvoiceSettings,
+  InvoicePayment,
+  RecordPaymentInput,
+  UpdateInvoiceSettingsInput,
+  RecurringInvoice,
+  CreateRecurringInvoiceInput,
+  UpdateRecurringInvoiceInput,
+} from '@atlas-platform/shared';
 
 // ─── Dashboard ──────────────────────────────────────────────────
 
@@ -336,6 +345,109 @@ export function useNextInvoiceNumber() {
 }
 
 // ─── E-Fatura ────────────────────────────────────────────────────
+
+// ─── Recurring Invoices ──────────────────────────────────────────
+
+export function useRecurringInvoicesList() {
+  return useQuery({
+    queryKey: queryKeys.invoices.recurringList,
+    queryFn: async () => {
+      const { data } = await api.get('/invoices/recurring');
+      return data.data as RecurringInvoice[];
+    },
+    staleTime: 10_000,
+  });
+}
+
+export function useRecurringInvoice(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.invoices.recurringDetail(id ?? ''),
+    queryFn: async () => {
+      const { data } = await api.get(`/invoices/recurring/${id}`);
+      return data.data as RecurringInvoice;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateRecurringInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateRecurringInvoiceInput) => {
+      const { data } = await api.post('/invoices/recurring', input);
+      return data.data as RecurringInvoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.recurringList });
+    },
+  });
+}
+
+export function useUpdateRecurringInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; body: UpdateRecurringInvoiceInput }) => {
+      const { data } = await api.patch(`/invoices/recurring/${input.id}`, input.body);
+      return data.data as RecurringInvoice;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.recurringList });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.recurringDetail(variables.id) });
+    },
+  });
+}
+
+export function useDeleteRecurringInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/invoices/recurring/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.recurringList });
+    },
+  });
+}
+
+export function usePauseRecurringInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/invoices/recurring/${id}/pause`);
+      return data.data as RecurringInvoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.recurringList });
+    },
+  });
+}
+
+export function useResumeRecurringInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/invoices/recurring/${id}/resume`);
+      return data.data as RecurringInvoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.recurringList });
+    },
+  });
+}
+
+export function useRunRecurringInvoiceNow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/invoices/recurring/${id}/run-now`);
+      return data.data as { invoiceId: string; emailed: boolean; deactivated: boolean };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.recurringList });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
 
 export function useGenerateEFatura() {
   const queryClient = useQueryClient();
