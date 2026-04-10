@@ -3672,6 +3672,25 @@
       "lineItems": "Kalemler",
       "source": "Kaynak"
     },
+    "send": {
+      "sendInvoice": "Faturayı gönder",
+      "recipient": "Alıcı",
+      "recipientPlaceholder": "ornek@ornek.com",
+      "subjectLabel": "Konu (isteğe bağlı)",
+      "subjectPlaceholder": "Varsayılan konu için boş bırakın",
+      "defaultSubjectPreview": "{{company}} firmasından {{number}} numaralı fatura",
+      "messageLabel": "Mesaj (isteğe bağlı)",
+      "messagePlaceholder": "Fatura öncesi kısa bir mesaj ekleyin (isteğe bağlı)",
+      "ccLabel": "CC (isteğe bağlı)",
+      "ccPlaceholder": "cc1@ornek.com, cc2@ornek.com",
+      "pdfAttachedNote": "Fatura PDF'i otomatik olarak eklenecektir.",
+      "sendButton": "E-posta ile gönder",
+      "markOnlyButton": "Sadece gönderildi işaretle",
+      "cancelButton": "İptal",
+      "sendSuccess": "Fatura {{recipient}} adresine e-posta ile gönderildi",
+      "markedOnly": "Fatura gönderildi olarak işaretlendi",
+      "sendFailed": "E-posta gönderilemedi: {{reason}}"
+    },
     "settings": {
       "general": "Genel",
       "saved": "Ayarlar kaydedildi",

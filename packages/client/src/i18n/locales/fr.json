@@ -3672,6 +3672,25 @@
       "lineItems": "Postes",
       "source": "Source"
     },
+    "send": {
+      "sendInvoice": "Envoyer la facture",
+      "recipient": "Destinataire",
+      "recipientPlaceholder": "email@exemple.com",
+      "subjectLabel": "Objet (facultatif)",
+      "subjectPlaceholder": "Laissez vide pour utiliser l'objet par défaut",
+      "defaultSubjectPreview": "Facture {{number}} de {{company}}",
+      "messageLabel": "Message (facultatif)",
+      "messagePlaceholder": "Ajoutez un message personnel avant la facture (facultatif)",
+      "ccLabel": "CC (facultatif)",
+      "ccPlaceholder": "cc1@exemple.com, cc2@exemple.com",
+      "pdfAttachedNote": "Un PDF de la facture sera automatiquement joint.",
+      "sendButton": "Envoyer par email",
+      "markOnlyButton": "Marquer comme envoyée",
+      "cancelButton": "Annuler",
+      "sendSuccess": "Facture envoyée à {{recipient}}",
+      "markedOnly": "Facture marquée comme envoyée",
+      "sendFailed": "L'email n'a pas pu être envoyé : {{reason}}"
+    },
     "settings": {
       "general": "Général",
       "saved": "Paramètres enregistrés",

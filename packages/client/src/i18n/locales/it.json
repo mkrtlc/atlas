@@ -3672,6 +3672,25 @@
       "lineItems": "Voci",
       "source": "Fonte"
     },
+    "send": {
+      "sendInvoice": "Invia fattura",
+      "recipient": "Destinatario",
+      "recipientPlaceholder": "email@esempio.com",
+      "subjectLabel": "Oggetto (facoltativo)",
+      "subjectPlaceholder": "Lascia vuoto per usare l'oggetto predefinito",
+      "defaultSubjectPreview": "Fattura {{number}} da {{company}}",
+      "messageLabel": "Messaggio (facoltativo)",
+      "messagePlaceholder": "Aggiungi un messaggio personale prima della fattura (facoltativo)",
+      "ccLabel": "CC (facoltativo)",
+      "ccPlaceholder": "cc1@esempio.com, cc2@esempio.com",
+      "pdfAttachedNote": "Un PDF della fattura sarà allegato automaticamente.",
+      "sendButton": "Invia via email",
+      "markOnlyButton": "Segna solo come inviata",
+      "cancelButton": "Annulla",
+      "sendSuccess": "Fattura inviata a {{recipient}}",
+      "markedOnly": "Fattura segnata come inviata",
+      "sendFailed": "Impossibile inviare l'email: {{reason}}"
+    },
     "settings": {
       "general": "Generale",
       "saved": "Impostazioni salvate",

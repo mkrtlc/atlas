@@ -8,9 +8,10 @@ import {
 import type { Invoice } from '@atlas-platform/shared';
 import { getInvoiceStatusVariant } from '@atlas-platform/shared';
 import {
-  useDeleteInvoice, useSendInvoice, useMarkInvoicePaid, useWaiveInvoice, useDuplicateInvoice,
+  useDeleteInvoice, useMarkInvoicePaid, useWaiveInvoice, useDuplicateInvoice,
   useInvoiceSettings,
 } from '../hooks';
+import { SendInvoiceModal } from './send-invoice-modal';
 import { api } from '../../../lib/api-client';
 import { useCompanies } from '../../crm/hooks';
 import { Button } from '../../../components/ui/button';
@@ -18,7 +19,6 @@ import { IconButton } from '../../../components/ui/icon-button';
 import { Badge } from '../../../components/ui/badge';
 import { StatusTimeline } from '../../../components/shared/status-timeline';
 import { TotalsBlock } from '../../../components/shared/totals-block';
-import { Tooltip } from '../../../components/ui/tooltip';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { useToastStore } from '../../../stores/toast-store';
 
@@ -37,7 +37,6 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
   const { t } = useTranslation();
   const navigate = useNavigate();
   const deleteInvoice = useDeleteInvoice();
-  const sendInvoice = useSendInvoice();
   const markPaid = useMarkInvoicePaid();
   const waive = useWaiveInvoice();
   const duplicate = useDuplicateInvoice();
@@ -48,6 +47,7 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
   const company = companies.find((c) => c.id === invoice.companyId);
   const [linkCopied, setLinkCopied] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
   const addToast = useToastStore((s) => s.addToast);
 
   const handleConfirmDelete = () => {
@@ -283,44 +283,18 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
                   navigator.clipboard.writeText(portalUrl);
                   setLinkCopied(true);
                   setTimeout(() => setLinkCopied(false), 2000);
-                  if (invoice.status === 'draft') {
-                    sendInvoice.mutate(invoice.id);
-                  }
                 }}
               >
                 {linkCopied ? t('invoices.linkCopied') : t('invoices.copyLink')}
               </Button>
-              {invoice.contactEmail ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  icon={<Mail size={13} />}
-                  onClick={() => {
-                    const portalUrl = `${window.location.origin}/api/invoices/portal/${company.portalToken}/${invoice.id}`;
-                    const subject = encodeURIComponent(`${invoice.invoiceNumber} from ${invoice.companyName || ''}`);
-                    const body = encodeURIComponent(`You can view your invoice here:\n\n${portalUrl}`);
-                    window.open(`mailto:${invoice.contactEmail}?subject=${subject}&body=${body}`);
-                    if (invoice.status === 'draft') {
-                      sendInvoice.mutate(invoice.id);
-                    }
-                  }}
-                >
-                  {t('invoices.sendByEmail')}
-                </Button>
-              ) : (
-                <Tooltip content={t('invoices.noContactEmail')}>
-                  <span>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={<Mail size={13} />}
-                      disabled
-                    >
-                      {t('invoices.sendByEmail')}
-                    </Button>
-                  </span>
-                </Tooltip>
-              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Mail size={13} />}
+                onClick={() => setSendModalOpen(true)}
+              >
+                {t('invoices.sendByEmail')}
+              </Button>
             </div>
           </div>
         )}
@@ -328,7 +302,10 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
         {/* Actions */}
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
           {invoice.status === 'draft' && (
-            <Button variant="secondary" size="sm" onClick={onEdit}>{t('common.edit')}</Button>
+            <>
+              <Button variant="secondary" size="sm" onClick={onEdit}>{t('common.edit')}</Button>
+              <Button variant="primary" size="sm" icon={<Mail size={13} />} onClick={() => setSendModalOpen(true)}>{t('invoices.send.sendInvoice')}</Button>
+            </>
           )}
           {(invoice.status === 'sent' || invoice.status === 'viewed' || invoice.status === 'overdue') && (
             <>
@@ -343,6 +320,15 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
           <Button variant="secondary" size="sm" icon={<Download size={13} />} onClick={handleDownloadStandardPdf}>{t('invoices.downloadPdf')}</Button>
         </div>
       </div>
+
+      <SendInvoiceModal
+        open={sendModalOpen}
+        onOpenChange={setSendModalOpen}
+        invoiceId={invoice.id}
+        invoiceNumber={invoice.invoiceNumber}
+        defaultRecipient={invoice.contactEmail ?? undefined}
+        companyName={invoice.companyName ?? undefined}
+      />
 
       <ConfirmDialog
         open={confirmDeleteOpen}

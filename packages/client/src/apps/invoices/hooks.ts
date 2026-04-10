@@ -141,14 +141,50 @@ export function useDeleteInvoice() {
   });
 }
 
+export interface SendInvoiceBody {
+  customSubject?: string;
+  customMessage?: string;
+  ccEmails?: string[];
+  skipEmail?: boolean;
+}
+
+export interface SendInvoiceResponse {
+  invoice: Invoice;
+  emailSent: boolean;
+  reason?: string;
+  recipient?: string;
+}
+
 export function useSendInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { data } = await api.post(`/invoices/${id}/send`);
-      return data.data as Invoice;
+    mutationFn: async ({ id, body }: { id: string; body?: SendInvoiceBody }) => {
+      const { data } = await api.post(`/invoices/${id}/send`, body ?? {});
+      return data.data as SendInvoiceResponse;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKeys.invoices.detail(result.invoice.id), result.invoice);
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export interface EmailInvoiceBody {
+  customSubject?: string;
+  customMessage?: string;
+  ccEmails?: string[];
+  recipientOverride?: string;
+}
+
+export function useEmailInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body?: EmailInvoiceBody }) => {
+      const { data } = await api.post(`/invoices/${id}/email`, body ?? {});
+      return data.data as SendInvoiceResponse;
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKeys.invoices.detail(result.invoice.id), result.invoice);
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
     },
   });

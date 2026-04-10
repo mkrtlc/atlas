@@ -3672,6 +3672,25 @@
       "lineItems": "Positionen",
       "source": "Quelle"
     },
+    "send": {
+      "sendInvoice": "Rechnung senden",
+      "recipient": "Empfänger",
+      "recipientPlaceholder": "email@beispiel.com",
+      "subjectLabel": "Betreff (optional)",
+      "subjectPlaceholder": "Leer lassen, um den Standardbetreff zu verwenden",
+      "defaultSubjectPreview": "Rechnung {{number}} von {{company}}",
+      "messageLabel": "Nachricht (optional)",
+      "messagePlaceholder": "Fügen Sie der Rechnung eine persönliche Nachricht hinzu (optional)",
+      "ccLabel": "CC (optional)",
+      "ccPlaceholder": "cc1@beispiel.com, cc2@beispiel.com",
+      "pdfAttachedNote": "Ein Rechnungs-PDF wird automatisch angehängt.",
+      "sendButton": "Per E-Mail senden",
+      "markOnlyButton": "Nur als gesendet markieren",
+      "cancelButton": "Abbrechen",
+      "sendSuccess": "Rechnung an {{recipient}} gesendet",
+      "markedOnly": "Rechnung als gesendet markiert",
+      "sendFailed": "E-Mail konnte nicht zugestellt werden: {{reason}}"
+    },
     "settings": {
       "general": "Allgemein",
       "saved": "Einstellungen gespeichert",

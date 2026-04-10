@@ -3677,6 +3677,25 @@
       "lineItems": "Line items",
       "source": "Source"
     },
+    "send": {
+      "sendInvoice": "Send invoice",
+      "recipient": "Recipient",
+      "recipientPlaceholder": "email@example.com",
+      "subjectLabel": "Subject (optional)",
+      "subjectPlaceholder": "Leave blank to use the default subject",
+      "defaultSubjectPreview": "Invoice {{number}} from {{company}}",
+      "messageLabel": "Message (optional)",
+      "messagePlaceholder": "Add a personal message before the invoice (optional)",
+      "ccLabel": "CC (optional)",
+      "ccPlaceholder": "cc1@example.com, cc2@example.com",
+      "pdfAttachedNote": "An invoice PDF will be attached automatically.",
+      "sendButton": "Send via email",
+      "markOnlyButton": "Just mark as sent",
+      "cancelButton": "Cancel",
+      "sendSuccess": "Invoice emailed to {{recipient}}",
+      "markedOnly": "Invoice marked as sent",
+      "sendFailed": "Email could not be delivered: {{reason}}"
+    },
     "settings": {
       "general": "General",
       "saved": "Settings saved",
