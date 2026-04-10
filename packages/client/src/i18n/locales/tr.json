@@ -3574,6 +3574,10 @@
     "sendByEmail": "E-posta ile gönder",
     "noContactEmail": "Bu fatura için iletişim e-posta adresi ayarlanmamış",
     "downloadPdf": "PDF indir",
+    "preview": "Önizleme",
+    "print": "Yazdır",
+    "billTo": "Fatura adresi",
+    "invoicePreview": "Fatura önizleme",
     "efatura": {
       "type": "e-Fatura türü",
       "typeOptions": {

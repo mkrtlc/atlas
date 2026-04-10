@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../../lib/format';
 import {
-  X, Trash2, DollarSign, FileCode, FileDown, Link, Mail, Download,
+  X, Trash2, DollarSign, FileCode, FileDown, Link, Mail, Download, Eye,
 } from 'lucide-react';
 import type { Invoice } from '@atlasmail/shared';
 import { getInvoiceStatusVariant } from '@atlasmail/shared';
@@ -32,7 +32,7 @@ function getEFaturaStatusVariant(status: string): 'default' | 'primary' | 'succe
   }
 }
 
-export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invoice; onClose: () => void; onEdit: () => void }) {
+export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { invoice: Invoice; onClose: () => void; onEdit: () => void; onPreview?: () => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const deleteInvoice = useDeleteInvoice();
@@ -330,6 +330,9 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invo
             </>
           )}
           <Button variant="ghost" size="sm" onClick={() => duplicate.mutate(invoice.id)}>{t('invoices.detail.duplicate')}</Button>
+          {onPreview && (
+            <Button variant="secondary" size="sm" icon={<Eye size={13} />} onClick={onPreview}>{t('invoices.preview')}</Button>
+          )}
           <Button variant="secondary" size="sm" icon={<Download size={13} />} onClick={handleDownloadStandardPdf}>{t('invoices.downloadPdf')}</Button>
         </div>
       </div>

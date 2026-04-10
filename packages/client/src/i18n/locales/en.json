@@ -3579,6 +3579,10 @@
     "sendByEmail": "Send by email",
     "noContactEmail": "No contact email address set for this invoice",
     "downloadPdf": "Download PDF",
+    "preview": "Preview",
+    "print": "Print",
+    "billTo": "Bill to",
+    "invoicePreview": "Invoice preview",
     "efatura": {
       "type": "e-Fatura type",
       "typeOptions": {

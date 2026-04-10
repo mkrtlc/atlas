@@ -7,6 +7,7 @@ import { InvoicesSidebar } from './components/invoices-sidebar';
 import { InvoicesListView } from './components/invoices-list-view';
 import { InvoiceDetailPanel } from './components/invoice-detail-panel';
 import { InvoicesDashboard } from './components/invoices-dashboard';
+import { InvoicePreview } from './components/invoice-preview';
 import { InvoiceBuilderModal } from '../../components/shared/invoice-builder-modal';
 import { ContentArea } from '../../components/ui/content-area';
 import { Button } from '../../components/ui/button';
@@ -25,6 +26,7 @@ export function InvoicesPage() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [previewInvoiceId, setPreviewInvoiceId] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Prefill from URL params
@@ -141,6 +143,7 @@ export function InvoicesPage() {
                     invoice={selectedInvoice}
                     onClose={() => setSelectedInvoiceId(null)}
                     onEdit={() => { setEditingInvoice(selectedInvoice); setShowBuilder(true); }}
+                    onPreview={() => setPreviewInvoiceId(selectedInvoice.id)}
                   />
                 </div>
               )}
@@ -148,6 +151,14 @@ export function InvoicesPage() {
           </>
         )}
       </ContentArea>
+
+      {/* Invoice preview overlay */}
+      {previewInvoiceId && (
+        <InvoicePreview
+          invoiceId={previewInvoiceId}
+          onClose={() => setPreviewInvoiceId(null)}
+        />
+      )}
 
       {/* Builder modal */}
       <InvoiceBuilderModal

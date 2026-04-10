@@ -3574,6 +3574,10 @@
     "sendByEmail": "Envoyer par e-mail",
     "noContactEmail": "Aucune adresse e-mail de contact définie pour cette facture",
     "downloadPdf": "Télécharger PDF",
+    "preview": "Aperçu",
+    "print": "Imprimer",
+    "billTo": "Facturer à",
+    "invoicePreview": "Aperçu de la facture",
     "efatura": {
       "type": "Type e-Fatura",
       "typeOptions": {
