@@ -3236,6 +3236,8 @@
       "detailed": "Detailed breakdown",
       "name": "Name",
       "hours": "Hours",
+      "billableHours": "Billable",
+      "billedHours": "Billed",
       "noData": "No data for the selected period",
       "invoiced": "Invoiced",
       "outstanding": "Outstanding",
@@ -3575,6 +3577,7 @@
     "copyLink": "Copy invoice link",
     "linkCopied": "Link copied!",
     "sendByEmail": "Send by email",
+    "noContactEmail": "No contact email address set for this invoice",
     "downloadPdf": "Download PDF",
     "efatura": {
       "type": "e-Fatura type",

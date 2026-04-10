@@ -17,6 +17,8 @@ export interface Project {
   budgetAmount: number | null;
   isBillable: boolean;
   totalHours: number;
+  billableHours: number;
+  billedHours: number;
   totalAmount: number;
   unbilledHours: number;
   isArchived: boolean;
@@ -152,6 +154,8 @@ function mapProject(raw: Record<string, unknown>): Project {
     budgetAmount: (raw.estimatedAmount as number) ?? null,
     isBillable: (raw.billable as boolean) ?? true,
     totalHours: typeof raw.totalTrackedMinutes === 'number' ? raw.totalTrackedMinutes / 60 : 0,
+    billableHours: typeof raw.billableMinutes === 'number' ? raw.billableMinutes / 60 : 0,
+    billedHours: typeof raw.billedMinutes === 'number' ? raw.billedMinutes / 60 : 0,
     totalAmount: (raw.totalBilledAmount as number) ?? 0,
     unbilledHours: typeof raw.unbilledMinutes === 'number' ? raw.unbilledMinutes / 60 : 0,
     isArchived: (raw.isArchived as boolean) ?? false,

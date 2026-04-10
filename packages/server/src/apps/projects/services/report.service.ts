@@ -94,7 +94,8 @@ export async function getRevenueReport(userId: string, tenantId: string, filters
     db.select({
       totalInvoiced: sql<number>`COALESCE(SUM(${invoices.total}), 0)`.as('total_invoiced'),
       totalPaid: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} = 'paid' THEN ${invoices.total} ELSE 0 END), 0)`.as('total_paid'),
-      totalOutstanding: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} IN ('sent', 'viewed', 'overdue') THEN ${invoices.total} ELSE 0 END), 0)`.as('total_outstanding'),
+      totalOutstanding: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} IN ('sent', 'viewed') THEN ${invoices.total} ELSE 0 END), 0)`.as('total_outstanding'),
+      totalOverdue: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} = 'overdue' THEN ${invoices.total} ELSE 0 END), 0)`.as('total_overdue'),
     })
     .from(invoices)
     .where(and(...conditions)),
@@ -115,7 +116,7 @@ export async function getRevenueReport(userId: string, tenantId: string, filters
       clientId: invoices.companyId,
       clientName: crmCompanies.name,
       invoiced: sql<number>`COALESCE(SUM(${invoices.total}), 0)`.as('invoiced'),
-      paid: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} = 'paid' THEN ${invoices.total} ELSE 0 END), 0)`.as('paid'),
+      outstanding: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.status} IN ('sent', 'viewed', 'overdue') THEN ${invoices.total} ELSE 0 END), 0)`.as('outstanding'),
     })
     .from(invoices)
     .leftJoin(crmCompanies, eq(invoices.companyId, crmCompanies.id))
@@ -126,9 +127,10 @@ export async function getRevenueReport(userId: string, tenantId: string, filters
   const totals = totalsResult[0];
 
   return {
-    totalInvoiced: Number(totals?.totalInvoiced ?? 0),
-    totalPaid: Number(totals?.totalPaid ?? 0),
-    totalOutstanding: Number(totals?.totalOutstanding ?? 0),
+    invoiced: Number(totals?.totalInvoiced ?? 0),
+    outstanding: Number(totals?.totalOutstanding ?? 0),
+    overdue: Number(totals?.totalOverdue ?? 0),
+    paid: Number(totals?.totalPaid ?? 0),
     byMonth,
     byClient: byCompany,
   };
@@ -143,7 +145,8 @@ export async function getProjectProfitability(userId: string, tenantId: string) 
       totalMinutes: sql<number>`COALESCE((SELECT SUM(duration_minutes) FROM project_time_entries WHERE project_id = ${projectProjects.id} AND is_archived = false), 0)`.as('total_minutes'),
       billableMinutes: sql<number>`COALESCE((SELECT SUM(duration_minutes) FROM project_time_entries WHERE project_id = ${projectProjects.id} AND is_archived = false AND billable = true), 0)`.as('billable_minutes'),
       billedAmount: sql<number>`COALESCE((SELECT SUM(ili.amount) FROM invoice_line_items ili INNER JOIN project_time_entries pte ON pte.id = ili.time_entry_id WHERE pte.project_id = ${projectProjects.id}), 0)`.as('billed_amount'),
-      paidAmount: sql<number>`COALESCE((SELECT SUM(i.total) FROM invoices i WHERE i.status = 'paid' AND i.is_archived = false AND i.company_id = ${projectProjects.companyId}), 0)`.as('paid_amount'),
+      invoicedAmount: sql<number>`COALESCE((SELECT SUM(i2.total) FROM invoices i2 WHERE i2.is_archived = false AND i2.company_id = ${projectProjects.companyId} AND i2.tenant_id = ${projectProjects.tenantId}), 0)`.as('invoiced_amount'),
+      paidAmount: sql<number>`COALESCE((SELECT SUM(i.total) FROM invoices i WHERE i.status = 'paid' AND i.is_archived = false AND i.company_id = ${projectProjects.companyId} AND i.tenant_id = ${projectProjects.tenantId}), 0)`.as('paid_amount'),
     })
     .from(projectProjects)
     .where(and(
@@ -159,6 +162,7 @@ export async function getProjectProfitability(userId: string, tenantId: string) 
     billableHours: Number(p.billableMinutes) / 60,
     estimatedAmount: Number(p.estimatedAmount ?? 0),
     billedAmount: Number(p.billedAmount),
+    invoicedAmount: Number(p.invoicedAmount),
     paidAmount: Number(p.paidAmount),
   }));
 }

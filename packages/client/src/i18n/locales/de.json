@@ -3231,6 +3231,8 @@
       "detailed": "Detailaufschlusselung",
       "name": "Name",
       "hours": "Stunden",
+      "billableHours": "Abrechenbar",
+      "billedHours": "Abgerechnet",
       "noData": "Keine Daten fur den ausgewaehlten Zeitraum",
       "invoiced": "In Rechnung gestellt",
       "outstanding": "Ausstehend",
@@ -3570,6 +3572,7 @@
     "copyLink": "Rechnungslink kopieren",
     "linkCopied": "Link kopiert!",
     "sendByEmail": "Per E-Mail senden",
+    "noContactEmail": "Keine Kontakt-E-Mail-Adresse für diese Rechnung hinterlegt",
     "downloadPdf": "PDF herunterladen",
     "efatura": {
       "type": "e-Fatura-Typ",

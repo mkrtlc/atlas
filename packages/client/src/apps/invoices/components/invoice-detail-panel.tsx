@@ -18,6 +18,7 @@ import { IconButton } from '../../../components/ui/icon-button';
 import { Badge } from '../../../components/ui/badge';
 import { StatusTimeline } from '../../../components/shared/status-timeline';
 import { TotalsBlock } from '../../../components/shared/totals-block';
+import { Tooltip } from '../../../components/ui/tooltip';
 import { useToastStore } from '../../../stores/toast-store';
 
 function getEFaturaStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' {
@@ -282,7 +283,7 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invo
               >
                 {linkCopied ? t('invoices.linkCopied') : t('invoices.copyLink')}
               </Button>
-              {invoice.contactEmail && (
+              {invoice.contactEmail ? (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -299,6 +300,19 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit }: { invoice: Invo
                 >
                   {t('invoices.sendByEmail')}
                 </Button>
+              ) : (
+                <Tooltip content={t('invoices.noContactEmail')}>
+                  <span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<Mail size={13} />}
+                      disabled
+                    >
+                      {t('invoices.sendByEmail')}
+                    </Button>
+                  </span>
+                </Tooltip>
               )}
             </div>
           </div>

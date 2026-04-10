@@ -92,6 +92,32 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       ),
     },
     {
+      key: 'billableHours',
+      label: t('projects.reports.billableHours'),
+      icon: <DollarSign size={12} />,
+      width: 90,
+      sortable: true,
+      align: 'right',
+      render: (project) => (
+        <span style={{ fontVariantNumeric: 'tabular-nums', color: project.billableHours > 0 ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)' }}>
+          {formatNumber(project.billableHours, 1)}h
+        </span>
+      ),
+    },
+    {
+      key: 'billedHours',
+      label: t('projects.reports.billedHours'),
+      icon: <DollarSign size={12} />,
+      width: 80,
+      sortable: true,
+      align: 'right',
+      render: (project) => (
+        <span style={{ fontVariantNumeric: 'tabular-nums', color: project.billedHours > 0 ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}>
+          {formatNumber(project.billedHours, 1)}h
+        </span>
+      ),
+    },
+    {
       key: 'budgetAmount',
       label: t('projects.projects.budget'),
       icon: <DollarSign size={12} />,

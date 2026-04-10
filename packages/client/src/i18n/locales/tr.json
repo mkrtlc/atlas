@@ -3231,6 +3231,8 @@
       "detailed": "Detaylı dönüm",
       "name": "Ad",
       "hours": "Saatler",
+      "billableHours": "Faturalanabilir",
+      "billedHours": "Faturalanmış",
       "noData": "Seçilen dönem için veri yok",
       "invoiced": "Faturalanmış",
       "outstanding": "Bekleyen",
@@ -3570,6 +3572,7 @@
     "copyLink": "Fatura bağlantısını kopyala",
     "linkCopied": "Bağlantı kopyalandı!",
     "sendByEmail": "E-posta ile gönder",
+    "noContactEmail": "Bu fatura için iletişim e-posta adresi ayarlanmamış",
     "downloadPdf": "PDF indir",
     "efatura": {
       "type": "e-Fatura türü",

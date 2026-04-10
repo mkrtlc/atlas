@@ -71,6 +71,8 @@ export async function listProjects(userId: string, tenantId: string, filters?: {
       totalTrackedMinutes: sql<number>`COALESCE((SELECT SUM(duration_minutes) FROM project_time_entries WHERE project_id = ${projectProjects.id} AND is_archived = false), 0)`.as('total_tracked_minutes'),
       totalBilledAmount: sql<number>`COALESCE((SELECT SUM(ili.amount) FROM invoice_line_items ili INNER JOIN project_time_entries pte ON pte.id = ili.time_entry_id WHERE pte.project_id = ${projectProjects.id}), 0)`.as('total_billed_amount'),
       unbilledMinutes: sql<number>`COALESCE((SELECT SUM(pte2.duration_minutes) FROM project_time_entries pte2 WHERE pte2.project_id = ${projectProjects.id} AND pte2.is_archived = false AND pte2.billable = true AND NOT EXISTS (SELECT 1 FROM invoice_line_items ili2 WHERE ili2.time_entry_id = pte2.id)), 0)`.as('unbilled_minutes'),
+      billableMinutes: sql<number>`COALESCE((SELECT SUM(duration_minutes) FROM project_time_entries WHERE project_id = ${projectProjects.id} AND is_archived = false AND billable = true), 0)`.as('billable_minutes'),
+      billedMinutes: sql<number>`COALESCE((SELECT SUM(pte3.duration_minutes) FROM project_time_entries pte3 WHERE pte3.project_id = ${projectProjects.id} AND pte3.is_archived = false AND pte3.billable = true AND EXISTS (SELECT 1 FROM invoice_line_items ili3 WHERE ili3.time_entry_id = pte3.id)), 0)`.as('billed_minutes'),
     })
     .from(projectProjects)
     .leftJoin(crmCompanies, eq(projectProjects.companyId, crmCompanies.id))
