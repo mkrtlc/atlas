@@ -3629,6 +3629,8 @@
       "waive": "Erlassen",
       "duplicate": "Duplizieren",
       "delete": "Löschen",
+      "deleteConfirmTitle": "Rechnung löschen?",
+      "deleteConfirmDescription": "Möchten Sie die Rechnung {{invoiceNumber}} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
       "fromDeal": "Vom Geschäft",
       "fromProposal": "Vom Angebot",
       "nextAction": "Nächste Aktion",

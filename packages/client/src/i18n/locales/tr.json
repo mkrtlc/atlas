@@ -3629,6 +3629,8 @@
       "waive": "Feragat et",
       "duplicate": "Kopyala",
       "delete": "Sil",
+      "deleteConfirmTitle": "Fatura silinsin mi?",
+      "deleteConfirmDescription": "{{invoiceNumber}} numaralı faturayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
       "fromDeal": "Anlaşmadan",
       "fromProposal": "Tekliften",
       "nextAction": "Sonraki işlem",

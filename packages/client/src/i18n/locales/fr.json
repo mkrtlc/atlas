@@ -3629,6 +3629,8 @@
       "waive": "Annuler",
       "duplicate": "Dupliquer",
       "delete": "Supprimer",
+      "deleteConfirmTitle": "Supprimer la facture ?",
+      "deleteConfirmDescription": "Voulez-vous vraiment supprimer la facture {{invoiceNumber}} ? Cette action est irréversible.",
       "fromDeal": "De l'affaire",
       "fromProposal": "De la proposition",
       "nextAction": "Action suivante",

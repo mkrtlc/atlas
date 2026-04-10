@@ -19,6 +19,7 @@ import { Badge } from '../../../components/ui/badge';
 import { StatusTimeline } from '../../../components/shared/status-timeline';
 import { TotalsBlock } from '../../../components/shared/totals-block';
 import { Tooltip } from '../../../components/ui/tooltip';
+import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { useToastStore } from '../../../stores/toast-store';
 
 function getEFaturaStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' {
@@ -46,7 +47,13 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
   const companies = companiesData?.companies ?? [];
   const company = companies.find((c) => c.id === invoice.companyId);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const addToast = useToastStore((s) => s.addToast);
+
+  const handleConfirmDelete = () => {
+    deleteInvoice.mutate(invoice.id);
+    onClose();
+  };
 
   const handleDownloadStandardPdf = async () => {
     try {
@@ -94,7 +101,7 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
           {t('invoices.detail.invoiceDetail')}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <IconButton icon={<Trash2 size={14} />} label={t('invoices.detail.delete')} size={28} destructive onClick={() => { deleteInvoice.mutate(invoice.id); onClose(); }} />
+          <IconButton icon={<Trash2 size={14} />} label={t('invoices.detail.delete')} size={28} destructive onClick={() => setConfirmDeleteOpen(true)} />
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
         </div>
       </div>
@@ -336,6 +343,16 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
           <Button variant="secondary" size="sm" icon={<Download size={13} />} onClick={handleDownloadStandardPdf}>{t('invoices.downloadPdf')}</Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title={t('invoices.detail.deleteConfirmTitle')}
+        description={t('invoices.detail.deleteConfirmDescription', { invoiceNumber: invoice.invoiceNumber })}
+        confirmLabel={t('invoices.detail.delete')}
+        destructive
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

@@ -3634,6 +3634,8 @@
       "waive": "Waive",
       "duplicate": "Duplicate",
       "delete": "Delete",
+      "deleteConfirmTitle": "Delete invoice?",
+      "deleteConfirmDescription": "Are you sure you want to delete invoice {{invoiceNumber}}? This action cannot be undone.",
       "fromDeal": "From deal",
       "fromProposal": "From proposal",
       "nextAction": "Next action",

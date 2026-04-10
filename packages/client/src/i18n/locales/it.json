@@ -3629,6 +3629,8 @@
       "waive": "Annulla",
       "duplicate": "Duplica",
       "delete": "Elimina",
+      "deleteConfirmTitle": "Eliminare la fattura?",
+      "deleteConfirmDescription": "Vuoi davvero eliminare la fattura {{invoiceNumber}}? Questa azione non può essere annullata.",
       "fromDeal": "Dall'affare",
       "fromProposal": "Dalla proposta",
       "nextAction": "Prossima azione",

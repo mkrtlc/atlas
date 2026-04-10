@@ -36,6 +36,7 @@ export function InvoiceTemplatesPanel() {
   const [form, setForm] = useState<UpdateInvoiceSettingsInput>({});
   const [dirty, setDirty] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const templates = [
@@ -65,6 +66,30 @@ export function InvoiceTemplatesPanel() {
       setDirty(false);
     }
   }, [settings]);
+
+  // Fetch logo as blob (uploads endpoint requires auth, so <img src> won't work directly)
+  useEffect(() => {
+    if (!form.logoPath) {
+      setLogoPreviewUrl(null);
+      return;
+    }
+    let objectUrl: string | null = null;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await api.get(`/uploads/${form.logoPath}`, { responseType: 'blob' });
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(response.data);
+        setLogoPreviewUrl(objectUrl);
+      } catch {
+        if (!cancelled) setLogoPreviewUrl(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [form.logoPath]);
 
   const update = (patch: Partial<UpdateInvoiceSettingsInput>) => {
     setForm((prev) => ({ ...prev, ...patch }));
@@ -178,11 +203,15 @@ export function InvoiceTemplatesPanel() {
               justifyContent: 'center',
               padding: 'var(--spacing-xs)',
             }}>
-              <img
-                src={`/api/v1/uploads/${form.logoPath}`}
-                alt="Logo"
-                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-              />
+              {logoPreviewUrl ? (
+                <img
+                  src={logoPreviewUrl}
+                  alt="Logo"
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                />
+              ) : (
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>…</span>
+              )}
             </div>
             <Button variant="ghost" size="sm" icon={<X size={14} />} onClick={handleRemoveLogo}>
               {t('invoices.settings.removeLogo')}
