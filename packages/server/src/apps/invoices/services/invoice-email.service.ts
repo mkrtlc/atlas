@@ -38,7 +38,9 @@ export async function sendInvoiceEmail(
   options?: SendInvoiceEmailOptions,
 ): Promise<SendInvoiceEmailResult> {
   try {
-    // 1. Load invoice scoped to tenant
+    // 1. Load invoice scoped to tenant.
+    // userId is only used for per-user ACL filtering; passing '' bypasses
+    // it for tenant-wide email sends (caller must enforce permissions).
     const invoice = await getInvoice('', tenantId, invoiceId);
     if (!invoice) {
       logger.warn({ invoiceId, tenantId }, 'sendInvoiceEmail: invoice not found');
@@ -94,14 +96,18 @@ export async function sendInvoiceEmail(
       return { sent: false, reason: 'No recipient email address available' };
     }
 
-    if (options?.ccEmails && options.ccEmails.length > 0) {
+    // 5. Require a portal token — the public portal route is
+    //    /api/invoices/portal/:token/:invoiceId, so without a token the
+    //    CTA in the email would 404.
+    if (!company.portalToken) {
       logger.warn(
-        { invoiceId, ccCount: options.ccEmails.length },
-        'sendInvoiceEmail: ccEmails not yet supported by sendEmail; ignoring',
+        { invoiceId, companyId: company.id },
+        'sendInvoiceEmail: company has no portal token',
       );
+      return { sent: false, reason: 'Company has no portal token', recipient };
     }
 
-    // 5. Generate PDF
+    // 6. Generate PDF
     let pdfBuffer: Buffer;
     try {
       pdfBuffer = await generateInvoicePdf(tenantId, invoiceId);
@@ -110,19 +116,19 @@ export async function sendInvoiceEmail(
       return { sent: false, reason: 'Failed to generate invoice PDF', recipient };
     }
 
-    // 6. Build portal URL — matches the public route mounted at
+    // 7. Build portal URL — matches the public route mounted at
     //    /api/invoices/portal/:token/:invoiceId (see invoices/routes.ts)
     const baseUrl = env.CLIENT_PUBLIC_URL || env.SERVER_PUBLIC_URL;
-    const portalUrl = company.portalToken
-      ? `${baseUrl}/api/invoices/portal/${company.portalToken}/${invoice.id}`
-      : `${baseUrl}/api/invoices/portal/${invoice.id}`;
+    const portalUrl = `${baseUrl}/api/invoices/portal/${company.portalToken}/${invoice.id}`;
 
-    // 7. Build email content
+    // 8. Build email content
     const template = buildInvoiceEmailTemplate({
       invoice: {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         total: invoice.total,
+        // TODO(phase-2): once invoice_payments exists, compute balanceDue as
+        // total - SUM(payments.amount). For now, no payments means balanceDue === total.
         balanceDue: invoice.total,
         currency: invoice.currency,
         dueDate: invoice.dueDate instanceof Date ? invoice.dueDate : invoice.dueDate ? new Date(invoice.dueDate) : null,
@@ -151,9 +157,10 @@ export async function sendInvoiceEmail(
       customMessage: options?.customMessage,
     });
 
-    // 8. Dispatch
+    // 9. Dispatch
     const sent = await sendEmail({
       to: recipient,
+      ...(options?.ccEmails && options.ccEmails.length > 0 ? { cc: options.ccEmails } : {}),
       subject: template.subject,
       text: template.text,
       html: template.html,

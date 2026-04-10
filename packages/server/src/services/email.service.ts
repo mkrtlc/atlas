@@ -7,6 +7,7 @@ import { getRawSmtpSettings } from '../apps/system/service';
  */
 export async function sendEmail(options: {
   to: string;
+  cc?: string | string[];
   subject: string;
   text: string;
   html?: string;
@@ -37,6 +38,9 @@ export async function sendEmail(options: {
     };
     if (options.attachments !== undefined) {
       mailOptions.attachments = options.attachments;
+    }
+    if (options.cc !== undefined) {
+      mailOptions.cc = options.cc;
     }
 
     await transport.sendMail(mailOptions as Parameters<typeof transport.sendMail>[0]);
