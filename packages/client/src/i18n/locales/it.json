@@ -3648,7 +3648,21 @@
       "companyCity": "Città",
       "companyCountry": "Paese",
       "companyPhone": "Telefono",
-      "companyEmail": "E-mail"
+      "companyEmail": "E-mail",
+      "template": "Modello",
+      "classic": "Classico",
+      "classicDescription": "Pulito e professionale",
+      "modern": "Moderno",
+      "modernDescription": "Audace e contemporaneo",
+      "compact": "Compatto",
+      "compactDescription": "Minimale ed efficiente",
+      "accentColor": "Colore accento",
+      "companyWebsite": "Sito web",
+      "payment": "Pagamento",
+      "paymentInstructions": "Istruzioni di pagamento",
+      "bankDetails": "Dati bancari",
+      "footer": "Piè di pagina",
+      "footerText": "Testo del piè di pagina"
     },
     "status": {
       "draft": "Bozza",

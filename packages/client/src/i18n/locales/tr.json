@@ -3648,7 +3648,21 @@
       "companyCity": "Şehir",
       "companyCountry": "Ülke",
       "companyPhone": "Telefon",
-      "companyEmail": "E-posta"
+      "companyEmail": "E-posta",
+      "template": "Şablon",
+      "classic": "Klasik",
+      "classicDescription": "Temiz ve profesyonel",
+      "modern": "Modern",
+      "modernDescription": "Cesur ve çağdaş",
+      "compact": "Kompakt",
+      "compactDescription": "Minimal ve alan verimli",
+      "accentColor": "Vurgu rengi",
+      "companyWebsite": "Web sitesi",
+      "payment": "Ödeme",
+      "paymentInstructions": "Ödeme talimatları",
+      "bankDetails": "Banka bilgileri",
+      "footer": "Alt bilgi",
+      "footerText": "Alt bilgi metni"
     },
     "status": {
       "draft": "Taslak",

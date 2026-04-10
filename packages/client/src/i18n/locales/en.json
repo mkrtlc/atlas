@@ -3653,7 +3653,21 @@
       "companyCity": "City",
       "companyCountry": "Country",
       "companyPhone": "Phone",
-      "companyEmail": "Email"
+      "companyEmail": "Email",
+      "template": "Template",
+      "classic": "Classic",
+      "classicDescription": "Clean and professional",
+      "modern": "Modern",
+      "modernDescription": "Bold and contemporary",
+      "compact": "Compact",
+      "compactDescription": "Minimal and space-efficient",
+      "accentColor": "Accent color",
+      "companyWebsite": "Website",
+      "payment": "Payment",
+      "paymentInstructions": "Payment instructions",
+      "bankDetails": "Bank details",
+      "footer": "Footer",
+      "footerText": "Footer text"
     },
     "status": {
       "draft": "Draft",
