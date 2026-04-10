@@ -39,6 +39,8 @@ export interface Invoice {
   eFaturaType?: string | null;
   eFaturaUuid?: string | null;
   eFaturaStatus?: string | null;
+  lastReminderStage?: number;
+  lastReminderAt?: Date | string | null;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -126,6 +128,11 @@ export interface InvoiceSettings {
   paymentInstructions?: string | null;
   bankDetails?: string | null;
   footerText?: string | null;
+  reminderEnabled?: boolean;
+  reminder1Days?: number;
+  reminder2Days?: number;
+  reminder3Days?: number;
+  endlessReminderDays?: number;
 }
 
 export interface UpdateInvoiceSettingsInput {

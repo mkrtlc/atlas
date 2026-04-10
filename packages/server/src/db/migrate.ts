@@ -1471,6 +1471,15 @@ export async function runMigrations() {
     await client.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS last_emailed_at TIMESTAMPTZ`);
     await client.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS email_sent_count INTEGER NOT NULL DEFAULT 0`);
 
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS reminder_enabled BOOLEAN NOT NULL DEFAULT FALSE`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS reminder_1_days INTEGER NOT NULL DEFAULT 7`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS reminder_2_days INTEGER NOT NULL DEFAULT 14`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS reminder_3_days INTEGER NOT NULL DEFAULT 30`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS endless_reminder_days INTEGER NOT NULL DEFAULT 14`);
+
+    await client.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS last_reminder_stage INTEGER NOT NULL DEFAULT 0`);
+    await client.query(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS last_reminder_at TIMESTAMPTZ`);
+
     // ─── HR: New leave/attendance/lifecycle tables ─────────────────
 
     await client.query(`
