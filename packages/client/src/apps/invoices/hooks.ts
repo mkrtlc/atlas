@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api-client';
 import { queryKeys } from '../../config/query-keys';
-import type { Invoice, InvoiceSettings, UpdateInvoiceSettingsInput } from '@atlas-platform/shared';
+import type { Invoice, InvoiceSettings, InvoicePayment, RecordPaymentInput, UpdateInvoiceSettingsInput } from '@atlas-platform/shared';
 
 // ─── Dashboard ──────────────────────────────────────────────────
 
@@ -248,6 +248,48 @@ export function useRecordPayment() {
       return data.data;
     },
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.detail(variables.invoiceId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useInvoicePayments(invoiceId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.invoices.payments(invoiceId ?? ''),
+    queryFn: async () => {
+      const { data } = await api.get(`/invoices/${invoiceId}/payments`);
+      return data.data as InvoicePayment[];
+    },
+    enabled: !!invoiceId,
+    staleTime: 10_000,
+  });
+}
+
+export function useUpdatePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { paymentId: string; invoiceId: string; body: Partial<RecordPaymentInput> }) => {
+      const { data } = await api.patch(`/invoices/payments/${input.paymentId}`, input.body);
+      return data.data as InvoicePayment;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.payments(variables.invoiceId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.detail(variables.invoiceId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+export function useDeletePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { paymentId: string; invoiceId: string }) => {
+      const { data } = await api.delete(`/invoices/payments/${input.paymentId}`);
+      return data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.payments(variables.invoiceId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.detail(variables.invoiceId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
     },

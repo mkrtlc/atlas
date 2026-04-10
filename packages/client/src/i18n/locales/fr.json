@@ -3714,7 +3714,22 @@
       "refundSuccess": "Remboursement de {{amount}} enregistré",
       "overpayWarning": "Avertissement : le montant dépasse le solde dû",
       "overRefundWarning": "Avertissement : le remboursement dépasse le montant payé",
-      "dateInFutureWarning": "La date de paiement ne peut pas être dans le futur"
+      "dateInFutureWarning": "La date de paiement ne peut pas être dans le futur",
+      "sectionTitle": "Paiements",
+      "sectionTitleCount": "Paiements ({{count}})",
+      "totalPaidLabel": "Total payé",
+      "emptyState": "Aucun paiement enregistré pour le moment",
+      "editAction": "Modifier le paiement",
+      "deleteAction": "Supprimer le paiement",
+      "deleteConfirmTitle": "Supprimer le paiement ?",
+      "deleteConfirmMessage": "Ce paiement sera définitivement supprimé. Le solde de la facture sera recalculé.",
+      "deleteConfirmButton": "Supprimer",
+      "paymentLabel": "Paiement",
+      "refundLabel": "Remboursement",
+      "editModeTitle": "Modifier le paiement",
+      "editModeSubmitLabel": "Enregistrer les modifications",
+      "deleteSuccess": "Paiement supprimé",
+      "updateSuccess": "Paiement mis à jour"
     },
     "importTime": {
       "importTimeEntries": "Importer les saisies de temps",

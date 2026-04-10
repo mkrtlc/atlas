@@ -3714,7 +3714,22 @@
       "refundSuccess": "Rückerstattung über {{amount}} erfasst",
       "overpayWarning": "Achtung: Betrag übersteigt den offenen Saldo",
       "overRefundWarning": "Achtung: Rückerstattung übersteigt den bezahlten Betrag",
-      "dateInFutureWarning": "Zahlungsdatum darf nicht in der Zukunft liegen"
+      "dateInFutureWarning": "Zahlungsdatum darf nicht in der Zukunft liegen",
+      "sectionTitle": "Zahlungen",
+      "sectionTitleCount": "Zahlungen ({{count}})",
+      "totalPaidLabel": "Gesamt bezahlt",
+      "emptyState": "Noch keine Zahlungen erfasst",
+      "editAction": "Zahlung bearbeiten",
+      "deleteAction": "Zahlung löschen",
+      "deleteConfirmTitle": "Zahlung löschen?",
+      "deleteConfirmMessage": "Diese Zahlung wird dauerhaft entfernt. Der Rechnungssaldo wird neu berechnet.",
+      "deleteConfirmButton": "Löschen",
+      "paymentLabel": "Zahlung",
+      "refundLabel": "Rückerstattung",
+      "editModeTitle": "Zahlung bearbeiten",
+      "editModeSubmitLabel": "Änderungen speichern",
+      "deleteSuccess": "Zahlung gelöscht",
+      "updateSuccess": "Zahlung aktualisiert"
     },
     "importTime": {
       "importTimeEntries": "Zeiteinträge importieren",

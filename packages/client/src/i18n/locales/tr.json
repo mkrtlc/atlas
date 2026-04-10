@@ -3714,7 +3714,22 @@
       "refundSuccess": "{{amount}} tutarında iade kaydedildi",
       "overpayWarning": "Uyarı: tutar kalan bakiyeyi aşıyor",
       "overRefundWarning": "Uyarı: iade tutarı ödenen tutarı aşıyor",
-      "dateInFutureWarning": "Ödeme tarihi gelecekte olamaz"
+      "dateInFutureWarning": "Ödeme tarihi gelecekte olamaz",
+      "sectionTitle": "Ödemeler",
+      "sectionTitleCount": "Ödemeler ({{count}})",
+      "totalPaidLabel": "Toplam ödenen",
+      "emptyState": "Henüz kaydedilmiş ödeme yok",
+      "editAction": "Ödemeyi düzenle",
+      "deleteAction": "Ödemeyi sil",
+      "deleteConfirmTitle": "Ödeme silinsin mi?",
+      "deleteConfirmMessage": "Bu ödeme kalıcı olarak silinecek. Fatura bakiyesi yeniden hesaplanacaktır.",
+      "deleteConfirmButton": "Sil",
+      "paymentLabel": "Ödeme",
+      "refundLabel": "İade",
+      "editModeTitle": "Ödemeyi düzenle",
+      "editModeSubmitLabel": "Değişiklikleri kaydet",
+      "deleteSuccess": "Ödeme silindi",
+      "updateSuccess": "Ödeme güncellendi"
     },
     "importTime": {
       "importTimeEntries": "Zaman girdilerini içe aktar",

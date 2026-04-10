@@ -3719,7 +3719,22 @@
       "refundSuccess": "Refund of {{amount}} recorded",
       "overpayWarning": "Warning: amount exceeds balance due",
       "overRefundWarning": "Warning: refund exceeds amount paid",
-      "dateInFutureWarning": "Payment date cannot be in the future"
+      "dateInFutureWarning": "Payment date cannot be in the future",
+      "sectionTitle": "Payments",
+      "sectionTitleCount": "Payments ({{count}})",
+      "totalPaidLabel": "Total paid",
+      "emptyState": "No payments recorded yet",
+      "editAction": "Edit payment",
+      "deleteAction": "Delete payment",
+      "deleteConfirmTitle": "Delete payment?",
+      "deleteConfirmMessage": "This payment will be permanently removed. The invoice balance will be recalculated.",
+      "deleteConfirmButton": "Delete",
+      "paymentLabel": "Payment",
+      "refundLabel": "Refund",
+      "editModeTitle": "Edit payment",
+      "editModeSubmitLabel": "Save changes",
+      "deleteSuccess": "Payment deleted",
+      "updateSuccess": "Payment updated"
     },
     "importTime": {
       "importTimeEntries": "Import time entries",

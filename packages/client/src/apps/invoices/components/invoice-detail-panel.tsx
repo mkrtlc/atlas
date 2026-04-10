@@ -14,6 +14,7 @@ import {
 import { SendInvoiceModal } from './send-invoice-modal';
 import { ImportTimeEntriesModal } from './import-time-entries-modal';
 import { RecordPaymentModal } from './record-payment-modal';
+import { InvoicePaymentsList } from './invoice-payments-list';
 import { api } from '../../../lib/api-client';
 import { useCompanies } from '../../crm/hooks';
 import { Button } from '../../../components/ui/button';
@@ -257,6 +258,18 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
           taxPercent={invoice.taxPercent}
           discountPercent={invoice.discountPercent}
         />
+
+        {/* Payments list */}
+        {invoice.status !== 'draft' && (
+          <InvoicePaymentsList
+            invoiceId={invoice.id}
+            invoiceNumber={invoice.invoiceNumber}
+            currency={invoice.currency}
+            total={invoice.total}
+            balanceDue={invoice.balanceDue ?? invoice.total}
+            isDraft={false}
+          />
+        )}
 
         {/* E-fatura info */}
         {eFaturaEnabled && invoice.eFaturaStatus && (

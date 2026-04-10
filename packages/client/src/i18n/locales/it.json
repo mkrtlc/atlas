@@ -3714,7 +3714,22 @@
       "refundSuccess": "Rimborso di {{amount}} registrato",
       "overpayWarning": "Attenzione: l'importo supera il saldo dovuto",
       "overRefundWarning": "Attenzione: il rimborso supera l'importo pagato",
-      "dateInFutureWarning": "La data di pagamento non può essere nel futuro"
+      "dateInFutureWarning": "La data di pagamento non può essere nel futuro",
+      "sectionTitle": "Pagamenti",
+      "sectionTitleCount": "Pagamenti ({{count}})",
+      "totalPaidLabel": "Totale pagato",
+      "emptyState": "Nessun pagamento registrato",
+      "editAction": "Modifica pagamento",
+      "deleteAction": "Elimina pagamento",
+      "deleteConfirmTitle": "Eliminare il pagamento?",
+      "deleteConfirmMessage": "Questo pagamento verrà rimosso definitivamente. Il saldo della fattura verrà ricalcolato.",
+      "deleteConfirmButton": "Elimina",
+      "paymentLabel": "Pagamento",
+      "refundLabel": "Rimborso",
+      "editModeTitle": "Modifica pagamento",
+      "editModeSubmitLabel": "Salva modifiche",
+      "deleteSuccess": "Pagamento eliminato",
+      "updateSuccess": "Pagamento aggiornato"
     },
     "importTime": {
       "importTimeEntries": "Importa voci di tempo",

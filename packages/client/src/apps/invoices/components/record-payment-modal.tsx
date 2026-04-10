@@ -6,8 +6,9 @@ import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
 import { Button } from '../../../components/ui/button';
-import { useRecordPayment } from '../hooks';
+import { useRecordPayment, useUpdatePayment } from '../hooks';
 import { useToastStore } from '../../../stores/toast-store';
+import type { InvoicePayment } from '@atlas-platform/shared';
 
 interface RecordPaymentModalProps {
   open: boolean;
@@ -17,6 +18,7 @@ interface RecordPaymentModalProps {
   currency: string;
   total: number;
   balanceDue: number;
+  editingPayment?: InvoicePayment;
 }
 
 interface ServerErrorResponse {
@@ -65,10 +67,13 @@ export function RecordPaymentModal({
   currency,
   total,
   balanceDue,
+  editingPayment,
 }: RecordPaymentModalProps) {
   const { t } = useTranslation();
   const recordPayment = useRecordPayment();
+  const updatePayment = useUpdatePayment();
   const addToast = useToastStore((s) => s.addToast);
+  const isEditMode = !!editingPayment;
 
   const [isRefund, setIsRefund] = useState(false);
   const [amount, setAmount] = useState<string>('');
@@ -79,14 +84,26 @@ export function RecordPaymentModal({
 
   useEffect(() => {
     if (open) {
-      setIsRefund(false);
-      setAmount(balanceDue > 0 ? balanceDue.toFixed(2) : '');
-      setPaymentDate(todayIso());
-      setMethod('bank_transfer');
-      setReference('');
-      setNotes('');
+      if (editingPayment) {
+        setIsRefund(editingPayment.type === 'refund');
+        setAmount(Number(editingPayment.amount).toFixed(2));
+        const date = typeof editingPayment.paymentDate === 'string'
+          ? editingPayment.paymentDate.slice(0, 10)
+          : new Date(editingPayment.paymentDate).toISOString().slice(0, 10);
+        setPaymentDate(date);
+        setMethod(editingPayment.method || 'bank_transfer');
+        setReference(editingPayment.reference || '');
+        setNotes(editingPayment.notes || '');
+      } else {
+        setIsRefund(false);
+        setAmount(balanceDue > 0 ? balanceDue.toFixed(2) : '');
+        setPaymentDate(todayIso());
+        setMethod('bank_transfer');
+        setReference('');
+        setNotes('');
+      }
     }
-  }, [open, balanceDue]);
+  }, [open, balanceDue, editingPayment]);
 
   const methodOptions = useMemo(
     () => [
@@ -103,22 +120,64 @@ export function RecordPaymentModal({
   const parsedAmount = Number(amount);
   const amountIsValid = !Number.isNaN(parsedAmount) && parsedAmount > 0;
 
+  const originalAmount = editingPayment ? Number(editingPayment.amount) : 0;
+  // In edit mode, when checking overpayment/overrefund, treat the original amount as available headroom.
   const alreadyPaid = Math.max(0, Number((total - balanceDue).toFixed(2)));
-  const overPayment = !isRefund && amountIsValid && parsedAmount > balanceDue + 0.0001;
-  const overRefund = isRefund && amountIsValid && parsedAmount > alreadyPaid + 0.0001;
+  const effectiveBalanceForPayment = isEditMode && !isRefund ? balanceDue + originalAmount : balanceDue;
+  const effectiveAlreadyPaidForRefund = isEditMode && isRefund ? alreadyPaid + originalAmount : alreadyPaid;
+  const overPayment = !isRefund && amountIsValid && parsedAmount > effectiveBalanceForPayment + 0.0001;
+  const overRefund = isRefund && amountIsValid && parsedAmount > effectiveAlreadyPaidForRefund + 0.0001;
   const dateInFuture = paymentDate > todayIso();
 
-  const title = isRefund
-    ? t('invoices.payments.recordRefund')
-    : t('invoices.payments.recordPayment');
-  const submitLabel = isRefund
-    ? t('invoices.payments.submitRefund')
-    : t('invoices.payments.submitPayment');
+  const title = isEditMode
+    ? t('invoices.payments.editModeTitle')
+    : isRefund
+      ? t('invoices.payments.recordRefund')
+      : t('invoices.payments.recordPayment');
+  const submitLabel = isEditMode
+    ? t('invoices.payments.editModeSubmitLabel')
+    : isRefund
+      ? t('invoices.payments.submitRefund')
+      : t('invoices.payments.submitPayment');
 
-  const isSubmitting = recordPayment.isPending;
+  const isSubmitting = recordPayment.isPending || updatePayment.isPending;
 
   const handleSubmit = () => {
     if (!amountIsValid || dateInFuture) return;
+
+    const onError = (err: unknown) => {
+      const serverErr = err as ServerErrorResponse;
+      const message =
+        serverErr?.response?.data?.error ?? serverErr?.message ?? t('common.error');
+      addToast({ type: 'error', message });
+    };
+
+    if (isEditMode && editingPayment) {
+      updatePayment.mutate(
+        {
+          paymentId: editingPayment.id,
+          invoiceId,
+          body: {
+            amount: parsedAmount,
+            paymentDate,
+            method: method || null,
+            reference: reference.trim() || null,
+            notes: notes.trim() || null,
+          },
+        },
+        {
+          onSuccess: () => {
+            addToast({
+              type: 'success',
+              message: t('invoices.payments.updateSuccess'),
+            });
+            onOpenChange(false);
+          },
+          onError,
+        },
+      );
+      return;
+    }
 
     recordPayment.mutate(
       {
@@ -141,12 +200,7 @@ export function RecordPaymentModal({
           });
           onOpenChange(false);
         },
-        onError: (err: unknown) => {
-          const serverErr = err as ServerErrorResponse;
-          const message =
-            serverErr?.response?.data?.error ?? serverErr?.message ?? t('common.error');
-          addToast({ type: 'error', message });
-        },
+        onError,
       },
     );
   };
@@ -260,8 +314,9 @@ export function RecordPaymentModal({
             <input
               type="checkbox"
               checked={isRefund}
+              disabled={isEditMode}
               onChange={(e) => setIsRefund(e.target.checked)}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: isEditMode ? 'not-allowed' : 'pointer' }}
             />
             {t('invoices.payments.refundToggle')}
           </label>
