@@ -42,6 +42,40 @@ const styles = StyleSheet.create({
   signatureBlock: { marginTop: 40, fontSize: 10, color: '#888' },
   signatureRow: { flexDirection: 'row', justifyContent: 'space-between' },
   signatureCol: { width: 220 },
+  // Absolute-positioned footer rows. PDF origin is bottom-left; in react-pdf
+  // `bottom` on an absolute view is the distance from the page bottom to the
+  // top edge of the element. Field specs place signature rects at y=100..150
+  // and date rects at y=60..85, so labels sit just above each field.
+  absSignatureRow: {
+    position: 'absolute',
+    left: 54,
+    right: 54,
+    bottom: 150,
+    fontSize: 10,
+    color: '#888',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  absDateRow: {
+    position: 'absolute',
+    left: 54,
+    right: 54,
+    bottom: 85,
+    fontSize: 10,
+    color: '#888',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  absDateRowSingle: {
+    position: 'absolute',
+    left: 54,
+    right: 54,
+    bottom: 85,
+    fontSize: 10,
+    color: '#888',
+    flexDirection: 'row',
+  },
+  footerCol: { width: 220 },
 });
 
 const DISCLAIMER =
@@ -77,18 +111,32 @@ function SignatureFooter({
   rightLabel: string;
 }) {
   return (
-    <View style={styles.signatureBlock}>
-      <View style={styles.signatureRow}>
-        <View style={styles.signatureCol}>
-          <Text>{leftLabel}</Text>
-          <Text>Date: ______________________</Text>
-        </View>
-        <View style={styles.signatureCol}>
-          <Text>{rightLabel}</Text>
-          <Text>Date: ______________________</Text>
-        </View>
+    <>
+      <View style={styles.absSignatureRow}>
+        <Text style={styles.footerCol}>{leftLabel}</Text>
+        <Text style={styles.footerCol}>{rightLabel}</Text>
       </View>
-    </View>
+      <View style={styles.absDateRow}>
+        <Text style={styles.footerCol}>Date</Text>
+        <Text style={styles.footerCol}>Date</Text>
+      </View>
+    </>
+  );
+}
+
+function OfferLetterFooter() {
+  return (
+    <>
+      <View style={styles.absSignatureRow}>
+        <Text style={styles.footerCol}>Candidate signature</Text>
+        <Text style={styles.footerCol}>
+          Acknowledged by [Your company name]
+        </Text>
+      </View>
+      <View style={styles.absDateRowSingle}>
+        <Text style={styles.footerCol}>Date</Text>
+      </View>
+    </>
   );
 }
 
@@ -316,10 +364,7 @@ function OfferLetterDoc() {
           Please indicate your acceptance of this offer by signing below. We
           look forward to welcoming you to the team.
         </Text>
-        <SignatureFooter
-          leftLabel="Candidate signature"
-          rightLabel="Acknowledged by [Your company name]"
-        />
+        <OfferLetterFooter />
       </Page>
     </Document>
   );
@@ -394,7 +439,7 @@ const OFFER_LETTER_FIELDS: StarterFieldSpec[] = [
     width: 200,
     height: 50,
     signerEmail: null,
-    label: 'Acknowledged by',
+    label: 'Acknowledged by [Your company name]',
     required: true,
   },
   {
