@@ -3641,6 +3641,8 @@
       "source": "Source"
     },
     "settings": {
+      "general": "General",
+      "saved": "Settings saved",
       "invoicePrefix": "Invoice prefix",
       "defaultCurrency": "Default currency",
       "defaultTaxRate": "Default tax rate",

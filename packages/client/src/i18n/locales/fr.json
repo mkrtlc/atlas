@@ -3636,6 +3636,8 @@
       "source": "Source"
     },
     "settings": {
+      "general": "Général",
+      "saved": "Paramètres enregistrés",
       "invoicePrefix": "Préfixe de facture",
       "defaultCurrency": "Devise par défaut",
       "defaultTaxRate": "Taux de taxe par défaut",

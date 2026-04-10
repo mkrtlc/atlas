@@ -3636,6 +3636,8 @@
       "source": "Kaynak"
     },
     "settings": {
+      "general": "Genel",
+      "saved": "Ayarlar kaydedildi",
       "invoicePrefix": "Fatura ön eki",
       "defaultCurrency": "Varsayılan para birimi",
       "defaultTaxRate": "Varsayılan vergi oranı",

@@ -36,6 +36,10 @@ export async function updateSettings(req: Request, res: Response) {
       eFaturaEnabled, eFaturaCompanyName, eFaturaCompanyTaxId, eFaturaCompanyTaxOffice,
       eFaturaCompanyAddress, eFaturaCompanyCity, eFaturaCompanyCountry,
       eFaturaCompanyPhone, eFaturaCompanyEmail,
+      templateId, logoPath, accentColor,
+      companyName, companyAddress, companyCity, companyCountry,
+      companyPhone, companyEmail, companyWebsite, companyTaxId,
+      paymentInstructions, bankDetails, footerText,
     } = req.body;
 
     const settings = await settingsService.updateInvoiceSettings(tenantId, {
@@ -43,6 +47,10 @@ export async function updateSettings(req: Request, res: Response) {
       eFaturaEnabled, eFaturaCompanyName, eFaturaCompanyTaxId, eFaturaCompanyTaxOffice,
       eFaturaCompanyAddress, eFaturaCompanyCity, eFaturaCompanyCountry,
       eFaturaCompanyPhone, eFaturaCompanyEmail,
+      templateId, logoPath, accentColor,
+      companyName, companyAddress, companyCity, companyCountry,
+      companyPhone, companyEmail, companyWebsite, companyTaxId,
+      paymentInstructions, bankDetails, footerText,
     });
 
     res.json({ success: true, data: settings });

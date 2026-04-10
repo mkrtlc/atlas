@@ -3636,6 +3636,8 @@
       "source": "Quelle"
     },
     "settings": {
+      "general": "Allgemein",
+      "saved": "Einstellungen gespeichert",
       "invoicePrefix": "Rechnungspräfix",
       "defaultCurrency": "Standardwährung",
       "defaultTaxRate": "Standard-Steuersatz",

@@ -3636,6 +3636,8 @@
       "source": "Fonte"
     },
     "settings": {
+      "general": "Generale",
+      "saved": "Impostazioni salvate",
       "invoicePrefix": "Prefisso fattura",
       "defaultCurrency": "Valuta predefinita",
       "defaultTaxRate": "Aliquota fiscale predefinita",
