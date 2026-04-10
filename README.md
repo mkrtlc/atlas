@@ -3,7 +3,7 @@
 </p>
 
 
-A self-hosted business platform that brings CRM, HRM, e-signatures, documents, tasks, spreadsheets, file storage, and whiteboards into one connected workspace for your team. An open alternative to [Zoho](https://zoho.com/) and [Odoo](https://www.odoo.com/).
+A self-hosted business platform that brings CRM, HRM, agreements, documents, tasks, spreadsheets, file storage, and whiteboards into one connected workspace for your team. An open alternative to [Zoho](https://zoho.com/) and [Odoo](https://www.odoo.com/).
 
 Atlas can also deploy several 3rd party apps, including [Activepieces](https://www.activepieces.com/), [Cal.com](http://cal.com/), [Formbricks](http://formbricks.com/), [Mattermost](http://mattermost.com/), [Umami](https://umami.is/) and [Checkmate](https://checkmate.so/).
 
@@ -45,7 +45,7 @@ docker compose -f docker-compose.production.yml up -d
 
 Open **http://localhost:3001** and create your admin account. Secrets are auto-generated on first run.
 
-To pin a specific version: `IMAGE_TAG=1.7.0 docker compose -f docker-compose.production.yml up -d`
+To pin a specific version: `IMAGE_TAG=1.9.0 docker compose -f docker-compose.production.yml up -d`
 
 ## HTTPS with Caddy (optional)
 
@@ -98,7 +98,7 @@ npm run dev
 | HRM | Employees, departments, org chart (React Flow), leave management, attendance |
 | Calendar | Month/week/day/year/agenda views with Google Calendar sync |
 | Projects | Time tracking, invoicing, clients, reports, budgets |
-| Sign | PDF e-signatures with templates, sequential signing, audit trail, reminders |
+| Agreements | PDF contracts with e-signatures, starter templates, document type tracking, counterparty linking, sequential signing, audit trail, reminders |
 | Drive | File storage with versioning, sharing, comments, activity log, password-protected links |
 | Tables | Spreadsheets with linked records, CSV import, row comments, multiple views |
 | Tasks | Task management with calendar, dependencies, attachments, assignees, comments |
