@@ -1876,10 +1876,14 @@ export async function runMigrations() {
       'CREATE INDEX IF NOT EXISTS idx_leave_balances_tenant_emp_year ON leave_balances(tenant_id, employee_id, year)',
     ];
 
+    // Track failed indexes so we can retry after the schema sync runs.
+    // (A common cause of failure is a missing column the sync will add.)
+    const failedIndexes: string[] = [];
     for (const idx of indexes) {
       try {
         await client.query(idx);
       } catch (err: any) {
+        failedIndexes.push(idx);
         logger.warn(`Index creation failed: ${idx} — ${err.message}`);
       }
     }
@@ -2223,6 +2227,24 @@ export async function runMigrations() {
     // after the table was already created in production (the CREATE is a
     // no-op once the table exists, so additive columns are silently lost).
     await syncSchemaColumns(client);
+
+    // Retry any indexes that failed earlier — typically because they
+    // referenced a column that the schema sync just added.
+    if (failedIndexes.length > 0) {
+      let recovered = 0;
+      for (const idx of failedIndexes) {
+        try {
+          await client.query(idx);
+          recovered++;
+        } catch (err: any) {
+          logger.warn(`Index retry failed: ${idx} — ${err.message}`);
+        }
+      }
+      logger.info(
+        { attempted: failedIndexes.length, recovered },
+        'Index retry after schema sync completed',
+      );
+    }
 
     logger.info('Database migrations completed');
   } finally {
