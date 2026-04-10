@@ -545,7 +545,8 @@
     "demoDataActive": "Sample data active",
     "clearDemoData": "Clear all",
     "clearDemoConfirm": "This will remove all sample data. Your own data won't be affected.",
-    "clearDemoConfirmTitle": "Clear sample data?"
+    "clearDemoConfirmTitle": "Clear sample data?",
+    "versionAria": "Open About Atlas"
   },
   "calendar": {
     "title": "Calendar",

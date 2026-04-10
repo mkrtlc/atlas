@@ -517,7 +517,8 @@
     "demoDataActive": "Données d'exemple actives",
     "clearDemoData": "Tout effacer",
     "clearDemoConfirm": "Toutes les données d'exemple seront supprimées. Vos propres données ne seront pas affectées.",
-    "clearDemoConfirmTitle": "Effacer les données d'exemple ?"
+    "clearDemoConfirmTitle": "Effacer les données d'exemple ?",
+    "versionAria": "Ouvrir À propos d'Atlas"
   },
   "calendar": {
     "title": "Calendrier",

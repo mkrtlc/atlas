@@ -13,6 +13,7 @@ import {
 import { useAuthStore } from '../stores/auth-store';
 import { useTaskCounts } from '../apps/tasks/hooks';
 import { ROUTES } from '../config/routes';
+import { APP_VERSION } from '../config/version';
 import { appRegistry } from '../apps';
 import { useUIStore } from '../stores/ui-store';
 import { WidgetGrid } from '../components/home/widgets/widget-grid';
@@ -1410,6 +1411,47 @@ export function HomePage() {
             </button>
           </div>
         )}
+
+        {/* Bottom-right — Version badge (opens Settings > About) */}
+        <button
+          onClick={() => openSettings('global', 'about')}
+          aria-label={t('home.versionAria', 'Open About Atlas')}
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+            zIndex: 50,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            height: 26,
+            padding: '0 10px',
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.14)',
+            borderRadius: 13,
+            color: 'rgba(255,255,255,0.6)',
+            cursor: 'pointer',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            transition: 'background 0.2s, color 0.2s, border-color 0.2s',
+            fontFamily: 'var(--font-family)',
+            fontSize: 11,
+            fontWeight: 'var(--font-weight-medium)' as CSSProperties['fontWeight'],
+            letterSpacing: 0.2,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.16)';
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)';
+            e.currentTarget.style.color = 'rgba(255,255,255,0.9)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)';
+            e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+          }}
+        >
+          v{APP_VERSION}
+        </button>
       </div>
 
       <ConfirmDialog

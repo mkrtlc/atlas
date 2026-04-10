@@ -517,7 +517,8 @@
     "demoDataActive": "Dati di esempio attivi",
     "clearDemoData": "Cancella tutto",
     "clearDemoConfirm": "Tutti i dati di esempio verranno rimossi. I tuoi dati non saranno influenzati.",
-    "clearDemoConfirmTitle": "Cancellare i dati di esempio?"
+    "clearDemoConfirmTitle": "Cancellare i dati di esempio?",
+    "versionAria": "Apri Informazioni su Atlas"
   },
   "calendar": {
     "title": "Calendario",

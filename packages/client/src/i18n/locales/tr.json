@@ -517,7 +517,8 @@
     "demoDataActive": "Örnek veriler etkin",
     "clearDemoData": "Temizle",
     "clearDemoConfirm": "Tüm örnek veriler kaldırılacak. Kendi verileriniz etkilenmez.",
-    "clearDemoConfirmTitle": "Örnek veriler temizlensin mi?"
+    "clearDemoConfirmTitle": "Örnek veriler temizlensin mi?",
+    "versionAria": "Atlas Hakkında'yı aç"
   },
   "calendar": {
     "title": "Takvim",

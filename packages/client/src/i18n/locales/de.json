@@ -517,7 +517,8 @@
     "demoDataActive": "Beispieldaten aktiv",
     "clearDemoData": "Alle löschen",
     "clearDemoConfirm": "Alle Beispieldaten werden entfernt. Ihre eigenen Daten bleiben unberührt.",
-    "clearDemoConfirmTitle": "Beispieldaten löschen?"
+    "clearDemoConfirmTitle": "Beispieldaten löschen?",
+    "versionAria": "Über Atlas öffnen"
   },
   "calendar": {
     "title": "Kalender",

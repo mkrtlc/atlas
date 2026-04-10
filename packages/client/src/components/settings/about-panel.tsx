@@ -4,6 +4,7 @@ import {
   SettingsSection,
   SettingsRow,
 } from './settings-primitives';
+import { APP_VERSION } from '../../config/version';
 
 export function AboutPanel() {
   const { t } = useTranslation();
@@ -58,7 +59,7 @@ export function AboutPanel() {
               border: '1px solid var(--color-border-secondary)',
             }}
           >
-            1.9.4
+            {APP_VERSION}
           </span>
         </SettingsRow>
 
