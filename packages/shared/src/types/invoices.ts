@@ -196,6 +196,91 @@ export interface UpdatePaymentInput {
   notes?: string | null;
 }
 
+export type RecurrenceFrequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface RecurringInvoiceLineItem {
+  id: string;
+  recurringInvoiceId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+  sortOrder: number;
+}
+
+export interface RecurringInvoice {
+  id: string;
+  tenantId: string;
+  userId: string;
+  companyId: string;
+  title: string;
+  description: string | null;
+  currency: string;
+  taxPercent: number;
+  discountPercent: number;
+  notes: string | null;
+  paymentInstructions: string | null;
+  frequency: RecurrenceFrequency;
+  startDate: Date | string;
+  endDate: Date | string | null;
+  nextRunAt: Date | string;
+  lastRunAt: Date | string | null;
+  runCount: number;
+  maxRuns: number | null;
+  autoSend: boolean;
+  paymentTermsDays: number;
+  isActive: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  lineItems?: RecurringInvoiceLineItem[];
+}
+
+export interface CreateRecurringInvoiceInput {
+  companyId: string;
+  title: string;
+  description?: string;
+  currency?: string;
+  taxPercent?: number;
+  discountPercent?: number;
+  notes?: string;
+  paymentInstructions?: string;
+  frequency: RecurrenceFrequency;
+  startDate: Date | string;
+  endDate?: Date | string;
+  maxRuns?: number;
+  autoSend?: boolean;
+  paymentTermsDays?: number;
+  lineItems: Array<{
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    taxRate?: number;
+  }>;
+}
+
+export interface UpdateRecurringInvoiceInput {
+  title?: string;
+  description?: string | null;
+  currency?: string;
+  taxPercent?: number;
+  discountPercent?: number;
+  notes?: string | null;
+  paymentInstructions?: string | null;
+  frequency?: RecurrenceFrequency;
+  startDate?: Date | string;
+  endDate?: Date | string | null;
+  maxRuns?: number | null;
+  autoSend?: boolean;
+  paymentTermsDays?: number;
+  isActive?: boolean;
+  lineItems?: Array<{
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    taxRate?: number;
+  }>;
+}
+
 export function getInvoiceStatusVariant(status: InvoiceStatus): 'default' | 'primary' | 'success' | 'warning' | 'error' {
   switch (status) {
     case 'draft': return 'default';

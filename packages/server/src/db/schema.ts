@@ -1925,6 +1925,48 @@ export const invoicePayments = pgTable('invoice_payments', {
   tenantIdx: index('idx_invoice_payments_tenant').on(table.tenantId),
 }));
 
+export const recurringInvoices = pgTable('recurring_invoices', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  userId: uuid('user_id').notNull(),
+  companyId: uuid('company_id').notNull().references(() => crmCompanies.id),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  // Template fields copied to generated invoices
+  currency: varchar('currency', { length: 10 }).notNull().default('USD'),
+  taxPercent: real('tax_percent').notNull().default(0),
+  discountPercent: real('discount_percent').notNull().default(0),
+  notes: text('notes'),
+  paymentInstructions: text('payment_instructions'),
+  // Recurrence
+  frequency: varchar('frequency', { length: 20 }).notNull(),
+  startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+  endDate: timestamp('end_date', { withTimezone: true }),
+  nextRunAt: timestamp('next_run_at', { withTimezone: true }).notNull(),
+  lastRunAt: timestamp('last_run_at', { withTimezone: true }),
+  runCount: integer('run_count').notNull().default(0),
+  maxRuns: integer('max_runs'),
+  // Behavior
+  autoSend: boolean('auto_send').notNull().default(false),
+  paymentTermsDays: integer('payment_terms_days').notNull().default(30),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  tenantIdx: index('idx_recurring_invoices_tenant').on(table.tenantId),
+  nextRunIdx: index('idx_recurring_invoices_next_run').on(table.isActive, table.nextRunAt),
+}));
+
+export const recurringInvoiceLineItems = pgTable('recurring_invoice_line_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  recurringInvoiceId: uuid('recurring_invoice_id').notNull().references(() => recurringInvoices.id, { onDelete: 'cascade' }),
+  description: text('description').notNull(),
+  quantity: real('quantity').notNull().default(1),
+  unitPrice: real('unit_price').notNull().default(0),
+  taxRate: real('tax_rate').notNull().default(0),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
 export const invoiceSettings = pgTable('invoice_settings', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id).unique(),

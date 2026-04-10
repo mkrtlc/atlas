@@ -1390,6 +1390,48 @@ export async function runMigrations() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_invoice_payments_tenant ON invoice_payments(tenant_id)`);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS recurring_invoices (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id),
+        user_id UUID NOT NULL,
+        company_id UUID NOT NULL REFERENCES crm_companies(id),
+        title VARCHAR(500) NOT NULL,
+        description TEXT,
+        currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+        tax_percent REAL NOT NULL DEFAULT 0,
+        discount_percent REAL NOT NULL DEFAULT 0,
+        notes TEXT,
+        payment_instructions TEXT,
+        frequency VARCHAR(20) NOT NULL,
+        start_date TIMESTAMPTZ NOT NULL,
+        end_date TIMESTAMPTZ,
+        next_run_at TIMESTAMPTZ NOT NULL,
+        last_run_at TIMESTAMPTZ,
+        run_count INTEGER NOT NULL DEFAULT 0,
+        max_runs INTEGER,
+        auto_send BOOLEAN NOT NULL DEFAULT FALSE,
+        payment_terms_days INTEGER NOT NULL DEFAULT 30,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_recurring_invoices_tenant ON recurring_invoices(tenant_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_recurring_invoices_next_run ON recurring_invoices(is_active, next_run_at)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recurring_invoice_line_items (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        recurring_invoice_id UUID NOT NULL REFERENCES recurring_invoices(id) ON DELETE CASCADE,
+        description TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        unit_price REAL NOT NULL DEFAULT 0,
+        tax_rate REAL NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS invoice_settings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id UUID NOT NULL REFERENCES tenants(id) UNIQUE,
