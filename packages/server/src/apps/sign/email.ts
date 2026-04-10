@@ -1,9 +1,6 @@
 import { sendEmail } from '../../services/email.service';
 import { env } from '../../config/env';
-
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+import { escapeHtml } from '../../utils/html';
 
 /**
  * Send an email inviting a signer to review and sign a document.

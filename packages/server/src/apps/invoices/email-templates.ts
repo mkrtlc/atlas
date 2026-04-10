@@ -1,10 +1,4 @@
-/**
- * Invoice email template builders.
- *
- * Pure content builders — no DB access, no nodemailer, no cross-app imports.
- * Each function returns { subject, text, html } for the SMTP send path
- * (Task 1.2) to consume.
- */
+import { escapeHtml, escapeHtmlMultiline } from '../../utils/html';
 
 export interface InvoiceEmailData {
   invoice: {
@@ -48,18 +42,6 @@ export interface BuiltEmail {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function escapeHtmlMultiline(str: string): string {
-  return escapeHtml(str).replace(/\n/g, '<br />');
-}
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',

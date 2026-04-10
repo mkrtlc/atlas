@@ -14,7 +14,6 @@ interface RecordPaymentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   invoiceId: string;
-  invoiceNumber: string;
   currency: string;
   total: number;
   balanceDue: number;
@@ -63,7 +62,6 @@ export function RecordPaymentModal({
   open,
   onOpenChange,
   invoiceId,
-  invoiceNumber: _invoiceNumber,
   currency,
   total,
   balanceDue,

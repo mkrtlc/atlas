@@ -9,10 +9,8 @@
  *   Stage 4+ → "endless" cadence, every endless_reminder_days after the
  *              previous reminder (stage stays pinned at 4).
  *
- * Progress per invoice is tracked via `invoices.last_reminder_stage` and
- * `invoices.last_reminder_at` (columns added in Task 5.1). On successful
- * send we bump the stage and timestamp; on failure we leave them alone so
- * the next cron cycle retries.
+ * On successful send we bump invoices.last_reminder_stage + last_reminder_at;
+ * on failure we leave them alone so the next cron cycle retries.
  */
 
 import { and, eq, inArray, lt, sql } from 'drizzle-orm';
@@ -94,7 +92,9 @@ export async function runInvoiceReminders(): Promise<ReminderRunResult> {
   try {
     // Pull all overdue, non-archived, non-terminal invoices whose tenant
     // has reminders enabled. Balance-due is computed inline (sum of
-    // payments minus refunds) using the same pattern as Task 2.4.
+    // payments minus refunds) so we can skip invoices that have already
+    // been fully paid and pass the real outstanding amount to the email
+    // template.
     const rows = await db
       .select({
         id: invoices.id,
@@ -167,6 +167,7 @@ export async function runInvoiceReminders(): Promise<ReminderRunResult> {
         const result = await sendInvoiceEmail(row.id, row.tenantId, {
           template: 'reminder',
           stage,
+          balanceDue: Math.round(balance * 100) / 100,
         });
 
         if (result.sent) {

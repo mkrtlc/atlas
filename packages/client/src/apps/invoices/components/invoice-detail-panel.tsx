@@ -263,7 +263,6 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
         {invoice.status !== 'draft' && (
           <InvoicePaymentsList
             invoiceId={invoice.id}
-            invoiceNumber={invoice.invoiceNumber}
             currency={invoice.currency}
             total={invoice.total}
             balanceDue={invoice.balanceDue ?? invoice.total}
@@ -364,7 +363,6 @@ export function InvoiceDetailPanel({ invoice, onClose, onEdit, onPreview }: { in
         open={recordPaymentOpen}
         onOpenChange={setRecordPaymentOpen}
         invoiceId={invoice.id}
-        invoiceNumber={invoice.invoiceNumber}
         currency={invoice.currency}
         total={invoice.total}
         balanceDue={invoice.balanceDue ?? invoice.total}

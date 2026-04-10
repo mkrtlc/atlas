@@ -4,10 +4,6 @@ import { and, eq, lte, sql } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
 import { generateInvoiceFromRecurring } from './services/recurring-invoice.service';
 
-/**
- * Daily scheduler that generates invoices from active recurring templates
- * whose nextRunAt is in the past.
- */
 export async function runRecurringInvoices(): Promise<{
   processed: number;
   generated: number;

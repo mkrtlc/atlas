@@ -12,7 +12,6 @@ import { RecordPaymentModal } from './record-payment-modal';
 
 interface InvoicePaymentsListProps {
   invoiceId: string;
-  invoiceNumber: string;
   currency: string;
   total: number;
   balanceDue: number;
@@ -44,7 +43,6 @@ function getMethodLabel(method: string | null | undefined, t: (k: string) => str
 
 export function InvoicePaymentsList({
   invoiceId,
-  invoiceNumber,
   currency,
   total,
   balanceDue,
@@ -88,8 +86,7 @@ export function InvoicePaymentsList({
   const handleEditModalClose = (open: boolean) => {
     setEditModalOpen(open);
     if (!open) {
-      // Clear after close animation; simple clear is fine
-      setTimeout(() => setEditingPayment(undefined), 0);
+      setEditingPayment(undefined);
     }
   };
 
@@ -243,7 +240,6 @@ export function InvoicePaymentsList({
         open={editModalOpen}
         onOpenChange={handleEditModalClose}
         invoiceId={invoiceId}
-        invoiceNumber={invoiceNumber}
         currency={currency}
         total={total}
         balanceDue={balanceDue}

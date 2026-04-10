@@ -1,13 +1,3 @@
-/**
- * Send invoice email service.
- *
- * Orchestrates loading the invoice, resolving a recipient, generating
- * the PDF, building the email body, and dispatching via the shared
- * sendEmail() helper. Updates last_emailed_at and email_sent_count on
- * success. Never throws — all failures become structured log entries
- * plus a `{ sent: false, reason }` return value.
- */
-
 import { db } from '../../../config/database';
 import { invoices, crmCompanies, crmContacts } from '../../../db/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
@@ -28,6 +18,13 @@ export interface SendInvoiceEmailOptions {
   template?: 'invoice' | 'reminder';
   /** Reminder stage (1-4). Only used when template === 'reminder'. */
   stage?: 1 | 2 | 3 | 4;
+  /**
+   * Outstanding balance to show in the email. If omitted, falls back to
+   * invoice.total (correct for freshly-issued invoices with no payments).
+   * The reminder scheduler passes the SQL-computed balance here so the
+   * email shows the actual amount owed rather than the original total.
+   */
+  balanceDue?: number;
 }
 
 export interface SendInvoiceEmailResult {
@@ -42,7 +39,8 @@ export async function sendInvoiceEmail(
   options?: SendInvoiceEmailOptions,
 ): Promise<SendInvoiceEmailResult> {
   try {
-    // 1. Load invoice scoped to tenant.
+    // 1. Load invoice scoped to tenant. Must happen first — we need
+    // invoice.companyId before we can load the company.
     // userId is only used for per-user ACL filtering; passing '' bypasses
     // it for tenant-wide email sends (caller must enforce permissions).
     const invoice = await getInvoice('', tenantId, invoiceId);
@@ -51,22 +49,38 @@ export async function sendInvoiceEmail(
       return { sent: false, reason: 'Invoice not found' };
     }
 
-    // 2. Load company
-    const [company] = await db
-      .select()
-      .from(crmCompanies)
-      .where(eq(crmCompanies.id, invoice.companyId))
-      .limit(1);
+    // 2. Load company, settings, and PDF in parallel. These are all
+    // independent of each other once we have the invoice — company +
+    // settings come from the DB, pdf generation only needs
+    // (tenantId, invoiceId). PDF is normally the slowest step so
+    // overlapping it with the DB reads shaves wall-clock time.
+    let companyRows: Array<typeof crmCompanies.$inferSelect>;
+    let loadedSettings: Awaited<ReturnType<typeof getInvoiceSettings>>;
+    let pdfBuffer: Buffer;
+    try {
+      [companyRows, loadedSettings, pdfBuffer] = await Promise.all([
+        db
+          .select()
+          .from(crmCompanies)
+          .where(eq(crmCompanies.id, invoice.companyId))
+          .limit(1),
+        getInvoiceSettings(tenantId),
+        generateInvoicePdf(tenantId, invoiceId),
+      ]);
+    } catch (err) {
+      logger.error({ err, invoiceId }, 'sendInvoiceEmail: failed to load company/settings or render PDF');
+      return { sent: false, reason: 'Failed to generate invoice PDF' };
+    }
 
+    const company = companyRows[0];
     if (!company) {
       logger.warn({ invoiceId, companyId: invoice.companyId }, 'sendInvoiceEmail: company not found');
       return { sent: false, reason: 'Company not found' };
     }
 
-    // 3. Load tenant invoice settings (default to empty if missing)
-    const settings = (await getInvoiceSettings(tenantId)) ?? {};
+    const settings: Partial<NonNullable<typeof loadedSettings>> = loadedSettings ?? {};
 
-    // 4. Resolve recipient
+    // 3. Resolve recipient
     let recipient: string | undefined;
     if (options?.recipientOverride) {
       recipient = options.recipientOverride;
@@ -100,9 +114,9 @@ export async function sendInvoiceEmail(
       return { sent: false, reason: 'No recipient email address available' };
     }
 
-    // 5. Require a portal token — the public portal route is
-    //    /api/invoices/portal/:token/:invoiceId, so without a token the
-    //    CTA in the email would 404.
+    // Require a portal token — the public portal route is
+    // /api/invoices/portal/:token/:invoiceId, so without a token the
+    // CTA in the email would 404.
     if (!company.portalToken) {
       logger.warn(
         { invoiceId, companyId: company.id },
@@ -111,29 +125,21 @@ export async function sendInvoiceEmail(
       return { sent: false, reason: 'Company has no portal token', recipient };
     }
 
-    // 6. Generate PDF
-    let pdfBuffer: Buffer;
-    try {
-      pdfBuffer = await generateInvoicePdf(tenantId, invoiceId);
-    } catch (err) {
-      logger.error({ err, invoiceId }, 'sendInvoiceEmail: failed to render PDF');
-      return { sent: false, reason: 'Failed to generate invoice PDF', recipient };
-    }
-
-    // 7. Build portal URL — matches the public route mounted at
-    //    /api/invoices/portal/:token/:invoiceId (see invoices/routes.ts)
+    // Build portal URL — matches the public route mounted at
+    // /api/invoices/portal/:token/:invoiceId (see invoices/routes.ts)
     const baseUrl = env.CLIENT_PUBLIC_URL || env.SERVER_PUBLIC_URL;
     const portalUrl = `${baseUrl}/api/invoices/portal/${company.portalToken}/${invoice.id}`;
 
-    // 8. Build email content
+    // Build email content. balanceDue falls back to invoice.total, which
+    // is correct for freshly-issued invoices with no payments. The
+    // reminder scheduler passes an explicit balanceDue computed from the
+    // payments ledger so overdue emails show the actual amount owed.
     const templateData = {
       invoice: {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         total: invoice.total,
-        // TODO(phase-2): once invoice_payments exists, compute balanceDue as
-        // total - SUM(payments.amount). For now, no payments means balanceDue === total.
-        balanceDue: invoice.total,
+        balanceDue: options?.balanceDue ?? invoice.total,
         currency: invoice.currency,
         dueDate: invoice.dueDate instanceof Date ? invoice.dueDate : invoice.dueDate ? new Date(invoice.dueDate) : null,
         issueDate: invoice.issueDate instanceof Date ? invoice.issueDate : invoice.issueDate ? new Date(invoice.issueDate) : null,

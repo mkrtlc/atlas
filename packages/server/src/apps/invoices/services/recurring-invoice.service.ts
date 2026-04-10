@@ -488,6 +488,9 @@ export async function generateInvoiceFromRecurring(
       // Flip status to 'sent' first — the invoice has left draft state regardless
       // of whether delivery ultimately succeeds.
       await sendInvoice(result.userId, tenantId, result.invoiceId);
+      // No balanceDue override — a freshly-generated invoice has no
+      // payments yet, so sendInvoiceEmail's default (balanceDue = total)
+      // is correct here.
       const emailResult = await sendInvoiceEmail(result.invoiceId, tenantId);
       emailed = emailResult.sent;
       if (!emailed) {
