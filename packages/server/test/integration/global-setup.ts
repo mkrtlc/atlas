@@ -23,36 +23,12 @@ export async function setup() {
     await client.end();
   }
 
-  // Import and run the app's migrations
+  // Import and run the app's migrations. Note: runMigrations now drops
+  // legacy `account_id` columns from tasks/drive/crm tables that predate
+  // the tenant-only model, so test databases created from older snapshots
+  // self-heal here without any extra setup.
   const { runMigrations } = await import('../../src/db/migrate');
   await runMigrations();
-
-  // Drop legacy `account_id` columns from CRM tables that predate the
-  // tenant-only model. The current schema (schema.ts + migrate.ts) only
-  // tracks `tenant_id`, but test databases created from older snapshots
-  // still carry a NOT NULL `account_id`, which causes inserts to fail.
-  const cleanupClient = new pg.Client({ connectionString: TEST_DB_URL });
-  await cleanupClient.connect();
-  try {
-    const legacyTables = [
-      'crm_companies',
-      'crm_contacts',
-      'crm_deal_stages',
-      'crm_deals',
-      'crm_activities',
-      'crm_workflows',
-      'crm_permissions',
-      'crm_leads',
-      'crm_notes',
-      'tasks',
-      'drive_items',
-    ];
-    for (const table of legacyTables) {
-      await cleanupClient.query(`ALTER TABLE IF EXISTS ${table} DROP COLUMN IF EXISTS account_id`);
-    }
-  } finally {
-    await cleanupClient.end();
-  }
 }
 
 export async function teardown() {

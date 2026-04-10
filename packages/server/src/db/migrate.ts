@@ -2294,6 +2294,42 @@ export async function runMigrations() {
       ALTER TABLE crm_companies ADD COLUMN IF NOT EXISTS portal_token UUID UNIQUE;
     `);
 
+    // ─── Drop legacy account_id columns ──────────────────────────────
+    // Tasks, Drive, and CRM tables were originally scoped per-account
+    // (with `account_id NOT NULL REFERENCES accounts(id)`). They were
+    // migrated to the tenant-only model long ago and the CREATE TABLE
+    // blocks above no longer mention `account_id`, but databases that
+    // were first migrated under the older snapshot still carry the
+    // column with its NOT NULL constraint. New inserts from the
+    // tenant-only services then fail with
+    //   null value in column "account_id" violates not-null constraint
+    // Drop the column wherever it still exists. Idempotent — safe to
+    // run on healthy databases (DROP COLUMN IF EXISTS is a no-op).
+    const legacyAccountIdTables = [
+      'tasks',
+      'drive_items',
+      'crm_companies',
+      'crm_contacts',
+      'crm_deal_stages',
+      'crm_deals',
+      'crm_activities',
+      'crm_workflows',
+      'crm_permissions',
+      'crm_leads',
+      'crm_notes',
+    ];
+    for (const table of legacyAccountIdTables) {
+      try {
+        await client.query(
+          `ALTER TABLE IF EXISTS ${table} DROP COLUMN IF EXISTS account_id`,
+        );
+      } catch (err: any) {
+        logger.warn(
+          `Failed to drop legacy account_id column on ${table}: ${err.message}`,
+        );
+      }
+    }
+
     // ─── Runtime schema sync ─────────────────────────────────────────
     // Walks every pgTable in schema.ts and emits ALTER TABLE ADD COLUMN
     // IF NOT EXISTS for any column missing from production. This catches
