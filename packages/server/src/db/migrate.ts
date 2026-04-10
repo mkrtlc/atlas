@@ -1381,6 +1381,21 @@ export async function runMigrations() {
       );
     `);
 
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS template_id VARCHAR(50) NOT NULL DEFAULT 'classic'`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS logo_path TEXT`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS accent_color VARCHAR(20) NOT NULL DEFAULT '#13715B'`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_name VARCHAR(255)`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_address TEXT`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_city VARCHAR(100)`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_country VARCHAR(100)`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_phone VARCHAR(50)`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_email VARCHAR(255)`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_website VARCHAR(255)`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS company_tax_id VARCHAR(50)`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS payment_instructions TEXT`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS bank_details TEXT`);
+    await client.query(`ALTER TABLE invoice_settings ADD COLUMN IF NOT EXISTS footer_text TEXT`);
+
     // ─── HR: New leave/attendance/lifecycle tables ─────────────────
 
     await client.query(`
