@@ -3638,6 +3638,10 @@
     "settings": {
       "general": "Genel",
       "saved": "Ayarlar kaydedildi",
+      "logoHint": "PNG, JPG veya SVG. Önerilen 400x200px veya benzeri en-boy oranı.",
+      "logoInvalidType": "Lütfen bir resim dosyası yükleyin",
+      "eFaturaInfo": "e-Fatura, Gelir İdaresi Başkanlığı (GİB) tarafından işletilen Türkiye'nin zorunlu elektronik fatura sistemidir. Belirli bir ciro eşiğinin üzerindeki işletmeler faturalarını bu sistem üzerinden elektronik olarak düzenlemek zorundadır. Bu seçeneği yalnızca şirketiniz e-Fatura için kayıtlıysa etkinleştirin.",
+      "eFaturaEnable": "e-Fatura'yı etkinleştir",
       "invoicePrefix": "Fatura ön eki",
       "defaultCurrency": "Varsayılan para birimi",
       "defaultTaxRate": "Varsayılan vergi oranı",

@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Upload, X } from 'lucide-react';
 import { useInvoiceSettings, useUpdateInvoiceSettings } from '../hooks';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Button } from '../../../components/ui/button';
 import { useToastStore } from '../../../stores/toast-store';
+import { api } from '../../../lib/api-client';
 import type { UpdateInvoiceSettingsInput } from '@atlasmail/shared';
 
 const sectionLabelStyle: React.CSSProperties = {
@@ -33,6 +35,8 @@ export function InvoiceTemplatesPanel() {
 
   const [form, setForm] = useState<UpdateInvoiceSettingsInput>({});
   const [dirty, setDirty] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const templates = [
     { id: 'classic', name: t('invoices.settings.classic'), description: t('invoices.settings.classicDescription') },
@@ -44,6 +48,7 @@ export function InvoiceTemplatesPanel() {
     if (settings) {
       setForm({
         templateId: settings.templateId ?? 'classic',
+        logoPath: settings.logoPath ?? null,
         accentColor: settings.accentColor ?? '#13715B',
         companyName: settings.companyName ?? '',
         companyAddress: settings.companyAddress ?? '',
@@ -64,6 +69,34 @@ export function InvoiceTemplatesPanel() {
   const update = (patch: Partial<UpdateInvoiceSettingsInput>) => {
     setForm((prev) => ({ ...prev, ...patch }));
     setDirty(true);
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      addToast({ type: 'error', message: t('invoices.settings.logoInvalidType') });
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const filename = data?.data?.url?.split('/').pop() ?? null;
+      if (filename) {
+        update({ logoPath: filename });
+      }
+    } catch {
+      addToast({ type: 'error', message: t('common.error') });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    update({ logoPath: null });
   };
 
   const handleSave = () => {
@@ -127,6 +160,57 @@ export function InvoiceTemplatesPanel() {
             {form.accentColor ?? '#13715B'}
           </span>
         </div>
+      </div>
+
+      {/* Logo */}
+      <div style={sectionBoxStyle}>
+        <span style={sectionLabelStyle}>{t('invoices.settings.logo')}</span>
+        {form.logoPath ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <div style={{
+              width: 120,
+              height: 60,
+              background: 'var(--color-bg-primary)',
+              border: '1px solid var(--color-border-primary)',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 'var(--spacing-xs)',
+            }}>
+              <img
+                src={`/api/v1/uploads/${form.logoPath}`}
+                alt="Logo"
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              />
+            </div>
+            <Button variant="ghost" size="sm" icon={<X size={14} />} onClick={handleRemoveLogo}>
+              {t('invoices.settings.removeLogo')}
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/svg+xml"
+              onChange={handleLogoUpload}
+              style={{ display: 'none' }}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Upload size={14} />}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? t('common.loading') : t('invoices.settings.uploadLogo')}
+            </Button>
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 'var(--spacing-xs)', fontFamily: 'var(--font-family)' }}>
+              {t('invoices.settings.logoHint')}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Company details */}

@@ -8,6 +8,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1a1a1a',
+    paddingTop: 36,
     paddingBottom: 60,
   },
   // Accent bar at top

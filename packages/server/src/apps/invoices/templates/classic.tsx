@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1a1a1a',
-    paddingTop: 40,
+    paddingTop: 72,
     paddingBottom: 60,
     paddingHorizontal: 48,
   },

@@ -3643,6 +3643,10 @@
     "settings": {
       "general": "General",
       "saved": "Settings saved",
+      "logoHint": "PNG, JPG or SVG. Recommended 400x200px or similar aspect ratio.",
+      "logoInvalidType": "Please upload an image file",
+      "eFaturaInfo": "e-Fatura is Turkey's mandatory electronic invoicing system operated by the Revenue Administration (GİB). Businesses above a certain revenue threshold must issue invoices electronically through this system. Enable this only if your company is registered for e-Fatura.",
+      "eFaturaEnable": "Enable e-Fatura",
       "invoicePrefix": "Invoice prefix",
       "defaultCurrency": "Default currency",
       "defaultTaxRate": "Default tax rate",

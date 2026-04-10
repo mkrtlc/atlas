@@ -3638,6 +3638,10 @@
     "settings": {
       "general": "Allgemein",
       "saved": "Einstellungen gespeichert",
+      "logoHint": "PNG, JPG oder SVG. Empfohlen 400x200px oder ähnliches Seitenverhältnis.",
+      "logoInvalidType": "Bitte eine Bilddatei hochladen",
+      "eFaturaInfo": "e-Fatura ist das verpflichtende elektronische Rechnungssystem der Türkei, betrieben von der Finanzverwaltung (GİB). Unternehmen über einer bestimmten Umsatzgrenze müssen Rechnungen elektronisch über dieses System ausstellen. Aktivieren Sie diese Option nur, wenn Ihr Unternehmen für e-Fatura registriert ist.",
+      "eFaturaEnable": "e-Fatura aktivieren",
       "invoicePrefix": "Rechnungspräfix",
       "defaultCurrency": "Standardwährung",
       "defaultTaxRate": "Standard-Steuersatz",

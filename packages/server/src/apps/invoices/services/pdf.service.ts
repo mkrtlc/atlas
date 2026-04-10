@@ -29,12 +29,14 @@ export async function generateInvoicePdf(tenantId: string, invoiceId: string): P
   const company = companyResult[0];
 
   // Read logo file if exists, convert to base64
+  // logoPath stores just the filename from the upload endpoint; resolve under uploads/
   let logoBase64: string | undefined;
   if (settings?.logoPath) {
     try {
-      const logoFullPath = path.resolve(settings.logoPath);
+      const filename = path.basename(settings.logoPath);
+      const logoFullPath = path.join(__dirname, '../../../../uploads', filename);
       const logoBuffer = await fs.readFile(logoFullPath);
-      const ext = path.extname(settings.logoPath).toLowerCase();
+      const ext = path.extname(filename).toLowerCase();
       const mime = ext === '.png' ? 'image/png' : ext === '.svg' ? 'image/svg+xml' : 'image/jpeg';
       logoBase64 = `data:${mime};base64,${logoBuffer.toString('base64')}`;
     } catch (err) {

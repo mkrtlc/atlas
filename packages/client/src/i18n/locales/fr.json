@@ -3638,6 +3638,10 @@
     "settings": {
       "general": "Général",
       "saved": "Paramètres enregistrés",
+      "logoHint": "PNG, JPG ou SVG. Recommandé 400x200px ou un rapport d'aspect similaire.",
+      "logoInvalidType": "Veuillez télécharger un fichier image",
+      "eFaturaInfo": "e-Fatura est le système de facturation électronique obligatoire de la Turquie, géré par l'Administration fiscale (GİB). Les entreprises dépassant un certain seuil de chiffre d'affaires doivent émettre leurs factures électroniquement via ce système. N'activez cette option que si votre entreprise est enregistrée pour e-Fatura.",
+      "eFaturaEnable": "Activer e-Fatura",
       "invoicePrefix": "Préfixe de facture",
       "defaultCurrency": "Devise par défaut",
       "defaultTaxRate": "Taux de taxe par défaut",

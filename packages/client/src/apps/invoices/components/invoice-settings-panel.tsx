@@ -114,15 +114,19 @@ export function InvoiceSettingsPanel() {
         size="sm"
       />
 
-      {/* E-Fatura toggle */}
-      <div>
+      {/* E-Fatura section */}
+      <div style={sectionBoxStyle}>
+        <span style={sectionLabelStyle}>{t('invoices.settings.eFatura')}</span>
+        <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.5, fontFamily: 'var(--font-family)' }}>
+          {t('invoices.settings.eFaturaInfo')}
+        </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', color: 'var(--color-text-primary)' }}>
           <input
             type="checkbox"
             checked={form.eFaturaEnabled ?? false}
             onChange={(e) => update({ eFaturaEnabled: e.target.checked })}
           />
-          {t('invoices.settings.eFatura')}
+          {t('invoices.settings.eFaturaEnable')}
         </label>
       </div>
 
