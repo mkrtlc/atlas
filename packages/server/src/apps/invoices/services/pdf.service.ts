@@ -56,8 +56,8 @@ export async function generateInvoicePdf(tenantId: string, invoiceId: string): P
       discountAmount: invoice.discountAmount,
       total: invoice.total,
       notes: invoice.notes,
-      issueDate: invoice.issueDate,
-      dueDate: invoice.dueDate,
+      issueDate: invoice.issueDate instanceof Date ? invoice.issueDate.toISOString() : String(invoice.issueDate),
+      dueDate: invoice.dueDate instanceof Date ? invoice.dueDate.toISOString() : String(invoice.dueDate),
     },
     lineItems: (invoice.lineItems || []).map((li: any) => ({
       description: li.description,
@@ -85,7 +85,7 @@ export async function generateInvoicePdf(tenantId: string, invoiceId: string): P
       name: company?.name || 'Unknown',
       address: company?.address || undefined,
       postalCode: company?.postalCode || undefined,
-      city: company?.city || undefined,
+      city: undefined,
       state: company?.state || undefined,
       country: company?.country || undefined,
       taxId: company?.taxId || undefined,
@@ -99,6 +99,6 @@ export async function generateInvoicePdf(tenantId: string, invoiceId: string): P
   const Template = getTemplate(templateId);
 
   // 8. Render to PDF buffer
-  const pdfBuffer = await renderToBuffer(React.createElement(Template, templateProps));
+  const pdfBuffer = await renderToBuffer(React.createElement(Template, templateProps) as any);
   return Buffer.from(pdfBuffer);
 }

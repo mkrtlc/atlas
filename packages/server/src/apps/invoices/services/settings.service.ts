@@ -30,6 +30,20 @@ export async function updateInvoiceSettings(tenantId: string, input: {
   eFaturaCompanyCountry?: string | null;
   eFaturaCompanyPhone?: string | null;
   eFaturaCompanyEmail?: string | null;
+  templateId?: string;
+  logoPath?: string | null;
+  accentColor?: string;
+  companyName?: string | null;
+  companyAddress?: string | null;
+  companyCity?: string | null;
+  companyCountry?: string | null;
+  companyPhone?: string | null;
+  companyEmail?: string | null;
+  companyWebsite?: string | null;
+  companyTaxId?: string | null;
+  paymentInstructions?: string | null;
+  bankDetails?: string | null;
+  footerText?: string | null;
 }) {
   const now = new Date();
 
@@ -67,6 +81,20 @@ export async function updateInvoiceSettings(tenantId: string, input: {
   if (input.eFaturaCompanyCountry !== undefined) updates.eFaturaCompanyCountry = input.eFaturaCompanyCountry;
   if (input.eFaturaCompanyPhone !== undefined) updates.eFaturaCompanyPhone = input.eFaturaCompanyPhone;
   if (input.eFaturaCompanyEmail !== undefined) updates.eFaturaCompanyEmail = input.eFaturaCompanyEmail;
+  if (input.templateId !== undefined) updates.templateId = input.templateId;
+  if (input.logoPath !== undefined) updates.logoPath = input.logoPath;
+  if (input.accentColor !== undefined) updates.accentColor = input.accentColor;
+  if (input.companyName !== undefined) updates.companyName = input.companyName;
+  if (input.companyAddress !== undefined) updates.companyAddress = input.companyAddress;
+  if (input.companyCity !== undefined) updates.companyCity = input.companyCity;
+  if (input.companyCountry !== undefined) updates.companyCountry = input.companyCountry;
+  if (input.companyPhone !== undefined) updates.companyPhone = input.companyPhone;
+  if (input.companyEmail !== undefined) updates.companyEmail = input.companyEmail;
+  if (input.companyWebsite !== undefined) updates.companyWebsite = input.companyWebsite;
+  if (input.companyTaxId !== undefined) updates.companyTaxId = input.companyTaxId;
+  if (input.paymentInstructions !== undefined) updates.paymentInstructions = input.paymentInstructions;
+  if (input.bankDetails !== undefined) updates.bankDetails = input.bankDetails;
+  if (input.footerText !== undefined) updates.footerText = input.footerText;
 
   const [updated] = await db
     .update(invoiceSettings)
