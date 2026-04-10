@@ -3660,6 +3660,30 @@
       "trackDesc": "Surveillez le statut de paiement du brouillon au payé",
       "companyTitle": "Lier aux entreprises",
       "companyDesc": "Associez les factures aux entreprises CRM"
+    },
+    "dashboard": {
+      "title": "Tableau de bord",
+      "totalReceivables": "Total des créances",
+      "current": "En cours",
+      "overdue": "En retard",
+      "days1to15": "1-15 jours",
+      "days16to30": "16-30 jours",
+      "days31to45": "31-45 jours",
+      "days45plus": "Plus de 45 jours",
+      "invoiceActivity": "Activité de facturation",
+      "last12Months": "12 derniers mois",
+      "totalInvoiced": "Total facturé",
+      "totalPaid": "Total payé",
+      "salesReceiptsDues": "Facturé, reçu et dû",
+      "period": "Période",
+      "invoiced": "Facturé",
+      "received": "Reçu",
+      "due": "Dû",
+      "today": "Aujourd'hui",
+      "thisWeek": "Cette semaine",
+      "thisMonth": "Ce mois",
+      "thisQuarter": "Ce trimestre",
+      "thisYear": "Cette année"
     }
   }
 }

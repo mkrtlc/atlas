@@ -15,6 +15,9 @@ router.use(authMiddleware);
 router.get('/settings', invoiceController.getSettings);
 router.patch('/settings', invoiceController.updateSettings);
 
+// Dashboard
+router.get('/dashboard', invoiceController.getInvoicesDashboard);
+
 // Invoices
 router.get('/list', invoiceController.listInvoices);
 router.get('/next-number', invoiceController.getNextInvoiceNumber);

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  List, FileEdit, Send, AlertTriangle, CheckCircle2, XCircle, Settings2,
+  LayoutDashboard, List, FileEdit, Send, AlertTriangle, CheckCircle2, XCircle, Settings2,
 } from 'lucide-react';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../../components/layout/app-sidebar';
 import { useUIStore } from '../../../stores/ui-store';
@@ -28,6 +28,13 @@ export function InvoicesSidebar({ activeView, setActiveView, counts }: InvoicesS
       }
     >
       <SidebarSection>
+        <SidebarItem
+          label={t('invoices.dashboard.title')}
+          icon={<LayoutDashboard size={14} />}
+          iconColor="#6366f1"
+          isActive={activeView === 'dashboard'}
+          onClick={() => setActiveView('dashboard')}
+        />
         <SidebarItem
           label={t('invoices.sidebar.all')}
           icon={<List size={14} />}

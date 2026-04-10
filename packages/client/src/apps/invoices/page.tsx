@@ -6,6 +6,7 @@ import { useInvoices } from './hooks';
 import { InvoicesSidebar } from './components/invoices-sidebar';
 import { InvoicesListView } from './components/invoices-list-view';
 import { InvoiceDetailPanel } from './components/invoice-detail-panel';
+import { InvoicesDashboard } from './components/invoices-dashboard';
 import { InvoiceBuilderModal } from '../../components/shared/invoice-builder-modal';
 import { ContentArea } from '../../components/ui/content-area';
 import { Button } from '../../components/ui/button';
@@ -18,7 +19,7 @@ export function InvoicesPage() {
   const [searchParams] = useSearchParams();
 
   // State
-  const [activeView, setActiveView] = useState('all');
+  const [activeView, setActiveView] = useState('dashboard');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(searchParams.get('id'));
   const [showBuilder, setShowBuilder] = useState(searchParams.get('new') === 'true');
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -81,6 +82,7 @@ export function InvoicesPage() {
 
   const sectionTitle = useMemo(() => {
     switch (activeView) {
+      case 'dashboard': return t('invoices.dashboard.title');
       case 'all': return t('invoices.sidebar.all');
       case 'draft': return t('invoices.sidebar.draft');
       case 'sent': return t('invoices.sidebar.sent');
@@ -98,66 +100,74 @@ export function InvoicesPage() {
       <ContentArea
         title={sectionTitle}
         actions={
-          <>
-            <IconButton
-              icon={<Search size={14} />}
-              label={t('common.search')}
-              size={28}
-              active={showSearch}
-              onClick={() => {
-                setShowSearch(!showSearch);
-                if (!showSearch) setTimeout(() => searchInputRef.current?.focus(), 50);
-              }}
-            />
-            <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => { setEditingInvoice(null); setShowBuilder(true); }}>
-              {t('invoices.builder.createInvoice')}
-            </Button>
-          </>
+          activeView !== 'dashboard' ? (
+            <>
+              <IconButton
+                icon={<Search size={14} />}
+                label={t('common.search')}
+                size={28}
+                active={showSearch}
+                onClick={() => {
+                  setShowSearch(!showSearch);
+                  if (!showSearch) setTimeout(() => searchInputRef.current?.focus(), 50);
+                }}
+              />
+              <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => { setEditingInvoice(null); setShowBuilder(true); }}>
+                {t('invoices.builder.createInvoice')}
+              </Button>
+            </>
+          ) : undefined
         }
       >
-        {/* Search bar */}
-        {showSearch && (
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0 var(--spacing-lg)', borderBottom: '1px solid var(--color-border-secondary)' }}>
-            <Input
-              ref={searchInputRef}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('common.search')}
-              iconLeft={<Search size={14} />}
-              size="sm"
-              style={{ border: 'none', background: 'transparent' }}
-            />
-            <IconButton
-              icon={<X size={14} />}
-              label={t('common.close')}
-              size={24}
-              onClick={() => { setShowSearch(false); setSearchQuery(''); }}
-            />
-          </div>
-        )}
+        {activeView === 'dashboard' ? (
+          <InvoicesDashboard />
+        ) : (
+          <>
+            {/* Search bar */}
+            {showSearch && (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '0 var(--spacing-lg)', borderBottom: '1px solid var(--color-border-secondary)' }}>
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('common.search')}
+                  iconLeft={<Search size={14} />}
+                  size="sm"
+                  style={{ border: 'none', background: 'transparent' }}
+                />
+                <IconButton
+                  icon={<X size={14} />}
+                  label={t('common.close')}
+                  size={24}
+                  onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+                />
+              </div>
+            )}
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <InvoicesListView
-              invoices={invoices}
-              searchQuery={searchQuery}
-              selectedId={selectedInvoiceId}
-              onSelect={(id) => setSelectedInvoiceId(id)}
-              onAdd={() => { setEditingInvoice(null); setShowBuilder(true); }}
-            />
-          </div>
+            <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <InvoicesListView
+                  invoices={invoices}
+                  searchQuery={searchQuery}
+                  selectedId={selectedInvoiceId}
+                  onSelect={(id) => setSelectedInvoiceId(id)}
+                  onAdd={() => { setEditingInvoice(null); setShowBuilder(true); }}
+                />
+              </div>
 
-          {/* Detail panel */}
-          {selectedInvoice && (
-            <div style={{ width: 360, borderLeft: '1px solid var(--color-border-secondary)', flexShrink: 0, overflow: 'hidden' }}>
-              <InvoiceDetailPanel
-                invoice={selectedInvoice}
-                onClose={() => setSelectedInvoiceId(null)}
-                onEdit={() => { setEditingInvoice(selectedInvoice); setShowBuilder(true); }}
-              />
+              {/* Detail panel */}
+              {selectedInvoice && (
+                <div style={{ width: 360, borderLeft: '1px solid var(--color-border-secondary)', flexShrink: 0, overflow: 'hidden' }}>
+                  <InvoiceDetailPanel
+                    invoice={selectedInvoice}
+                    onClose={() => setSelectedInvoiceId(null)}
+                    onEdit={() => { setEditingInvoice(selectedInvoice); setShowBuilder(true); }}
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </ContentArea>
 
       {/* Builder modal */}

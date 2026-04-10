@@ -160,6 +160,7 @@ export const queryKeys = {
     detail: (id: string) => ['invoices', id] as const,
     settings: ['invoices', 'settings'] as const,
     nextNumber: ['invoices', 'next-number'] as const,
+    dashboard: ['invoices', 'dashboard'] as const,
   },
   crm: {
     all: ['crm'] as const,

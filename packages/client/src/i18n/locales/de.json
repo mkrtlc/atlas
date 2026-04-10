@@ -3660,6 +3660,30 @@
       "trackDesc": "Überwachen Sie den Zahlungsstatus von Entwurf bis bezahlt",
       "companyTitle": "Mit Unternehmen verknüpfen",
       "companyDesc": "Verknüpfen Sie Rechnungen mit CRM-Unternehmen"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "totalReceivables": "Gesamte Forderungen",
+      "current": "Aktuell",
+      "overdue": "Überfällig",
+      "days1to15": "1-15 Tage",
+      "days16to30": "16-30 Tage",
+      "days31to45": "31-45 Tage",
+      "days45plus": "Über 45 Tage",
+      "invoiceActivity": "Rechnungsaktivität",
+      "last12Months": "Letzte 12 Monate",
+      "totalInvoiced": "Gesamt in Rechnung gestellt",
+      "totalPaid": "Gesamt bezahlt",
+      "salesReceiptsDues": "In Rechnung gestellt, erhalten und fällig",
+      "period": "Zeitraum",
+      "invoiced": "In Rechnung gestellt",
+      "received": "Erhalten",
+      "due": "Fällig",
+      "today": "Heute",
+      "thisWeek": "Diese Woche",
+      "thisMonth": "Dieser Monat",
+      "thisQuarter": "Dieses Quartal",
+      "thisYear": "Dieses Jahr"
     }
   }
 }

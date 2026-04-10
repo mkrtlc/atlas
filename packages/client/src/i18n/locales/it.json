@@ -3660,6 +3660,30 @@
       "trackDesc": "Monitora lo stato del pagamento dalla bozza al pagato",
       "companyTitle": "Collega alle aziende",
       "companyDesc": "Associa le fatture alle aziende CRM"
+    },
+    "dashboard": {
+      "title": "Pannello di controllo",
+      "totalReceivables": "Totale crediti",
+      "current": "Corrente",
+      "overdue": "Scaduto",
+      "days1to15": "1-15 giorni",
+      "days16to30": "16-30 giorni",
+      "days31to45": "31-45 giorni",
+      "days45plus": "Oltre 45 giorni",
+      "invoiceActivity": "Attività fatture",
+      "last12Months": "Ultimi 12 mesi",
+      "totalInvoiced": "Totale fatturato",
+      "totalPaid": "Totale pagato",
+      "salesReceiptsDues": "Fatturato, ricevuto e dovuto",
+      "period": "Periodo",
+      "invoiced": "Fatturato",
+      "received": "Ricevuto",
+      "due": "Dovuto",
+      "today": "Oggi",
+      "thisWeek": "Questa settimana",
+      "thisMonth": "Questo mese",
+      "thisQuarter": "Questo trimestre",
+      "thisYear": "Quest'anno"
     }
   }
 }

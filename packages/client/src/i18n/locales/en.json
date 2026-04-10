@@ -3665,6 +3665,30 @@
       "trackDesc": "Monitor payment status from draft to paid",
       "companyTitle": "Link to companies",
       "companyDesc": "Associate invoices with CRM companies"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "totalReceivables": "Total receivables",
+      "current": "Current",
+      "overdue": "Overdue",
+      "days1to15": "1-15 days",
+      "days16to30": "16-30 days",
+      "days31to45": "31-45 days",
+      "days45plus": "Above 45 days",
+      "invoiceActivity": "Invoice activity",
+      "last12Months": "Last 12 months",
+      "totalInvoiced": "Total invoiced",
+      "totalPaid": "Total paid",
+      "salesReceiptsDues": "Invoiced, received and dues",
+      "period": "Period",
+      "invoiced": "Invoiced",
+      "received": "Received",
+      "due": "Due",
+      "today": "Today",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "thisQuarter": "This quarter",
+      "thisYear": "This year"
     }
   }
 }

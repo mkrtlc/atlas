@@ -3,6 +3,40 @@ import { api } from '../../lib/api-client';
 import { queryKeys } from '../../config/query-keys';
 import type { Invoice, InvoiceSettings, UpdateInvoiceSettingsInput } from '@atlasmail/shared';
 
+// ─── Dashboard ──────────────────────────────────────────────────
+
+export function useInvoicesDashboard() {
+  return useQuery({
+    queryKey: queryKeys.invoices.dashboard,
+    queryFn: async () => {
+      const { data } = await api.get('/invoices/dashboard');
+      return data.data as {
+        receivables: {
+          total: number;
+          current: number;
+          overdue1to15: number;
+          overdue16to30: number;
+          overdue31to45: number;
+          overdue45plus: number;
+        };
+        monthlyActivity: Array<{
+          month: string;
+          invoiced: number;
+          paid: number;
+        }>;
+        periodSummary: {
+          today: { invoiced: number; received: number; due: number };
+          thisWeek: { invoiced: number; received: number; due: number };
+          thisMonth: { invoiced: number; received: number; due: number };
+          thisQuarter: { invoiced: number; received: number; due: number };
+          thisYear: { invoiced: number; received: number; due: number };
+        };
+      };
+    },
+    staleTime: 30_000,
+  });
+}
+
 // ─── Invoice Queries ─────────────────────────────────────────────
 
 export function useInvoices(filters?: {
