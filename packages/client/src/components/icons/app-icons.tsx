@@ -551,9 +551,10 @@ export function SignIcon({ size = 24, className, style }: IconProps) {
 
       <defs>
         <linearGradient id="sign_paint0" x1="64" y1="0" x2="64" y2="128" gradientUnits="userSpaceOnUse">
-          {/* Tighter gradient — light end pulled down toward the dark end so
-              the contrast is subtle, like the CRM/HRM/Projects icons. */}
-          <stop stopColor="#9061F9" />
+          {/* Very tight gradient — the lighter stop is barely lighter than
+              the darker one. Just enough variation to feel like a gradient
+              rather than a flat fill. */}
+          <stop stopColor="#7C3AED" />
           <stop offset="1" stopColor="#6D28D9" />
         </linearGradient>
         <linearGradient id="sign_paint2" x1="64" y1="0" x2="64" y2="40" gradientUnits="userSpaceOnUse">
