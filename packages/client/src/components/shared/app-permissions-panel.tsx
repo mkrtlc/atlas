@@ -30,10 +30,10 @@ const ROLE_OPTIONS = [
   { value: 'viewer', label: 'Viewer' },
 ];
 
-const ACCESS_OPTIONS = [
-  { value: 'all', label: 'All records' },
-  { value: 'own', label: 'Own records only' },
-];
+// recordAccess: 'own' is only enforced by CRM services today — see RBAC audit.
+// Hide the "Own records only" option for apps that don't actually honor it,
+// otherwise the setting silently does nothing.
+const APPS_SUPPORTING_OWN_RECORD_ACCESS = new Set(['crm']);
 
 const ROLE_COLORS: Record<AppRole, string> = {
   admin: '#16a34a',
@@ -95,10 +95,12 @@ function RoleCards() {
 
 function UserPermissionRow({
   perm,
+  supportsOwnAccess,
   onUpdate,
   onReset,
 }: {
   perm: AppPermissionWithUser;
+  supportsOwnAccess: boolean;
   onUpdate: (userId: string, role: AppRole, recordAccess: AppRecordAccess) => void;
   onReset: (userId: string) => void;
 }) {
@@ -153,13 +155,18 @@ function UserPermissionRow({
 
       {/* Record access selector */}
       <Select
-        value={perm.recordAccess}
+        value={supportsOwnAccess ? perm.recordAccess : 'all'}
         onChange={(v) => onUpdate(perm.userId, perm.role, v as AppRecordAccess)}
-        options={[
-          { value: 'all', label: t('permissions.allRecords', 'All records') },
-          { value: 'own', label: t('permissions.ownRecords', 'Own records only') },
-        ]}
+        options={
+          supportsOwnAccess
+            ? [
+                { value: 'all', label: t('permissions.allRecords', 'All records') },
+                { value: 'own', label: t('permissions.ownRecords', 'Own records only') },
+              ]
+            : [{ value: 'all', label: t('permissions.allRecords', 'All records') }]
+        }
         size="sm"
+        disabled={!supportsOwnAccess}
       />
 
       {/* Reset button */}
@@ -203,6 +210,7 @@ export function AppPermissionsPanel({ appId, appName, appColor }: AppPermissions
   const deletePermission = useDeleteAppPermission(appId);
 
   const permissions = data?.permissions ?? [];
+  const supportsOwnAccess = APPS_SUPPORTING_OWN_RECORD_ACCESS.has(appId);
 
   const handleUpdate = (userId: string, role: AppRole, recordAccess: AppRecordAccess) => {
     updatePermission.mutate({ userId, role, recordAccess });
@@ -301,6 +309,7 @@ export function AppPermissionsPanel({ appId, appName, appColor }: AppPermissions
             <UserPermissionRow
               key={perm.userId}
               perm={perm}
+              supportsOwnAccess={supportsOwnAccess}
               onUpdate={handleUpdate}
               onReset={handleReset}
             />

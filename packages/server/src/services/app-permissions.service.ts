@@ -49,7 +49,12 @@ export async function getAppPermission(
 
     if (member) {
       const isPrivileged = member.role === 'owner' || member.role === 'admin';
-      return { role: isPrivileged ? 'admin' : 'viewer', recordAccess: isPrivileged ? 'all' : 'own' };
+      // Non-privileged tenant members default to editor+all so newly invited
+      // teammates are productive on day one rather than landing on blank
+      // read-only apps until an admin sets per-app permissions. See RBAC audit.
+      return isPrivileged
+        ? { role: 'admin', recordAccess: 'all' }
+        : { role: 'editor', recordAccess: 'all' };
     }
   }
 

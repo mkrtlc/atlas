@@ -26,6 +26,13 @@ import { ROLE_COLORS } from '../../config/role-colors';
 // Constants
 // ---------------------------------------------------------------------------
 
+// recordAccess: 'own' is only enforced by CRM services today — see RBAC audit.
+// Other apps (HR, Drive, Tasks, Docs, Tables, Sign, Invoices, Projects, Draw)
+// ignore recordAccess at the service layer, so exposing "Only theirs" for them
+// in the UI would be a lie. Gate the option behind this set until those apps
+// actually honor it.
+const APPS_SUPPORTING_OWN_RECORD_ACCESS = new Set(['crm']);
+
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   owner: 'Full control. Can manage members, change roles, enable apps, and access everything.',
   admin: 'Can manage members, enable apps, and access everything. Cannot change roles.',
@@ -375,6 +382,13 @@ export function OrgMemberEditPage() {
                 const displayRole = hasAccess ? perm.role : 'no-access';
                 const currentAccess = perm?.recordAccess ?? 'all';
                 const isLast = i === allApps.length - 1;
+                const supportsOwnAccess = APPS_SUPPORTING_OWN_RECORD_ACCESS.has(app.id);
+                const recordAccessOptions = supportsOwnAccess
+                  ? [
+                      { value: 'all', label: 'Everything' },
+                      { value: 'own', label: 'Only theirs' },
+                    ]
+                  : [{ value: 'all', label: 'Everything' }];
 
                 return (
                   <div
@@ -427,19 +441,16 @@ export function OrgMemberEditPage() {
                     />
 
                     <Select
-                      value={currentAccess}
+                      value={supportsOwnAccess ? currentAccess : 'all'}
                       onChange={(val) => {
                         if (hasAccess) {
                           setDraftPerms((prev) => ({ ...prev, [app.id]: { ...prev[app.id], recordAccess: val as AppRecordAccess } }));
                         }
                       }}
-                      options={[
-                        { value: 'all', label: 'Everything' },
-                        { value: 'own', label: 'Only theirs' },
-                      ]}
+                      options={recordAccessOptions}
                       size="sm"
                       width={130}
-                      disabled={!hasAccess}
+                      disabled={!hasAccess || !supportsOwnAccess}
                     />
                   </div>
                 );
