@@ -180,7 +180,11 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
         },
         onError: (err) => {
           // eslint-disable-next-line no-console
-          console.error('[expense-form] createExpense.onError', err);
+          console.error('[expense-form] createExpense.onError', {
+            err,
+            status: (err as { response?: { status?: number } })?.response?.status,
+            data: (err as { response?: { data?: unknown } })?.response?.data,
+          });
           showSaveError(err);
         },
       });
