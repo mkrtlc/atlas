@@ -82,14 +82,19 @@ export async function getExpense(req: Request, res: Response) {
 
 // ─── Create Expense ─────────────────────────────────────────────
 
+// Expenses are a self-service feature — any HR user with a linked
+// employee record can create their own expenses. This intentionally
+// bypasses the usual canAccess(role, 'create') gate (which would
+// otherwise require editor+), scoping creation to the caller's own
+// employee record via findEmployeeIdByLinkedUser.
 export async function createExpense(req: Request, res: Response) {
   try {
     const tenantId = req.auth!.tenantId;
     const userId = req.auth!.userId;
 
     const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
-    if (!canAccess(perm.role, 'create')) {
-      res.status(403).json({ success: false, error: 'No permission to create HR records' });
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to access HR records' });
       return;
     }
 
@@ -109,14 +114,32 @@ export async function createExpense(req: Request, res: Response) {
 
 // ─── Update Expense ─────────────────────────────────────────────
 
+// Viewers can update their OWN expenses (self-service); editor+ can
+// update any expense they have permission to see.
 export async function updateExpense(req: Request, res: Response) {
   try {
     const tenantId = req.auth!.tenantId;
+    const userId = req.auth!.userId;
 
-    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'update')) {
-      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to access HR records' });
       return;
+    }
+
+    // If the caller doesn't have blanket update permission, verify the
+    // expense belongs to them via their linked employee record.
+    if (!canAccess(perm.role, 'update')) {
+      const callerEmployeeId = await findEmployeeIdByLinkedUser(userId, tenantId);
+      if (!callerEmployeeId) {
+        res.status(400).json({ success: false, error: 'No employee record found for current user' });
+        return;
+      }
+      const existing = await expenseService.getExpense(tenantId, req.params.id as string);
+      if (!existing || existing.employeeId !== callerEmployeeId) {
+        res.status(403).json({ success: false, error: 'No permission to update this expense' });
+        return;
+      }
     }
 
     const data = await expenseService.updateExpense(tenantId, req.params.id as string, req.body);
@@ -133,14 +156,30 @@ export async function updateExpense(req: Request, res: Response) {
 
 // ─── Delete Expense ─────────────────────────────────────────────
 
+// Viewers can delete their OWN draft expenses (self-service); editor+
+// can delete any expense they have permission to see.
 export async function deleteExpense(req: Request, res: Response) {
   try {
     const tenantId = req.auth!.tenantId;
+    const userId = req.auth!.userId;
 
-    const perm = await getAppPermission(req.auth?.tenantId, req.auth!.userId, 'hr');
-    if (!canAccess(perm.role, 'delete')) {
-      res.status(403).json({ success: false, error: 'No permission to delete HR records' });
+    const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to access HR records' });
       return;
+    }
+
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      const callerEmployeeId = await findEmployeeIdByLinkedUser(userId, tenantId);
+      if (!callerEmployeeId) {
+        res.status(400).json({ success: false, error: 'No employee record found for current user' });
+        return;
+      }
+      const existing = await expenseService.getExpense(tenantId, req.params.id as string);
+      if (!existing || existing.employeeId !== callerEmployeeId) {
+        res.status(403).json({ success: false, error: 'No permission to delete this expense' });
+        return;
+      }
     }
 
     const data = await expenseService.deleteExpense(tenantId, req.params.id as string);
@@ -157,14 +196,19 @@ export async function deleteExpense(req: Request, res: Response) {
 
 // ─── Submit Expense ─────────────────────────────────────────────
 
+// Submitting a draft is a self-service action — any HR user with a
+// linked employee record can submit their OWN drafts. Editor+ can
+// submit any expense they have permission to see (e.g. for correcting
+// workflow issues). Ownership is enforced in the service layer too
+// because submitExpense already passes the caller's employeeId.
 export async function submitExpense(req: Request, res: Response) {
   try {
     const tenantId = req.auth!.tenantId;
     const userId = req.auth!.userId;
 
     const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
-    if (!canAccess(perm.role, 'update')) {
-      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to access HR records' });
       return;
     }
 
@@ -172,6 +216,15 @@ export async function submitExpense(req: Request, res: Response) {
     if (!employeeId) {
       res.status(400).json({ success: false, error: 'No employee record found for current user' });
       return;
+    }
+
+    // For non-privileged roles, verify the expense belongs to the caller.
+    if (!canAccess(perm.role, 'update')) {
+      const existing = await expenseService.getExpense(tenantId, req.params.id as string);
+      if (!existing || existing.employeeId !== employeeId) {
+        res.status(403).json({ success: false, error: 'No permission to submit this expense' });
+        return;
+      }
     }
 
     const data = await expenseService.submitExpense(tenantId, req.params.id as string, employeeId);
@@ -188,15 +241,30 @@ export async function submitExpense(req: Request, res: Response) {
 
 // ─── Recall Expense ─────────────────────────────────────────────
 
+// Viewers can recall their OWN submitted expenses (self-service);
+// editor+ can recall any expense they have permission to see.
 export async function recallExpense(req: Request, res: Response) {
   try {
     const tenantId = req.auth!.tenantId;
     const userId = req.auth!.userId;
 
     const perm = await getAppPermission(req.auth?.tenantId, userId, 'hr');
-    if (!canAccess(perm.role, 'update')) {
-      res.status(403).json({ success: false, error: 'No permission to update HR records' });
+    if (!canAccess(perm.role, 'view')) {
+      res.status(403).json({ success: false, error: 'No permission to access HR records' });
       return;
+    }
+
+    if (!canAccess(perm.role, 'update')) {
+      const callerEmployeeId = await findEmployeeIdByLinkedUser(userId, tenantId);
+      if (!callerEmployeeId) {
+        res.status(400).json({ success: false, error: 'No employee record found for current user' });
+        return;
+      }
+      const existing = await expenseService.getExpense(tenantId, req.params.id as string);
+      if (!existing || existing.employeeId !== callerEmployeeId) {
+        res.status(403).json({ success: false, error: 'No permission to recall this expense' });
+        return;
+      }
     }
 
     const data = await expenseService.recallExpense(tenantId, req.params.id as string, userId);
