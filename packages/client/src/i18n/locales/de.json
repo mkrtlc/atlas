@@ -1433,8 +1433,6 @@
       "role": "Rolle",
       "recordAccess": "Datensatzzugriff",
       "admin": "Administrator",
-      "manager": "Manager",
-      "sales": "Vertrieb",
       "viewer": "Betrachter",
       "allRecords": "Alle Datensätze",
       "ownRecords": "Nur eigene Datensätze",

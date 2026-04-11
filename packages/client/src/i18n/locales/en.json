@@ -1461,8 +1461,6 @@
       "role": "Role",
       "recordAccess": "Record access",
       "admin": "Admin",
-      "manager": "Manager",
-      "sales": "Sales",
       "viewer": "Viewer",
       "allRecords": "All records",
       "ownRecords": "Own records only",

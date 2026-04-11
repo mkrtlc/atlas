@@ -3,9 +3,6 @@
 // The CRM admin UI writes through these helpers. Request-time enforcement
 // lives in packages/server/src/services/app-permissions.service.ts and is
 // used by every CRM controller via getAppPermission/canAccessEntity.
-//
-// The legacy `crm_permissions` table is no longer read or written by code.
-// Any existing rows are migrated into `app_permissions` in db/migrate.ts.
 
 import { db } from '../../config/database';
 import { accounts, appPermissions, tenantMembers } from '../../db/schema';

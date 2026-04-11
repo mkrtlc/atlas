@@ -1635,19 +1635,6 @@ export const crmTeamMembers = pgTable('crm_team_members', {
   uniqueIdx: uniqueIndex('idx_crm_team_members_unique').on(table.teamId, table.userId),
 }));
 
-// ─── CRM: Permissions ─────────────────────────────────────────────
-export const crmPermissions = pgTable('crm_permissions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
-  userId: uuid('user_id').notNull(),
-  role: varchar('role', { length: 50 }).notNull().default('sales'),
-  recordAccess: varchar('record_access', { length: 50 }).notNull().default('own'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  userIdx: uniqueIndex('idx_crm_permissions_user').on(table.tenantId, table.userId),
-}));
-
 // ─── CRM: Leads ───────────────────────────────────────────────────
 export const crmLeads = pgTable('crm_leads', {
   id: uuid('id').primaryKey().defaultRandom(),

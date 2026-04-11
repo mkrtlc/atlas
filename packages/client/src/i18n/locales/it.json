@@ -1433,8 +1433,6 @@
       "role": "Ruolo",
       "recordAccess": "Accesso ai record",
       "admin": "Amministratore",
-      "manager": "Manager",
-      "sales": "Commerciale",
       "viewer": "Visualizzatore",
       "allRecords": "Tutti i record",
       "ownRecords": "Solo i propri record",

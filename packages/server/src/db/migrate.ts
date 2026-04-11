@@ -1141,16 +1141,6 @@ export async function runMigrations() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
-      CREATE TABLE IF NOT EXISTS crm_permissions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        tenant_id UUID NOT NULL REFERENCES tenants(id),
-        user_id UUID NOT NULL,
-        role VARCHAR(50) NOT NULL DEFAULT 'sales',
-        record_access VARCHAR(50) NOT NULL DEFAULT 'own',
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
       CREATE TABLE IF NOT EXISTS crm_leads (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id UUID NOT NULL REFERENCES tenants(id),
@@ -1860,8 +1850,6 @@ export async function runMigrations() {
       // CRM Workflows
       'CREATE INDEX IF NOT EXISTS idx_crm_workflows_tenant ON crm_workflows(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_workflows_trigger ON crm_workflows(trigger)',
-      // CRM Permissions
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_permissions_user ON crm_permissions(tenant_id, user_id)',
       // CRM Leads
       'CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads(tenant_id)',
       'CREATE INDEX IF NOT EXISTS idx_crm_leads_status ON crm_leads(status)',
@@ -2089,6 +2077,17 @@ export async function runMigrations() {
       logger.info('Skipped CRM permission migration (crm_permissions table may not exist)');
     }
 
+    // Drop the legacy crm_permissions table entirely. The dual-store
+    // issue (CRM admin UI writing here, controllers reading from
+    // app_permissions) was fixed in the RBAC Phase 2 refactor, and the
+    // one-time migration above copies any surviving rows into
+    // app_permissions. CASCADE cleans up the indexes.
+    try {
+      await client.query(`DROP TABLE IF EXISTS crm_permissions CASCADE`);
+    } catch (err) {
+      logger.warn({ err }, 'Failed to drop legacy crm_permissions table');
+    }
+
     // Add last_reminder_at column + dueDate index to tasks (idempotent)
     await client.query(`
       ALTER TABLE tasks ADD COLUMN IF NOT EXISTS last_reminder_at TIMESTAMPTZ;
@@ -2314,7 +2313,6 @@ export async function runMigrations() {
       'crm_deals',
       'crm_activities',
       'crm_workflows',
-      'crm_permissions',
       'crm_leads',
       'crm_notes',
     ];

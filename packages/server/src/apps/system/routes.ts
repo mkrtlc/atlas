@@ -3,8 +3,16 @@ import type { Request, Response, NextFunction } from 'express';
 import * as systemController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 
+// Allow super admin OR the tenant owner/admin. In single-tenant self-hosted
+// Atlas, super admin and tenant owner are effectively the same person, so
+// gating strictly on isSuperAdmin was over-restrictive for routine system
+// tasks (metrics, SMTP config).
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.auth?.isSuperAdmin) {
+  const allowed =
+    req.auth?.isSuperAdmin ||
+    req.auth?.tenantRole === 'owner' ||
+    req.auth?.tenantRole === 'admin';
+  if (!allowed) {
     res.status(403).json({ success: false, error: 'Admin access required' });
     return;
   }

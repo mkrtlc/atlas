@@ -1433,8 +1433,6 @@
       "role": "Rol",
       "recordAccess": "Kayıt erişimi",
       "admin": "Yönetici",
-      "manager": "Müdür",
-      "sales": "Satışçı",
       "viewer": "İzleyici",
       "allRecords": "Tüm kayıtlar",
       "ownRecords": "Sadece kendi kayıtları",
