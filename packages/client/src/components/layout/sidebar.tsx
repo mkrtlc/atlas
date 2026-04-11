@@ -46,6 +46,7 @@ const BRAND_ICON_BACKGROUNDS: Record<string, string> = {
   crm: '#ffffff',
   projects: '#ffffff',
   drive: '#ffffff',
+  system: '#ffffff',
   // Tables artwork is meant to sit on a dark slate backdrop.
   tables: '#3C444E',
   hr: '#fff1ea',
