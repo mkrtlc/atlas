@@ -3,10 +3,12 @@ import { Plus, X, Link2, AlertTriangle, CheckCircle2, CircleDot } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 import type { Task } from '@atlas-platform/shared';
 import { useTaskDependencies, useAddDependency, useRemoveDependency } from '../hooks';
+import { useAppActions } from '../../../hooks/use-app-permissions';
 import { IconButton } from '../../../components/ui/icon-button';
 
 export function DependencySection({ taskId, allTasks }: { taskId: string; allTasks: Task[] }) {
   const { t } = useTranslation();
+  const { canCreate, canEdit } = useAppActions('tasks');
   const { data: dependencies = [] } = useTaskDependencies(taskId);
   const addDependency = useAddDependency();
   const removeDependency = useRemoveDependency();
@@ -55,12 +57,14 @@ export function DependencySection({ taskId, allTasks }: { taskId: string; allTas
             {t('tasks.dependencies.title')} {dependencies.length > 0 && `(${dependencies.length})`}
           </span>
         </div>
-        <IconButton
-          icon={<Plus size={14} />}
-          label={t('tasks.dependencies.add')}
-          size={24}
-          onClick={() => setIsAdding(!isAdding)}
-        />
+        {canCreate && (
+          <IconButton
+            icon={<Plus size={14} />}
+            label={t('tasks.dependencies.add')}
+            size={24}
+            onClick={() => setIsAdding(!isAdding)}
+          />
+        )}
       </div>
 
       {dependencies.length === 0 && !isAdding && (
@@ -101,20 +105,22 @@ export function DependencySection({ taskId, allTasks }: { taskId: string; allTas
             }}>
               {dep.blockerTitle || t('tasks.untitled')}
             </span>
-            <IconButton
-              icon={<X size={12} />}
-              label={t('tasks.dependencies.remove')}
-              size={22}
-              tooltip={false}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => removeDependency.mutate({ taskId, blockerTaskId: dep.blockedByTaskId })}
-            />
+            {canEdit && (
+              <IconButton
+                icon={<X size={12} />}
+                label={t('tasks.dependencies.remove')}
+                size={22}
+                tooltip={false}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => removeDependency.mutate({ taskId, blockerTaskId: dep.blockedByTaskId })}
+              />
+            )}
           </div>
         ))}
       </div>
 
       {/* Add blocker search */}
-      {isAdding && (
+      {isAdding && canCreate && (
         <div style={{ marginTop: 'var(--spacing-sm)' }}>
           <input
             ref={searchInputRef}

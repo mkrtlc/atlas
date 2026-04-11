@@ -294,6 +294,11 @@ export async function restoreVersion(req: Request, res: Response) {
 
 export async function seedSampleData(req: Request, res: Response) {
   try {
+    if (!canAccess(req.docsPerm!.role, 'create')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
 
@@ -449,6 +454,11 @@ export async function importDocument(req: Request, res: Response) {
 
 export async function updateDocumentVisibility(req: Request, res: Response) {
   try {
+    if (!canAccess(req.docsPerm!.role, 'update')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const documentId = req.params.id as string;
     const { visibility } = req.body;

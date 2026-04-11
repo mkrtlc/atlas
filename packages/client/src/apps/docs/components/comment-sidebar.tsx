@@ -8,6 +8,7 @@ import {
   useDeleteDocComment,
 } from '../hooks/use-doc-comments';
 import type { DocumentComment } from '@atlas-platform/shared';
+import { useAppActions } from '../../../hooks/use-app-permissions';
 import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
 import { Textarea } from '../../../components/ui/textarea';
@@ -32,6 +33,7 @@ function getRelativeTime(dateStr: string): string {
 }
 
 export function CommentSidebar({ docId, isOpen, onClose }: CommentSidebarProps) {
+  const { canCreate } = useAppActions('docs');
   const { data: comments = [] } = useDocComments(docId);
   const createComment = useCreateDocComment();
   const resolveComment = useResolveDocComment();
@@ -45,6 +47,7 @@ export function CommentSidebar({ docId, isOpen, onClose }: CommentSidebarProps) 
   const displayComments = showResolved ? [...activeComments, ...resolvedComments] : activeComments;
 
   const handleSubmit = () => {
+    if (!canCreate) return;
     if (!newComment.trim()) return;
     createComment.mutate({ docId, content: newComment.trim() });
     setNewComment('');

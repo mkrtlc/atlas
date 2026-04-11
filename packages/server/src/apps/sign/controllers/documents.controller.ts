@@ -277,6 +277,11 @@ export async function voidDocument(req: Request, res: Response) {
 
 export async function seedSampleData(req: Request, res: Response) {
   try {
+    if (!canAccess(req.signPerm!.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create sign documents' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
 
@@ -290,7 +295,15 @@ export async function seedSampleData(req: Request, res: Response) {
 
 export async function getAuditLog(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
+
+    const doc = await signService.getDocument(userId, documentId);
+    if (!doc) {
+      res.status(404).json({ success: false, error: 'Document not found' });
+      return;
+    }
+
     const entries = await signService.getAuditLog(documentId);
     res.json({ success: true, data: { entries } });
   } catch (error) {
@@ -303,6 +316,11 @@ export async function getAuditLog(req: Request, res: Response) {
 
 export async function triggerReminders(req: Request, res: Response) {
   try {
+    if (!canAccess(req.signPerm!.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to send reminders' });
+      return;
+    }
+
     const count = await sendPendingReminders();
     res.json({ success: true, data: { remindersSent: count } });
   } catch (error) {

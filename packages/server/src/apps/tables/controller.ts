@@ -167,6 +167,11 @@ export async function restoreSpreadsheet(req: Request, res: Response) {
 // POST /api/tables/seed
 export async function seedSampleData(req: Request, res: Response) {
   try {
+    if (!canAccess(req.tablesPerm!.role, 'create')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
 
@@ -224,6 +229,11 @@ export async function createRowComment(req: Request, res: Response) {
 // DELETE /api/tables/comments/:commentId
 export async function deleteRowComment(req: Request, res: Response) {
   try {
+    if (!canAccess(req.tablesPerm!.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const commentId = req.params.commentId as string;
 

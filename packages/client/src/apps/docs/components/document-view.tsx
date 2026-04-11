@@ -12,6 +12,7 @@ import { EmojiPicker } from '../../../components/shared/emoji-picker';
 import { CoverPicker, isCoverGradient } from '../../../components/shared/cover-picker';
 import { BacklinksSection } from './backlinks-section';
 import { useDocSettingsStore } from '../settings-store';
+import { useAppActions } from '../../../hooks/use-app-permissions';
 
 // ─── Document view with inline title, cover, icon ───────────────────────
 
@@ -51,6 +52,7 @@ export function DocumentView({
   allTables,
 }: DocumentViewProps) {
   const { t } = useTranslation();
+  const { canEdit } = useAppActions('docs');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -172,7 +174,9 @@ export function DocumentView({
           ref={titleRef}
           className="doc-inline-title"
           value={titleValue}
+          readOnly={!canEdit}
           onChange={(e) => {
+            if (!canEdit) return;
             setTitleValue(e.target.value);
             onTitleChange(e.target.value);
           }}
@@ -197,6 +201,7 @@ export function DocumentView({
         key={doc.id}
         value={doc.content}
         onChange={onContentChange}
+        readOnly={!canEdit}
         documents={allDocuments}
         onNavigate={onNavigate}
         drawings={allDrawings}

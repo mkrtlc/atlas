@@ -10,6 +10,7 @@ interface TaskNotesEditorProps {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  readOnly?: boolean;
 }
 
 function normalizeContent(raw: string): string {
@@ -22,11 +23,12 @@ function normalizeContent(raw: string): string {
   return trimmed;
 }
 
-export function TaskNotesEditor({ content, onChange, placeholder }: TaskNotesEditorProps) {
+export function TaskNotesEditor({ content, onChange, placeholder, readOnly = false }: TaskNotesEditorProps) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   const editor = useEditor({
+    editable: !readOnly,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
@@ -52,6 +54,12 @@ export function TaskNotesEditor({ content, onChange, placeholder }: TaskNotesEdi
       },
     },
   });
+
+  // Sync editable state
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
 
   // Update content when task changes (different task selected)
   const contentRef = useRef(content);

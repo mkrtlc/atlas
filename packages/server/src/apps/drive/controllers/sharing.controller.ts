@@ -307,6 +307,11 @@ export async function listComments(req: Request, res: Response) {
 // POST /api/drive/:id/comments — create comment
 export async function createComment(req: Request, res: Response) {
   try {
+    if (!canAccess(req.drivePerm!.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to comment in drive' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
     const itemId = req.params.id as string;

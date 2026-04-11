@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
 import * as settingsService from '../services/settings.service';
 import { logger } from '../../../utils/logger';
-import { canAccess } from '../../../services/app-permissions.service';
 
 // ─── Settings ───────────────────────────────────────────────────────
 
@@ -18,9 +17,10 @@ export async function getSettings(req: Request, res: Response) {
 
 export async function updateSettings(req: Request, res: Response) {
   try {
-    const perm = req.invoicesPerm!;
-    if (!canAccess(perm.role, 'update')) {
-      res.status(403).json({ success: false, error: 'No permission to update invoice settings' });
+    // Invoice settings are tenant-global (company identity, bank details,
+    // e-Fatura credentials, reminder cadence) — restrict writes to admin only.
+    if (req.invoicesPerm!.role !== 'admin') {
+      res.status(403).json({ success: false, error: 'Admin access required' });
       return;
     }
 

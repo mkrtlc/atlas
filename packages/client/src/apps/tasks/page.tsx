@@ -397,6 +397,7 @@ export function TasksPage() {
         navCounts={navCounts}
         projects={projects}
         allTags={allTags}
+        canCreate={canCreate}
         canDelete={canDelete}
         onNewProject={handleNewProject}
         onDeleteProject={handleDeleteProject}

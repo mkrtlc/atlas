@@ -36,7 +36,7 @@ export function TaskDetailPanel({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { canDelete: canDeleteAll, canDeleteOwn } = useAppActions('tasks');
+  const { canCreate, canEdit, canDelete: canDeleteAll, canDeleteOwn } = useAppActions('tasks');
   const [title, setTitle] = useState(task.title);
   const [when, setWhen] = useState(task.when);
   const [priority, setPriority] = useState(task.priority);
@@ -106,7 +106,8 @@ export function TaskDetailPanel({
           <div style={{ position: 'relative' }}>
             <button
               className="task-detail-emoji-btn"
-              onClick={() => setShowTaskEmoji(!showTaskEmoji)}
+              onClick={() => canEdit && setShowTaskEmoji(!showTaskEmoji)}
+              disabled={!canEdit}
               title={t('tasks.setIcon')}
             >
               {task.icon || <Plus size={14} />}
@@ -123,7 +124,9 @@ export function TaskDetailPanel({
             ref={titleRef}
             className="task-detail-title"
             value={title}
+            readOnly={!canEdit}
             onChange={e => {
+              if (!canEdit) return;
               setTitle(e.target.value);
               autoSave({ title: e.target.value });
             }}
@@ -151,7 +154,9 @@ export function TaskDetailPanel({
                 <button
                   key={opt.value}
                   className={`task-pill${when === opt.value ? ' active' : ''}`}
+                  disabled={!canEdit}
                   onClick={() => {
+                    if (!canEdit) return;
                     setWhen(opt.value);
                     updateTask.mutate({ id: task.id, when: opt.value });
                   }}
@@ -171,7 +176,9 @@ export function TaskDetailPanel({
                 <button
                   key={opt.value}
                   className={`task-pill${priority === opt.value ? ' active' : ''}`}
+                  disabled={!canEdit}
                   onClick={() => {
+                    if (!canEdit) return;
                     setPriority(opt.value);
                     updateTask.mutate({ id: task.id, priority: opt.value });
                   }}
@@ -192,7 +199,9 @@ export function TaskDetailPanel({
               type="date"
               className="task-date-input"
               value={dueDate}
+              disabled={!canEdit}
               onChange={e => {
+                if (!canEdit) return;
                 setDueDate(e.target.value);
                 updateTask.mutate({ id: task.id, dueDate: e.target.value || null });
               }}
@@ -215,7 +224,9 @@ export function TaskDetailPanel({
             <span className="task-detail-label">{t('tasks.repeat')}</span>
             <Select
               value={task.recurrenceRule || ''}
+              disabled={!canEdit}
               onChange={(v) => {
+                if (!canEdit) return;
                 const val = v || null;
                 updateTask.mutate({ id: task.id, recurrenceRule: val as RecurrenceRule | null });
               }}
@@ -246,7 +257,9 @@ export function TaskDetailPanel({
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
                 <Select
                   value={task.assigneeId || ''}
+                  disabled={!canEdit}
                   onChange={(v) => {
+                    if (!canEdit) return;
                     updateTask.mutate({ id: task.id, assigneeId: v || null });
                   }}
                   options={[
@@ -274,7 +287,7 @@ export function TaskDetailPanel({
             <VisibilityToggle
               visibility={(task.visibility as 'private' | 'team') || 'private'}
               onToggle={(v) => updateVisibility.mutate({ id: task.id, visibility: v })}
-              disabled={!isOwner}
+              disabled={!isOwner || !canEdit}
             />
           </div>
         </div>
@@ -292,7 +305,9 @@ export function TaskDetailPanel({
         <div style={{ paddingTop: 16 }}>
           <TaskNotesEditor
             content={task.description || task.notes || ''}
+            readOnly={!canEdit}
             onChange={(html) => {
+              if (!canEdit) return;
               autoSave({ description: html || null });
             }}
             placeholder={t('tasks.addNotes')}

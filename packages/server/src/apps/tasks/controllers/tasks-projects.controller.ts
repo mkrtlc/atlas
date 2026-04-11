@@ -328,6 +328,11 @@ export async function deleteProject(req: Request, res: Response) {
 
 export async function seedSampleTasks(req: Request, res: Response) {
   try {
+    if (!canAccess(req.tasksPerm!.role, 'create')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
 
@@ -360,6 +365,11 @@ export async function seedSampleTasks(req: Request, res: Response) {
 
 export async function updateTaskVisibility(req: Request, res: Response) {
   try {
+    if (!canAccess(req.tasksPerm!.role, 'update')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const taskId = req.params.id as string;
     const { visibility } = req.body;
@@ -383,6 +393,11 @@ export async function updateTaskVisibility(req: Request, res: Response) {
 
 export async function updateProjectVisibility(req: Request, res: Response) {
   try {
+    if (!canAccess(req.tasksPerm!.role, 'update')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const projectId = req.params.id as string;
     const { visibility } = req.body;

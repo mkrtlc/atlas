@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MessageSquare, Trash2, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../stores/auth-store';
+import { useAppActions } from '../../../hooks/use-app-permissions';
 import { useTaskComments, useCreateComment, useDeleteComment } from '../hooks';
 import { Avatar } from '../../../components/ui/avatar';
 import { IconButton } from '../../../components/ui/icon-button';
@@ -10,12 +11,14 @@ import { MentionInput } from '../../../components/shared/mention-input';
 export function CommentSection({ taskId }: { taskId: string }) {
   const { t } = useTranslation();
   const { account } = useAuthStore();
+  const { canCreate } = useAppActions('tasks');
   const { data: comments = [] } = useTaskComments(taskId);
   const createComment = useCreateComment();
   const deleteComment = useDeleteComment();
   const [newComment, setNewComment] = useState('');
 
   const handleSubmit = () => {
+    if (!canCreate) return;
     const body = newComment.trim();
     if (!body) return;
     createComment.mutate({ taskId, body });
@@ -127,25 +130,27 @@ export function CommentSection({ taskId }: { taskId: string }) {
       </div>
 
       {/* Add comment input */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--spacing-sm)',
-        marginTop: 'var(--spacing-md)',
-      }}>
-        <MentionInput
-          value={newComment}
-          onChange={setNewComment}
-          onSubmit={handleSubmit}
-          placeholder={t('tasks.comments.placeholder')}
-        />
-        <IconButton
-          icon={<Send size={14} />}
-          label={t('tasks.comments.add')}
-          size={28}
-          onClick={handleSubmit}
-        />
-      </div>
+      {canCreate && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-sm)',
+          marginTop: 'var(--spacing-md)',
+        }}>
+          <MentionInput
+            value={newComment}
+            onChange={setNewComment}
+            onSubmit={handleSubmit}
+            placeholder={t('tasks.comments.placeholder')}
+          />
+          <IconButton
+            icon={<Send size={14} />}
+            label={t('tasks.comments.add')}
+            size={28}
+            onClick={handleSubmit}
+          />
+        </div>
+      )}
     </div>
   );
 }

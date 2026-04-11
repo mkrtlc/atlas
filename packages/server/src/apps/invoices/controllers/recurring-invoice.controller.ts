@@ -75,7 +75,7 @@ export async function deleteRecurring(req: Request, res: Response) {
     return;
   }
   const perm = req.invoicesPerm!;
-  if (!canAccess(perm.role, 'delete')) {
+  if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
     res.status(403).json({ success: false, error: 'No permission to delete recurring invoices' });
     return;
   }

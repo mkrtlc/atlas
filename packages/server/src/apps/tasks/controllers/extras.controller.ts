@@ -261,6 +261,11 @@ export async function createComment(req: Request, res: Response) {
 
 export async function deleteComment(req: Request, res: Response) {
   try {
+    if (!canAccess(req.tasksPerm!.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const commentId = req.params.commentId as string;
 
@@ -318,6 +323,11 @@ export async function uploadAttachment(req: Request, res: Response) {
 
 export async function deleteAttachment(req: Request, res: Response) {
   try {
+    if (!canAccess(req.tasksPerm!.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const attachmentId = req.params.attachmentId as string;
 

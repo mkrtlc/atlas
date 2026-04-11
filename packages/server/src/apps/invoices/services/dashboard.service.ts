@@ -30,11 +30,11 @@ interface PeriodSummary {
   thisYear: PeriodRow;
 }
 
-export async function getInvoicesDashboard(tenantId: string) {
+export async function getInvoicesDashboard(tenantId: string, userIdFilter?: string) {
   const [receivables, monthlyActivity, periodSummary] = await Promise.all([
-    getReceivables(tenantId),
-    getMonthlyActivity(tenantId),
-    getPeriodSummary(tenantId),
+    getReceivables(tenantId, userIdFilter),
+    getMonthlyActivity(tenantId, userIdFilter),
+    getPeriodSummary(tenantId, userIdFilter),
   ]);
 
   return { receivables, monthlyActivity, periodSummary };
@@ -42,10 +42,11 @@ export async function getInvoicesDashboard(tenantId: string) {
 
 // ─── Receivables ────────────────────────────────────────────────────
 
-async function getReceivables(tenantId: string): Promise<ReceivablesBuckets> {
+async function getReceivables(tenantId: string, userIdFilter?: string): Promise<ReceivablesBuckets> {
   // Each bucket sums the outstanding balance (total - net payments) rather
   // than the raw invoice total so partial payments reduce the aging amounts.
   // Invoices with zero balance are excluded from every bucket.
+  const userClause = userIdFilter ? sql`AND i.user_id = ${userIdFilter}` : sql``;
   const result = await db.execute(sql`
     WITH outstanding AS (
       SELECT
@@ -60,6 +61,7 @@ async function getReceivables(tenantId: string): Promise<ReceivablesBuckets> {
       WHERE i.tenant_id = ${tenantId}
         AND i.status IN ('sent', 'viewed', 'approved')
         AND i.is_archived = false
+        ${userClause}
     )
     SELECT
       COALESCE(SUM(CASE WHEN balance_due > 0 THEN balance_due ELSE 0 END), 0) AS total,
@@ -84,7 +86,10 @@ async function getReceivables(tenantId: string): Promise<ReceivablesBuckets> {
 
 // ─── Monthly Activity ───────────────────────────────────────────────
 
-async function getMonthlyActivity(tenantId: string): Promise<MonthlyActivity[]> {
+async function getMonthlyActivity(tenantId: string, userIdFilter?: string): Promise<MonthlyActivity[]> {
+  const invoicedUserClause = userIdFilter ? sql`AND user_id = ${userIdFilter}` : sql``;
+  const paymentsUserClause = userIdFilter ? sql`AND i.user_id = ${userIdFilter}` : sql``;
+
   // Get invoiced amounts by month (last 12 months)
   const invoicedResult = await db.execute(sql`
     SELECT
@@ -95,6 +100,7 @@ async function getMonthlyActivity(tenantId: string): Promise<MonthlyActivity[]> 
       AND status != 'draft'
       AND is_archived = false
       AND issue_date >= DATE_TRUNC('month', NOW()) - INTERVAL '11 months'
+      ${invoicedUserClause}
     GROUP BY DATE_TRUNC('month', issue_date)
     ORDER BY month
   `);
@@ -110,6 +116,7 @@ async function getMonthlyActivity(tenantId: string): Promise<MonthlyActivity[]> 
     WHERE p.tenant_id = ${tenantId}
       AND i.is_archived = false
       AND p.payment_date >= DATE_TRUNC('month', NOW()) - INTERVAL '11 months'
+      ${paymentsUserClause}
     GROUP BY DATE_TRUNC('month', p.payment_date)
     ORDER BY month
   `);
@@ -138,7 +145,10 @@ async function getMonthlyActivity(tenantId: string): Promise<MonthlyActivity[]> 
 
 // ─── Period Summary ─────────────────────────────────────────────────
 
-async function getPeriodSummary(tenantId: string): Promise<PeriodSummary> {
+async function getPeriodSummary(tenantId: string, userIdFilter?: string): Promise<PeriodSummary> {
+  const invoicedUserClause = userIdFilter ? sql`AND user_id = ${userIdFilter}` : sql``;
+  const paymentsUserClause = userIdFilter ? sql`AND i.user_id = ${userIdFilter}` : sql``;
+
   // "Invoiced" totals come from the invoices table (by issue_date).
   const invoicedResult = await db.execute(sql`
     SELECT
@@ -150,6 +160,7 @@ async function getPeriodSummary(tenantId: string): Promise<PeriodSummary> {
     FROM invoices
     WHERE tenant_id = ${tenantId}
       AND is_archived = false
+      ${invoicedUserClause}
   `);
 
   // "Received" totals come from invoice_payments (by payment_date). Payments
@@ -165,6 +176,7 @@ async function getPeriodSummary(tenantId: string): Promise<PeriodSummary> {
     INNER JOIN invoices i ON i.id = p.invoice_id
     WHERE p.tenant_id = ${tenantId}
       AND i.is_archived = false
+      ${paymentsUserClause}
   `);
 
   const row = {

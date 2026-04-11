@@ -13,10 +13,9 @@ export async function listProjects(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const { search, companyId, clientId, status, includeArchived } = req.query;
 
-    // Only callers with blanket update permission (editor+) see every
-    // project in the tenant. Everyone else is scoped to projects they
-    // own or are a member of.
-    const isAdmin = canAccess(perm.role, 'update');
+    // Only admins see every project in the tenant. Editors and
+    // viewers are scoped to projects they own or are a member of.
+    const isAdmin = perm.role === 'admin';
 
     const projects = await projectService.listProjects(userId, tenantId, {
       search: search as string | undefined,
@@ -273,8 +272,8 @@ export async function updateProjectMemberRate(req: Request, res: Response) {
     }
 
     // Only blanket-update roles (admin/editor) or the project owner
-    // may change member rates.
-    if (perm.role !== 'admin' && project.userId !== userId) {
+    // may change member rates. Match the sibling add/remove pattern.
+    if (!canAccess(perm.role, 'update') && project.userId !== userId) {
       res.status(403).json({ success: false, error: 'Only the project owner or an admin can manage members' });
       return;
     }

@@ -8,7 +8,10 @@ import { canAccess } from '../../../services/app-permissions.service';
 export async function getWidgetData(req: Request, res: Response) {
   try {
     const tenantId = req.auth!.tenantId;
-    const data = await projectService.getWidgetData(tenantId);
+    // Non-admins see widget numbers scoped to projects they can access.
+    const isAdmin = req.projectsPerm!.role === 'admin';
+    const scopedUserId = isAdmin ? undefined : req.auth!.userId;
+    const data = await projectService.getWidgetData(tenantId, scopedUserId);
     res.json({ success: true, data });
   } catch (error) {
     logger.error({ error }, 'Failed to get Projects widget data');

@@ -15,6 +15,7 @@ export function TasksSidebar({
   navCounts,
   projects,
   allTags,
+  canCreate,
   canDelete,
   onNewProject,
   onDeleteProject,
@@ -24,6 +25,7 @@ export function TasksSidebar({
   navCounts: Record<string, number>;
   projects: TaskProject[];
   allTags: string[];
+  canCreate: boolean;
   canDelete: boolean;
   onNewProject: () => void;
   onDeleteProject: (projectId: string) => void;
@@ -110,12 +112,14 @@ export function TasksSidebar({
       <div style={{ marginTop: 16, padding: '0 8px' }}>
         <div className="tasks-projects-header">
           <span className="tasks-projects-label">{t('tasks.projectsLabel')}</span>
-          <IconButton
-            icon={<Plus size={14} />}
-            label={t('tasks.newProject')}
-            size={24}
-            onClick={onNewProject}
-          />
+          {canCreate && (
+            <IconButton
+              icon={<Plus size={14} />}
+              label={t('tasks.newProject')}
+              size={24}
+              onClick={onNewProject}
+            />
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

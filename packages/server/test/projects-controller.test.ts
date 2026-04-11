@@ -80,9 +80,8 @@ describe('projects controller — listProjects', () => {
       companyId: undefined,
       status: undefined,
       includeArchived: false,
-      // Controller derives isAdmin from canAccess(role, 'update'). The
-      // app-permissions mock returns true, so this test's caller is
-      // always treated as admin.
+      // Controller derives isAdmin from perm.role === 'admin'.
+      // makeReq attaches projectsPerm with role 'admin'.
       isAdmin: true,
     });
     expect(res.json).toHaveBeenCalledWith(

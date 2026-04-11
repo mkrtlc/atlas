@@ -2,11 +2,44 @@ import { db } from '../../../config/database';
 import {
   projectProjects, projectTimeEntries, invoices, crmCompanies,
 } from '../../../db/schema';
-import { eq, and, asc, desc, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, asc, desc, gte, lte, inArray, sql } from 'drizzle-orm';
+
+/**
+ * Returns the set of project IDs in this tenant that the given user
+ * owns OR is a member of. Used to member-scope widget/dashboard data
+ * for non-admin callers.
+ */
+async function getAccessibleProjectIds(tenantId: string, userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ id: projectProjects.id })
+    .from(projectProjects)
+    .where(and(
+      eq(projectProjects.tenantId, tenantId),
+      sql`(${projectProjects.userId} = ${userId} OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = ${projectProjects.id} AND pm.user_id = ${userId}))`,
+    ));
+  return rows.map(r => r.id);
+}
+
+/**
+ * Returns the set of CRM company IDs tied to projects the user can
+ * access. Used to scope invoice queries so a non-admin never sees
+ * revenue/billing info from outside their projects.
+ */
+async function getAccessibleCompanyIds(tenantId: string, userId: string): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ companyId: projectProjects.companyId })
+    .from(projectProjects)
+    .where(and(
+      eq(projectProjects.tenantId, tenantId),
+      sql`${projectProjects.companyId} IS NOT NULL`,
+      sql`(${projectProjects.userId} = ${userId} OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = ${projectProjects.id} AND pm.user_id = ${userId}))`,
+    ));
+  return rows.map(r => r.companyId).filter((id): id is string => !!id);
+}
 
 // ─── Widget ─────────────────────────────────────────────────────────
 
-export async function getWidgetData(tenantId: string) {
+export async function getWidgetData(tenantId: string, userId?: string) {
   const now = new Date();
   const weekStart = new Date(now);
   const day = weekStart.getDay();
@@ -15,48 +48,85 @@ export async function getWidgetData(tenantId: string) {
   const weekStartStr = weekStart.toISOString().split('T')[0];
   const todayStr = now.toISOString().split('T')[0];
 
-  // Run all independent widget queries in parallel
+  // Non-admins: restrict to projects they own or are a member of, and
+  // to invoices for companies tied to those projects.
+  let accessibleProjectIds: string[] | null = null;
+  let accessibleCompanyIds: string[] | null = null;
+  if (userId) {
+    [accessibleProjectIds, accessibleCompanyIds] = await Promise.all([
+      getAccessibleProjectIds(tenantId, userId),
+      getAccessibleCompanyIds(tenantId, userId),
+    ]);
+  }
+  const noProjects = accessibleProjectIds !== null && accessibleProjectIds.length === 0;
+  const noCompanies = accessibleCompanyIds !== null && accessibleCompanyIds.length === 0;
+
+  // Build project-scoped and invoice-scoped condition arrays.
+  const projectScope = (extra: ReturnType<typeof eq>[]) => {
+    const base = [
+      eq(projectProjects.tenantId, tenantId),
+      eq(projectProjects.isArchived, false),
+      ...extra,
+    ];
+    if (accessibleProjectIds) base.push(inArray(projectProjects.id, accessibleProjectIds));
+    return and(...base);
+  };
+  const timeEntryScope = (extra: any[]) => {
+    const base: any[] = [
+      eq(projectTimeEntries.tenantId, tenantId),
+      eq(projectTimeEntries.isArchived, false),
+      ...extra,
+    ];
+    if (accessibleProjectIds) base.push(inArray(projectTimeEntries.projectId, accessibleProjectIds));
+    return and(...base);
+  };
+  const invoiceScope = (extra: any[]) => {
+    const base: any[] = [
+      eq(invoices.tenantId, tenantId),
+      eq(invoices.isArchived, false),
+      ...extra,
+    ];
+    if (accessibleCompanyIds) base.push(inArray(invoices.companyId, accessibleCompanyIds));
+    return and(...base);
+  };
+
+  // Run all independent widget queries in parallel (short-circuited
+  // to empty results when the caller has no accessible projects).
   const [projectCountResult, weekHoursResult, pendingInvoiceResult, overdueCountResult] = await Promise.all([
     // Active projects count
-    db.select({ count: sql<number>`COUNT(*)`.as('count') })
-      .from(projectProjects)
-      .where(and(
-        eq(projectProjects.tenantId, tenantId),
-        eq(projectProjects.isArchived, false),
-        eq(projectProjects.status, 'active'),
-      )),
+    noProjects
+      ? Promise.resolve([{ count: 0 }] as Array<{ count: number }>)
+      : db.select({ count: sql<number>`COUNT(*)`.as('count') })
+          .from(projectProjects)
+          .where(projectScope([eq(projectProjects.status, 'active')])),
 
     // Total tracked hours this week
-    db.select({
-      totalMinutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('total_minutes'),
-    })
-      .from(projectTimeEntries)
-      .where(and(
-        eq(projectTimeEntries.tenantId, tenantId),
-        eq(projectTimeEntries.isArchived, false),
-        gte(projectTimeEntries.workDate, weekStartStr),
-        lte(projectTimeEntries.workDate, todayStr),
-      )),
+    noProjects
+      ? Promise.resolve([{ totalMinutes: 0 }] as Array<{ totalMinutes: number }>)
+      : db.select({
+          totalMinutes: sql<number>`COALESCE(SUM(${projectTimeEntries.durationMinutes}), 0)`.as('total_minutes'),
+        })
+          .from(projectTimeEntries)
+          .where(timeEntryScope([
+            gte(projectTimeEntries.workDate, weekStartStr),
+            lte(projectTimeEntries.workDate, todayStr),
+          ])),
 
     // Pending invoice amount (sent + viewed + overdue) — from shared invoices table
-    db.select({
-      amount: sql<number>`COALESCE(SUM(${invoices.total}), 0)`.as('amount'),
-    })
-      .from(invoices)
-      .where(and(
-        eq(invoices.tenantId, tenantId),
-        eq(invoices.isArchived, false),
-        sql`${invoices.status} IN ('sent', 'viewed', 'overdue')`,
-      )),
+    noCompanies
+      ? Promise.resolve([{ amount: 0 }] as Array<{ amount: number }>)
+      : db.select({
+          amount: sql<number>`COALESCE(SUM(${invoices.total}), 0)`.as('amount'),
+        })
+          .from(invoices)
+          .where(invoiceScope([sql`${invoices.status} IN ('sent', 'viewed', 'overdue')`])),
 
     // Overdue invoice count
-    db.select({ count: sql<number>`COUNT(*)`.as('count') })
-      .from(invoices)
-      .where(and(
-        eq(invoices.tenantId, tenantId),
-        eq(invoices.isArchived, false),
-        eq(invoices.status, 'overdue'),
-      )),
+    noCompanies
+      ? Promise.resolve([{ count: 0 }] as Array<{ count: number }>)
+      : db.select({ count: sql<number>`COUNT(*)`.as('count') })
+          .from(invoices)
+          .where(invoiceScope([eq(invoices.status, 'overdue')])),
   ]);
 
   const projectCount = projectCountResult[0];

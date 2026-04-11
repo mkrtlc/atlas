@@ -13,7 +13,15 @@ const UPLOADS_DIR = path.join(__dirname, '../../../../uploads');
 
 export async function listFields(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
+
+    const doc = await signService.getDocument(userId, documentId);
+    if (!doc) {
+      res.status(404).json({ success: false, error: 'Document not found' });
+      return;
+    }
+
     const fields = await signService.listFields(documentId);
     res.json({ success: true, data: { fields } });
   } catch (error) {
@@ -150,7 +158,15 @@ export async function createSigningToken(req: Request, res: Response) {
 
 export async function listSigningTokens(req: Request, res: Response) {
   try {
+    const userId = req.auth!.userId;
     const documentId = req.params.id as string;
+
+    const doc = await signService.getDocument(userId, documentId);
+    if (!doc) {
+      res.status(404).json({ success: false, error: 'Document not found' });
+      return;
+    }
+
     const tokens = await signService.listSigningTokens(documentId);
     res.json({ success: true, data: { tokens } });
   } catch (error) {

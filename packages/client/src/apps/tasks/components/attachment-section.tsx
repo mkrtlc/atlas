@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Plus, Paperclip, Download, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../stores/auth-store';
+import { useAppActions } from '../../../hooks/use-app-permissions';
 import { useTaskAttachments, useAddAttachment, useDeleteAttachment } from '../hooks';
 import { IconButton } from '../../../components/ui/icon-button';
 import { api } from '../../../lib/api-client';
@@ -9,6 +10,7 @@ import { api } from '../../../lib/api-client';
 export function AttachmentSection({ taskId }: { taskId: string }) {
   const { t } = useTranslation();
   const { account } = useAuthStore();
+  const { canCreate } = useAppActions('tasks');
   const { data: attachments = [] } = useTaskAttachments(taskId);
   const addAttachment = useAddAttachment();
   const deleteAttachment = useDeleteAttachment();
@@ -57,12 +59,14 @@ export function AttachmentSection({ taskId }: { taskId: string }) {
             {t('tasks.attachments.title')} {attachments.length > 0 && `(${attachments.length})`}
           </span>
         </div>
-        <IconButton
-          icon={<Plus size={14} />}
-          label={t('tasks.attachments.upload')}
-          size={24}
-          onClick={() => fileInputRef.current?.click()}
-        />
+        {canCreate && (
+          <IconButton
+            icon={<Plus size={14} />}
+            label={t('tasks.attachments.upload')}
+            size={24}
+            onClick={() => fileInputRef.current?.click()}
+          />
+        )}
         <input
           ref={fileInputRef}
           type="file"

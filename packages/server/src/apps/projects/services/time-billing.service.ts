@@ -18,15 +18,24 @@ export async function previewTimeEntryLineItems(
   startDate: string,
   endDate: string,
   timeEntryIds?: string[],
+  scopedUserId?: string,
 ) {
-  // Find all company's projects
+  // Find all company's projects. Non-admin callers are restricted to
+  // projects they own or are members of — otherwise a preview would
+  // leak unbilled time across the tenant.
+  const projectConditions = [
+    eq(projectProjects.companyId, companyId),
+    eq(projectProjects.tenantId, tenantId),
+  ];
+  if (scopedUserId) {
+    projectConditions.push(
+      sql`(${projectProjects.userId} = ${scopedUserId} OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = ${projectProjects.id} AND pm.user_id = ${scopedUserId}))`,
+    );
+  }
   const companyProjects = await db
     .select({ id: projectProjects.id, name: projectProjects.name })
     .from(projectProjects)
-    .where(and(
-      eq(projectProjects.companyId, companyId),
-      eq(projectProjects.tenantId, tenantId),
-    ));
+    .where(and(...projectConditions));
 
   const projectIds = companyProjects.map(p => p.id);
   if (projectIds.length === 0) return [];

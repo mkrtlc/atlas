@@ -5,6 +5,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Task, TaskProject, TenantUser } from '@atlas-platform/shared';
 import { useTasksSettingsStore } from '../settings-store';
+import { useAppActions } from '../../../hooks/use-app-permissions';
 import { useAuthStore } from '../../../stores/auth-store';
 import { getDueBadgeClass, formatDueDate } from '../lib/helpers';
 import { WhenBadge } from './when-badge';
@@ -56,6 +57,7 @@ export function TaskItem({
 }) {
   const { t } = useTranslation();
   const tasksSettings = useTasksSettingsStore();
+  const { canEdit } = useAppActions('tasks');
   const currentUserId = useAuthStore((s) => s.account?.userId);
   const [completing, setCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -75,6 +77,7 @@ export function TaskItem({
 
   const handleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canEdit) return;
     if (task.status === 'completed') {
       onComplete(); // uncomplete immediately
       return;

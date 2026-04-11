@@ -7,6 +7,11 @@ import { assertCanDelete } from '../../middleware/assert-can-delete';
 // POST /api/drawings/seed
 export async function seedSampleData(req: Request, res: Response) {
   try {
+    if (!canAccess(req.drawPerm!.role, 'create')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
 
@@ -193,6 +198,11 @@ export async function searchDrawings(req: Request, res: Response) {
 // PATCH /api/drawings/:id/visibility
 export async function updateDrawingVisibility(req: Request, res: Response) {
   try {
+    if (!canAccess(req.drawPerm!.role, 'update')) {
+      res.status(403).json({ success: false, error: 'Insufficient permissions' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const drawingId = req.params.id as string;
     const { visibility } = req.body;

@@ -439,13 +439,19 @@ export async function batchDelete(req: Request, res: Response) {
     const hasBlanketDelete = canAccess(perm.role, 'delete');
     const hasDeleteOwn = canAccess(perm.role, 'delete_own');
     const allowedIds: string[] = [];
+    const skippedIds: string[] = [];
     for (const itemId of itemIds) {
       const item = await driveService.getItem(userId, itemId, req.auth!.tenantId ?? null);
-      if (!item) continue;
+      if (!item) {
+        skippedIds.push(itemId);
+        continue;
+      }
       if (hasBlanketDelete) {
         allowedIds.push(itemId);
       } else if (hasDeleteOwn && item.userId === userId) {
         allowedIds.push(itemId);
+      } else {
+        skippedIds.push(itemId);
       }
     }
 
@@ -455,7 +461,7 @@ export async function batchDelete(req: Request, res: Response) {
     }
 
     await driveService.batchDelete(userId, allowedIds);
-    res.json({ success: true, data: null });
+    res.json({ success: true, data: { deleted: allowedIds, skipped: skippedIds } });
   } catch (error) {
     logger.error({ error }, 'Failed to batch delete');
     res.status(500).json({ success: false, error: 'Failed to batch delete' });
@@ -534,6 +540,11 @@ export async function listItemsByType(req: Request, res: Response) {
 // POST /api/drive/seed
 export async function seedSampleData(req: Request, res: Response) {
   try {
+    if (!canAccess(req.drivePerm!.role, 'create')) {
+      res.status(403).json({ success: false, error: 'No permission to create in drive' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
 
@@ -548,6 +559,11 @@ export async function seedSampleData(req: Request, res: Response) {
 // PATCH /api/drive/:id/visibility
 export async function updateDriveItemVisibility(req: Request, res: Response) {
   try {
+    if (!canAccess(req.drivePerm!.role, 'update')) {
+      res.status(403).json({ success: false, error: 'No permission to update in drive' });
+      return;
+    }
+
     const userId = req.auth!.userId;
     const itemId = req.params.id as string;
     const { visibility } = req.body;

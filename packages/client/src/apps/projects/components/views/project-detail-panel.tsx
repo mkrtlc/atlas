@@ -22,7 +22,7 @@ import { useAuthStore } from '../../../../stores/auth-store';
 
 export function ProjectDetailPanel({ project, onClose }: { project: Project; onClose: () => void }) {
   const { t } = useTranslation();
-  const { canDelete: isAdmin, canEdit } = useAppActions('projects');
+  const { canDelete, canEdit } = useAppActions('projects');
   const currentUserId = useAuthStore((s) => s.account?.userId ?? null);
   const deleteProject = useDeleteProject();
   const updateProject = useUpdateProject();
@@ -64,7 +64,7 @@ export function ProjectDetailPanel({ project, onClose }: { project: Project; onC
           {t('projects.projects.projectDetail')}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {isAdmin && (
+          {canDelete && (
             <IconButton icon={<Trash2 size={14} />} label={t('projects.actions.delete')} size={28} destructive onClick={() => { deleteProject.mutate(project.id); onClose(); }} />
           )}
           <IconButton icon={<X size={14} />} label={t('common.close')} size={28} onClick={onClose} />
@@ -202,7 +202,7 @@ export function ProjectDetailPanel({ project, onClose }: { project: Project; onC
                           {formatNumber(entry.hours, 1)}h
                         </span>
                         <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                          {(isAdmin || (canEdit && entry.userId === currentUserId)) && (
+                          {(canDelete || (canEdit && entry.userId === currentUserId)) && (
                             <>
                               <IconButton icon={<Pencil size={11} />} label={t('projects.timeTracking.editEntry')} size={20} onClick={() => handleStartEdit(entry)} />
                               <IconButton icon={<Trash2 size={11} />} label={t('projects.timeTracking.deleteEntry')} size={20} destructive onClick={() => setConfirmDeleteEntryId(entry.id)} />
