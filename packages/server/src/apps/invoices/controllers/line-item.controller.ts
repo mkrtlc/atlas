@@ -18,8 +18,10 @@ export async function listLineItems(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const invoiceId = req.params.invoiceId as string;
 
-    // Verify the invoice belongs to the authenticated user's tenant
-    const invoice = await invoiceService.getInvoice(userId, tenantId, invoiceId);
+    // Verify the invoice belongs to the authenticated user's tenant, and for
+    // non-admins, that it belongs to them specifically.
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const invoice = await invoiceService.getInvoice(userId, tenantId, invoiceId, isAdmin ? undefined : userId);
     if (!invoice) {
       res.status(404).json({ success: false, error: 'Invoice not found' });
       return;
@@ -46,8 +48,10 @@ export async function createLineItem(req: Request, res: Response) {
     const invoiceId = req.params.invoiceId as string;
     const { timeEntryId, description, quantity, unitPrice, amount, taxRate } = req.body;
 
-    // Verify the invoice belongs to the authenticated user's tenant
-    const invoice = await invoiceService.getInvoice(userId, tenantId, invoiceId);
+    // Verify the invoice belongs to the authenticated user's tenant, and for
+    // non-admins, that it belongs to them specifically.
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const invoice = await invoiceService.getInvoice(userId, tenantId, invoiceId, isAdmin ? undefined : userId);
     if (!invoice) {
       res.status(404).json({ success: false, error: 'Invoice not found' });
       return;
@@ -88,7 +92,8 @@ export async function updateLineItem(req: Request, res: Response) {
       res.status(404).json({ success: false, error: 'Line item not found' });
       return;
     }
-    const invoice = await invoiceService.getInvoice(userId, tenantId, existingLineItem.invoiceId);
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const invoice = await invoiceService.getInvoice(userId, tenantId, existingLineItem.invoiceId, isAdmin ? undefined : userId);
     if (!invoice) {
       res.status(404).json({ success: false, error: 'Invoice not found' });
       return;
@@ -125,7 +130,8 @@ export async function deleteLineItem(req: Request, res: Response) {
       res.status(404).json({ success: false, error: 'Line item not found' });
       return;
     }
-    const invoice = await invoiceService.getInvoice(userId, tenantId, existingLineItem.invoiceId);
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const invoice = await invoiceService.getInvoice(userId, tenantId, existingLineItem.invoiceId, isAdmin ? undefined : userId);
     if (!invoice) {
       res.status(404).json({ success: false, error: 'Invoice not found' });
       return;

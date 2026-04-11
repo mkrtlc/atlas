@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as efaturaService from '../services/efatura.service';
+import * as invoiceService from '../services/invoice.service';
 import { logger } from '../../../utils/logger';
 import { getAppPermission, canAccess } from '../../../services/app-permissions.service';
 
@@ -16,6 +17,14 @@ export async function generateEFatura(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const id = req.params.id as string;
     const { eFaturaType } = req.body || {};
+
+    // Ownership guard: non-admins can only generate e-Fatura for their own invoices.
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const parent = await invoiceService.getInvoice(req.auth!.userId, tenantId, id, isAdmin ? undefined : req.auth!.userId);
+    if (!parent) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
 
     const invoice = await efaturaService.generateEFatura(tenantId, id, eFaturaType);
     if (!invoice) {
@@ -46,6 +55,13 @@ export async function getEFaturaXml(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const id = req.params.id as string;
 
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const parent = await invoiceService.getInvoice(req.auth!.userId, tenantId, id, isAdmin ? undefined : req.auth!.userId);
+    if (!parent) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
+
     const xml = await efaturaService.getEFaturaXml(tenantId, id);
     if (!xml) {
       res.status(404).json({ success: false, error: 'e-Fatura XML not found. Generate it first.' });
@@ -71,6 +87,13 @@ export async function getEFaturaPreview(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const id = req.params.id as string;
 
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const parent = await invoiceService.getInvoice(req.auth!.userId, tenantId, id, isAdmin ? undefined : req.auth!.userId);
+    if (!parent) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
+
     const html = await efaturaService.getEFaturaPreviewHtml(tenantId, id);
     if (!html) {
       res.status(404).json({ success: false, error: 'Invoice not found' });
@@ -95,6 +118,13 @@ export async function getEFaturaPdf(req: Request, res: Response) {
 
     const tenantId = req.auth!.tenantId;
     const id = req.params.id as string;
+
+    const isAdmin = perm.role === 'admin' || perm.role === 'manager';
+    const parent = await invoiceService.getInvoice(req.auth!.userId, tenantId, id, isAdmin ? undefined : req.auth!.userId);
+    if (!parent) {
+      res.status(404).json({ success: false, error: 'Invoice not found' });
+      return;
+    }
 
     const html = await efaturaService.getEFaturaPreviewHtml(tenantId, id);
     if (!html) {

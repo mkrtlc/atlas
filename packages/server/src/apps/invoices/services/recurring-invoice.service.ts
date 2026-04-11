@@ -71,11 +71,16 @@ function parseDate(value: Date | string, field: string): Date {
 async function fetchRecurringWithItems(
   id: string,
   tenantId: string,
+  ownerUserId?: string,
 ): Promise<RecurringInvoice> {
+  const conditions = [eq(recurringInvoices.id, id), eq(recurringInvoices.tenantId, tenantId)];
+  if (ownerUserId) {
+    conditions.push(eq(recurringInvoices.userId, ownerUserId));
+  }
   const [row] = await db
     .select()
     .from(recurringInvoices)
-    .where(and(eq(recurringInvoices.id, id), eq(recurringInvoices.tenantId, tenantId)))
+    .where(and(...conditions))
     .limit(1);
 
   if (!row) {
@@ -115,8 +120,9 @@ export async function listRecurringInvoices(
 export async function getRecurringInvoice(
   id: string,
   tenantId: string,
+  ownerUserId?: string,
 ): Promise<RecurringInvoice> {
-  return fetchRecurringWithItems(id, tenantId);
+  return fetchRecurringWithItems(id, tenantId, ownerUserId);
 }
 
 export async function createRecurringInvoice(
@@ -215,8 +221,9 @@ export async function updateRecurringInvoice(
   id: string,
   input: UpdateRecurringInvoiceInput,
   tenantId: string,
+  ownerUserId?: string,
 ): Promise<RecurringInvoice> {
-  const existing = await fetchRecurringWithItems(id, tenantId);
+  const existing = await fetchRecurringWithItems(id, tenantId, ownerUserId);
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
 
@@ -323,7 +330,11 @@ export async function updateRecurringInvoice(
 export async function pauseRecurringInvoice(
   id: string,
   tenantId: string,
+  ownerUserId?: string,
 ): Promise<RecurringInvoice> {
+  // Ownership guard first — non-admins can only pause their own.
+  await fetchRecurringWithItems(id, tenantId, ownerUserId);
+
   const [updated] = await db
     .update(recurringInvoices)
     .set({ isActive: false, updatedAt: new Date() })
@@ -339,8 +350,9 @@ export async function pauseRecurringInvoice(
 export async function resumeRecurringInvoice(
   id: string,
   tenantId: string,
+  ownerUserId?: string,
 ): Promise<RecurringInvoice> {
-  const existing = await fetchRecurringWithItems(id, tenantId);
+  const existing = await fetchRecurringWithItems(id, tenantId, ownerUserId);
   const now = new Date();
   const nextRunAt = parseDate(existing.nextRunAt, 'nextRunAt');
 
@@ -363,7 +375,11 @@ export async function resumeRecurringInvoice(
 export async function deleteRecurringInvoice(
   id: string,
   tenantId: string,
+  ownerUserId?: string,
 ): Promise<void> {
+  // Ownership guard first — non-admins can only delete their own.
+  await fetchRecurringWithItems(id, tenantId, ownerUserId);
+
   const result = await db
     .delete(recurringInvoices)
     .where(and(eq(recurringInvoices.id, id), eq(recurringInvoices.tenantId, tenantId)))
@@ -380,13 +396,16 @@ export async function deleteRecurringInvoice(
 export async function generateInvoiceFromRecurring(
   recurringInvoiceId: string,
   tenantId: string,
+  ownerUserId?: string,
 ): Promise<{ invoiceId: string; emailed: boolean; deactivated: boolean }> {
   // Need the invoice number BEFORE the transaction because getNextInvoiceNumber
   // updates invoice_settings atomically on its own connection.
   const invoiceNumber = await getNextInvoiceNumber(tenantId);
 
   const result = await db.transaction(async (tx) => {
-    // Row lock to prevent double-generation
+    // Row lock to prevent double-generation. For non-admin callers the
+    // ownership filter (ownerUserId) rides on the same query so a non-owner
+    // gets a 404 just like non-tenant callers.
     const [rec] = await tx
       .select()
       .from(recurringInvoices)
@@ -395,6 +414,9 @@ export async function generateInvoiceFromRecurring(
       .limit(1);
 
     if (!rec) {
+      throw new AppError(404, 'Recurring invoice not found');
+    }
+    if (ownerUserId && rec.userId !== ownerUserId) {
       throw new AppError(404, 'Recurring invoice not found');
     }
     if (!rec.isActive) {

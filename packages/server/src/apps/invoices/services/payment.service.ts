@@ -133,6 +133,23 @@ async function updateInvoicePaidStatusInTx(
 
 // ─── Public API ─────────────────────────────────────────────────────
 
+/**
+ * Look up the invoiceId for a payment, scoped to tenant. Returns null if the
+ * payment does not exist (or is in another tenant). Callers use this to run
+ * an ownership check on the parent invoice before mutating a payment.
+ */
+export async function getPaymentInvoiceId(
+  paymentId: string,
+  tenantId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ invoiceId: invoicePayments.invoiceId })
+    .from(invoicePayments)
+    .where(and(eq(invoicePayments.id, paymentId), eq(invoicePayments.tenantId, tenantId)))
+    .limit(1);
+  return row?.invoiceId ?? null;
+}
+
 export async function listPaymentsForInvoice(
   invoiceId: string,
   tenantId: string,

@@ -170,7 +170,11 @@ export async function listInvoices(userId: string, tenantId: string, filters?: {
   });
 }
 
-export async function getInvoice(userId: string, tenantId: string, id: string) {
+export async function getInvoice(userId: string, tenantId: string, id: string, ownerUserId?: string) {
+  const conditions = [eq(invoices.id, id), eq(invoices.tenantId, tenantId)];
+  if (ownerUserId) {
+    conditions.push(eq(invoices.userId, ownerUserId));
+  }
   const [invoice] = await db
     .select({
       id: invoices.id,
@@ -215,7 +219,7 @@ export async function getInvoice(userId: string, tenantId: string, id: string) {
     .leftJoin(crmCompanies, eq(invoices.companyId, crmCompanies.id))
     .leftJoin(crmContacts, eq(invoices.contactId, crmContacts.id))
     .leftJoin(crmDeals, eq(invoices.dealId, crmDeals.id))
-    .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)))
+    .where(and(...conditions))
     .limit(1);
 
   if (!invoice) return null;
@@ -331,7 +335,7 @@ export async function createInvoice(userId: string, tenantId: string, input: Cre
   return created;
 }
 
-export async function updateInvoice(userId: string, tenantId: string, id: string, input: UpdateInvoiceInput) {
+export async function updateInvoice(userId: string, tenantId: string, id: string, input: UpdateInvoiceInput, ownerUserId?: string) {
   const now = new Date();
   const updates: Record<string, unknown> = { updatedAt: now };
 
@@ -354,6 +358,9 @@ export async function updateInvoice(userId: string, tenantId: string, id: string
   if (input.isArchived !== undefined) updates.isArchived = input.isArchived;
 
   const conditions = [eq(invoices.id, id), eq(invoices.tenantId, tenantId)];
+  if (ownerUserId) {
+    conditions.push(eq(invoices.userId, ownerUserId));
+  }
 
   const [updated] = await db
     .update(invoices)
@@ -364,7 +371,13 @@ export async function updateInvoice(userId: string, tenantId: string, id: string
   return updated ?? null;
 }
 
-export async function deleteInvoice(userId: string, tenantId: string, id: string) {
+export async function deleteInvoice(userId: string, tenantId: string, id: string, ownerUserId?: string) {
+  // Ownership guard: when a non-admin caller passes ownerUserId, verify the
+  // invoice belongs to them before touching any related rows. Returns false
+  // if the invoice is not found under the scoping filters.
+  const existing = await getInvoice(userId, tenantId, id, ownerUserId);
+  if (!existing) return false;
+
   // When an invoice is deleted, unmark all linked time entries
   const lineItems = await db
     .select({ timeEntryId: invoiceLineItems.timeEntryId })
@@ -382,7 +395,8 @@ export async function deleteInvoice(userId: string, tenantId: string, id: string
       .where(inArray(projectTimeEntries.id, timeEntryIds));
   }
 
-  await updateInvoice(userId, tenantId, id, { isArchived: true });
+  await updateInvoice(userId, tenantId, id, { isArchived: true }, ownerUserId);
+  return true;
 }
 
 export async function sendInvoice(userId: string, tenantId: string, id: string) {
