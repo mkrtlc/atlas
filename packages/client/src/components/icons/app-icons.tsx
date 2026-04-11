@@ -25,10 +25,12 @@ export const FULL_BLEED_BRAND_ICONS = new Set<string>(['draw', 'docs', 'sign']);
  * default to 1.2× because the supplied artwork has more internal padding
  * than lucide line icons. A few apps need extra presence:
  *   - calendar: 1.44× (dark body + small white type needs to read at small sizes)
- *   - system:   1.56× (colourful glyph has lots of internal whitespace) */
+ *   - system:   1.56× (colourful glyph has lots of internal whitespace)
+ *   - tasks:    1.56× (checklist artwork has wide internal margins) */
 export function getBrandIconScale(appId: string): number {
   if (appId === 'calendar') return 1.44;
   if (appId === 'system') return 1.56;
+  if (appId === 'tasks') return 1.56;
   return 1.2;
 }
 
@@ -541,14 +543,6 @@ export function SignIcon({ size = 24, className, style }: IconProps) {
         strokeWidth="6"
         strokeLinecap="round"
         fill="none"
-      />
-      {/* Signature flourish underline */}
-      <path
-        d="M16 114 L 116 114"
-        stroke="url(#sign_paint3)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        opacity="0.6"
       />
 
       <defs>
