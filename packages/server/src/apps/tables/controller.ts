@@ -4,14 +4,25 @@ import { logger } from '../../utils/logger';
 import { canAccess } from '../../services/app-permissions.service';
 import { assertCanDelete } from '../../middleware/assert-can-delete';
 
+// Helper: caller is an admin with tenant-wide record access.
+function isAdminCaller(req: Request): boolean {
+  const perm = req.tablesPerm!;
+  return perm.role === 'admin' && perm.recordAccess === 'all';
+}
+
 // GET /api/tables
 export async function listSpreadsheets(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
-    const tenantId = req.auth!.tenantId;
+    const tenantId = req.auth!.tenantId!;
     const includeArchived = req.query.includeArchived === 'true';
+    const isAdmin = isAdminCaller(req);
 
-    const spreadsheets = await tableService.listSpreadsheets(userId, includeArchived);
+    const spreadsheets = await tableService.listSpreadsheets(
+      tenantId,
+      includeArchived,
+      isAdmin ? undefined : userId,
+    );
 
     res.json({ success: true, data: { spreadsheets } });
   } catch (error) {
@@ -30,7 +41,7 @@ export async function createSpreadsheet(req: Request, res: Response) {
     }
 
     const userId = req.auth!.userId;
-    const tenantId = req.auth!.tenantId;
+    const tenantId = req.auth!.tenantId!;
     const { title, columns, rows, viewConfig, color, icon } = req.body;
 
     const spreadsheet = await tableService.createSpreadsheet(userId, tenantId, {
@@ -53,9 +64,15 @@ export async function createSpreadsheet(req: Request, res: Response) {
 export async function getSpreadsheet(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+    const tenantId = req.auth!.tenantId!;
     const spreadsheetId = req.params.id as string;
+    const isAdmin = isAdminCaller(req);
 
-    const spreadsheet = await tableService.getSpreadsheet(userId, spreadsheetId);
+    const spreadsheet = await tableService.getSpreadsheet(
+      tenantId,
+      spreadsheetId,
+      isAdmin ? undefined : userId,
+    );
 
     if (!spreadsheet) {
       res.status(404).json({ success: false, error: 'Spreadsheet not found' });
@@ -79,19 +96,26 @@ export async function updateSpreadsheet(req: Request, res: Response) {
     }
 
     const userId = req.auth!.userId;
+    const tenantId = req.auth!.tenantId!;
     const spreadsheetId = req.params.id as string;
+    const isAdmin = isAdminCaller(req);
     const { title, columns, rows, viewConfig, isArchived, color, icon, guide } = req.body;
 
-    const spreadsheet = await tableService.updateSpreadsheet(userId, spreadsheetId, {
-      title,
-      columns,
-      rows,
-      viewConfig,
-      isArchived,
-      color,
-      icon,
-      guide,
-    });
+    const spreadsheet = await tableService.updateSpreadsheet(
+      tenantId,
+      spreadsheetId,
+      {
+        title,
+        columns,
+        rows,
+        viewConfig,
+        isArchived,
+        color,
+        icon,
+        guide,
+      },
+      isAdmin ? undefined : userId,
+    );
 
     if (!spreadsheet) {
       res.status(404).json({ success: false, error: 'Spreadsheet not found' });
@@ -115,16 +139,25 @@ export async function deleteSpreadsheet(req: Request, res: Response) {
     }
 
     const userId = req.auth!.userId;
+    const tenantId = req.auth!.tenantId!;
     const spreadsheetId = req.params.id as string;
+    const isAdmin = isAdminCaller(req);
 
-    const existing = await tableService.getSpreadsheet(userId, spreadsheetId);
+    // Load existing with admin-aware scope so we can feed the real owner to
+    // assertCanDelete. Non-admins with delete_own can only ever see their
+    // own rows, but we still scope the lookup by tenant.
+    const existing = await tableService.getSpreadsheet(
+      tenantId,
+      spreadsheetId,
+      isAdmin ? undefined : userId,
+    );
     if (!existing) {
       res.status(404).json({ success: false, error: 'Spreadsheet not found' });
       return;
     }
     if (!assertCanDelete(res, perm.role, existing.userId, userId)) return;
 
-    const result = await tableService.deleteSpreadsheet(existing.userId, spreadsheetId);
+    const result = await tableService.deleteSpreadsheet(tenantId, spreadsheetId);
 
     if (!result) {
       res.status(404).json({ success: false, error: 'Spreadsheet not found' });
@@ -148,9 +181,15 @@ export async function restoreSpreadsheet(req: Request, res: Response) {
     }
 
     const userId = req.auth!.userId;
+    const tenantId = req.auth!.tenantId!;
     const spreadsheetId = req.params.id as string;
+    const isAdmin = isAdminCaller(req);
 
-    const spreadsheet = await tableService.restoreSpreadsheet(userId, spreadsheetId);
+    const spreadsheet = await tableService.restoreSpreadsheet(
+      tenantId,
+      spreadsheetId,
+      isAdmin ? undefined : userId,
+    );
 
     if (!spreadsheet) {
       res.status(404).json({ success: false, error: 'Spreadsheet not found' });
@@ -173,7 +212,7 @@ export async function seedSampleData(req: Request, res: Response) {
     }
 
     const userId = req.auth!.userId;
-    const tenantId = req.auth!.tenantId;
+    const tenantId = req.auth!.tenantId!;
 
     const result = await tableService.seedSampleSpreadsheets(userId, tenantId);
     res.json({ success: true, data: { message: 'Seeded Tables sample data', ...result } });
@@ -208,7 +247,7 @@ export async function createRowComment(req: Request, res: Response) {
     }
 
     const userId = req.auth!.userId;
-    const tenantId = req.auth!.tenantId;
+    const tenantId = req.auth!.tenantId!;
     const spreadsheetId = req.params.id as string;
     const rowId = req.params.rowId as string;
     const { body } = req.body;
@@ -254,14 +293,20 @@ export async function deleteRowComment(req: Request, res: Response) {
 export async function searchSpreadsheets(req: Request, res: Response) {
   try {
     const userId = req.auth!.userId;
+    const tenantId = req.auth!.tenantId!;
     const query = (req.query.q as string) || '';
+    const isAdmin = isAdminCaller(req);
 
     if (!query.trim()) {
       res.json({ success: true, data: [] });
       return;
     }
 
-    const results = await tableService.searchSpreadsheets(userId, query.trim());
+    const results = await tableService.searchSpreadsheets(
+      tenantId,
+      query.trim(),
+      isAdmin ? undefined : userId,
+    );
     res.json({ success: true, data: results });
   } catch (error) {
     logger.error({ error }, 'Failed to search spreadsheets');

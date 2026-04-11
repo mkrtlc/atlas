@@ -1033,6 +1033,7 @@
   },
   "tables": {
     "title": "Tables",
+    "createdBy": "Créé par {{name}}",
     "newTable": "Nouveau tableau",
     "searchTables": "Rechercher des tableaux...",
     "noTables": "Aucun tableau pour le moment",

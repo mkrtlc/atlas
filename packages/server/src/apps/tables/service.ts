@@ -6,11 +6,18 @@ import type { CreateSpreadsheetInput, UpdateSpreadsheetInput } from '@atlas-plat
 
 // ─── List all spreadsheets (flat list) ───────────────────────────────
 
-export async function listSpreadsheets(userId: string, includeArchived = false) {
-  const conditions = [eq(spreadsheets.userId, userId)];
+export async function listSpreadsheets(
+  tenantId: string,
+  includeArchived = false,
+  userIdFilter?: string,
+) {
+  const conditions = [eq(spreadsheets.tenantId, tenantId)];
 
   if (!includeArchived) {
     conditions.push(eq(spreadsheets.isArchived, false));
+  }
+  if (userIdFilter) {
+    conditions.push(eq(spreadsheets.userId, userIdFilter));
   }
 
   return db
@@ -35,11 +42,21 @@ export async function listSpreadsheets(userId: string, includeArchived = false) 
 
 // ─── Get a single spreadsheet with full data ──────────────────────────
 
-export async function getSpreadsheet(userId: string, spreadsheetId: string) {
+export async function getSpreadsheet(
+  tenantId: string,
+  spreadsheetId: string,
+  userIdFilter?: string,
+) {
   const [spreadsheet] = await db
     .select()
     .from(spreadsheets)
-    .where(and(eq(spreadsheets.id, spreadsheetId), eq(spreadsheets.userId, userId)))
+    .where(
+      and(
+        eq(spreadsheets.id, spreadsheetId),
+        eq(spreadsheets.tenantId, tenantId),
+        ...(userIdFilter ? [eq(spreadsheets.userId, userIdFilter)] : []),
+      ),
+    )
     .limit(1);
 
   return spreadsheet || null;
@@ -51,10 +68,10 @@ export async function seedSampleSpreadsheets(userId: string, tenantId: string) {
   const existing = await db
     .select({ id: spreadsheets.id })
     .from(spreadsheets)
-    .where(eq(spreadsheets.userId, userId))
+    .where(eq(spreadsheets.tenantId, tenantId))
     .limit(1);
 
-  if (existing.length > 0) return { skipped: true }; // User already has tables
+  if (existing.length > 0) return { skipped: true }; // Tenant already has tables
 
   const now = new Date();
   const ts = now.toISOString();
@@ -77,7 +94,7 @@ export async function seedSampleSpreadsheets(userId: string, tenantId: string) {
     viewConfig: { activeView: 'grid' }, sortOrder: 0, createdAt: now, updatedAt: now,
   });
 
-  logger.info({ userId }, 'Seeded sample spreadsheets');
+  logger.info({ tenantId, userId }, 'Seeded sample spreadsheets');
   return { spreadsheets: 1 };
 }
 
@@ -95,7 +112,7 @@ export async function createSpreadsheet(userId: string, tenantId: string, input:
       columns: input.columns ?? [],
       rows: input.rows ?? [],
       viewConfig: input.viewConfig ?? { activeView: 'grid' as const },
-      sortOrder: sql`COALESCE((SELECT MAX(${spreadsheets.sortOrder}) FROM spreadsheets WHERE ${spreadsheets.userId} = ${userId}), -1) + 1`,
+      sortOrder: sql`COALESCE((SELECT MAX(${spreadsheets.sortOrder}) FROM spreadsheets WHERE ${spreadsheets.tenantId} = ${tenantId}), -1) + 1`,
       color: input.color ?? null,
       icon: input.icon ?? null,
       createdAt: now,
@@ -103,16 +120,17 @@ export async function createSpreadsheet(userId: string, tenantId: string, input:
     })
     .returning();
 
-  logger.info({ userId, spreadsheetId: created.id }, 'Spreadsheet created');
+  logger.info({ userId, tenantId, spreadsheetId: created.id }, 'Spreadsheet created');
   return created;
 }
 
 // ─── Update a spreadsheet ────────────────────────────────────────────
 
 export async function updateSpreadsheet(
-  userId: string,
+  tenantId: string,
   spreadsheetId: string,
   input: UpdateSpreadsheetInput,
+  userIdFilter?: string,
 ) {
   const now = new Date();
 
@@ -130,7 +148,13 @@ export async function updateSpreadsheet(
   const [updated] = await db
     .update(spreadsheets)
     .set(updates)
-    .where(and(eq(spreadsheets.id, spreadsheetId), eq(spreadsheets.userId, userId)))
+    .where(
+      and(
+        eq(spreadsheets.id, spreadsheetId),
+        eq(spreadsheets.tenantId, tenantId),
+        ...(userIdFilter ? [eq(spreadsheets.userId, userIdFilter)] : []),
+      ),
+    )
     .returning();
 
   return updated || null;
@@ -138,19 +162,33 @@ export async function updateSpreadsheet(
 
 // ─── Delete (soft delete) a spreadsheet ──────────────────────────────
 
-export async function deleteSpreadsheet(userId: string, spreadsheetId: string) {
-  return updateSpreadsheet(userId, spreadsheetId, { isArchived: true });
+export async function deleteSpreadsheet(
+  tenantId: string,
+  spreadsheetId: string,
+  userIdFilter?: string,
+) {
+  return updateSpreadsheet(tenantId, spreadsheetId, { isArchived: true }, userIdFilter);
 }
 
 // ─── Restore an archived spreadsheet ─────────────────────────────────
 
-export async function restoreSpreadsheet(userId: string, spreadsheetId: string) {
+export async function restoreSpreadsheet(
+  tenantId: string,
+  spreadsheetId: string,
+  userIdFilter?: string,
+) {
   const now = new Date();
 
   const [restored] = await db
     .update(spreadsheets)
     .set({ isArchived: false, updatedAt: now })
-    .where(and(eq(spreadsheets.id, spreadsheetId), eq(spreadsheets.userId, userId)))
+    .where(
+      and(
+        eq(spreadsheets.id, spreadsheetId),
+        eq(spreadsheets.tenantId, tenantId),
+        ...(userIdFilter ? [eq(spreadsheets.userId, userIdFilter)] : []),
+      ),
+    )
     .returning();
 
   return restored || null;
@@ -158,7 +196,11 @@ export async function restoreSpreadsheet(userId: string, spreadsheetId: string) 
 
 // ─── Search spreadsheets by title ────────────────────────────────────
 
-export async function searchSpreadsheets(userId: string, query: string) {
+export async function searchSpreadsheets(
+  tenantId: string,
+  query: string,
+  userIdFilter?: string,
+) {
   const searchTerm = `%${query}%`;
   return db
     .select({
@@ -178,9 +220,10 @@ export async function searchSpreadsheets(userId: string, query: string) {
     .from(spreadsheets)
     .where(
       and(
-        eq(spreadsheets.userId, userId),
+        eq(spreadsheets.tenantId, tenantId),
         eq(spreadsheets.isArchived, false),
         sql`${spreadsheets.title} LIKE ${searchTerm}`,
+        ...(userIdFilter ? [eq(spreadsheets.userId, userIdFilter)] : []),
       ),
     )
     .orderBy(asc(spreadsheets.updatedAt))

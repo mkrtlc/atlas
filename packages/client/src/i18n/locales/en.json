@@ -1061,6 +1061,7 @@
   },
   "tables": {
     "title": "Tables",
+    "createdBy": "Created by {{name}}",
     "newTable": "New table",
     "searchTables": "Search tables...",
     "noTables": "No tables yet",

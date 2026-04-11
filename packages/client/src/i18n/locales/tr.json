@@ -1033,6 +1033,7 @@
   },
   "tables": {
     "title": "Tables",
+    "createdBy": "{{name}} tarafından oluşturuldu",
     "newTable": "Yeni tablo",
     "searchTables": "Tablo ara...",
     "noTables": "Henüz tablo yok",

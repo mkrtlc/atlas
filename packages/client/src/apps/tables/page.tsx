@@ -43,6 +43,9 @@ import { IconButton } from '../../components/ui/icon-button';
 import { Select } from '../../components/ui/select';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { Avatar } from '../../components/ui/avatar';
+import { useTenantUsers } from '../../hooks/use-platform';
+import { useAuthStore } from '../../stores/auth-store';
 
 // Extracted modules
 import { PLACEHOLDER_ROW_ID, ROW_HEIGHT_MAP, getTemplateIcon } from './lib/table-constants';
@@ -281,6 +284,13 @@ import { AppSidebar as AppSidebarLayout } from '../../components/layout/app-side
 function AppSidebar({ state }: { state: ReturnType<typeof useTablesPageState> }) {
   const { t, searchQuery, setSearchQuery, showTrash, setShowTrash, showTemplates, setShowTemplates, selectedId, localViewConfig, filteredTables, archivedTables, listLoading, handleSelectTable, handleCreateTable, handleDeleteTable, handleRestoreTable, handleViewToggle, openSettings, perm, currentUserId } = state;
   const canCreate = perm.canCreate;
+  const tenantId = useAuthStore((s) => s.tenantId);
+  const { data: tenantUsers } = useTenantUsers(tenantId ?? undefined);
+  const userMap = useMemo(() => {
+    const map = new Map<string, { name: string | null; email: string }>();
+    for (const u of tenantUsers ?? []) map.set(u.userId, { name: u.name, email: u.email });
+    return map;
+  }, [tenantUsers]);
   return (
     <AppSidebarLayout storageKey="atlas_tables_sidebar" title={t('tables.title')}
       headerAction={<div style={{ display: 'flex', gap: 2 }}>{canCreate && <IconButton icon={<LayoutTemplate size={14} />} label={t('tables.browseTemplates')} onClick={() => setShowTemplates(true)} size={28} />}{canCreate && <IconButton icon={<Plus size={14} />} label={t('tables.newTable')} onClick={handleCreateTable} size={28} />}</div>}
@@ -288,7 +298,7 @@ function AppSidebar({ state }: { state: ReturnType<typeof useTablesPageState> })
       footer={<><div className="tables-sidebar-views">{[{ key: 'grid' as const, icon: LayoutGrid, label: t('tables.gridView', 'Grid view') }, { key: 'kanban' as const, icon: Kanban, label: t('tables.kanbanView', 'Kanban') }, { key: 'calendar' as const, icon: Calendar, label: t('tables.calendarView', 'Calendar') }, { key: 'gallery' as const, icon: GalleryHorizontalEnd, label: t('tables.galleryView', 'Gallery') }].map((v) => (<button key={v.key} className={`tables-sidebar-view-item${localViewConfig.activeView === v.key ? ' active' : ''}`} onClick={() => handleViewToggle(v.key)}><v.icon size={14} /><span>{v.label}</span></button>))}</div><button className="tables-sidebar-view-item" onClick={() => openSettings('tables')} title={t('tables.tableSettings')}><Settings2 size={14} /><span>{t('tables.settings')}</span></button></>}>
       <div className="tables-sidebar-list">
         {filteredTables.length === 0 && !listLoading && <div className="tables-sidebar-empty">{t('tables.noTables')}</div>}
-        {filteredTables.map((table) => { const SidebarIcon = getTableIcon(table.icon); const canDeleteThis = perm.canDelete || (perm.canDeleteOwn && table.userId === currentUserId); return (<div key={table.id} role="button" tabIndex={0} className={`tables-sidebar-item${selectedId === table.id ? ' active' : ''}`} onClick={() => handleSelectTable(table.id)} onKeyDown={(e) => { if (e.key === 'Enter') handleSelectTable(table.id); }}><SidebarIcon size={14} style={table.color ? { color: table.color } : undefined} /><span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{table.title}</span>{canDeleteThis && <IconButton icon={<Trash2 size={12} />} label={t('tables.delete')} onClick={(e) => { e.stopPropagation(); handleDeleteTable(table.id); }} size={22} destructive tooltip={false} className="tables-sidebar-delete-btn" style={{ opacity: 0, transition: 'opacity 100ms' }} />}</div>); })}
+        {filteredTables.map((table) => { const SidebarIcon = getTableIcon(table.icon); const canDeleteThis = perm.canDelete || (perm.canDeleteOwn && table.userId === currentUserId); const owner = table.userId !== currentUserId ? userMap.get(table.userId) : null; const ownerLabel = owner ? t('tables.createdBy', { name: owner.name || owner.email, defaultValue: 'Created by {{name}}' }) : undefined; return (<div key={table.id} role="button" tabIndex={0} className={`tables-sidebar-item${selectedId === table.id ? ' active' : ''}`} onClick={() => handleSelectTable(table.id)} onKeyDown={(e) => { if (e.key === 'Enter') handleSelectTable(table.id); }}><SidebarIcon size={14} style={table.color ? { color: table.color } : undefined} /><span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{table.title}</span>{owner && <span title={ownerLabel} style={{ display: 'inline-flex', flexShrink: 0 }}><Avatar name={owner.name} email={owner.email} size={16} /></span>}{canDeleteThis && <IconButton icon={<Trash2 size={12} />} label={t('tables.delete')} onClick={(e) => { e.stopPropagation(); handleDeleteTable(table.id); }} size={22} destructive tooltip={false} className="tables-sidebar-delete-btn" style={{ opacity: 0, transition: 'opacity 100ms' }} />}</div>); })}
         {archivedTables.length > 0 && (<><button className="tables-sidebar-item" onClick={() => setShowTrash(!showTrash)} style={{ marginTop: 8 }}><Trash2 size={14} /><span>{t('tables.trash')}</span><span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--color-text-tertiary)' }}>{archivedTables.length}</span></button>{showTrash && archivedTables.map((table) => (<div key={table.id} className="tables-sidebar-item archived"><Table2 size={14} /><span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{table.title}</span><IconButton icon={<RotateCcw size={12} />} label={t('tables.restore')} onClick={(e) => { e.stopPropagation(); handleRestoreTable(table.id); }} size={22} /></div>))}</>)}
       </div>
     </AppSidebarLayout>

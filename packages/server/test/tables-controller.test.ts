@@ -72,7 +72,7 @@ describe('tables controller - listSpreadsheets', () => {
 
     await controller.listSpreadsheets(req, res);
 
-    expect(tableService.listSpreadsheets).toHaveBeenCalledWith('u1', false);
+    expect(tableService.listSpreadsheets).toHaveBeenCalledWith('t1', false, undefined);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, data: { spreadsheets: mockSheets } })
     );
@@ -86,7 +86,31 @@ describe('tables controller - listSpreadsheets', () => {
 
     await controller.listSpreadsheets(req, res);
 
-    expect(tableService.listSpreadsheets).toHaveBeenCalledWith('u1', true);
+    expect(tableService.listSpreadsheets).toHaveBeenCalledWith('t1', true, undefined);
+  });
+
+  it('scopes non-admin editors with recordAccess=own to their own userId', async () => {
+    vi.mocked(tableService.listSpreadsheets).mockResolvedValue([]);
+
+    const req = makeReq({
+      tablesPerm: { role: 'editor', recordAccess: 'own', entityPermissions: null },
+    });
+    const res = makeRes();
+
+    await controller.listSpreadsheets(req, res);
+
+    expect(tableService.listSpreadsheets).toHaveBeenCalledWith('t1', false, 'u1');
+  });
+
+  it('passes undefined userIdFilter for admin callers (tenant-wide)', async () => {
+    vi.mocked(tableService.listSpreadsheets).mockResolvedValue([]);
+
+    const req = makeReq(); // default admin + recordAccess: 'all'
+    const res = makeRes();
+
+    await controller.listSpreadsheets(req, res);
+
+    expect(tableService.listSpreadsheets).toHaveBeenCalledWith('t1', false, undefined);
   });
 
   it('returns 500 when service throws', async () => {
@@ -175,7 +199,7 @@ describe('tables controller - getSpreadsheet', () => {
 
     await controller.getSpreadsheet(req, res);
 
-    expect(tableService.getSpreadsheet).toHaveBeenCalledWith('u1', 's1');
+    expect(tableService.getSpreadsheet).toHaveBeenCalledWith('t1', 's1', undefined);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, data: mockSheet })
     );
@@ -210,10 +234,15 @@ describe('tables controller - updateSpreadsheet', () => {
 
     await controller.updateSpreadsheet(req, res);
 
-    expect(tableService.updateSpreadsheet).toHaveBeenCalledWith('u1', 's1', expect.objectContaining({
-      title: 'Updated Title',
-      color: '#00ff00',
-    }));
+    expect(tableService.updateSpreadsheet).toHaveBeenCalledWith(
+      't1',
+      's1',
+      expect.objectContaining({
+        title: 'Updated Title',
+        color: '#00ff00',
+      }),
+      undefined,
+    );
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, data: mockSheet })
     );
@@ -250,7 +279,7 @@ describe('tables controller - deleteSpreadsheet', () => {
 
     await controller.deleteSpreadsheet(req, res);
 
-    expect(tableService.deleteSpreadsheet).toHaveBeenCalledWith('u1', 's1');
+    expect(tableService.deleteSpreadsheet).toHaveBeenCalledWith('t1', 's1');
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, data: null })
     );
@@ -283,7 +312,7 @@ describe('tables controller - searchSpreadsheets', () => {
 
     await controller.searchSpreadsheets(req, res);
 
-    expect(tableService.searchSpreadsheets).toHaveBeenCalledWith('u1', 'budget');
+    expect(tableService.searchSpreadsheets).toHaveBeenCalledWith('t1', 'budget', undefined);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, data: mockResults })
     );
