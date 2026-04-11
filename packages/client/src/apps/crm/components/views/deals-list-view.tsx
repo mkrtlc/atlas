@@ -118,6 +118,7 @@ export function DealsListView({
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{deal.title}</span>
         </span>
       ),
+      searchValue: (deal) => deal.title,
       compare: (a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()),
     },
     {
@@ -128,11 +129,13 @@ export function DealsListView({
           {deal.companyName || '-'}
         </span>
       ),
+      searchValue: (deal) => deal.companyName || '',
       compare: (a, b) => (a.companyName || '').localeCompare(b.companyName || ''),
     },
     {
       key: 'contact', label: t('crm.deals.contact'), icon: <Users size={12} />, width: 110, sortable: true,
       render: (deal) => <span className="dt-cell-secondary">{deal.contactName || '-'}</span>,
+      searchValue: (deal) => deal.contactName || '',
       compare: (a, b) => (a.contactName || '').localeCompare(b.contactName || ''),
     },
     {
@@ -144,6 +147,7 @@ export function DealsListView({
           {formatCurrency(deal.value)}
         </span>
       ),
+      searchValue: (deal) => String(deal.value),
     },
     {
       key: 'stage', label: t('crm.deals.stage'), icon: <LayoutGrid size={12} />, width: 100, sortable: true,
@@ -154,6 +158,7 @@ export function DealsListView({
           {deal.stageName && <Badge variant="default"><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><StatusDot color={deal.stageColor || '#6b7280'} size={6} />{deal.stageName}</span></Badge>}
         </span>
       ),
+      searchValue: (deal) => deal.stageName || '',
       compare: (a, b) => (a.stageName || '').localeCompare(b.stageName || ''),
     },
     {
@@ -165,6 +170,7 @@ export function DealsListView({
           {deal.expectedCloseDate ? formatDate(deal.expectedCloseDate) : '-'}
         </span>
       ),
+      searchValue: (deal) => deal.expectedCloseDate ? formatDate(deal.expectedCloseDate) : '',
     },
   ];
 
@@ -172,6 +178,11 @@ export function DealsListView({
     <DataTable
       data={filtered}
       columns={dealColumns}
+      searchable
+      exportable
+      columnSelector
+      resizableColumns
+      storageKey="crm-deals"
       selectable
       selectedIds={selectedIds}
       onSelectionChange={onSelectionChange}

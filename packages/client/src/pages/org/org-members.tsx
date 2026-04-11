@@ -138,6 +138,7 @@ export function OrgMembersPage() {
         icon: <User size={12} />,
         sortable: true,
         compare: (a, b) => (a.name ?? '').localeCompare(b.name ?? ''),
+        searchValue: (item) => item.name ?? '',
         render: (item) => {
           const isCurrentUser = item.userId === currentUserId;
           return (
@@ -166,6 +167,7 @@ export function OrgMembersPage() {
         icon: <Mail size={12} />,
         sortable: true,
         compare: (a, b) => a.email.localeCompare(b.email),
+        searchValue: (item) => item.email,
         render: (item) => (
           <span style={{
             fontSize: 'var(--font-size-sm)',
@@ -182,6 +184,12 @@ export function OrgMembersPage() {
         label: 'Apps',
         icon: <Shield size={12} />,
         width: 180,
+        searchValue: (item) => {
+          if (item.role === 'owner' || item.role === 'admin') return 'All apps';
+          const perms = userPermissions[item.userId];
+          if (!perms) return '';
+          return Object.keys(perms).map((id) => appsMap.get(id)?.name || id).join(' ');
+        },
         render: (item) => {
           if (item.role === 'owner' || item.role === 'admin') {
             return (
@@ -235,6 +243,7 @@ export function OrgMembersPage() {
         width: 110,
         sortable: true,
         compare: (a, b) => a.role.localeCompare(b.role),
+        searchValue: (item) => item.role,
         render: (item) => (
           <Chip
             color={ROLE_COLORS[item.role] ?? ROLE_COLORS.member}
@@ -252,6 +261,7 @@ export function OrgMembersPage() {
         width: 100,
         sortable: true,
         compare: (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        searchValue: (item) => new Date(item.createdAt).toLocaleDateString(),
         render: (item) => (
           <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
             {new Date(item.createdAt).toLocaleDateString()}
@@ -265,6 +275,7 @@ export function OrgMembersPage() {
         key: 'actions',
         label: '',
         width: 100,
+        searchValue: () => '',
         render: (item) => {
           const isCurrentUser = item.userId === currentUserId;
           if (isCurrentUser) return null;
@@ -285,7 +296,7 @@ export function OrgMembersPage() {
     }
 
     return cols;
-  }, [currentUserId, isAdminOrOwner, appsMap]);
+  }, [currentUserId, isAdminOrOwner, appsMap, userPermissions]);
 
   const handleRowClick = useCallback((item: MemberRow) => {
     if (!isAdminOrOwner) return;
@@ -397,6 +408,11 @@ export function OrgMembersPage() {
       <DataTable
         data={tableData}
         columns={columns}
+        searchable
+        exportable
+        columnSelector
+        resizableColumns
+        storageKey="org-members"
         paginated={tableData.length > 25}
         defaultPageSize={25}
         onRowClick={isAdminOrOwner ? handleRowClick : undefined}

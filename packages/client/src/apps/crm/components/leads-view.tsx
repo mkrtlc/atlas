@@ -380,6 +380,7 @@ export function LeadsView() {
   const leadColumns: DataTableColumn<CrmLead>[] = [
     {
       key: 'name', label: t('crm.leads.name'), icon: <User size={12} />, width: 180, sortable: true,
+      searchValue: (lead) => lead.name,
       render: (lead) => isEd(lead.id, 'name') ? (
         <InlineInput value={lead.name} onSave={(v) => handleSave(lead.id, 'name', v)} onCancel={() => setEditingCell(null)} />
       ) : (
@@ -393,6 +394,7 @@ export function LeadsView() {
     },
     {
       key: 'email', label: t('crm.leads.email'), icon: <Mail size={12} />, width: 180,
+      searchValue: (lead) => lead.email || '',
       render: (lead) => isEd(lead.id, 'email') ? (
         <InlineInput value={lead.email || ''} onSave={(v) => handleSave(lead.id, 'email', v)} onCancel={() => setEditingCell(null)} />
       ) : (
@@ -401,6 +403,7 @@ export function LeadsView() {
     },
     {
       key: 'companyName', label: t('crm.leads.companyName'), icon: <Building2 size={12} />, width: 140,
+      searchValue: (lead) => lead.companyName || '',
       render: (lead) => isEd(lead.id, 'companyName') ? (
         <InlineInput value={lead.companyName || ''} onSave={(v) => handleSave(lead.id, 'companyName', v)} onCancel={() => setEditingCell(null)} />
       ) : (
@@ -409,18 +412,22 @@ export function LeadsView() {
     },
     {
       key: 'source', label: t('crm.leads.source'), icon: <Globe size={12} />, width: 110,
+      searchValue: (lead) => lead.source.replace('_', ' '),
       render: (lead) => <Badge variant={sourceBadgeVariant(lead.source)}>{lead.source.replace('_', ' ')}</Badge>,
     },
     {
       key: 'status', label: t('crm.leads.status'), icon: <Tag size={12} />, width: 100,
+      searchValue: (lead) => lead.status,
       render: (lead) => <Badge variant={statusBadgeVariant(lead.status)}>{lead.status}</Badge>,
     },
     {
       key: 'createdAt', label: t('crm.leads.createdAt'), icon: <Plus size={12} />, width: 100, sortable: true,
+      searchValue: (lead) => formatDate(lead.createdAt),
       render: (lead) => <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>{formatDate(lead.createdAt)}</span>,
     },
     {
       key: 'actions', label: '', width: 36,
+      searchValue: () => '',
       render: (lead) => (
         <IconButton icon={<Trash2 size={13} />} label={t('crm.actions.delete')} size={24} destructive onClick={(e) => { e.stopPropagation(); setDeletingId(lead.id); }} />
       ),
@@ -482,6 +489,11 @@ export function LeadsView() {
             addRowLabel={t('crm.actions.addNew')}
             emptyTitle={t('crm.leads.noLeads')}
             paginated={false}
+            searchable
+            exportable
+            columnSelector
+            resizableColumns
+            storageKey="crm-leads"
           />
         )}
       </div>

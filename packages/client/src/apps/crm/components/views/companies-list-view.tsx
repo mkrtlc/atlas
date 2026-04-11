@@ -98,6 +98,7 @@ export function CompaniesListView({
   const companyColumns: DataTableColumn<CrmCompany>[] = [
     {
       key: 'name', label: t('crm.companies.name'), icon: <Building2 size={12} />, width: 160, sortable: true,
+      searchValue: (c) => c.name,
       render: (c) => isEd(c.id, 'name') ? (
         <InlineEditInput value={c.name} type="text" onSave={(v) => handleSave(c.id, 'name', v)} onCancel={() => onEditingCellChange(null)} />
       ) : (
@@ -109,6 +110,7 @@ export function CompaniesListView({
     },
     {
       key: 'domain', label: t('crm.companies.domain'), icon: <Globe size={12} />, width: 150, sortable: true,
+      searchValue: (c) => c.domain || '',
       render: (c) => isEd(c.id, 'domain') ? (
         <InlineEditInput value={c.domain || ''} type="text" onSave={(v) => handleSave(c.id, 'domain', v)} onCancel={() => onEditingCellChange(null)} />
       ) : (
@@ -117,6 +119,7 @@ export function CompaniesListView({
     },
     {
       key: 'industry', label: t('crm.companies.industry'), icon: <Tag size={12} />, width: 120, sortable: true,
+      searchValue: (c) => c.industry || '',
       render: (c) => isEd(c.id, 'industry') ? (
         <InlineEditInput value={c.industry || ''} type="text" onSave={(v) => handleSave(c.id, 'industry', v)} onCancel={() => onEditingCellChange(null)} />
       ) : (
@@ -127,10 +130,12 @@ export function CompaniesListView({
     },
     {
       key: 'size', label: t('crm.companies.size'), icon: <Users size={12} />, width: 80, sortable: true,
+      searchValue: (c) => c.size || '',
       render: (c) => <span className="dt-cell-secondary">{c.size || '-'}</span>,
     },
     {
       key: 'stats', label: t('crm.companies.contactsDeals'),
+      searchValue: (c) => `${c.contactCount} ${c.dealCount}`,
       render: (c) => (
         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>
           {c.contactCount} {t('crm.sidebar.contacts').toLowerCase()} &middot; {c.dealCount} {t('crm.sidebar.deals').toLowerCase()}
@@ -143,6 +148,11 @@ export function CompaniesListView({
     <DataTable
       data={filtered}
       columns={companyColumns}
+      searchable
+      exportable
+      columnSelector
+      resizableColumns
+      storageKey="crm-companies"
       selectable
       selectedIds={selectedIds}
       onSelectionChange={onSelectionChange}

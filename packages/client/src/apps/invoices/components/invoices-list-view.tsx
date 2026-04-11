@@ -131,6 +131,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
       render: (invoice) => (
         <span style={{ fontWeight: 'var(--font-weight-medium)' }}>{invoice.invoiceNumber}</span>
       ),
+      searchValue: (invoice) => invoice.invoiceNumber,
     },
     {
       key: 'companyName',
@@ -143,6 +144,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
           {invoice.companyName || '-'}
         </span>
       ),
+      searchValue: (invoice) => invoice.companyName || '',
     },
     {
       key: 'source',
@@ -154,6 +156,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
             <Link2 size={12} style={{ color: 'var(--color-text-tertiary)' }} />
           </Tooltip>
         ) : null,
+      searchValue: () => '',
     },
     {
       key: 'total',
@@ -167,6 +170,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
           {formatCurrency(invoice.total)}
         </span>
       ),
+      searchValue: (invoice) => formatCurrency(invoice.total),
     },
     {
       key: 'lineItemCount',
@@ -180,6 +184,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
           {invoice.lineItemCount ?? invoice.lineItems?.length ?? 0}
         </span>
       ),
+      searchValue: (invoice) => String(invoice.lineItemCount ?? invoice.lineItems?.length ?? 0),
     },
     {
       key: 'status',
@@ -191,6 +196,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
           {t(`invoices.status.${invoice.status}`)}
         </Badge>
       ),
+      searchValue: (invoice) => t(`invoices.status.${invoice.status}`),
     },
     {
       key: 'issueDate',
@@ -201,6 +207,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
       render: (invoice) => (
         <span className="dt-cell-secondary">{formatDate(invoice.issueDate)}</span>
       ),
+      searchValue: (invoice) => formatDate(invoice.issueDate),
     },
     {
       key: 'dueDate',
@@ -211,6 +218,7 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
       render: (invoice) => (
         <span className="dt-cell-secondary">{formatDate(invoice.dueDate)}</span>
       ),
+      searchValue: (invoice) => formatDate(invoice.dueDate),
     },
   ];
 
@@ -257,6 +265,11 @@ export function InvoicesListView({ invoices, searchQuery, onSelect, selectedId, 
         <DataTable
           data={filtered}
           columns={columns}
+          searchable
+          exportable
+          columnSelector
+          resizableColumns
+          storageKey="invoices"
           activeRowId={selectedId}
           onRowClick={(invoice) => onSelect(invoice.id)}
           onAddRow={onAdd}

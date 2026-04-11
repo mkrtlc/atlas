@@ -87,6 +87,7 @@ export function DriveDataTableList({
       label: t('drive.table.name'),
       icon: <File size={12} />,
       sortable: true,
+      searchValue: (item) => item.name,
       render: (item) => {
         const Icon = getFileTypeIcon(item.mimeType, item.type, item.linkedResourceType);
         const isRenaming = renameId === item.id;
@@ -142,6 +143,11 @@ export function DriveDataTableList({
       label: t('drive.table.sharedBy'),
       width: 160,
       sortable: false,
+      searchValue: (item: DriveItem) => {
+        const sharedItem = item as DriveItem & { sharedBy?: string };
+        const sharer = tenantUsersData.find((u) => u.userId === sharedItem.sharedBy);
+        return sharer ? (sharer.name || sharer.email || '') : '';
+      },
       render: (item: DriveItem) => {
         const sharedItem = item as DriveItem & { sharePermission?: string; sharedBy?: string };
         const sharer = tenantUsersData.find((u) => u.userId === sharedItem.sharedBy);
@@ -171,6 +177,7 @@ export function DriveDataTableList({
       width: 120,
       sortable: true,
       align: 'right' as const,
+      searchValue: (item) => (item.type === 'file' ? String(item.size ?? '') : ''),
       render: (item) => (
         <span className="drive-list-size">
           {item.type === 'file' ? formatBytes(item.size) : '—'}
@@ -184,6 +191,7 @@ export function DriveDataTableList({
       icon: <Clock size={12} />,
       width: 140,
       sortable: true,
+      searchValue: (item) => formatRelativeDate(item.updatedAt),
       render: (item) => (
         <span className="drive-list-modified">
           {formatRelativeDate(item.updatedAt)}
@@ -224,6 +232,11 @@ export function DriveDataTableList({
           ].filter(Boolean).join(' ')
         }
         className="drive-data-table"
+        searchable
+        exportable
+        columnSelector
+        resizableColumns
+        storageKey="drive-files"
       />
     </div>
   );

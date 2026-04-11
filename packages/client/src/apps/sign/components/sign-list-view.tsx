@@ -151,6 +151,7 @@ export function SignListView({
                 label: t('sign.list.title'),
                 icon: <FileText size={12} />,
                 sortable: true,
+                searchValue: (doc) => `${doc.title} ${(doc.tags ?? []).join(' ')}`,
                 render: (doc) => (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span>{doc.title}</span>
@@ -168,6 +169,7 @@ export function SignListView({
                 icon: <Building2 size={12} />,
                 sortable: true,
                 minWidth: 160,
+                searchValue: (doc) => doc.counterpartyName ?? '',
                 render: (doc) =>
                   doc.counterpartyName ? (
                     <span>{doc.counterpartyName}</span>
@@ -181,6 +183,7 @@ export function SignListView({
                 icon: <Tag size={12} />,
                 sortable: true,
                 width: 110,
+                searchValue: (doc) => doc.status ?? '',
                 render: (doc) => (
                   <Badge variant={STATUS_BADGE_MAP[doc.status] ?? 'default'}>
                     {doc.status}
@@ -192,6 +195,8 @@ export function SignListView({
                 label: t('sign.list.signers'),
                 icon: <Users size={12} />,
                 width: 140,
+                searchValue: (doc) =>
+                  (doc.signers ?? []).map((s) => `${s.name ?? ''} ${s.email}`).join(' '),
                 render: (doc) =>
                   doc.signerCount && doc.signerCount > 0 ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -224,6 +229,7 @@ export function SignListView({
                 icon: <Calendar size={12} />,
                 sortable: true,
                 width: 130,
+                searchValue: (doc) => formatDate(doc.createdAt),
                 render: (doc) => (
                   <span style={{ color: 'var(--color-text-secondary)' }}>{formatDate(doc.createdAt)}</span>
                 ),
@@ -232,6 +238,7 @@ export function SignListView({
                 key: 'actions',
                 label: t('sign.list.actions'),
                 width: 80,
+                searchValue: () => '',
                 render: (doc) => (
                   <div
                     style={{ display: 'flex', gap: 2 }}
@@ -266,6 +273,11 @@ export function SignListView({
             rowClassName={(doc) => `sign-doc-row-dt`}
             paginated={false}
             hideFooter={false}
+            searchable
+            exportable
+            columnSelector
+            resizableColumns
+            storageKey="sign-documents"
             emptyTitle={t('sign.empty.title')}
           />
         )}

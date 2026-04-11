@@ -50,6 +50,7 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       icon: <FolderKanban size={12} />,
       width: 200,
       sortable: true,
+      searchValue: (project) => project.name,
       render: (project) => (
         <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <StatusDot color={project.color} size={8} />
@@ -63,6 +64,7 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       icon: <Users size={12} />,
       width: 140,
       sortable: true,
+      searchValue: (project) => project.companyName || '',
       render: (project) => (
         <span className="dt-cell-secondary" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {project.companyName || '-'}
@@ -74,6 +76,7 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       label: t('projects.projects.status'),
       width: 100,
       sortable: true,
+      searchValue: (project) => t(`projects.status.${project.status}`),
       render: (project) => (
         <Badge variant={project.status === 'active' ? 'success' : project.status === 'paused' ? 'warning' : project.status === 'completed' ? 'primary' : 'default'}>
           {t(`projects.status.${project.status}`)}
@@ -87,6 +90,7 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       width: 80,
       sortable: true,
       align: 'right',
+      searchValue: (project) => `${formatNumber(project.totalHours, 1)}h`,
       render: (project) => (
         <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatNumber(project.totalHours, 1)}h</span>
       ),
@@ -98,6 +102,7 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       width: 90,
       sortable: true,
       align: 'right',
+      searchValue: (project) => `${formatNumber(project.billableHours, 1)}h`,
       render: (project) => (
         <span style={{ fontVariantNumeric: 'tabular-nums', color: project.billableHours > 0 ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)' }}>
           {formatNumber(project.billableHours, 1)}h
@@ -111,6 +116,7 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       width: 80,
       sortable: true,
       align: 'right',
+      searchValue: (project) => `${formatNumber(project.billedHours, 1)}h`,
       render: (project) => (
         <span style={{ fontVariantNumeric: 'tabular-nums', color: project.billedHours > 0 ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}>
           {formatNumber(project.billedHours, 1)}h
@@ -122,6 +128,13 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       label: t('projects.projects.budget'),
       icon: <DollarSign size={12} />,
       sortable: true,
+      searchValue: (project) => {
+        const parts: string[] = [];
+        if (project.budgetHours) parts.push(`${formatNumber((project.totalHours / project.budgetHours) * 100, 0)}%`);
+        if (project.unbilledHours > 0) parts.push(`${formatNumber(project.unbilledHours, 1)}h ${t('projects.dashboard.unbilled')}`);
+        if (project.totalAmount > 0) parts.push(formatCurrency(project.totalAmount));
+        return parts.join(' ');
+      },
       render: (project) => {
         const budgetPct = project.budgetHours ? Math.min((project.totalHours / project.budgetHours) * 100, 100) : 0;
         return (
@@ -165,6 +178,11 @@ export function ProjectsListView({ projects, searchQuery, onSelect, selectedId, 
       emptyTitle={t('projects.empty.noMatchingProjects')}
       emptyDescription={t('projects.empty.tryDifferentSearch')}
       emptyIcon={<FolderKanban size={48} />}
+      searchable
+      exportable
+      columnSelector
+      resizableColumns
+      storageKey="projects"
     />
   );
 }

@@ -62,14 +62,17 @@ export function EmployeesListView({
             <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.name}</span>
           </span>
         ),
+        searchValue: (emp) => emp.name,
       },
       {
         key: 'email', label: t('hr.columns.email'), icon: <Mail size={12} />, width: 180, sortable: true,
         render: (emp) => <span className="dt-cell-secondary">{emp.email}</span>,
+        searchValue: (emp) => emp.email,
       },
       {
         key: 'role', label: t('hr.columns.role'), icon: <Briefcase size={12} />, width: 140, sortable: true,
         render: (emp) => <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>{emp.role}</span>,
+        searchValue: (emp) => emp.role,
       },
     ];
     if (showDept) {
@@ -83,16 +86,22 @@ export function EmployeesListView({
             </span>
           ) : <span className="dt-cell-secondary">-</span>;
         },
+        searchValue: (emp) => {
+          const dept = emp.departmentId ? departments.find((d) => d.id === emp.departmentId) : null;
+          return dept ? dept.name : '';
+        },
       });
     }
     cols.push(
       {
         key: 'status', label: t('hr.columns.status'), icon: <Tag size={12} />, width: 80,
         render: (emp) => getStatusBadge(emp.status, t),
+        searchValue: (emp) => emp.status,
       },
       {
         key: 'startDate', label: t('hr.columns.started'), icon: <CalendarDays size={12} />, width: 100, sortable: true,
         render: (emp) => <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>{formatDate(emp.startDate)}</span>,
+        searchValue: (emp) => formatDate(emp.startDate),
       },
     );
     return cols;
@@ -136,6 +145,11 @@ export function EmployeesListView({
         activeRowId={selectedId}
         onRowClick={(emp) => onSelect(emp.id)}
         paginated={false}
+        searchable
+        exportable
+        columnSelector
+        resizableColumns
+        storageKey="hr-employees"
         bulkActions={[
           {
             key: 'delete',

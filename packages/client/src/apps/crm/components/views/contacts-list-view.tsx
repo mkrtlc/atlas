@@ -105,6 +105,7 @@ export function ContactsListView({
   const contactColumns: DataTableColumn<CrmContact>[] = [
     {
       key: 'name', label: t('crm.contacts.name'), icon: <User size={12} />, width: 160, sortable: true,
+      searchValue: (c) => c.name ?? '',
       render: (c) => isEd(c.id, 'name') ? (
         <InlineEditInput value={c.name} type="text" onSave={(v) => handleSave(c.id, 'name', v)} onCancel={() => onEditingCellChange(null)} />
       ) : (
@@ -116,6 +117,7 @@ export function ContactsListView({
     },
     {
       key: 'email', label: t('crm.contacts.email'), icon: <Mail size={12} />, width: 170, sortable: true,
+      searchValue: (c) => c.email ?? '',
       render: (c) => isEd(c.id, 'email') ? (
         <InlineEditInput value={c.email || ''} type="text" onSave={(v) => handleSave(c.id, 'email', v)} onCancel={() => onEditingCellChange(null)} />
       ) : (
@@ -124,6 +126,7 @@ export function ContactsListView({
     },
     {
       key: 'phone', label: t('crm.contacts.phone'), icon: <PhoneIcon size={12} />, width: 120, sortable: true,
+      searchValue: (c) => c.phone ?? '',
       render: (c) => isEd(c.id, 'phone') ? (
         <InlineEditInput value={c.phone || ''} type="text" onSave={(v) => handleSave(c.id, 'phone', v)} onCancel={() => onEditingCellChange(null)} />
       ) : (
@@ -132,6 +135,7 @@ export function ContactsListView({
     },
     {
       key: 'company', label: t('crm.deals.company'), icon: <Building2 size={12} />, width: 130, sortable: true,
+      searchValue: (c) => c.companyName ?? '',
       render: (c) => (
         <span className="dt-cell-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {c.companyId && <CompanyLogo domain={companyDomainMap.get(c.companyId)} />}
@@ -142,6 +146,7 @@ export function ContactsListView({
     },
     {
       key: 'position', label: t('crm.contacts.position'), icon: <Briefcase size={12} />, width: 130, sortable: true,
+      searchValue: (c) => c.position ?? '',
       render: (c) => isEd(c.id, 'position') ? (
         <InlineEditInput value={c.position || ''} type="text" onSave={(v) => handleSave(c.id, 'position', v)} onCancel={() => onEditingCellChange(null)} />
       ) : (
@@ -164,6 +169,11 @@ export function ContactsListView({
       onAddRow={onAdd}
       addRowLabel={t('crm.actions.addNew')}
       emptyTitle={t('crm.empty.noMatchingContacts')}
+      searchable
+      exportable
+      columnSelector
+      resizableColumns
+      storageKey="crm-contacts"
     />
   );
 }
