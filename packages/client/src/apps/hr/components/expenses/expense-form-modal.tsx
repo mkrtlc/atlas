@@ -120,9 +120,25 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
   };
 
   const handleSave = (andSubmit: boolean) => {
-    if (!description.trim() || !amountNum) return;
+    // TEMP diagnostic logging — remove once the silent-save bug is fixed.
+    // eslint-disable-next-line no-console
+    console.log('[expense-form] handleSave called', {
+      andSubmit,
+      isEditing,
+      description: description.trim(),
+      amountNum,
+      canSave,
+      isSaving,
+    });
+    if (!description.trim() || !amountNum) {
+      // eslint-disable-next-line no-console
+      console.warn('[expense-form] handleSave EARLY RETURN — missing description or amount');
+      return;
+    }
 
     const input = buildInput();
+    // eslint-disable-next-line no-console
+    console.log('[expense-form] handleSave input', input);
 
     if (isEditing) {
       updateExpense.mutate({ id: expense.id, ...input }, {
@@ -143,8 +159,12 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
         onError: showSaveError,
       });
     } else {
+      // eslint-disable-next-line no-console
+      console.log('[expense-form] calling createExpense.mutate');
       createExpense.mutate(input, {
         onSuccess: (data) => {
+          // eslint-disable-next-line no-console
+          console.log('[expense-form] createExpense.onSuccess', data);
           if (andSubmit && data?.id) {
             submitExpense.mutate(data.id, {
               onSuccess: () => {
@@ -158,7 +178,11 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
             onClose();
           }
         },
-        onError: showSaveError,
+        onError: (err) => {
+          // eslint-disable-next-line no-console
+          console.error('[expense-form] createExpense.onError', err);
+          showSaveError(err);
+        },
       });
     }
   };
