@@ -1,5 +1,5 @@
-import { FileSignature } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
+import { SignIcon } from '../../components/icons/app-icons';
 import { SignPage } from './page';
 
 export const signManifest: ClientAppManifest = {
@@ -7,7 +7,7 @@ export const signManifest: ClientAppManifest = {
   name: 'Agreements',
   labelKey: 'sidebar.sign',
   iconName: 'FileSignature',
-  icon: FileSignature,
+  icon: SignIcon,
   color: '#8b5cf6',
   minPlan: 'starter',
   category: 'productivity',

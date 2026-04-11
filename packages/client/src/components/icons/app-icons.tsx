@@ -497,3 +497,173 @@ export function TasksIcon({ size = 24, className, style }: IconProps) {
     </svg>
   );
 }
+
+// ─── Hand-authored brand icons ────────────────────────────────────────
+//
+// The icons below were hand-authored to match the visual language of the
+// design-supplied SVGs above (128×128 viewBox, multi-stop gradient fills,
+// soft inner highlights, glyph-on-card layout). They are intentionally
+// simpler than the design-supplied ones — when proper design assets are
+// supplied, replace these with the inlined versions like the others.
+
+export function SignIcon({ size = 24, className, style }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 128 128"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={style}
+    >
+      {/* Document body — rounded paper rectangle, slightly tilted, with a
+          purple→indigo gradient matching the Sign app brand colour. */}
+      <g transform="rotate(-4 64 64)">
+        <rect
+          x="26"
+          y="18"
+          width="76"
+          height="92"
+          rx="10"
+          fill="url(#sign_paint0)"
+          stroke="url(#sign_paint1)"
+          strokeWidth="1.5"
+        />
+        {/* Inner highlight on the top edge for the glassy look */}
+        <rect x="26" y="18" width="76" height="20" rx="10" fill="url(#sign_paint2)" />
+
+        {/* Three thin lines representing document text */}
+        <rect x="36" y="40" width="56" height="3.5" rx="1.75" fill="#ffffff" opacity="0.55" />
+        <rect x="36" y="50" width="56" height="3.5" rx="1.75" fill="#ffffff" opacity="0.55" />
+        <rect x="36" y="60" width="36" height="3.5" rx="1.75" fill="#ffffff" opacity="0.55" />
+
+        {/* Signature curve — flowing handwritten line in gold */}
+        <path
+          d="M36 86 C 44 78, 50 96, 58 84 S 72 76, 80 88 S 92 80, 96 86"
+          stroke="url(#sign_paint3)"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Signature flourish underline */}
+        <path
+          d="M38 96 L 92 96"
+          stroke="url(#sign_paint3)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+      </g>
+
+      <defs>
+        <linearGradient id="sign_paint0" x1="64" y1="18" x2="64" y2="110" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#A78BFA" />
+          <stop offset="0.5" stopColor="#8B5CF6" />
+          <stop offset="1" stopColor="#5B21B6" />
+        </linearGradient>
+        <linearGradient id="sign_paint1" x1="64" y1="18" x2="64" y2="110" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#C4B5FD" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#4C1D95" stopOpacity="0.6" />
+        </linearGradient>
+        <linearGradient id="sign_paint2" x1="64" y1="18" x2="64" y2="38" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#ffffff" stopOpacity="0.25" />
+          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="sign_paint3" x1="36" y1="86" x2="96" y2="86" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FCD34D" />
+          <stop offset="0.5" stopColor="#F59E0B" />
+          <stop offset="1" stopColor="#D97706" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+export function InvoicesIcon({ size = 24, className, style }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 128 128"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={style}
+    >
+      {/* Receipt body — upright with a scalloped/torn bottom edge, sky-blue
+          gradient matching the Invoices app brand colour. */}
+      <path
+        d="M30 16
+           C 30 13.7909 31.7909 12 34 12
+           H 94
+           C 96.2091 12 98 13.7909 98 16
+           V 108
+           L 91 102
+           L 84 108
+           L 77 102
+           L 70 108
+           L 64 102
+           L 58 108
+           L 51 102
+           L 44 108
+           L 37 102
+           L 30 108
+           Z"
+        fill="url(#invoices_paint0)"
+        stroke="url(#invoices_paint1)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      {/* Top highlight strip */}
+      <path
+        d="M30 16
+           C 30 13.7909 31.7909 12 34 12
+           H 94
+           C 96.2091 12 98 13.7909 98 16
+           V 28
+           H 30 Z"
+        fill="url(#invoices_paint2)"
+      />
+
+      {/* Currency mark — circle with vertical line through it (S-curve) */}
+      <circle cx="64" cy="50" r="13" fill="#ffffff" opacity="0.18" />
+      <path
+        d="M68 44 C 64 42, 60 43, 60 47 C 60 50, 64 50, 64 50 C 68 50, 68 53, 68 53 C 68 57, 64 58, 60 56
+           M 64 41 V 60"
+        stroke="#ffffff"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {/* Line items — three horizontal rows with a "value" rect on the right */}
+      <rect x="34" y="74" width="34" height="3.5" rx="1.75" fill="#ffffff" opacity="0.55" />
+      <rect x="78" y="74" width="16" height="3.5" rx="1.75" fill="#ffffff" opacity="0.85" />
+
+      <rect x="34" y="84" width="34" height="3.5" rx="1.75" fill="#ffffff" opacity="0.55" />
+      <rect x="78" y="84" width="16" height="3.5" rx="1.75" fill="#ffffff" opacity="0.85" />
+
+      {/* Total row — slightly thicker, full opacity */}
+      <rect x="34" y="95" width="60" height="1.5" rx="0.75" fill="#ffffff" opacity="0.4" />
+      <rect x="34" y="100" width="22" height="4" rx="2" fill="#ffffff" opacity="0.7" />
+      <rect x="74" y="100" width="20" height="4" rx="2" fill="#ffffff" />
+
+      <defs>
+        <linearGradient id="invoices_paint0" x1="64" y1="12" x2="64" y2="108" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#7DD3FC" />
+          <stop offset="0.5" stopColor="#0EA5E9" />
+          <stop offset="1" stopColor="#0C4A6E" />
+        </linearGradient>
+        <linearGradient id="invoices_paint1" x1="64" y1="12" x2="64" y2="108" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#BAE6FD" stopOpacity="0.9" />
+          <stop offset="1" stopColor="#0C4A6E" stopOpacity="0.6" />
+        </linearGradient>
+        <linearGradient id="invoices_paint2" x1="64" y1="12" x2="64" y2="28" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#ffffff" stopOpacity="0.3" />
+          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}

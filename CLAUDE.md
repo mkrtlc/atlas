@@ -65,8 +65,8 @@ service.ts           — Business logic + database queries
 | HRM | hr | #10b981 | HrmIcon (brand) | 20 | /hr |
 | Projects | projects | #0ea5e9 | ProjectsIcon (brand) | 25 | /projects |
 | Calendar | calendar | #f97316 | CalendarIcon (brand) | 27 | /calendar |
-| Sign | sign | #8b5cf6 | PenTool | 30 | /sign-app |
-| Invoices | invoices | #0ea5e9 | Receipt | 35 | /invoices |
+| Sign | sign | #8b5cf6 | SignIcon (brand, hand-authored) | 30 | /sign-app |
+| Invoices | invoices | #0ea5e9 | InvoicesIcon (brand, hand-authored) | 35 | /invoices |
 | Drive | drive | #64748b | DriveIcon (brand) | 40 | /drive, /drive/folder/:id |
 | Tables | tables | #2d8a6e | TablesIcon (brand) | 50 | /tables, /tables/:id |
 | Tasks | tasks | #6366f1 | TasksIcon (brand, full-bleed) | 60 | /tasks |
