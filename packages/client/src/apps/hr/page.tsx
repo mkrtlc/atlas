@@ -68,10 +68,10 @@ export function HrPage() {
 
   // Navigation state (URL-driven, falls back to user's preferred default view)
   const hrDefaultView = useHrSettingsStore((s) => s.defaultView);
-  // Portal users (viewer role) land on Leave by default — it's a more
-  // actionable hub than 'view your own record'. my-profile is still
-  // reachable via the portal sidebar item when they want it.
-  const portalDefault = 'leave';
+  // Portal users (viewer role) land on their own profile — a safe
+  // read-only view. The Leave hub currently has unresolved viewer-
+  // permission bugs (see audit) so we can't default to it yet.
+  const portalDefault = 'my-profile';
   const [searchParams, setSearchParams] = useSearchParams();
   const activeNav = (searchParams.get('view') || (isPortalUser ? portalDefault : hrDefaultView)) as NavSection;
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -410,7 +410,7 @@ export function HrPage() {
           // self-view ("view my own profile" isn't a list context).
           employees={[myEmployee]}
           departments={departments}
-          onBack={() => setActiveNav(isPortalUser ? 'leave' : (hrDefaultView as NavSection))}
+          onBack={() => setActiveNav(hrDefaultView as NavSection)}
           onNavigate={() => {}}
         />
       )}
