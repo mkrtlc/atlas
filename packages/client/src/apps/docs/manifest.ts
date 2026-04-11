@@ -1,5 +1,6 @@
 import { FileText, Type, Rocket } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
+import { WriteIcon } from '../../components/icons/app-icons';
 import { DocsPage } from './page';
 import { DocsEditorPanel, DocsStartupPanel } from './components/doc-settings-modal';
 
@@ -8,7 +9,7 @@ export const docsManifest: ClientAppManifest = {
   name: 'Write',
   labelKey: 'sidebar.docs',
   iconName: 'FileText',
-  icon: FileText,
+  icon: WriteIcon,
   color: '#c4856c',
   minPlan: 'starter',
   category: 'productivity',
