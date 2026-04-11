@@ -19,7 +19,7 @@ interface IconProps {
  * backdrop (sticky-note, gradient horizon, etc.) rather than a foreground
  * glyph. Note: the Write app's id is `docs`. Consumed by the dockbar render
  * paths in home.tsx and sidebar.tsx. */
-export const FULL_BLEED_BRAND_ICONS = new Set<string>(['draw', 'docs']);
+export const FULL_BLEED_BRAND_ICONS = new Set<string>(['draw', 'docs', 'tasks']);
 
 /** Per-brand-icon size multiplier on top of the base icon size. Brand icons
  * default to 1.2× because the supplied artwork has more internal padding
@@ -457,6 +457,42 @@ export function SystemIcon({ size = 24, className, style }: IconProps) {
       <stop offset="0.801867" stopColor="#E65659"/>
       <stop offset="1" stopColor="#F2C241"/>
       </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+export function TasksIcon({ size = 24, className, style }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 128 128"
+      preserveAspectRatio="xMidYMid meet"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={style}
+    >
+      <path d="M30 20C34.9706 20 39 24.0294 39 29C39 33.9706 34.9706 38 30 38C25.0294 38 21 33.9706 21 29C21 24.0294 25.0294 20 30 20ZM30 22C26.134 22 23 25.134 23 29C23 32.866 26.134 36 30 36C33.866 36 37 32.866 37 29C37 25.134 33.866 22 30 22ZM30 24C32.7614 24 35 26.2386 35 29C35 31.7614 32.7614 34 30 34C27.2386 34 25 31.7614 25 29C25 26.2386 27.2386 24 30 24Z" fill="#167F98"/>
+      <rect opacity="0.75" x="47" y="26" width="62" height="4" rx="2" fill="#3D3D6C"/>
+      <path d="M30 57C34.9706 57 39 61.0294 39 66C39 70.9706 34.9706 75 30 75C25.0294 75 21 70.9706 21 66C21 61.0294 25.0294 57 30 57ZM30 59C26.134 59 23 62.134 23 66C23 69.866 26.134 73 30 73C33.866 73 37 69.866 37 66C37 62.134 33.866 59 30 59ZM30 61C32.7614 61 35 63.2386 35 66C35 68.7614 32.7614 71 30 71C27.2386 71 25 68.7614 25 66C25 63.2386 27.2386 61 30 61Z" fill="#5F5ABE"/>
+      <rect opacity="0.75" x="47" y="63" width="62" height="4" rx="2" fill="#3D3D6C"/>
+      <g filter="url(#tasks_filter0_i_1105_1550)">
+      <path d="M30 91C34.9706 91 39 95.0294 39 100C39 104.971 34.9706 109 30 109C25.0294 109 21 104.971 21 100C21 95.0294 25.0294 91 30 91ZM30 93C26.134 93 23 96.134 23 100C23 103.866 26.134 107 30 107C33.866 107 37 103.866 37 100C37 96.134 33.866 93 30 93ZM30 95C32.7614 95 35 97.2386 35 100C35 102.761 32.7614 105 30 105C27.2386 105 25 102.761 25 100C25 97.2386 27.2386 95 30 95Z" fill="#E964E7"/>
+      </g>
+      <rect opacity="0.75" x="47" y="97" width="62" height="4" rx="2" fill="#3D3D6C"/>
+      <defs>
+      <filter id="tasks_filter0_i_1105_1550" x="21" y="91" width="18" height="19" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+      <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="1"/>
+      <feGaussianBlur stdDeviation="1"/>
+      <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.754167 0 0 0 0 0.147691 0 0 0 0 0.745564 0 0 0 1 0"/>
+      <feBlend mode="normal" in2="shape" result="effect1_innerShadow_1105_1550"/>
+      </filter>
       </defs>
     </svg>
   );

@@ -69,7 +69,7 @@ service.ts           — Business logic + database queries
 | Invoices | invoices | #0ea5e9 | Receipt | 35 | /invoices |
 | Drive | drive | #64748b | DriveIcon (brand) | 40 | /drive, /drive/folder/:id |
 | Tables | tables | #2d8a6e | TablesIcon (brand) | 50 | /tables, /tables/:id |
-| Tasks | tasks | #6366f1 | CheckSquare | 60 | /tasks |
+| Tasks | tasks | #6366f1 | TasksIcon (brand, full-bleed) | 60 | /tasks |
 | Write | docs | #c4856c | WriteIcon (brand, full-bleed) | 70 | /docs, /docs/:id |
 | Draw | draw | #e06c9f | DrawIcon (brand, full-bleed) | 80 | /draw, /draw/:id |
 | Marketplace | marketplace | #8b5cf6 | Store | 85 | /marketplace |

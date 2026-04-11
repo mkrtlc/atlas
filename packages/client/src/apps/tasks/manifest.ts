@@ -1,5 +1,6 @@
 import { CheckSquare, Settings, Eye, Zap } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
+import { TasksIcon } from '../../components/icons/app-icons';
 import { TasksPage } from './page';
 import { TasksGeneralPanel, TasksAppearancePanel, TasksBehaviorPanel } from './components/tasks-settings-modal';
 import { TasksWidget } from './widgets/tasks-widget';
@@ -9,7 +10,7 @@ export const tasksManifest: ClientAppManifest = {
   name: 'Tasks',
   labelKey: 'sidebar.tasks',
   iconName: 'CheckSquare',
-  icon: CheckSquare,
+  icon: TasksIcon,
   color: '#6366f1',
   minPlan: 'starter',
   category: 'productivity',
