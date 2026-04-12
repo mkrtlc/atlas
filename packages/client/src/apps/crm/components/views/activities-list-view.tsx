@@ -142,6 +142,10 @@ export function ActivitiesListView({
         data={filtered}
         columns={columns}
         storageKey="crm-activities"
+        searchable
+        columnSelector
+        resizableColumns
+        exportable
         paginated={filtered.length > 25}
         defaultPageSize={25}
         emptyIcon={<Clock size={40} />}
