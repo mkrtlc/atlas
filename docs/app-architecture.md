@@ -381,43 +381,6 @@ Sidebar, routes, settings panels, and widgets register automatically from the ma
 
 ---
 
-### Tables
-
-| Property | Value |
-|----------|-------|
-| **App ID** | `tables` |
-| **Display name** | Tables |
-| **Icon** | Table2 |
-| **Color** | `#2d8a6e` (teal) |
-| **Category** | data |
-| **Sidebar order** | 50 |
-
-**Purpose:** Airtable-style databases with custom columns, rows, view configurations, and color/icon customization. Each spreadsheet stores its schema (columns) and data (rows) as JSON.
-
-**Client routes:**
-| Route | Component |
-|-------|-----------|
-| `/tables` | `TablesPage` |
-| `/tables/:id` | `TablesPage` |
-
-**Server API prefix:** `/tables`
-
-**Database tables:**
-- `spreadsheets` -- the spreadsheet itself (title, columns JSON, rows JSON, view config)
-- `spreadsheet_columns` -- column definitions
-- `spreadsheet_rows` -- row data
-
-**Entity objects:**
-- Spreadsheets
-
-**Settings panels:**
-| Panel ID | Label | Icon |
-|----------|-------|------|
-| `general` | General | Settings |
-| `regional` | Regional | Languages |
-
----
-
 ### Tasks
 
 | Property | Value |
@@ -586,7 +549,6 @@ Sidebar, routes, settings panels, and widgets register automatically from the ma
 | Projects | `projects` | `#0ea5e9` | FolderKanban | 25 | `/projects` | `/projects` | -- | -- |
 | Sign | `sign` | `#8b5cf6` | PenTool | 30 | `/sign-app` | `/sign` | -- | -- |
 | Drive | `drive` | `#64748b` | HardDrive | 40 | `/drive` | `/drive` | 3 panels | -- |
-| Tables | `tables` | `#2d8a6e` | Table2 | 50 | `/tables` | `/tables` | 2 panels | -- |
 | Tasks | `tasks` | `#6366f1` | CheckSquare | 60 | `/tasks` | `/tasks` | 3 panels | Tasks |
 | Write | `docs` | `#c4856c` | FileText | 70 | `/docs` | `/docs` | 2 panels | -- |
 | Draw | `draw` | `#e06c9f` | Pencil | 80 | `/draw` | `/drawings` | 2 panels | -- |

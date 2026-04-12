@@ -172,7 +172,6 @@ Same replacement for:
 - [ ] **Step 8: Replace accountId with tenantId in remaining collaborative tables**
 
 Same replacement for:
-- `spreadsheets`, `tableRowComments` (Tables app)
 - `signatureDocuments`, `signatureFields`, `signingTokens`, `signAuditLog`, `signTemplates` (Sign app)
 - `drawings` (Draw app)
 - `customFieldDefinitions`, `customFieldValues`, `recordLinks` (Shared)

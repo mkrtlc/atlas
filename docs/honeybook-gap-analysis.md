@@ -17,7 +17,7 @@
 | 7 | **File Storage** | Basic file sharing per project | Drive app with folders, versioning, sharing | No gap | — |
 | 8 | **Task Management** | Basic project tasks | Tasks app: projects, statuses, assignments, comments | No gap | — |
 | 9 | **HRM** | None | Full HRM: employees, departments, leave, attendance, onboarding | Atlas advantage | — |
-| 10 | **Spreadsheets** | None | Tables app | Atlas advantage | — |
+| 10 | **Spreadsheets** | None | Deprecated (Tables app moved to /legacy) | — | — |
 | 11 | **Drawing / Whiteboard** | None | Draw app (Excalidraw) | Atlas advantage | — |
 
 ---

@@ -3,7 +3,7 @@
 </p>
 
 
-A self-hosted business platform that brings CRM, HRM, agreements, documents, tasks, spreadsheets, file storage, and whiteboards into one connected workspace for your team. An open alternative to [Zoho](https://zoho.com/) and [Odoo](https://www.odoo.com/).
+A self-hosted business platform that brings CRM, HRM, invoicing, agreements, documents, tasks, file storage, and whiteboards into one connected workspace for your team. An open alternative to [Zoho](https://zoho.com/) and [Odoo](https://www.odoo.com/).
 
 Atlas can also deploy several 3rd party apps, including [Activepieces](https://www.activepieces.com/), [Cal.com](http://cal.com/), [Formbricks](http://formbricks.com/), [Mattermost](http://mattermost.com/), [Umami](https://umami.is/) and [Checkmate](https://checkmate.so/).
 
@@ -100,7 +100,6 @@ npm run dev
 | Projects | Time tracking, invoicing, clients, reports, budgets |
 | Agreements | PDF contracts with e-signatures, starter templates, document type tracking, counterparty linking, sequential signing, audit trail, reminders |
 | Drive | File storage with versioning, sharing, comments, activity log, password-protected links |
-| Tables | Spreadsheets with linked records, CSV import, row comments, multiple views |
 | Tasks | Task management with calendar, dependencies, attachments, assignees, comments |
 | Write | Rich text editor with cover images, comments, templates |
 | Draw | Excalidraw-based canvas with PDF export, image insertion, presentation mode |

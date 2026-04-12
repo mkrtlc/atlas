@@ -68,13 +68,12 @@ service.ts           — Business logic + database queries
 | Sign | sign | #8b5cf6 | SignIcon (brand, hand-authored) | 30 | /sign-app |
 | Invoices | invoices | #0ea5e9 | InvoicesIcon (brand, hand-authored) | 35 | /invoices |
 | Drive | drive | #64748b | DriveIcon (brand) | 40 | /drive, /drive/folder/:id |
-| Tables | tables | #2d8a6e | TablesIcon (brand) | 50 | /tables, /tables/:id |
 | Tasks | tasks | #6366f1 | TasksIcon (brand, full-bleed) | 60 | /tasks |
 | Write | docs | #c4856c | WriteIcon (brand, full-bleed) | 70 | /docs, /docs/:id |
 | Draw | draw | #e06c9f | DrawIcon (brand, full-bleed) | 80 | /draw, /draw/:id |
 | System | system | #6b7280 | SystemIcon (brand) | 90 | /system |
 
-> **Note:** CRM, HRM, Projects, Calendar, Drive, Tables, and Draw use custom multicolor brand SVGs (defined in `packages/client/src/components/icons/app-icons.tsx`) instead of lucide icons in the dockbar. Most render on a small white/light card via `BRAND_ICON_BACKGROUNDS` in `sidebar.tsx` and `home.tsx`. Draw is **full-bleed** — its SVG artwork is itself a backdrop and fills the dock card edge-to-edge (controlled by `FULL_BLEED_BRAND_ICONS` in `app-icons.tsx`). All other apps still use lucide. Calendar is **client-only** — there is no `packages/server/src/apps/calendar/`.
+> **Note:** CRM, HRM, Projects, Calendar, Drive, and Draw use custom multicolor brand SVGs (defined in `packages/client/src/components/icons/app-icons.tsx`) instead of lucide icons in the dockbar. Most render on a small white/light card via `BRAND_ICON_BACKGROUNDS` in `sidebar.tsx` and `home.tsx`. Draw is **full-bleed** — its SVG artwork is itself a backdrop and fills the dock card edge-to-edge (controlled by `FULL_BLEED_BRAND_ICONS` in `app-icons.tsx`). All other apps still use lucide. Calendar is **client-only** — there is no `packages/server/src/apps/calendar/`.
 
 ---
 
@@ -139,7 +138,7 @@ updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(
 ```
 
 ### Table naming
-- Flat names, plural: `documents`, `tasks`, `spreadsheets`, `drive_items`
+- Flat names, plural: `documents`, `tasks`, `drive_items`
 - Join tables: `tenant_members`, `tenant_apps`
 - No app prefix needed
 
@@ -149,7 +148,7 @@ All tables in `packages/server/src/db/schema.ts`. Sections:
 - Platform (tenants, tenantMembers, tenantInvitations, tenantApps)
 - Custom Fields (customFieldDefinitions)
 - Record Links (recordLinks)
-- App tables (documents, drawings, tasks, spreadsheets, driveItems, etc.)
+- App tables (documents, drawings, tasks, driveItems, etc.)
 
 ### Migrations
 There are no hand-written migrations. `schema.ts` is the single source of truth; `npm run db:push` (wraps `drizzle-kit push --force`) diffs the schema against the live DB and applies the change. Pre-launch stance — no users, so drop-and-recreate is fine. Re-introduce versioned migrations once we have deployments we can't rewind.

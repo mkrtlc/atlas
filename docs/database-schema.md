@@ -2086,7 +2086,6 @@ Cross-app record-to-record links (e.g. linking a CRM deal to a task).
 | Drive | 3 (drive_items, drive_item_versions, drive_share_links) |
 | Docs | 4 (documents, document_versions, document_comments, document_links) |
 | Draw | 1 (drawings) |
-| Tables | 1 (spreadsheets) |
 | Sign | 3 (signature_documents, signature_fields, signing_tokens) |
 | Projects | 7 (project_clients, project_projects, project_members, project_time_entries, project_invoices, project_invoice_line_items, project_settings) |
 | System | 1 (system_settings) |
