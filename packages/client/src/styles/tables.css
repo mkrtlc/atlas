@@ -570,6 +570,7 @@
   --ag-font-family: var(--font-family);
   --ag-font-size: 13px;
   --ag-header-background-color: #f5f5f5;
+  --ag-odd-row-background-color: #fafbfc;
   --ag-border-color: #e2e5ea;
   --ag-row-border-color: #eef0f2;
   --ag-row-hover-color: #f5f7fa;
@@ -597,7 +598,7 @@
   --ag-border-color: #2a2d36;
   --ag-row-border-color: #1f2128;
   --ag-row-hover-color: #1a1d22;
-  --ag-odd-row-background-color: #101114;
+  --ag-odd-row-background-color: #141519;
   --ag-selected-row-background-color: color-mix(in srgb, #7a9ab8 10%, transparent);
   --ag-modal-overlay-background-color: rgba(0, 0, 0, 0.5);
   --ag-range-selection-border-color: var(--color-accent-primary);
