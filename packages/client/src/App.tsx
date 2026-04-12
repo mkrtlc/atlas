@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ThemeProvider } from './providers/theme-provider';
 import { QueryProvider } from './providers/query-provider';
@@ -20,6 +20,7 @@ import { ErrorBoundary } from './components/ui/error-boundary';
 import { SessionExpiredModal } from './components/ui/session-expired-modal';
 import { type ReactNode } from 'react';
 import { useMyAccessibleApps } from './hooks/use-app-permissions';
+import { GlobalDock } from './components/layout/global-dock';
 import { OrgLayout } from './pages/org/org-layout';
 import { OrgMembersPage } from './pages/org/org-members';
 import { OrgMemberEditPage } from './pages/org/org-member-edit';
@@ -59,6 +60,24 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+/** Renders the global dock on authenticated app pages, but NOT on home, login, setup, etc. */
+function GlobalDockWrapper() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const location = useLocation();
+
+  if (!isAuthenticated) return null;
+
+  // Hide on pages that have their own dock or are non-app pages
+  const hiddenPaths = ['/', '/login', '/register', '/setup', '/onboarding', '/forgot-password'];
+  const path = location.pathname;
+  if (hiddenPaths.includes(path)) return null;
+  if (path.startsWith('/invitation/')) return null;
+  if (path.startsWith('/reset-password/')) return null;
+  if (path.startsWith('/sign/') || path.startsWith('/proposal/')) return null;
+
+  return <GlobalDock />;
 }
 
 function AppGuard({ appId, children }: { appId: string; children: ReactNode }) {
@@ -136,6 +155,7 @@ export function App() {
 
                 <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
               </Routes>
+              <GlobalDockWrapper />
               <CommandPalette />
               <SettingsModal />
             </ErrorBoundary>
