@@ -102,7 +102,8 @@ export function Select({
         align="start"
         style={{
           padding: 'var(--spacing-xs)',
-          minWidth: 140,
+          width: 'max-content',
+          minWidth: 'var(--radix-popover-trigger-width)',
           maxHeight: 240,
           overflowY: 'auto',
         }}
@@ -171,7 +172,7 @@ function SelectItem({
           {option.icon}
         </span>
       )}
-      <span style={{ flex: 1, textTransform: 'capitalize' }}>
+      <span style={{ flex: 1, textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
         {option.label}
       </span>
       {isSelected && (
