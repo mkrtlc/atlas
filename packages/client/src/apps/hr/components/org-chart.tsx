@@ -470,6 +470,20 @@ function OrgChartInner({ employees, departments, onSelectEmployee }: OrgChartPro
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Theme-aware ReactFlow controls override */}
+      <style>{`
+        .react-flow__controls-button {
+          background: var(--color-bg-elevated) !important;
+          border-bottom: 1px solid var(--color-border-secondary) !important;
+          color: var(--color-text-primary) !important;
+        }
+        .react-flow__controls-button:hover {
+          background: var(--color-surface-hover) !important;
+        }
+        .react-flow__controls-button svg {
+          fill: var(--color-text-primary) !important;
+        }
+      `}</style>
       {/* Headcount summary */}
       <HeadcountBar employees={employees} departments={departments} t={t} />
 
@@ -490,7 +504,6 @@ function OrgChartInner({ employees, departments, onSelectEmployee }: OrgChartPro
         />
         <Select value={filterDept} onChange={setFilterDept} options={deptOptions} size="sm" width={150} />
         <Select value={filterStatus} onChange={setFilterStatus} options={statusOptions} size="sm" width={150} />
-        <div style={{ flex: 1 }} />
         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
           {t('hr.orgChart.dragHint')}
         </span>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  useAttendanceList, useMarkAttendance, useBulkMarkAttendance, useAttendanceToday,
+  useAttendanceList, useMarkAttendance, useBulkMarkAttendance,
   type HrEmployee, type HrAttendanceRecord,
 } from '../../hooks';
 import { Button } from '../../../../components/ui/button';
@@ -16,7 +16,6 @@ export function AttendanceView({ employees }: { employees: HrEmployee[] }) {
   const today = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(today);
   const { data: records, isLoading } = useAttendanceList({ date: selectedDate });
-  const { data: todaySummary } = useAttendanceToday();
   const markAttendance = useMarkAttendance();
   const bulkMark = useBulkMarkAttendance();
   const { canEdit } = useAppActions('hr');
@@ -28,6 +27,16 @@ export function AttendanceView({ employees }: { employees: HrEmployee[] }) {
     const map: Record<string, HrAttendanceRecord> = {};
     for (const r of records || []) map[r.employeeId] = r;
     return map;
+  }, [records]);
+
+  // Summary for the currently selected date — derived from the records
+  // already fetched for that date. Cards stay visible on any date.
+  const dateSummary = useMemo(() => {
+    const counts: Record<string, number> = { present: 0, absent: 0, remote: 0, 'on-leave': 0, 'half-day': 0 };
+    for (const r of records || []) {
+      if (counts[r.status] !== undefined) counts[r.status] += 1;
+    }
+    return counts;
   }, [records]);
 
   const handleMarkAll = () => {
@@ -52,20 +61,18 @@ export function AttendanceView({ employees }: { employees: HrEmployee[] }) {
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-xl)' }}>
       {/* Summary cards */}
-      {selectedDate === today && todaySummary && (
-        <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xl)' }}>
-          {['present', 'absent', 'remote', 'on-leave'].map(s => (
-            <div key={s} style={{ flex: 1, padding: 'var(--spacing-md)', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-              <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: statusColors[s] || 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-                {todaySummary[s] || 0}
-              </div>
-              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', textTransform: 'capitalize' }}>
-                {t(`hr.attendance.${s === 'half-day' ? 'halfDay' : s === 'on-leave' ? 'onLeave' : s}`)}
-              </div>
+      <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xl)' }}>
+        {['present', 'absent', 'remote', 'on-leave'].map(s => (
+          <div key={s} style={{ flex: 1, padding: 'var(--spacing-md)', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: statusColors[s] || 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
+              {dateSummary[s] || 0}
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', textTransform: 'capitalize' }}>
+              {t(`hr.attendance.${s === 'half-day' ? 'halfDay' : s === 'on-leave' ? 'onLeave' : s}`)}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Date picker + actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
