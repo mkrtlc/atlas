@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, HelpCircle } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Check } from 'lucide-react';
+import { isTenantOwner } from '@atlas-platform/shared';
 import { useAuthStore } from '../../stores/auth-store';
 import { useTenantUsers, useMyTenants } from '../../hooks/use-platform';
 import type { TenantMemberRole } from '@atlas-platform/shared';
@@ -63,6 +64,8 @@ export function OrgMemberEditPage() {
   const addToast = useToastStore((s) => s.addToast);
 
   const storeTenantId = useAuthStore((s) => s.tenantId);
+  const currentUserTenantRole = useAuthStore((s) => s.tenantRole);
+  const currentUserIsOwner = isTenantOwner(currentUserTenantRole);
   const { data: tenants } = useMyTenants();
   const tenantId = storeTenantId ?? tenants?.[0]?.id ?? null;
   const { data: users, isLoading: usersLoading } = useTenantUsers(tenantId ?? undefined);
@@ -313,26 +316,35 @@ export function OrgMemberEditPage() {
             Role
           </div>
           <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-            {(['owner', 'admin', 'member'] as TenantMemberRole[]).map((role) => (
-              <button
-                key={role}
-                onClick={() => setDraftRole(role)}
-                style={{
-                  flex: 1,
-                  padding: 'var(--spacing-sm) var(--spacing-md)',
-                  border: `1.5px solid ${draftRole === role ? ROLE_COLORS[role] : 'var(--color-border-primary)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  background: draftRole === role ? `color-mix(in srgb, ${ROLE_COLORS[role]} 8%, transparent)` : 'transparent',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontFamily: 'var(--font-family)',
-                }}
-              >
-                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: draftRole === role ? ROLE_COLORS[role] : 'var(--color-text-primary)', textTransform: 'capitalize' }}>
-                  {role}
-                </div>
-              </button>
-            ))}
+            {(['owner', 'admin', 'member'] as TenantMemberRole[])
+              .filter((role) => role !== 'owner' || currentUserIsOwner)
+              .map((role) => {
+                const isSelected = draftRole === role;
+                return (
+                  <button
+                    key={role}
+                    onClick={() => setDraftRole(role)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-xs)',
+                      padding: 'var(--spacing-sm) var(--spacing-md)',
+                      border: `1.5px solid ${isSelected ? ROLE_COLORS[role] : 'var(--color-border-primary)'}`,
+                      borderRadius: 'var(--radius-md)',
+                      background: isSelected ? `color-mix(in srgb, ${ROLE_COLORS[role]} 8%, transparent)` : 'transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'var(--font-family)',
+                    }}
+                  >
+                    {isSelected && <Check size={14} style={{ color: ROLE_COLORS[role], flexShrink: 0 }} />}
+                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: isSelected ? ROLE_COLORS[role] : 'var(--color-text-primary)', textTransform: 'capitalize' }}>
+                      {role}
+                    </span>
+                  </button>
+                );
+              })}
           </div>
           <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', margin: 'var(--spacing-sm) 0 0', lineHeight: 1.4 }}>
             {ROLE_DESCRIPTIONS[draftRole]}
@@ -376,7 +388,7 @@ export function OrgMemberEditPage() {
               {/* Header */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 160px 160px',
+                gridTemplateColumns: '1fr 210px 210px',
                 gap: 'var(--spacing-sm)',
                 padding: 'var(--spacing-sm) var(--spacing-md)',
                 background: 'var(--color-bg-secondary)',
@@ -423,7 +435,7 @@ export function OrgMemberEditPage() {
                     key={app.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 160px 160px',
+                      gridTemplateColumns: '1fr 210px 210px',
                       gap: 'var(--spacing-sm)',
                       alignItems: 'start',
                       padding: 'var(--spacing-sm) var(--spacing-md)',
@@ -466,7 +478,7 @@ export function OrgMemberEditPage() {
                           { value: 'admin', label: 'Full control' },
                         ]}
                         size="sm"
-                        width={160}
+                        width={210}
                       />
                       <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
                         {APP_ROLE_DESCRIPTIONS[displayRole] ?? ''}
@@ -483,7 +495,7 @@ export function OrgMemberEditPage() {
                         }}
                         options={recordAccessOptions}
                         size="sm"
-                        width={160}
+                        width={210}
                         disabled={!hasAccess || !supportsOwnAccess}
                       />
                       {hasAccess && (
