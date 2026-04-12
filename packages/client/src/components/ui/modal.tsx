@@ -107,7 +107,7 @@ function ModalHeader({ title, subtitle, children }: ModalHeaderProps) {
         <h2
           style={{
             margin: 0,
-            fontSize: 'var(--font-size-xl)',
+            fontSize: 'var(--font-size-lg)',
             fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
             color: 'var(--color-text-primary)',
             fontFamily: 'var(--font-family)',
