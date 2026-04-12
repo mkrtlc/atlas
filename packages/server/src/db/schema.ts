@@ -1764,10 +1764,13 @@ export const projectTimeEntries = pgTable('project_time_entries', {
   endTime: varchar('end_time', { length: 5 }),
   billable: boolean('billable').notNull().default(true),
   billed: boolean('billed').notNull().default(false),
+  paid: boolean('paid').notNull().default(false),
   locked: boolean('locked').notNull().default(false),
   invoiceLineItemId: uuid('invoice_line_item_id'),
+  rateId: uuid('rate_id').references(() => projectRates.id, { onDelete: 'set null' }),
   notes: text('notes'),
   taskDescription: varchar('task_description', { length: 500 }),
+  tags: jsonb('tags').$type<string[]>().notNull().default([]),
   isArchived: boolean('is_archived').notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -1791,10 +1794,26 @@ export const projectSettings = pgTable('project_settings', {
   weekStartDay: varchar('week_start_day', { length: 10 }).notNull().default('monday'),
   defaultProjectVisibility: varchar('default_project_visibility', { length: 10 }).notNull().default('team'),
   defaultBillable: boolean('default_billable').notNull().default(true),
+  timeRounding: integer('time_rounding').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   tenantIdx: uniqueIndex('idx_project_settings_tenant').on(table.tenantId),
+}));
+
+// ─── Projects: Rates ─────────────────────────────────────────────
+export const projectRates = pgTable('project_rates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  title: varchar('title', { length: 200 }).notNull(),
+  factor: real('factor').notNull().default(1),
+  extraPerHour: real('extra_per_hour').notNull().default(0),
+  isArchived: boolean('is_archived').notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  tenantIdx: index('idx_project_rates_tenant').on(table.tenantId),
 }));
 
 // ─── Tenant-wide Format Settings (singleton per tenant) ────────────

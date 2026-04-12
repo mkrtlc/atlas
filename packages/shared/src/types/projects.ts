@@ -58,6 +58,30 @@ export interface ProjectMember {
   userEmail?: string;
 }
 
+// ─── Rate ────────────────────────────────────────────────────────
+export interface ProjectRate {
+  id: string;
+  tenantId: string;
+  title: string;
+  factor: number;
+  extraPerHour: number;
+  isArchived: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRateInput {
+  title: string;
+  factor?: number;
+  extraPerHour?: number;
+}
+
+export interface UpdateRateInput extends Partial<CreateRateInput> {
+  isArchived?: boolean;
+  sortOrder?: number;
+}
+
 // ─── Time Entry ─────────────────────────────────────────────────────
 
 export interface TimeEntry {
@@ -71,10 +95,13 @@ export interface TimeEntry {
   endTime: string | null;
   billable: boolean;
   billed: boolean;
+  paid: boolean;
   locked: boolean;
   invoiceLineItemId: string | null;
+  rateId: string | null;
   notes: string | null;
   taskDescription: string | null;
+  tags: string[];
   isArchived: boolean;
   sortOrder: number;
   createdAt: string;
@@ -83,6 +110,7 @@ export interface TimeEntry {
   projectName?: string;
   projectColor?: string;
   userName?: string;
+  rateName?: string;
 }
 
 export interface CreateTimeEntryInput {
@@ -94,10 +122,13 @@ export interface CreateTimeEntryInput {
   billable?: boolean;
   notes?: string;
   taskDescription?: string;
+  tags?: string[];
+  rateId?: string;
 }
 
 export interface UpdateTimeEntryInput extends Partial<CreateTimeEntryInput> {
   billed?: boolean;
+  paid?: boolean;
   locked?: boolean;
   sortOrder?: number;
   isArchived?: boolean;
@@ -112,6 +143,7 @@ export interface ProjectSettings {
   companyName: string | null;
   companyAddress: string | null;
   companyLogo: string | null;
+  timeRounding: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -121,6 +153,7 @@ export interface UpdateProjectSettingsInput {
   companyName?: string;
   companyAddress?: string;
   companyLogo?: string;
+  timeRounding?: number;
 }
 
 // ─── Reports ────────────────────────────────────────────────────────
@@ -129,9 +162,10 @@ export interface TimeReport {
   totalMinutes: number;
   billableMinutes: number;
   nonBillableMinutes: number;
-  byProject: { projectId: string; projectName: string; minutes: number; billableMinutes: number }[];
+  byProject: { projectId: string; projectName: string; minutes: number; billableMinutes: number; paidMinutes: number }[];
   byUser: { userId: string; userName: string; minutes: number; billableMinutes: number }[];
   byDay: { date: string; minutes: number }[];
+  byTag: { tag: string; minutes: number; billableMinutes: number }[];
 }
 
 export interface RevenueReport {
