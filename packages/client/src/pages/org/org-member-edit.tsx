@@ -480,7 +480,7 @@ export function OrgMemberEditPage() {
                         size="sm"
                         width={210}
                       />
-                      <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
                         {APP_ROLE_DESCRIPTIONS[displayRole] ?? ''}
                       </div>
                     </div>
@@ -499,7 +499,7 @@ export function OrgMemberEditPage() {
                         disabled={!hasAccess || !supportsOwnAccess}
                       />
                       {hasAccess && (
-                        <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
                           {RECORD_ACCESS_DESCRIPTIONS[supportsOwnAccess ? currentAccess : 'all'] ?? ''}
                         </div>
                       )}
@@ -582,7 +582,7 @@ function HeaderWithHelp({
           <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)' }}>
             {label}
           </div>
-          <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-normal)' }}>
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-normal)' }}>
             {subtitle}
           </div>
         </div>
@@ -625,7 +625,7 @@ function HeaderWithHelp({
               <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: 2 }}>
                 {name}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', lineHeight: 1.4 }}>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', lineHeight: 1.4 }}>
                 {desc}
               </div>
             </div>
