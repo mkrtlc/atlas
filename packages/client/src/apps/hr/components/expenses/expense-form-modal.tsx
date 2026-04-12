@@ -17,6 +17,7 @@ import { Select } from '../../../../components/ui/select';
 import { Textarea } from '../../../../components/ui/textarea';
 import { useToastStore } from '../../../../stores/toast-store';
 import { useAuthStore } from '../../../../stores/auth-store';
+import { useTenantFormatSettings } from '../../../../hooks/use-tenant-format-settings';
 import { api } from '../../../../lib/api-client';
 
 interface ExpenseFormModalProps {
@@ -26,10 +27,18 @@ interface ExpenseFormModalProps {
 }
 
 const CURRENCY_OPTIONS = [
-  { value: 'USD', label: 'USD' },
-  { value: 'EUR', label: 'EUR' },
-  { value: 'GBP', label: 'GBP' },
-  { value: 'TRY', label: 'TRY' },
+  { value: 'USD', label: 'USD — $' },
+  { value: 'EUR', label: 'EUR — €' },
+  { value: 'GBP', label: 'GBP — £' },
+  { value: 'JPY', label: 'JPY — ¥' },
+  { value: 'TRY', label: 'TRY — ₺' },
+  { value: 'INR', label: 'INR — ₹' },
+  { value: 'KRW', label: 'KRW — ₩' },
+  { value: 'BRL', label: 'BRL — R$' },
+  { value: 'CHF', label: 'CHF' },
+  { value: 'SEK', label: 'SEK — kr' },
+  { value: 'CAD', label: 'CAD — C$' },
+  { value: 'AUD', label: 'AUD — A$' },
 ];
 
 const PAYMENT_METHOD_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
@@ -55,6 +64,8 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
   // out, instead of letting them hit a confusing error.
   const authAccount = useAuthStore((s) => s.account);
   const { data: employeeList } = useEmployeeList({});
+  const { data: tenantFormats } = useTenantFormatSettings();
+  const defaultCurrency = tenantFormats?.defaultCurrency ?? 'USD';
   const linkedEmployee = employeeList?.employees.find(
     (e) => e.email?.toLowerCase() === authAccount?.email?.toLowerCase(),
   );
@@ -97,13 +108,13 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
         setAmount('');
         setTaxAmount('0');
         setQuantity('1');
-        setCurrency('USD');
+        setCurrency(defaultCurrency);
         setPaymentMethod('personal_card');
         setReceiptPath('');
         setNotes('');
       }
     }
-  }, [open, expense]);
+  }, [open, expense, defaultCurrency]);
 
   const selectedCategory = categories?.find((c) => c.id === categoryId);
   const amountNum = parseFloat(amount) || 0;
