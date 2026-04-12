@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
 import { useTenantUsers, useMyTenants } from '../../hooks/use-platform';
 import type { TenantMemberRole } from '@atlas-platform/shared';
@@ -37,6 +37,18 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   owner: 'Full control. Can manage members, change roles, enable apps, and access everything.',
   admin: 'Can manage members, enable apps, and access everything. Cannot change roles.',
   member: 'Access only the apps and data you assign below.',
+};
+
+const APP_ROLE_DESCRIPTIONS: Record<string, string> = {
+  'no-access': 'App is hidden from the sidebar.',
+  viewer: 'Can see records but cannot create, edit, or delete.',
+  editor: 'Can create, edit, and delete own records. Cannot manage app settings.',
+  admin: 'Full access including settings and all records.',
+};
+
+const RECORD_ACCESS_DESCRIPTIONS: Record<string, string> = {
+  all: 'Can see every record in this app across the team.',
+  own: 'Can only see records they created or are assigned to.',
 };
 
 // ---------------------------------------------------------------------------
@@ -364,15 +376,31 @@ export function OrgMemberEditPage() {
               {/* Header */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 130px 130px',
+                gridTemplateColumns: '1fr 160px 160px',
                 gap: 'var(--spacing-sm)',
                 padding: 'var(--spacing-sm) var(--spacing-md)',
                 background: 'var(--color-bg-secondary)',
                 borderBottom: '1px solid var(--color-border-secondary)',
               }}>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)' }}>App</span>
-                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)' }}>What they can do</span>
-                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)' }}>Which data</span>
+                <HeaderWithHelp
+                  label="Access level"
+                  subtitle="What can they do?"
+                  helpRows={[
+                    ['No access', APP_ROLE_DESCRIPTIONS['no-access']],
+                    ['View only', APP_ROLE_DESCRIPTIONS.viewer],
+                    ['Can edit', APP_ROLE_DESCRIPTIONS.editor],
+                    ['Full control', APP_ROLE_DESCRIPTIONS.admin],
+                  ]}
+                />
+                <HeaderWithHelp
+                  label="Data scope"
+                  subtitle="What can they see?"
+                  helpRows={[
+                    ['All records', RECORD_ACCESS_DESCRIPTIONS.all],
+                    ['Own records only', RECORD_ACCESS_DESCRIPTIONS.own],
+                  ]}
+                />
               </div>
 
               {allApps.map((app, i) => {
@@ -385,19 +413,19 @@ export function OrgMemberEditPage() {
                 const supportsOwnAccess = APPS_SUPPORTING_OWN_RECORD_ACCESS.has(app.id);
                 const recordAccessOptions = supportsOwnAccess
                   ? [
-                      { value: 'all', label: 'Everything' },
-                      { value: 'own', label: 'Only theirs' },
+                      { value: 'all', label: 'All records' },
+                      { value: 'own', label: 'Own records only' },
                     ]
-                  : [{ value: 'all', label: 'Everything' }];
+                  : [{ value: 'all', label: 'All records' }];
 
                 return (
                   <div
                     key={app.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 130px 130px',
+                      gridTemplateColumns: '1fr 160px 160px',
                       gap: 'var(--spacing-sm)',
-                      alignItems: 'center',
+                      alignItems: 'start',
                       padding: 'var(--spacing-sm) var(--spacing-md)',
                       borderBottom: isLast ? 'none' : '1px solid var(--color-border-secondary)',
                       background: hasAccess ? `color-mix(in srgb, ${app.color} 4%, transparent)` : 'transparent',
@@ -421,37 +449,49 @@ export function OrgMemberEditPage() {
                       </span>
                     </div>
 
-                    <Select
-                      value={displayRole}
-                      onChange={(val) => {
-                        if (val === 'no-access') {
-                          setDraftPerms((prev) => { const c = { ...prev }; delete c[app.id]; return c; });
-                        } else {
-                          setDraftPerms((prev) => ({ ...prev, [app.id]: { role: val as AppRole, recordAccess: currentAccess } }));
-                        }
-                      }}
-                      options={[
-                        { value: 'no-access', label: 'No access' },
-                        { value: 'viewer', label: 'View only' },
-                        { value: 'editor', label: 'Can edit' },
-                        { value: 'admin', label: 'Full control' },
-                      ]}
-                      size="sm"
-                      width={130}
-                    />
+                    <div>
+                      <Select
+                        value={displayRole}
+                        onChange={(val) => {
+                          if (val === 'no-access') {
+                            setDraftPerms((prev) => { const c = { ...prev }; delete c[app.id]; return c; });
+                          } else {
+                            setDraftPerms((prev) => ({ ...prev, [app.id]: { role: val as AppRole, recordAccess: currentAccess } }));
+                          }
+                        }}
+                        options={[
+                          { value: 'no-access', label: 'No access' },
+                          { value: 'viewer', label: 'View only' },
+                          { value: 'editor', label: 'Can edit' },
+                          { value: 'admin', label: 'Full control' },
+                        ]}
+                        size="sm"
+                        width={160}
+                      />
+                      <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
+                        {APP_ROLE_DESCRIPTIONS[displayRole] ?? ''}
+                      </div>
+                    </div>
 
-                    <Select
-                      value={supportsOwnAccess ? currentAccess : 'all'}
-                      onChange={(val) => {
-                        if (hasAccess) {
-                          setDraftPerms((prev) => ({ ...prev, [app.id]: { ...prev[app.id], recordAccess: val as AppRecordAccess } }));
-                        }
-                      }}
-                      options={recordAccessOptions}
-                      size="sm"
-                      width={130}
-                      disabled={!hasAccess || !supportsOwnAccess}
-                    />
+                    <div>
+                      <Select
+                        value={supportsOwnAccess ? currentAccess : 'all'}
+                        onChange={(val) => {
+                          if (hasAccess) {
+                            setDraftPerms((prev) => ({ ...prev, [app.id]: { ...prev[app.id], recordAccess: val as AppRecordAccess } }));
+                          }
+                        }}
+                        options={recordAccessOptions}
+                        size="sm"
+                        width={160}
+                        disabled={!hasAccess || !supportsOwnAccess}
+                      />
+                      {hasAccess && (
+                        <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
+                          {RECORD_ACCESS_DESCRIPTIONS[supportsOwnAccess ? currentAccess : 'all'] ?? ''}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -496,6 +536,90 @@ export function OrgMemberEditPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Column header with help popover ──────────────────────────────
+
+function HeaderWithHelp({
+  label,
+  subtitle,
+  helpRows,
+}: {
+  label: string;
+  subtitle: string;
+  helpRows: Array<[string, string]>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div style={{ position: 'relative' }} ref={ref}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div>
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)' }}>
+            {label}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-normal)' }}>
+            {subtitle}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            color: 'var(--color-text-tertiary)',
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <HelpCircle size={12} />
+        </button>
+      </div>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: 4,
+            zIndex: 50,
+            width: 280,
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border-primary)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-lg)',
+            padding: 'var(--spacing-sm)',
+          }}
+        >
+          {helpRows.map(([name, desc]) => (
+            <div key={name} style={{ padding: '6px 8px' }}>
+              <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: 2 }}>
+                {name}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', lineHeight: 1.4 }}>
+                {desc}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
