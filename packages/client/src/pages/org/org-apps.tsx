@@ -31,6 +31,8 @@ const APP_DESC_KEYS: Record<string, string> = {
   docs: 'org.apps.docsDesc',
   draw: 'org.apps.drawDesc',
   projects: 'org.apps.projectsDesc',
+  invoices: 'org.apps.invoicesDesc',
+  calendar: 'org.apps.calendarDesc',
 };
 
 // ---------------------------------------------------------------------------

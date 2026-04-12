@@ -3597,7 +3597,9 @@
       "tasksDesc": "Task management with projects, due dates, priorities, and multiple views.",
       "docsDesc": "Rich text documents with real-time editing, templates, and collaboration.",
       "drawDesc": "Whiteboard and diagramming tool for sketches, flowcharts, and visual ideas.",
-      "projectsDesc": "Time tracking, invoicing, and project management for client work."
+      "projectsDesc": "Project management with time tracking, milestones, and team collaboration.",
+      "invoicesDesc": "Create and send professional invoices. Track payments, manage recurring billing.",
+      "calendarDesc": "Schedule events, manage meetings, and stay organized with shared calendars."
     },
     "manager": "Manager (optional)",
     "managerNone": "None",

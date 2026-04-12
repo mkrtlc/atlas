@@ -3586,15 +3586,17 @@
     "atlasApps": "Applications Atlas",
     "appsDescription": "Activez ou désactivez les applications Atlas intégrées pour votre organisation.",
     "apps": {
-      "crmDesc": "Gérez les deals, contacts et entreprises. Suivez votre pipeline de ventes et concluez plus d'affaires.",
-      "hrDesc": "Gestion des employés, départements, organigrammes, suivi des congés et présences.",
+      "crmDesc": "Gérez les offres, contacts et entreprises. Suivez votre pipeline de vente.",
+      "hrDesc": "Gestion des employés, départements, organigrammes, suivi des congés et présence.",
       "signDesc": "Créez, envoyez et suivez des documents pour signature électronique. Collectez les signatures en toute sécurité.",
-      "driveDesc": "Stockez, organisez et partagez des fichiers. Prévisualisez documents, images et médias.",
+      "driveDesc": "Stockez, organisez et partagez des fichiers. Prévisualisez documents et médias.",
       "tablesDesc": "Tableurs avec formules, tri, filtrage et import/export de données.",
-      "tasksDesc": "Gestion des tâches avec projets, échéances, priorités et vues multiples.",
+      "tasksDesc": "Gestion des tâches avec projets, dates d'échéance, priorités et vues multiples.",
       "docsDesc": "Documents texte enrichi avec édition en temps réel, modèles et collaboration.",
-      "drawDesc": "Tableau blanc et outil de diagramme pour croquis, organigrammes et idées visuelles.",
-      "projectsDesc": "Suivi du temps, facturation et gestion de projet pour le travail client."
+      "drawDesc": "Outil de tableau blanc et de diagrammes pour croquis, organigrammes et idées visuelles.",
+      "projectsDesc": "Gestion de projets avec suivi du temps, jalons et collaboration d'équipe.",
+      "invoicesDesc": "Créez et envoyez des factures professionnelles. Suivez les paiements et la facturation récurrente.",
+      "calendarDesc": "Planifiez des événements, gérez les réunions et restez organisé avec des calendriers partagés."
     },
     "manager": "Responsable (facultatif)",
     "managerNone": "Aucun",
