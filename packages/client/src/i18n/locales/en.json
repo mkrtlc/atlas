@@ -3260,7 +3260,8 @@
       "clients": "Clients",
       "invoices": "Invoices",
       "reports": "Reports",
-      "settings": "Settings"
+      "settings": "Settings",
+      "rates": "Rates"
     },
     "dashboard": {
       "hoursThisWeek": "Hours this week",
@@ -3444,7 +3445,15 @@
       "defaultBillable": "Time entries billable by default",
       "defaultCurrency": "Default currency",
       "inheritedFromFormats": "Inherited from Formats",
-      "editInFormats": "Edit in Formats"
+      "editInFormats": "Edit in Formats",
+      "timeRounding": "Time rounding",
+      "timeRoundingDesc": "Round tracked time to the nearest interval",
+      "roundingOff": "Off",
+      "rounding5": "5 minutes",
+      "rounding10": "10 minutes",
+      "rounding15": "15 minutes",
+      "rounding30": "30 minutes",
+      "rounding60": "1 hour"
     },
     "efatura": {
       "title": "E-fatura",
@@ -3555,6 +3564,33 @@
       "fri": "Fri",
       "sat": "Sat",
       "sun": "Sun"
+    },
+    "rates": {
+      "title": "Rates",
+      "newRate": "New rate",
+      "editRate": "Edit rate",
+      "deleteRate": "Delete rate",
+      "rateTitle": "Rate title",
+      "factor": "Factor",
+      "factorDesc": "Multiplier for the base hourly rate (e.g. 1.5 for overtime)",
+      "extraPerHour": "Extra per hour",
+      "extraPerHourDesc": "Fixed amount added per hour on top of the base rate",
+      "formula": "Formula: Hours × (Base rate × Factor + Extra/h)",
+      "noRates": "No rates defined",
+      "noRatesDesc": "Create custom rates for overtime, weekend, or premium work.",
+      "confirmDelete": "Are you sure you want to delete this rate?"
+    },
+    "tags": {
+      "addTag": "Add tag",
+      "tags": "Tags",
+      "noTags": "No tags"
+    },
+    "billing": {
+      "unbilled": "Unbilled",
+      "billed": "Billed",
+      "paid": "Paid",
+      "markBilled": "Mark as billed",
+      "markPaid": "Mark as paid"
     },
     "placeholder": {
       "email": "client@company.com",

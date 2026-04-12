@@ -3255,7 +3255,8 @@
       "clients": "Müşteriler",
       "invoices": "Faturalar",
       "reports": "Raporlar",
-      "settings": "Ayarlar"
+      "settings": "Ayarlar",
+      "rates": "Ücretler"
     },
     "dashboard": {
       "hoursThisWeek": "Bu hafta saatler",
@@ -3439,7 +3440,15 @@
       "defaultBillable": "Zaman girişleri varsayılan olarak faturalandırılabilir",
       "defaultCurrency": "Varsayılan para birimi",
       "inheritedFromFormats": "Biçimler ayarından devralındı",
-      "editInFormats": "Biçimler ayarında düzenle"
+      "editInFormats": "Biçimler ayarında düzenle",
+      "timeRounding": "Zaman yuvarlama",
+      "timeRoundingDesc": "Kaydedilen süreyi en yakın aralığa yuvarla",
+      "roundingOff": "Kapalı",
+      "rounding5": "5 dakika",
+      "rounding10": "10 dakika",
+      "rounding15": "15 dakika",
+      "rounding30": "30 dakika",
+      "rounding60": "1 saat"
     },
     "efatura": {
       "title": "E-fatura",
@@ -3550,6 +3559,33 @@
       "fri": "Cum",
       "sat": "Cmt",
       "sun": "Paz"
+    },
+    "rates": {
+      "title": "Ücretler",
+      "newRate": "Yeni ücret",
+      "editRate": "Ücret düzenle",
+      "deleteRate": "Ücret sil",
+      "rateTitle": "Ücret başlığı",
+      "factor": "Çarpan",
+      "factorDesc": "Temel saat ücretinin çarpanı (örn. fazla mesai için 1.5)",
+      "extraPerHour": "Saat başı ek ücret",
+      "extraPerHourDesc": "Temel ücrete eklenen sabit saat başı tutar",
+      "formula": "Formül: Saat × (Temel ücret × Çarpan + Ek/saat)",
+      "noRates": "Ücret tanımlanmadı",
+      "noRatesDesc": "Fazla mesai, hafta sonu veya özel çalışmalar için özel ücretler oluşturun.",
+      "confirmDelete": "Bu ücreti silmek istediğinizden emin misiniz?"
+    },
+    "tags": {
+      "addTag": "Etiket ekle",
+      "tags": "Etiketler",
+      "noTags": "Etiket yok"
+    },
+    "billing": {
+      "unbilled": "Faturalanmamış",
+      "billed": "Faturalanmış",
+      "paid": "Ödendi",
+      "markBilled": "Faturalanmış olarak işaretle",
+      "markPaid": "Ödenmiş olarak işaretle"
     },
     "placeholder": {
       "email": "musteri@sirket.com",

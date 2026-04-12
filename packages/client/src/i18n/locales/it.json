@@ -3255,7 +3255,8 @@
       "clients": "Clienti",
       "invoices": "Fatture",
       "reports": "Report",
-      "settings": "Impostazioni"
+      "settings": "Impostazioni",
+      "rates": "Tariffe"
     },
     "dashboard": {
       "hoursThisWeek": "Ore questa settimana",
@@ -3439,7 +3440,15 @@
       "defaultBillable": "Voci di tempo fatturabili per impostazione predefinita",
       "defaultCurrency": "Valuta predefinita",
       "inheritedFromFormats": "Ereditato da Formati",
-      "editInFormats": "Modifica in Formati"
+      "editInFormats": "Modifica in Formati",
+      "timeRounding": "Arrotondamento tempo",
+      "timeRoundingDesc": "Arrotonda il tempo tracciato all'intervallo più vicino",
+      "roundingOff": "Disattivato",
+      "rounding5": "5 minuti",
+      "rounding10": "10 minuti",
+      "rounding15": "15 minuti",
+      "rounding30": "30 minuti",
+      "rounding60": "1 ora"
     },
     "efatura": {
       "title": "E-fatura",
@@ -3550,6 +3559,33 @@
       "fri": "Ven",
       "sat": "Sab",
       "sun": "Dom"
+    },
+    "rates": {
+      "title": "Tariffe",
+      "newRate": "Nuova tariffa",
+      "editRate": "Modifica tariffa",
+      "deleteRate": "Elimina tariffa",
+      "rateTitle": "Titolo tariffa",
+      "factor": "Fattore",
+      "factorDesc": "Moltiplicatore della tariffa oraria base (es. 1,5 per straordinari)",
+      "extraPerHour": "Extra per ora",
+      "extraPerHourDesc": "Importo fisso aggiunto per ora alla tariffa base",
+      "formula": "Formula: Ore × (Tariffa base × Fattore + Extra/h)",
+      "noRates": "Nessuna tariffa definita",
+      "noRatesDesc": "Crea tariffe personalizzate per straordinari, weekend o lavoro premium.",
+      "confirmDelete": "Sei sicuro di voler eliminare questa tariffa?"
+    },
+    "tags": {
+      "addTag": "Aggiungi tag",
+      "tags": "Tag",
+      "noTags": "Nessun tag"
+    },
+    "billing": {
+      "unbilled": "Non fatturato",
+      "billed": "Fatturato",
+      "paid": "Pagato",
+      "markBilled": "Segna come fatturato",
+      "markPaid": "Segna come pagato"
     },
     "placeholder": {
       "email": "cliente@azienda.it",

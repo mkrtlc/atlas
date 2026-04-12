@@ -3255,7 +3255,8 @@
       "clients": "Kunden",
       "invoices": "Rechnungen",
       "reports": "Berichte",
-      "settings": "Einstellungen"
+      "settings": "Einstellungen",
+      "rates": "Tarife"
     },
     "dashboard": {
       "hoursThisWeek": "Stunden diese Woche",
@@ -3439,7 +3440,15 @@
       "defaultBillable": "Zeiteinträge standardmäßig abrechenbar",
       "defaultCurrency": "Standardwährung",
       "inheritedFromFormats": "Von Formaten geerbt",
-      "editInFormats": "In Formaten bearbeiten"
+      "editInFormats": "In Formaten bearbeiten",
+      "timeRounding": "Zeitrundung",
+      "timeRoundingDesc": "Erfasste Zeit auf das nächste Intervall runden",
+      "roundingOff": "Aus",
+      "rounding5": "5 Minuten",
+      "rounding10": "10 Minuten",
+      "rounding15": "15 Minuten",
+      "rounding30": "30 Minuten",
+      "rounding60": "1 Stunde"
     },
     "efatura": {
       "title": "E-Fatura",
@@ -3550,6 +3559,33 @@
       "fri": "Fr",
       "sat": "Sa",
       "sun": "So"
+    },
+    "rates": {
+      "title": "Tarife",
+      "newRate": "Neuer Tarif",
+      "editRate": "Tarif bearbeiten",
+      "deleteRate": "Tarif löschen",
+      "rateTitle": "Tarifbezeichnung",
+      "factor": "Faktor",
+      "factorDesc": "Multiplikator für den Basisstundensatz (z.B. 1,5 für Überstunden)",
+      "extraPerHour": "Zuschlag pro Stunde",
+      "extraPerHourDesc": "Fester Betrag pro Stunde zusätzlich zum Basistarif",
+      "formula": "Formel: Stunden × (Basistarif × Faktor + Zuschlag/h)",
+      "noRates": "Keine Tarife definiert",
+      "noRatesDesc": "Erstellen Sie benutzerdefinierte Tarife für Überstunden, Wochenend- oder Premiumarbeit.",
+      "confirmDelete": "Möchten Sie diesen Tarif wirklich löschen?"
+    },
+    "tags": {
+      "addTag": "Tag hinzufügen",
+      "tags": "Tags",
+      "noTags": "Keine Tags"
+    },
+    "billing": {
+      "unbilled": "Nicht abgerechnet",
+      "billed": "Abgerechnet",
+      "paid": "Bezahlt",
+      "markBilled": "Als abgerechnet markieren",
+      "markPaid": "Als bezahlt markieren"
     },
     "placeholder": {
       "email": "kunde@firma.de",

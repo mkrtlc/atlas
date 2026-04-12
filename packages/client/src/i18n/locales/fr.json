@@ -3255,7 +3255,8 @@
       "clients": "Clients",
       "invoices": "Factures",
       "reports": "Rapports",
-      "settings": "Parametres"
+      "settings": "Parametres",
+      "rates": "Tarifs"
     },
     "dashboard": {
       "hoursThisWeek": "Heures cette semaine",
@@ -3439,7 +3440,15 @@
       "defaultBillable": "Entrées de temps facturables par défaut",
       "defaultCurrency": "Devise par défaut",
       "inheritedFromFormats": "Hérité des Formats",
-      "editInFormats": "Modifier dans les Formats"
+      "editInFormats": "Modifier dans les Formats",
+      "timeRounding": "Arrondi du temps",
+      "timeRoundingDesc": "Arrondir le temps suivi à l'intervalle le plus proche",
+      "roundingOff": "Désactivé",
+      "rounding5": "5 minutes",
+      "rounding10": "10 minutes",
+      "rounding15": "15 minutes",
+      "rounding30": "30 minutes",
+      "rounding60": "1 heure"
     },
     "efatura": {
       "title": "E-fatura",
@@ -3550,6 +3559,33 @@
       "fri": "Ven",
       "sat": "Sam",
       "sun": "Dim"
+    },
+    "rates": {
+      "title": "Tarifs",
+      "newRate": "Nouveau tarif",
+      "editRate": "Modifier le tarif",
+      "deleteRate": "Supprimer le tarif",
+      "rateTitle": "Titre du tarif",
+      "factor": "Facteur",
+      "factorDesc": "Multiplicateur du taux horaire de base (ex. 1,5 pour les heures supplémentaires)",
+      "extraPerHour": "Supplément par heure",
+      "extraPerHourDesc": "Montant fixe ajouté par heure en plus du tarif de base",
+      "formula": "Formule : Heures × (Tarif de base × Facteur + Supplément/h)",
+      "noRates": "Aucun tarif défini",
+      "noRatesDesc": "Créez des tarifs personnalisés pour les heures supplémentaires, le week-end ou le travail premium.",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce tarif ?"
+    },
+    "tags": {
+      "addTag": "Ajouter un tag",
+      "tags": "Tags",
+      "noTags": "Aucun tag"
+    },
+    "billing": {
+      "unbilled": "Non facturé",
+      "billed": "Facturé",
+      "paid": "Payé",
+      "markBilled": "Marquer comme facturé",
+      "markPaid": "Marquer comme payé"
     },
     "placeholder": {
       "email": "client@entreprise.fr",
