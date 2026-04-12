@@ -79,7 +79,11 @@ export function ExpensesTabs({ searchQuery = '' }: ExpensesTabsProps) {
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  // When opening the form to edit an existing expense, stash it here.
+  // When creating new, stays null.
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const { data: selectedExpense } = useExpense(selectedExpenseId ?? undefined);
+  const { data: editingExpense } = useExpense(editingExpenseId ?? undefined);
 
   // Resolve the active tab: URL > localStorage > default 'my-expenses'.
   const urlTab = searchParams.get('tab') as ExpenseTabId | null;
@@ -165,13 +169,23 @@ export function ExpensesTabs({ searchQuery = '' }: ExpensesTabsProps) {
 
       {/* Modals + side panels — local to the Expenses tabs view */}
       {showExpenseForm && (
-        <ExpenseFormModal open={showExpenseForm} onClose={() => setShowExpenseForm(false)} />
+        <ExpenseFormModal
+          open={showExpenseForm}
+          onClose={() => {
+            setShowExpenseForm(false);
+            setEditingExpenseId(null);
+          }}
+          expense={editingExpense ?? null}
+        />
       )}
       {selectedExpenseId && selectedExpense && (
         <ExpenseDetailPanel
           expense={selectedExpense}
           onClose={() => setSelectedExpenseId(null)}
-          onEdit={() => setShowExpenseForm(true)}
+          onEdit={() => {
+            setEditingExpenseId(selectedExpenseId);
+            setShowExpenseForm(true);
+          }}
         />
       )}
     </div>

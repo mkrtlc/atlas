@@ -10,6 +10,7 @@ import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { Badge } from '../../../../components/ui/badge';
 import { IconButton } from '../../../../components/ui/icon-button';
+import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
 import { Skeleton } from '../../../../components/ui/skeleton';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
@@ -30,6 +31,7 @@ export function ExpenseCategoriesView() {
   const [color, setColor] = useState('#3b82f6');
   const [maxAmount, setMaxAmount] = useState('');
   const [receiptRequired, setReceiptRequired] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Auto-seed on first visit when empty
   const hasSeeded = useRef(false);
@@ -220,7 +222,7 @@ export function ExpenseCategoriesView() {
                     label={t('common.delete')}
                     size={26}
                     destructive
-                    onClick={() => deleteCategory.mutate(cat.id)}
+                    onClick={() => setPendingDeleteId(cat.id)}
                   />
                 )}
               </div>
@@ -300,6 +302,19 @@ export function ExpenseCategoriesView() {
           </Button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}
+        title={t('hr.expenses.categories.confirmDeleteTitle')}
+        description={t('hr.expenses.categories.confirmDeleteDesc')}
+        confirmLabel={t('common.delete')}
+        destructive
+        onConfirm={() => {
+          if (pendingDeleteId) deleteCategory.mutate(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 }

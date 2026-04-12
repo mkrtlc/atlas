@@ -2689,7 +2689,9 @@
         "required": "Gerekli",
         "namePlaceholder": "Kategori adı",
         "maxAmountPlaceholder": "Limit yok",
-        "requireReceipt": "Fiş gerekli"
+        "requireReceipt": "Fiş gerekli",
+        "confirmDeleteTitle": "Kategoriyi sil?",
+        "confirmDeleteDesc": "Bu kategori altında dosyalanmış giderler korunacak ancak yeni giderler için bu kategori seçilemeyecek."
       },
       "detail": {
         "expenseDetail": "Harcama detayı",
@@ -2699,7 +2701,9 @@
         "policyViolation": "Politika ihlali",
         "refuseComment": "Ret nedeni",
         "refuseCommentPlaceholder": "Nedenini girin..."
-      }
+      },
+      "confirmDeleteTitle": "Gideri sil?",
+      "confirmDeleteDesc": "Bu gider kalıcı olarak kaldırılacak. Bu işlem geri alınamaz."
     },
     "readOnlyNotice": "Salt okunur görünüm — değişiklik için İK yöneticinizle iletişime geçin."
   },

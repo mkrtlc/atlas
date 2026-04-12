@@ -2689,7 +2689,9 @@
         "required": "Requis",
         "namePlaceholder": "Nom de la catégorie",
         "maxAmountPlaceholder": "Pas de limite",
-        "requireReceipt": "Reçu requis"
+        "requireReceipt": "Reçu requis",
+        "confirmDeleteTitle": "Supprimer la catégorie ?",
+        "confirmDeleteDesc": "Les dépenses déjà enregistrées dans cette catégorie seront conservées, mais la catégorie ne sera plus sélectionnable pour les nouvelles dépenses."
       },
       "detail": {
         "expenseDetail": "Détail de la dépense",
@@ -2699,7 +2701,9 @@
         "policyViolation": "Violation de politique",
         "refuseComment": "Motif du refus",
         "refuseCommentPlaceholder": "Saisissez le motif..."
-      }
+      },
+      "confirmDeleteTitle": "Supprimer la dépense ?",
+      "confirmDeleteDesc": "Cette dépense sera définitivement supprimée. Cette action est irréversible."
     },
     "readOnlyNotice": "Vue en lecture seule — contactez votre administrateur RH pour effectuer des modifications."
   },

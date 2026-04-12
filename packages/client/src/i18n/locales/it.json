@@ -2689,7 +2689,9 @@
         "required": "Richiesta",
         "namePlaceholder": "Nome della categoria",
         "maxAmountPlaceholder": "Nessun limite",
-        "requireReceipt": "Richiedi ricevuta"
+        "requireReceipt": "Richiedi ricevuta",
+        "confirmDeleteTitle": "Eliminare la categoria?",
+        "confirmDeleteDesc": "Le spese già registrate in questa categoria verranno mantenute, ma la categoria non sarà più selezionabile per nuove spese."
       },
       "detail": {
         "expenseDetail": "Dettaglio spesa",
@@ -2699,7 +2701,9 @@
         "policyViolation": "Violazione della politica",
         "refuseComment": "Motivo del rifiuto",
         "refuseCommentPlaceholder": "Inserisci il motivo..."
-      }
+      },
+      "confirmDeleteTitle": "Eliminare la spesa?",
+      "confirmDeleteDesc": "Questa spesa verrà rimossa definitivamente. L'operazione non può essere annullata."
     },
     "readOnlyNotice": "Vista di sola lettura — contatta il tuo amministratore HR per apportare modifiche."
   },

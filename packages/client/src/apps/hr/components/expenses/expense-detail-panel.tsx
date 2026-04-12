@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   X, Edit2, Send, Trash2, RotateCcw, AlertTriangle, ExternalLink,
@@ -7,6 +8,7 @@ import { useSubmitExpense, useRecallExpense, useDeleteExpense } from '../../hook
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { IconButton } from '../../../../components/ui/icon-button';
+import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
 import { StatusTimeline } from '../../../../components/shared/status-timeline';
 import { formatDate, formatCurrency } from '../../../../lib/format';
 import { useToastStore } from '../../../../stores/toast-store';
@@ -34,6 +36,7 @@ export function ExpenseDetailPanel({ expense, onClose, onEdit }: ExpenseDetailPa
   const recallExpense = useRecallExpense();
   const deleteExpense = useDeleteExpense();
   const addToast = useToastStore((s) => s.addToast);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const timelineSteps = [
     { label: t('hr.expenses.status.draft'), timestamp: expense.createdAt ? formatDate(expense.createdAt) : null },
@@ -59,12 +62,20 @@ export function ExpenseDetailPanel({ expense, onClose, onEdit }: ExpenseDetailPa
   };
 
   const handleDelete = () => {
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDelete = () => {
     deleteExpense.mutate(expense.id, {
       onSuccess: () => {
         addToast({ type: 'success', message: t('hr.expenses.deleted') });
+        setConfirmDeleteOpen(false);
         onClose();
       },
-      onError: () => addToast({ type: 'error', message: t('hr.expenses.deleteFailed') }),
+      onError: () => {
+        addToast({ type: 'error', message: t('hr.expenses.deleteFailed') });
+        setConfirmDeleteOpen(false);
+      },
     });
   };
 
@@ -388,6 +399,17 @@ export function ExpenseDetailPanel({ expense, onClose, onEdit }: ExpenseDetailPa
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title={t('hr.expenses.confirmDeleteTitle')}
+        description={t('hr.expenses.confirmDeleteDesc')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

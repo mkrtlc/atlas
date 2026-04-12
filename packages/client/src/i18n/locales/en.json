@@ -2721,7 +2721,9 @@
         "required": "Required",
         "namePlaceholder": "Category name",
         "maxAmountPlaceholder": "No limit",
-        "requireReceipt": "Require receipt"
+        "requireReceipt": "Require receipt",
+        "confirmDeleteTitle": "Delete category?",
+        "confirmDeleteDesc": "Expenses already filed under this category will be preserved but the category will no longer be selectable for new expenses."
       },
       "detail": {
         "expenseDetail": "Expense detail",
@@ -2731,7 +2733,9 @@
         "policyViolation": "Policy violation",
         "refuseComment": "Reason for refusal",
         "refuseCommentPlaceholder": "Enter reason..."
-      }
+      },
+      "confirmDeleteTitle": "Delete expense?",
+      "confirmDeleteDesc": "This expense will be permanently removed. This cannot be undone."
     },
     "readOnlyNotice": "Read-only view — contact your HR admin to make changes."
   },

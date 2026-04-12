@@ -2689,7 +2689,9 @@
         "required": "Erforderlich",
         "namePlaceholder": "Kategoriename",
         "maxAmountPlaceholder": "Kein Limit",
-        "requireReceipt": "Beleg erforderlich"
+        "requireReceipt": "Beleg erforderlich",
+        "confirmDeleteTitle": "Kategorie löschen?",
+        "confirmDeleteDesc": "Bereits unter dieser Kategorie erfasste Ausgaben bleiben erhalten, aber die Kategorie kann für neue Ausgaben nicht mehr ausgewählt werden."
       },
       "detail": {
         "expenseDetail": "Ausgabendetail",
@@ -2699,7 +2701,9 @@
         "policyViolation": "Richtlinienverstoß",
         "refuseComment": "Ablehnungsgrund",
         "refuseCommentPlaceholder": "Grund eingeben..."
-      }
+      },
+      "confirmDeleteTitle": "Ausgabe löschen?",
+      "confirmDeleteDesc": "Diese Ausgabe wird dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden."
     },
     "readOnlyNotice": "Schreibgeschützte Ansicht — wenden Sie sich an Ihren HR-Admin für Änderungen."
   },
