@@ -64,7 +64,12 @@ function persistRefreshedTokens(newAccessToken: string, newRefreshToken?: string
  * The modal's "Sign back in" button calls logout() to complete the redirect.
  */
 function handleAuthFailure() {
-  useAuthStore.getState().setSessionExpired(true);
+  // Only show the expired modal if the user was previously authenticated.
+  // After a deliberate logout, isAuthenticated is false and we should not
+  // flash the "session expired" screen on the login page.
+  if (useAuthStore.getState().isAuthenticated) {
+    useAuthStore.getState().setSessionExpired(true);
+  }
 }
 
 api.interceptors.response.use(
