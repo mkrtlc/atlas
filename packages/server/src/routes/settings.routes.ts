@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { eq } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../config/database';
-import { userSettings, crmDeals, crmContacts, crmCompanies, crmLeads, crmActivities, crmNotes, crmWorkflows, crmLeadForms } from '../db/schema';
+import { userSettings, tenantFormatSettings, crmDeals, crmContacts, crmCompanies, crmLeads, crmActivities, crmNotes, crmWorkflows, crmLeadForms } from '../db/schema';
 import { employees, departments } from '../db/schema';
 import { settingsSchema } from '@atlas-platform/shared';
 import { encrypt, decrypt } from '../utils/crypto';
@@ -204,6 +204,56 @@ router.post('/ai/test', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error({ error }, 'Failed to test AI key');
     res.status(500).json({ success: false, error: 'Failed to test AI key' });
+  }
+});
+
+// ─── Tenant-wide Format Settings ───────────────────────────────────
+// Shared across apps. defaultCurrency is read by Projects, Invoices, etc.
+// Read: any authenticated tenant member. Write: tenant admin or owner.
+
+async function getOrCreateTenantFormatSettings(tenantId: string) {
+  const [existing] = await db.select().from(tenantFormatSettings)
+    .where(eq(tenantFormatSettings.tenantId, tenantId)).limit(1);
+  if (existing) return existing;
+  const [created] = await db.insert(tenantFormatSettings)
+    .values({ tenantId }).returning();
+  return created;
+}
+
+router.get('/formats-tenant', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.auth!.tenantId;
+    if (!tenantId) { res.status(400).json({ success: false, error: 'Tenant context required' }); return; }
+    const settings = await getOrCreateTenantFormatSettings(tenantId);
+    res.json({ success: true, data: settings });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get tenant format settings');
+    res.status(500).json({ success: false, error: 'Failed to get tenant format settings' });
+  }
+});
+
+router.put('/formats-tenant', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.auth!.tenantId;
+    if (!tenantId) { res.status(400).json({ success: false, error: 'Tenant context required' }); return; }
+    if (req.auth?.tenantRole !== 'owner' && req.auth?.tenantRole !== 'admin') {
+      res.status(403).json({ success: false, error: 'Admin access required' });
+      return;
+    }
+    const { defaultCurrency } = req.body;
+    if (typeof defaultCurrency !== 'string' || defaultCurrency.length > 10) {
+      res.status(400).json({ success: false, error: 'defaultCurrency required' });
+      return;
+    }
+    await getOrCreateTenantFormatSettings(tenantId);
+    const [updated] = await db.update(tenantFormatSettings)
+      .set({ defaultCurrency, updatedAt: new Date() })
+      .where(eq(tenantFormatSettings.tenantId, tenantId))
+      .returning();
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error({ error }, 'Failed to update tenant format settings');
+    res.status(500).json({ success: false, error: 'Failed to update tenant format settings' });
   }
 });
 

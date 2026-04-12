@@ -43,8 +43,8 @@ export const tasksManifest: ClientAppManifest = {
     color: '#6366f1',
     panels: [
       { id: 'general', label: 'General', icon: Settings, component: TasksGeneralPanel, adminOnly: true },
-      { id: 'appearance', label: 'Appearance', icon: Eye, component: TasksAppearancePanel, adminOnly: true },
-      { id: 'behavior', label: 'Behavior', icon: Zap, component: TasksBehaviorPanel, adminOnly: true },
+      { id: 'appearance', label: 'Appearance', icon: Eye, component: TasksAppearancePanel },
+      { id: 'behavior', label: 'Behavior', icon: Zap, component: TasksBehaviorPanel },
     ],
   },
 };

@@ -34,3 +34,8 @@ export {
   deleteTemplate,
   seedStarterTemplates,
 } from './controllers/fields-public.controller';
+
+export {
+  getSettings,
+  updateSettings,
+} from './controllers/settings.controller';

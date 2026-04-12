@@ -45,6 +45,12 @@ router.use(requireAppPermission('sign'));
 // ─── Widget (lightweight summary for home dashboard) ────────────────
 router.get('/widget', signController.getWidgetData);
 
+// ─── Settings (tenant-wide) ─────────────────────────────────────────
+// Must be declared before the `/:id` document routes so that the literal
+// "settings" path never gets matched as a document id.
+router.get('/settings', signController.getSettings);
+router.patch('/settings', signController.updateSettings);
+
 // ─── Seed ──────────────────────────────────────────────────────────
 router.post('/seed', signController.seedSampleData);
 

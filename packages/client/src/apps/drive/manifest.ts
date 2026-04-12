@@ -30,8 +30,8 @@ export const driveManifest: ClientAppManifest = {
     color: '#64748b',
     panels: [
       { id: 'general', label: 'General', icon: Settings, component: DriveGeneralPanel, adminOnly: true },
-      { id: 'display', label: 'Display', icon: Eye, component: DriveDisplayPanel, adminOnly: true },
-      { id: 'files', label: 'Files', icon: File, component: DriveFilesPanel, adminOnly: true },
+      { id: 'display', label: 'Display', icon: Eye, component: DriveDisplayPanel },
+      { id: 'files', label: 'Files', icon: File, component: DriveFilesPanel },
     ],
   },
 };

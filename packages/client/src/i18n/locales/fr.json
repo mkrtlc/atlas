@@ -400,7 +400,11 @@
     "monday": "Lundi",
     "ai": "Intelligence artificielle",
     "font": "Police",
-    "fontDescription": "Choisissez la police utilisée dans l'application"
+    "fontDescription": "Choisissez la police utilisée dans l'application",
+    "tenantDefaults": "Valeurs par défaut du locataire",
+    "tenantDefaultsDesc": "Valeurs partagées entre tous les utilisateurs et applications de ce locataire",
+    "tenantDefaultCurrency": "Devise par défaut",
+    "tenantDefaultCurrencyDesc": "Utilisée par Projets, Factures et les autres applications qui suivent l'argent"
   },
   "shortcuts": {
     "nextConversation": "Conversation suivante",
@@ -2956,7 +2960,14 @@
     "widgetTitle": "Accords",
     "widgetAwaiting": "en attente de signature",
     "widgetCompleted": "terminé",
-    "widgetDraft": "brouillon"
+    "widgetDraft": "brouillon",
+    "settings": {
+      "general": "Général",
+      "reminderCadence": "Fréquence de rappel",
+      "reminderCadenceHelp": "Jours entre les rappels de signature",
+      "signatureExpiry": "Expiration de la signature",
+      "signatureExpiryHelp": "Jours avant l'expiration des signatures en attente"
+    }
   },
   "system": {
     "title": "Système",
@@ -3307,16 +3318,17 @@
       "revenueVsCost": "Revenus vs coûts"
     },
     "settings": {
-      "projectSettings": "Paramètres du projet",
-      "invoicePrefix": "Prefixe de facture",
-      "invoicePrefixDesc": "Prefixe pour les numeros de facture automatiques",
-      "defaultHourlyRate": "Taux horaire par defaut",
-      "defaultHourlyRateDesc": "Taux par defaut pour les nouveaux projets",
-      "companyInfo": "Informations de l'entreprise",
-      "companyName": "Nom de l'entreprise",
-      "companyNameDesc": "Apparait sur les factures",
-      "companyAddress": "Adresse de l'entreprise",
-      "companyAddressDesc": "Apparait sur les factures"
+      "general": "Général",
+      "weekStartDay": "Début de semaine",
+      "weekStartMonday": "Lundi",
+      "weekStartSunday": "Dimanche",
+      "defaultVisibility": "Visibilité par défaut du projet",
+      "visibilityTeam": "Équipe",
+      "visibilityPrivate": "Privé",
+      "defaultBillable": "Entrées de temps facturables par défaut",
+      "defaultCurrency": "Devise par défaut",
+      "inheritedFromFormats": "Hérité des Formats",
+      "editInFormats": "Modifier dans les Formats"
     },
     "efatura": {
       "title": "E-fatura",

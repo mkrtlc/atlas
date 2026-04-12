@@ -400,7 +400,11 @@
     "monday": "Montag",
     "ai": "Künstliche Intelligenz",
     "font": "Schriftart",
-    "fontDescription": "Wählen Sie die Schriftart für die gesamte Anwendung"
+    "fontDescription": "Wählen Sie die Schriftart für die gesamte Anwendung",
+    "tenantDefaults": "Mandant-Standardwerte",
+    "tenantDefaultsDesc": "Werte, die von allen Benutzern und Apps in diesem Mandanten geteilt werden",
+    "tenantDefaultCurrency": "Standardwährung",
+    "tenantDefaultCurrencyDesc": "Wird von Projekte, Rechnungen und anderen Apps verwendet, die Geld verfolgen"
   },
   "shortcuts": {
     "nextConversation": "Nächste Konversation",
@@ -2956,7 +2960,14 @@
     "widgetTitle": "Vereinbarungen",
     "widgetAwaiting": "warten auf Unterschrift",
     "widgetCompleted": "abgeschlossen",
-    "widgetDraft": "Entwurf"
+    "widgetDraft": "Entwurf",
+    "settings": {
+      "general": "Allgemein",
+      "reminderCadence": "Erinnerungsrhythmus",
+      "reminderCadenceHelp": "Tage zwischen Signaturerinnerungen",
+      "signatureExpiry": "Signaturablauf",
+      "signatureExpiryHelp": "Tage bis ausstehende Signaturen ablaufen"
+    }
   },
   "system": {
     "title": "System",
@@ -3307,16 +3318,17 @@
       "revenueVsCost": "Umsatz vs. Kosten"
     },
     "settings": {
-      "projectSettings": "Projekteinstellungen",
-      "invoicePrefix": "Rechnungspraefix",
-      "invoicePrefixDesc": "Praefix fur automatische Rechnungsnummern",
-      "defaultHourlyRate": "Standard-Stundensatz",
-      "defaultHourlyRateDesc": "Standardsatz fur neue Projekte",
-      "companyInfo": "Unternehmensinformationen",
-      "companyName": "Firmenname",
-      "companyNameDesc": "Erscheint auf Rechnungen",
-      "companyAddress": "Firmenadresse",
-      "companyAddressDesc": "Erscheint auf Rechnungen"
+      "general": "Allgemein",
+      "weekStartDay": "Woche beginnt am",
+      "weekStartMonday": "Montag",
+      "weekStartSunday": "Sonntag",
+      "defaultVisibility": "Standardsichtbarkeit für Projekte",
+      "visibilityTeam": "Team",
+      "visibilityPrivate": "Privat",
+      "defaultBillable": "Zeiteinträge standardmäßig abrechenbar",
+      "defaultCurrency": "Standardwährung",
+      "inheritedFromFormats": "Von Formaten geerbt",
+      "editInFormats": "In Formaten bearbeiten"
     },
     "efatura": {
       "title": "E-Fatura",

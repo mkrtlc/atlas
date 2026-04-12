@@ -1830,10 +1830,41 @@ export const projectSettings = pgTable('project_settings', {
   companyName: varchar('company_name', { length: 500 }),
   companyAddress: text('company_address'),
   companyLogo: text('company_logo'),
+  // Tenant-wide defaults exposed in the Projects → General settings panel.
+  weekStartDay: varchar('week_start_day', { length: 10 }).notNull().default('monday'),
+  defaultProjectVisibility: varchar('default_project_visibility', { length: 10 }).notNull().default('team'),
+  defaultBillable: boolean('default_billable').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   tenantIdx: uniqueIndex('idx_project_settings_tenant').on(table.tenantId),
+}));
+
+// ─── Tenant-wide Format Settings (singleton per tenant) ────────────
+// This is a minimal tenant-level settings bucket used for values that need
+// to be shared across apps (e.g. defaultCurrency read by Projects/Invoices).
+// User-scoped formatting lives on user_settings; this table is explicitly
+// tenant-wide so every user in the tenant sees the same value.
+export const tenantFormatSettings = pgTable('tenant_format_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  defaultCurrency: varchar('default_currency', { length: 10 }).notNull().default('USD'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  tenantIdx: uniqueIndex('idx_tenant_format_settings_tenant').on(table.tenantId),
+}));
+
+// ─── Sign: Settings ────────────────────────────────────────────────
+export const signSettings = pgTable('sign_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  reminderCadenceDays: integer('reminder_cadence_days').notNull().default(3),
+  signatureExpiryDays: integer('signature_expiry_days').notNull().default(30),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  tenantIdx: uniqueIndex('idx_sign_settings_tenant').on(table.tenantId),
 }));
 
 // ─── Invoices ──────────────────────────────────────────────────────

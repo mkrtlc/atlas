@@ -40,7 +40,7 @@ export const hrManifest: ClientAppManifest = {
     color: '#10b981',
     panels: [
       { id: 'general', label: 'General', icon: Settings, component: HrGeneralPanel, adminOnly: true },
-      { id: 'appearance', label: 'Appearance', icon: Eye, component: HrAppearancePanel, adminOnly: true },
+      { id: 'appearance', label: 'Appearance', icon: Eye, component: HrAppearancePanel },
     ],
   },
 };

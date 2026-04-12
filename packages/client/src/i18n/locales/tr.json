@@ -400,7 +400,11 @@
     "monday": "Pazartesi",
     "ai": "Yapay Zeka",
     "font": "Yazı tipi",
-    "fontDescription": "Uygulama genelinde kullanılan yazı tipini seçin"
+    "fontDescription": "Uygulama genelinde kullanılan yazı tipini seçin",
+    "tenantDefaults": "Kiracı varsayılanları",
+    "tenantDefaultsDesc": "Bu kiracıdaki tüm kullanıcılar ve uygulamalar arasında paylaşılan değerler",
+    "tenantDefaultCurrency": "Varsayılan para birimi",
+    "tenantDefaultCurrencyDesc": "Para izleyen Projeler, Faturalar ve diğer uygulamalar tarafından kullanılır"
   },
   "shortcuts": {
     "nextConversation": "Sonraki görüşme",
@@ -2956,7 +2960,14 @@
     "widgetTitle": "Sözleşmeler",
     "widgetAwaiting": "imza bekliyor",
     "widgetCompleted": "tamamlandı",
-    "widgetDraft": "taslak"
+    "widgetDraft": "taslak",
+    "settings": {
+      "general": "Genel",
+      "reminderCadence": "Hatırlatma sıklığı",
+      "reminderCadenceHelp": "İmza hatırlatmaları arasındaki gün sayısı",
+      "signatureExpiry": "İmza süresi dolumu",
+      "signatureExpiryHelp": "Bekleyen imzaların süresinin dolması için gün sayısı"
+    }
   },
   "system": {
     "title": "Sistem",
@@ -3307,16 +3318,17 @@
       "revenueVsCost": "Gelir ve maliyet"
     },
     "settings": {
-      "projectSettings": "Proje ayarları",
-      "invoicePrefix": "Fatura ön eki",
-      "invoicePrefixDesc": "Otomatik fatura numaraları için ön ek",
-      "defaultHourlyRate": "Varsayılan saatlik ücret",
-      "defaultHourlyRateDesc": "Yeni projeler için varsayılan ücret",
-      "companyInfo": "Şirket bilgileri",
-      "companyName": "Şirket adı",
-      "companyNameDesc": "Faturalarda görünür",
-      "companyAddress": "Şirket adresi",
-      "companyAddressDesc": "Faturalarda görünür"
+      "general": "Genel",
+      "weekStartDay": "Hafta başlangıcı",
+      "weekStartMonday": "Pazartesi",
+      "weekStartSunday": "Pazar",
+      "defaultVisibility": "Varsayılan proje görünürlüğü",
+      "visibilityTeam": "Takım",
+      "visibilityPrivate": "Özel",
+      "defaultBillable": "Zaman girişleri varsayılan olarak faturalandırılabilir",
+      "defaultCurrency": "Varsayılan para birimi",
+      "inheritedFromFormats": "Biçimler ayarından devralındı",
+      "editInFormats": "Biçimler ayarında düzenle"
     },
     "efatura": {
       "title": "E-fatura",

@@ -400,7 +400,11 @@
     "monday": "Lunedì",
     "ai": "Intelligenza artificiale",
     "font": "Carattere",
-    "fontDescription": "Scegli il carattere utilizzato nell'applicazione"
+    "fontDescription": "Scegli il carattere utilizzato nell'applicazione",
+    "tenantDefaults": "Impostazioni predefinite del tenant",
+    "tenantDefaultsDesc": "Valori condivisi tra tutti gli utenti e le app di questo tenant",
+    "tenantDefaultCurrency": "Valuta predefinita",
+    "tenantDefaultCurrencyDesc": "Utilizzato da Progetti, Fatture e altre app che tracciano denaro"
   },
   "shortcuts": {
     "nextConversation": "Conversazione successiva",
@@ -2956,7 +2960,14 @@
     "widgetTitle": "Accordi",
     "widgetAwaiting": "in attesa di firma",
     "widgetCompleted": "completato",
-    "widgetDraft": "bozza"
+    "widgetDraft": "bozza",
+    "settings": {
+      "general": "Generale",
+      "reminderCadence": "Frequenza promemoria",
+      "reminderCadenceHelp": "Giorni tra i promemoria di firma",
+      "signatureExpiry": "Scadenza firma",
+      "signatureExpiryHelp": "Giorni prima che le firme in sospeso scadano"
+    }
   },
   "system": {
     "title": "Sistema",
@@ -3307,16 +3318,17 @@
       "revenueVsCost": "Ricavi vs costi"
     },
     "settings": {
-      "projectSettings": "Impostazioni progetto",
-      "invoicePrefix": "Prefisso fattura",
-      "invoicePrefixDesc": "Prefisso per i numeri fattura generati automaticamente",
-      "defaultHourlyRate": "Tariffa oraria predefinita",
-      "defaultHourlyRateDesc": "Tariffa predefinita per i nuovi progetti",
-      "companyInfo": "Informazioni aziendali",
-      "companyName": "Nome azienda",
-      "companyNameDesc": "Visualizzato sulle fatture",
-      "companyAddress": "Indirizzo azienda",
-      "companyAddressDesc": "Visualizzato sulle fatture"
+      "general": "Generale",
+      "weekStartDay": "Inizio settimana",
+      "weekStartMonday": "Lunedì",
+      "weekStartSunday": "Domenica",
+      "defaultVisibility": "Visibilità predefinita del progetto",
+      "visibilityTeam": "Team",
+      "visibilityPrivate": "Privato",
+      "defaultBillable": "Voci di tempo fatturabili per impostazione predefinita",
+      "defaultCurrency": "Valuta predefinita",
+      "inheritedFromFormats": "Ereditato da Formati",
+      "editInFormats": "Modifica in Formati"
     },
     "efatura": {
       "title": "E-fatura",

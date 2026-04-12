@@ -400,7 +400,11 @@
     "weekStartsOn": "Week starts on",
     "weekStartsOnDesc": "First day of the week in calendars",
     "sunday": "Sunday",
-    "monday": "Monday"
+    "monday": "Monday",
+    "tenantDefaults": "Tenant defaults",
+    "tenantDefaultsDesc": "Values shared across all users and apps in this tenant",
+    "tenantDefaultCurrency": "Default currency",
+    "tenantDefaultCurrencyDesc": "Used by Projects, Invoices and other apps that track money"
   },
   "shortcuts": {
     "nextConversation": "Next conversation",
@@ -2988,7 +2992,14 @@
     "widgetTitle": "Agreements",
     "widgetAwaiting": "awaiting signature",
     "widgetCompleted": "completed",
-    "widgetDraft": "draft"
+    "widgetDraft": "draft",
+    "settings": {
+      "general": "General",
+      "reminderCadence": "Reminder cadence",
+      "reminderCadenceHelp": "Days between signature reminders",
+      "signatureExpiry": "Signature expiry",
+      "signatureExpiryHelp": "Days before pending signatures expire"
+    }
   },
   "system": {
     "title": "System",
@@ -3312,16 +3323,17 @@
       "revenueVsCost": "Revenue vs cost"
     },
     "settings": {
-      "projectSettings": "Project settings",
-      "invoicePrefix": "Invoice prefix",
-      "invoicePrefixDesc": "Prefix for auto-generated invoice numbers",
-      "defaultHourlyRate": "Default hourly rate",
-      "defaultHourlyRateDesc": "Default rate for new projects",
-      "companyInfo": "Company information",
-      "companyName": "Company name",
-      "companyNameDesc": "Appears on invoices",
-      "companyAddress": "Company address",
-      "companyAddressDesc": "Appears on invoices"
+      "general": "General",
+      "weekStartDay": "Week starts on",
+      "weekStartMonday": "Monday",
+      "weekStartSunday": "Sunday",
+      "defaultVisibility": "Default project visibility",
+      "visibilityTeam": "Team",
+      "visibilityPrivate": "Private",
+      "defaultBillable": "Time entries billable by default",
+      "defaultCurrency": "Default currency",
+      "inheritedFromFormats": "Inherited from Formats",
+      "editInFormats": "Edit in Formats"
     },
     "efatura": {
       "title": "E-fatura",

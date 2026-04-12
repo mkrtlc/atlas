@@ -8,6 +8,13 @@
       "when": 1775932285357,
       "tag": "0000_silky_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775954849874,
+      "tag": "0001_noisy_vulture",
+      "breakpoints": true
     }
   ]
 }

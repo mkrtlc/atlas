@@ -2,6 +2,7 @@ export const queryKeys = {
   settings: {
     all: ['settings'] as const,
     tasks: ['settings', 'tasks'] as const,
+    tenantFormats: ['settings', 'tenant-formats'] as const,
   },
   account: {
     all: ['account'] as const,
@@ -153,6 +154,7 @@ export const queryKeys = {
     tokens: (docId: string) => ['sign', 'tokens', docId] as const,
     audit: (docId: string) => ['sign', 'audit', docId] as const,
     templates: ['sign', 'templates'] as const,
+    settings: ['sign', 'settings'] as const,
   },
   invoices: {
     all: ['invoices'] as const,

@@ -38,7 +38,7 @@ export interface SettingsPanel {
   icon: LucideIcon;
   component: () => ReactElement;
   adminOnly?: boolean;
-  superAdminOnly?: boolean;
+  ownerOnly?: boolean;
 }
 
 export interface SettingsCategory {
@@ -62,12 +62,12 @@ export const globalSettingsCategory: SettingsCategory = {
     { id: 'general', label: 'General', icon: Settings, component: GeneralPanel },
     { id: 'appearance', label: 'Appearance', icon: Palette, component: AppearancePanel },
     { id: 'formats', label: 'Formats', icon: Clock, component: FormatsPanel, adminOnly: true },
-    { id: 'data-model', label: 'Data model', icon: Database, component: DataModelPanel, superAdminOnly: true },
+    { id: 'data-model', label: 'Data model', icon: Database, component: DataModelPanel, ownerOnly: true },
     { id: 'home-background', label: 'Home background', icon: Image, component: HomeBackgroundPanel },
     { id: 'home-widgets', label: 'Widgets', icon: LayoutGrid, component: HomeWidgetsPanel },
-    { id: 'integrations', label: 'Integrations', icon: Link2, component: IntegrationsPanel, superAdminOnly: true },
+    { id: 'integrations', label: 'Integrations', icon: Link2, component: IntegrationsPanel, ownerOnly: true },
     { id: 'ai', label: 'AI', icon: Sparkles, component: AiSettingsPanel, adminOnly: true },
-    { id: 'updates', label: 'Updates', icon: RefreshCw, component: UpdatesPanel, superAdminOnly: true },
+    { id: 'updates', label: 'Updates', icon: RefreshCw, component: UpdatesPanel, ownerOnly: true },
     { id: 'about', label: 'About', icon: Info, component: AboutPanel },
   ],
 };

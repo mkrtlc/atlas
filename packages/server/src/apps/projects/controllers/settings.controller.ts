@@ -53,10 +53,38 @@ export async function updateSettings(req: Request, res: Response) {
     }
 
     const tenantId = req.auth!.tenantId;
-    const { defaultHourlyRate, companyName, companyAddress, companyLogo } = req.body;
+    const {
+      defaultHourlyRate,
+      companyName,
+      companyAddress,
+      companyLogo,
+      weekStartDay,
+      defaultProjectVisibility,
+      defaultBillable,
+    } = req.body;
+
+    // Minimal validation on enum-backed columns.
+    if (weekStartDay !== undefined && weekStartDay !== 'monday' && weekStartDay !== 'sunday') {
+      res.status(400).json({ success: false, error: 'Invalid weekStartDay' });
+      return;
+    }
+    if (
+      defaultProjectVisibility !== undefined &&
+      defaultProjectVisibility !== 'team' &&
+      defaultProjectVisibility !== 'private'
+    ) {
+      res.status(400).json({ success: false, error: 'Invalid defaultProjectVisibility' });
+      return;
+    }
 
     const settings = await projectService.updateSettings(tenantId, {
-      defaultHourlyRate, companyName, companyAddress, companyLogo,
+      defaultHourlyRate,
+      companyName,
+      companyAddress,
+      companyLogo,
+      weekStartDay,
+      defaultProjectVisibility,
+      defaultBillable,
     });
 
     res.json({ success: true, data: settings });

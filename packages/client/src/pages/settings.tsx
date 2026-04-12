@@ -58,9 +58,7 @@ export function SettingsModal() {
     return all.map(cat => ({
       ...cat,
       panels: cat.panels.filter(p => {
-        // `superAdminOnly` panels are reserved for the tenant owner in
-        // single-tenant Atlas (super admin === owner).
-        if (p.superAdminOnly && !isOwner) return false;
+        if (p.ownerOnly && !isOwner) return false;
         if (p.adminOnly && !isAdmin) return false;
         return true;
       }),

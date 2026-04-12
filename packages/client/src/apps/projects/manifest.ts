@@ -1,6 +1,8 @@
+import { Settings, FolderKanban } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
 import { ProjectsIcon } from '../../components/icons/app-icons';
 import { ProjectsPage } from './page';
+import { ProjectsGeneralPanel } from './components/settings/general-panel';
 
 export const projectsManifest: ClientAppManifest = {
   id: 'projects',
@@ -16,4 +18,13 @@ export const projectsManifest: ClientAppManifest = {
   version: '1.0.0',
   sidebarOrder: 25,
   routes: [{ path: '/projects', component: ProjectsPage }],
+  settingsCategory: {
+    id: 'projects',
+    label: 'Projects',
+    icon: FolderKanban,
+    color: '#0ea5e9',
+    panels: [
+      { id: 'general', label: 'General', icon: Settings, component: ProjectsGeneralPanel, adminOnly: true },
+    ],
+  },
 };

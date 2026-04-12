@@ -2,10 +2,29 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../stores/settings-store';
 import {
+  useTenantFormatSettings,
+  useUpdateTenantFormatSettings,
+} from '../../hooks/use-tenant-format-settings';
+import {
   SettingsSection,
   SettingsRow,
   SettingsSelect,
 } from './settings-primitives';
+
+const CURRENCY_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'USD', label: 'USD — $' },
+  { value: 'EUR', label: 'EUR — €' },
+  { value: 'GBP', label: 'GBP — £' },
+  { value: 'JPY', label: 'JPY — ¥' },
+  { value: 'TRY', label: 'TRY — ₺' },
+  { value: 'INR', label: 'INR — ₹' },
+  { value: 'KRW', label: 'KRW — ₩' },
+  { value: 'BRL', label: 'BRL — R$' },
+  { value: 'CHF', label: 'CHF' },
+  { value: 'SEK', label: 'SEK — kr' },
+  { value: 'CAD', label: 'CAD — C$' },
+  { value: 'AUD', label: 'AUD — A$' },
+];
 
 // ---------------------------------------------------------------------------
 // Timezone helpers
@@ -65,9 +84,27 @@ export function FormatsPanel() {
   } = useSettingsStore();
 
   const timezoneOptions = useMemo(() => getTimezoneOptions(), []);
+  const { data: tenantFormats } = useTenantFormatSettings();
+  const updateTenantFormats = useUpdateTenantFormatSettings();
 
   return (
     <div>
+      {/* ── Tenant defaults (shared across apps) ────────────────────── */}
+      <SettingsSection
+        title={t('settings.tenantDefaults')}
+        description={t('settings.tenantDefaultsDesc')}
+      >
+        <SettingsRow
+          label={t('settings.tenantDefaultCurrency')}
+          description={t('settings.tenantDefaultCurrencyDesc')}
+        >
+          <SettingsSelect
+            value={tenantFormats?.defaultCurrency ?? 'USD'}
+            options={CURRENCY_OPTIONS}
+            onChange={(v) => updateTenantFormats.mutate({ defaultCurrency: v })}
+          />
+        </SettingsRow>
+      </SettingsSection>
       {/* ── Date & time ─────────────────────────────────────────────── */}
       <SettingsSection title={t('settings.dateAndTime')}>
         <SettingsRow label={t('settings.dateFormat')} description={t('settings.dateFormatDesc')}>

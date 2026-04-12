@@ -342,3 +342,38 @@ export async function submitPublicDecline(
   });
   return data.data;
 }
+
+// ─── Sign: Tenant Settings ─────────────────────────────────────────
+
+export interface SignSettings {
+  id: string;
+  tenantId: string;
+  reminderCadenceDays: number;
+  signatureExpiryDays: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useSignSettings() {
+  return useQuery({
+    queryKey: queryKeys.sign.settings,
+    queryFn: async () => {
+      const { data } = await api.get('/sign/settings');
+      return data.data as SignSettings;
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateSignSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { reminderCadenceDays?: number; signatureExpiryDays?: number }) => {
+      const { data } = await api.patch('/sign/settings', input);
+      return data.data as SignSettings;
+    },
+    onSuccess: (settings) => {
+      queryClient.setQueryData(queryKeys.sign.settings, settings);
+    },
+  });
+}

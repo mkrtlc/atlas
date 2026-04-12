@@ -30,7 +30,7 @@ export const tablesManifest: ClientAppManifest = {
     color: '#2d8a6e',
     panels: [
       { id: 'general', label: 'General', icon: Settings, component: TablesGeneralPanel, adminOnly: true },
-      { id: 'regional', label: 'Regional', icon: Languages, component: TablesRegionalPanel, adminOnly: true },
+      { id: 'regional', label: 'Regional', icon: Languages, component: TablesRegionalPanel },
     ],
   },
 };

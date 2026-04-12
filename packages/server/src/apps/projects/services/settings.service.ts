@@ -2,7 +2,22 @@ import { db } from '../../../config/database';
 import {
   projectSettings,
 } from '../../../db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+
+// ─── Types ─────────────────────────────────────────────────────────
+
+export type WeekStartDay = 'monday' | 'sunday';
+export type ProjectVisibility = 'team' | 'private';
+
+export interface UpdateProjectSettingsInput {
+  defaultHourlyRate?: number;
+  companyName?: string | null;
+  companyAddress?: string | null;
+  companyLogo?: string | null;
+  weekStartDay?: WeekStartDay;
+  defaultProjectVisibility?: ProjectVisibility;
+  defaultBillable?: boolean;
+}
 
 // ─── Settings ───────────────────────────────────────────────────────
 
@@ -13,19 +28,22 @@ export async function getSettings(tenantId: string) {
     .where(eq(projectSettings.tenantId, tenantId))
     .limit(1);
 
-  return settings || null;
+  if (settings) return settings;
+
+  // Auto-create a row with defaults so callers always get a stable shape.
+  const now = new Date();
+  const [created] = await db
+    .insert(projectSettings)
+    .values({ tenantId, createdAt: now, updatedAt: now })
+    .returning();
+  return created;
 }
 
-export async function updateSettings(tenantId: string, input: {
-  defaultHourlyRate?: number;
-  companyName?: string | null;
-  companyAddress?: string | null;
-  companyLogo?: string | null;
-}) {
+export async function updateSettings(tenantId: string, input: UpdateProjectSettingsInput) {
   const now = new Date();
 
   // Upsert
-  let [existing] = await db
+  const [existing] = await db
     .select()
     .from(projectSettings)
     .where(eq(projectSettings.tenantId, tenantId))
@@ -49,6 +67,11 @@ export async function updateSettings(tenantId: string, input: {
   if (input.companyName !== undefined) updates.companyName = input.companyName;
   if (input.companyAddress !== undefined) updates.companyAddress = input.companyAddress;
   if (input.companyLogo !== undefined) updates.companyLogo = input.companyLogo;
+  if (input.weekStartDay !== undefined) updates.weekStartDay = input.weekStartDay;
+  if (input.defaultProjectVisibility !== undefined) {
+    updates.defaultProjectVisibility = input.defaultProjectVisibility;
+  }
+  if (input.defaultBillable !== undefined) updates.defaultBillable = input.defaultBillable;
 
   const [updated] = await db
     .update(projectSettings)
@@ -61,6 +84,6 @@ export async function updateSettings(tenantId: string, input: {
 
 // ─── Seed Sample Data ───────────────────────────────────────────────
 
-export async function seedSampleData(userId: string, tenantId: string) {
+export async function seedSampleData(_userId: string, _tenantId: string) {
   return { skipped: true };
 }

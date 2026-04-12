@@ -79,6 +79,9 @@ export interface ProjectSettings {
   defaultHourlyRate: number;
   companyName: string;
   companyAddress: string;
+  weekStartDay: 'monday' | 'sunday';
+  defaultProjectVisibility: 'team' | 'private';
+  defaultBillable: boolean;
 }
 
 export interface TimeReport {
