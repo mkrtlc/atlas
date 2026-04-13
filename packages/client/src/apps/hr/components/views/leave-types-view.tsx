@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Check, XCircle, Trash2, Download } from 'lucide-react';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import { useLeaveTypes, useCreateLeaveType, useUpdateLeaveType, useDeleteLeaveType, useSeedLeaveTypes } from '../../hooks';
+import { useAuthStore } from '../../../../stores/auth-store';
 import { useAppActions } from '../../../../hooks/use-app-permissions';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
@@ -19,6 +21,8 @@ export function LeaveTypesView() {
   const updateLeaveType = useUpdateLeaveType();
   const deleteLeaveType = useDeleteLeaveType();
   const seedLeaveTypes = useSeedLeaveTypes();
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = isTenantAdmin(tenantRole);
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -26,14 +30,14 @@ export function LeaveTypesView() {
   const [days, setDays] = useState(0);
   const [carryForward, setCarryForward] = useState(0);
 
-  // Auto-seed leave types on first visit when list is empty
+  // Auto-seed leave types on first visit when list is empty (only for admins/owners)
   const hasSeeded = useRef(false);
   useEffect(() => {
-    if (!isLoading && (!leaveTypes || leaveTypes.length === 0) && !hasSeeded.current) {
+    if (isAdmin && !isLoading && (!leaveTypes || leaveTypes.length === 0) && !hasSeeded.current) {
       hasSeeded.current = true;
       seedLeaveTypes.mutate();
     }
-  }, [isLoading, leaveTypes, seedLeaveTypes]);
+  }, [isAdmin, isLoading, leaveTypes, seedLeaveTypes]);
 
   const handleCreate = () => {
     if (!name.trim()) return;

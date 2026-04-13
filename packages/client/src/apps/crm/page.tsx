@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Plus, Search, X, Trash2, Merge,
 } from 'lucide-react';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import {
   useCompanies, useContacts,
   useStages, useDeals,
@@ -14,6 +15,7 @@ import {
   useMyCrmPermission, canAccess,
   type CrmDeal,
 } from './hooks';
+import { useAuthStore } from '../../stores/auth-store';
 import type { ActiveView, EditingCell, SortState } from './lib/crm-helpers';
 import {
   getDealsFilterColumns, getContactsFilterColumns, getCompaniesFilterColumns,
@@ -103,15 +105,17 @@ export function CrmPage() {
   const deleteCompany = useDeleteCompany();
   const markWon = useMarkDealWon();
   const seedCrm = useSeedCrmData();
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = isTenantAdmin(tenantRole);
 
-  // Auto-seed on first visit
+  // Auto-seed on first visit (only for admins/owners)
   const hasSeeded = useRef(false);
   useEffect(() => {
-    if (!loadingStages && !loadingDeals && stages.length === 0 && deals.length === 0 && companies.length === 0 && !hasSeeded.current) {
+    if (isAdmin && !loadingStages && !loadingDeals && stages.length === 0 && deals.length === 0 && companies.length === 0 && !hasSeeded.current) {
       hasSeeded.current = true;
       seedCrm.mutate();
     }
-  }, [loadingStages, loadingDeals, stages.length, deals.length, companies.length, seedCrm]);
+  }, [isAdmin, loadingStages, loadingDeals, stages.length, deals.length, companies.length, seedCrm]);
 
   // Selected entities
   const selectedDeal = selectedDealId ? deals.find((d) => d.id === selectedDealId) : null;

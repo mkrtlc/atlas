@@ -1,9 +1,18 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import * as hrController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const router = Router();
 router.use(authMiddleware);
@@ -38,8 +47,8 @@ router.patch('/leave-types/:id', hrController.updateLeaveType);
 router.delete('/leave-types/:id', hrController.deleteLeaveType);
 
 // Seed leave defaults (before /:id)
-router.post('/leave-types/seed', hrController.seedLeaveTypes);
-router.post('/leave-policies/seed', hrController.seedLeavePolicies);
+router.post('/leave-types/seed', requireSeedAdmin, hrController.seedLeaveTypes);
+router.post('/leave-policies/seed', requireSeedAdmin, hrController.seedLeavePolicies);
 
 // Leave Policies (before /:id)
 router.get('/leave-policies', hrController.listLeavePolicies);
@@ -119,7 +128,7 @@ router.get('/documents/:docId/download', hrController.downloadEmployeeDocument);
 // ─── Expense Categories ─────────────────────────────────────────
 router.get('/expense-categories/list', hrController.listExpenseCategories);
 router.post('/expense-categories', hrController.createExpenseCategory);
-router.post('/expense-categories/seed', hrController.seedExpenseCategories);
+router.post('/expense-categories/seed', requireSeedAdmin, hrController.seedExpenseCategories);
 router.post('/expense-categories/reorder', hrController.reorderExpenseCategories);
 router.patch('/expense-categories/:id', hrController.updateExpenseCategory);
 router.delete('/expense-categories/:id', hrController.deleteExpenseCategory);
@@ -194,6 +203,6 @@ router.get('/:id/documents', hrController.listEmployeeDocuments);
 router.post('/:id/documents', upload.single('file'), hrController.uploadEmployeeDocument);
 
 // Seed sample data
-router.post('/seed', hrController.seedSampleData);
+router.post('/seed', requireSeedAdmin, hrController.seedSampleData);
 
 export default router;

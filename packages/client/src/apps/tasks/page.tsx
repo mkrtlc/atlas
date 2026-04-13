@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import {
   useTaskList, useCreateProject, useUpdateTask, useDeleteTask,
   useProjectList, useDeleteProject, useTaskCounts,
@@ -201,6 +202,8 @@ export function TasksPage() {
   const reorderTasks = useReorderTasks();
   const queryClient = useQueryClient();
   const [seeding, setSeeding] = useState(false);
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = isTenantAdmin(tenantRole);
 
   const handleSeedSampleData = useCallback(async () => {
     setSeeding(true);
@@ -211,13 +214,14 @@ export function TasksPage() {
     setSeeding(false);
   }, [queryClient]);
 
+  // Auto-seed on first visit (only for admins/owners)
   const hasSeeded = useRef(false);
   useEffect(() => {
-    if (!isLoading && allTasks.length === 0 && !seeding && !hasSeeded.current && counts !== undefined && counts.total === 0 && counts.logbook === 0) {
+    if (isAdmin && !isLoading && allTasks.length === 0 && !seeding && !hasSeeded.current && counts !== undefined && counts.total === 0 && counts.logbook === 0) {
       hasSeeded.current = true;
       handleSeedSampleData();
     }
-  }, [isLoading, allTasks.length, seeding, counts, handleSeedSampleData]);
+  }, [isAdmin, isLoading, allTasks.length, seeding, counts, handleSeedSampleData]);
 
   const defaultWhen: TaskWhen = useMemo(() => {
     if (activeSection === 'today') return 'today';

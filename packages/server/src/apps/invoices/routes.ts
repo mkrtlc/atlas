@@ -1,7 +1,16 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as invoiceController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const router = Router();
 
@@ -33,7 +42,7 @@ router.post('/recurring/:id/resume', invoiceController.resumeRecurring);
 router.post('/recurring/:id/run-now', invoiceController.runRecurringNow);
 
 // Seed sample data
-router.post('/seed', invoiceController.seedInvoices);
+router.post('/seed', requireSeedAdmin, invoiceController.seedInvoices);
 
 // Invoices
 router.get('/list', invoiceController.listInvoices);

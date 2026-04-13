@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Check, XCircle, Download } from 'lucide-react';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import {
   useExpenseCategories, useCreateExpenseCategory, useUpdateExpenseCategory,
   useDeleteExpenseCategory, useSeedExpenseCategories,
 } from '../../hooks';
+import { useAuthStore } from '../../../../stores/auth-store';
 import { useAppActions } from '../../../../hooks/use-app-permissions';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
@@ -24,6 +26,8 @@ export function ExpenseCategoriesView() {
   const updateCategory = useUpdateExpenseCategory();
   const deleteCategory = useDeleteExpenseCategory();
   const seedCategories = useSeedExpenseCategories();
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = isTenantAdmin(tenantRole);
 
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
@@ -33,14 +37,14 @@ export function ExpenseCategoriesView() {
   const [receiptRequired, setReceiptRequired] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  // Auto-seed on first visit when empty
+  // Auto-seed on first visit when empty (only for admins/owners)
   const hasSeeded = useRef(false);
   useEffect(() => {
-    if (!isLoading && (!categories || categories.length === 0) && !hasSeeded.current) {
+    if (isAdmin && !isLoading && (!categories || categories.length === 0) && !hasSeeded.current) {
       hasSeeded.current = true;
       seedCategories.mutate();
     }
-  }, [isLoading, categories, seedCategories]);
+  }, [isAdmin, isLoading, categories, seedCategories]);
 
   const handleCreate = () => {
     if (!name.trim()) return;

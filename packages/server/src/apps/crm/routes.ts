@@ -1,10 +1,19 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as crmController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import { db } from '../../config/database';
 import { accounts, tenantMembers } from '../../db/schema';
 import { eq, inArray } from 'drizzle-orm';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const router = Router();
 
@@ -45,7 +54,7 @@ router.delete('/contacts/:id', crmController.deleteContact);
 router.get('/stages/list', crmController.listDealStages);
 router.post('/stages', crmController.createDealStage);
 router.post('/stages/reorder', crmController.reorderDealStages);
-router.post('/stages/seed', crmController.seedDefaultStages);
+router.post('/stages/seed', requireSeedAdmin, crmController.seedDefaultStages);
 router.patch('/stages/:id', crmController.updateDealStage);
 router.delete('/stages/:id', crmController.deleteDealStage);
 
@@ -74,7 +83,7 @@ router.get('/teams/user/:userId', crmController.getUserTeams);
 // Activity Types
 router.get('/activity-types/list', crmController.listActivityTypes);
 router.post('/activity-types', crmController.createActivityType);
-router.post('/activity-types/seed', crmController.seedActivityTypes);
+router.post('/activity-types/seed', requireSeedAdmin, crmController.seedActivityTypes);
 router.post('/activity-types/reorder', crmController.reorderActivityTypes);
 router.patch('/activity-types/:id', crmController.updateActivityType);
 router.delete('/activity-types/:id', crmController.deleteActivityType);
@@ -88,7 +97,7 @@ router.delete('/activities/:id', crmController.deleteActivity);
 
 // Workflow Automations
 router.get('/workflows', crmController.listWorkflows);
-router.post('/workflows/seed', crmController.seedExampleWorkflows);
+router.post('/workflows/seed', requireSeedAdmin, crmController.seedExampleWorkflows);
 router.post('/workflows', crmController.createWorkflow);
 router.put('/workflows/:id', crmController.updateWorkflow);
 router.delete('/workflows/:id', crmController.deleteWorkflow);
@@ -120,8 +129,8 @@ router.post('/companies/merge', crmController.mergeCompanies);
 router.get('/dashboard/charts', crmController.getDashboardCharts);
 
 // Seed sample data
-router.post('/seed', crmController.seedSampleData);
-router.post('/leads/seed', crmController.seedSampleLeads);
+router.post('/seed', requireSeedAdmin, crmController.seedSampleData);
+router.post('/leads/seed', requireSeedAdmin, crmController.seedSampleLeads);
 
 // Saved Views
 router.get('/views', crmController.listSavedViews);

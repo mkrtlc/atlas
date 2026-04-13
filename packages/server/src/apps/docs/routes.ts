@@ -1,7 +1,16 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as documentController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const router = Router();
 router.use(authMiddleware);
@@ -12,7 +21,7 @@ router.post('/', documentController.createDocument);
 router.get('/search', documentController.searchDocuments);
 
 // Seed sample data
-router.post('/seed', documentController.seedSampleData);
+router.post('/seed', requireSeedAdmin, documentController.seedSampleData);
 
 // Import (must be before /:id to avoid route conflicts)
 router.post('/import', documentController.importDocument);

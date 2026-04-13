@@ -1,13 +1,22 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as drawingController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const router = Router();
 router.use(authMiddleware);
 router.use(requireAppPermission('draw'));
 
-router.post('/seed', drawingController.seedSampleData);
+router.post('/seed', requireSeedAdmin, drawingController.seedSampleData);
 router.get('/', drawingController.listDrawings);
 router.post('/', drawingController.createDrawing);
 router.get('/search', drawingController.searchDrawings);

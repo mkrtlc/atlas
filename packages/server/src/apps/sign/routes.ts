@@ -1,10 +1,19 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import * as signController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const uploadsDir = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -52,7 +61,7 @@ router.get('/settings', signController.getSettings);
 router.patch('/settings', signController.updateSettings);
 
 // ─── Seed ──────────────────────────────────────────────────────────
-router.post('/seed', signController.seedSampleData);
+router.post('/seed', requireSeedAdmin, signController.seedSampleData);
 
 // ─── Reminders (admin) ──────────────────────────────────────────────
 router.post('/reminders/send', signController.triggerReminders);
@@ -60,7 +69,7 @@ router.post('/reminders/send', signController.triggerReminders);
 // ─── Templates ─────────────────────────────────────────────────────
 router.get('/templates', signController.listTemplates);
 router.post('/templates', signController.createTemplate);
-router.post('/templates/seed-starter', signController.seedStarterTemplates);
+router.post('/templates/seed-starter', requireSeedAdmin, signController.seedStarterTemplates);
 router.post('/templates/:id/use', signController.useTemplate);
 router.delete('/templates/:id', signController.deleteTemplate);
 

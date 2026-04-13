@@ -8,6 +8,7 @@ import {
   UserCheck,
   Receipt,
 } from 'lucide-react';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import {
   useEmployeeList, useEmployeeCounts,
   useDepartmentList,
@@ -146,18 +147,20 @@ export function HrPage() {
   const deleteTimeOff = useDeleteTimeOff();
   const deleteDepartment = useDeleteDepartment();
   const seedHr = useSeedHrData();
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = isTenantAdmin(tenantRole);
 
-  // Auto-seed on first visit
+  // Auto-seed on first visit (only for admins/owners)
   const hasSeeded = useRef(false);
   useEffect(() => {
     if (
-      !loadingEmployees && employees.length === 0 && departments.length === 0 &&
+      isAdmin && !loadingEmployees && employees.length === 0 && departments.length === 0 &&
       !hasSeeded.current && countsData !== undefined && counts.totalEmployees === 0
     ) {
       hasSeeded.current = true;
       seedHr.mutate();
     }
-  }, [loadingEmployees, employees.length, departments.length, countsData, counts.totalEmployees, seedHr]);
+  }, [isAdmin, loadingEmployees, employees.length, departments.length, countsData, counts.totalEmployees, seedHr]);
 
   const selectedEmployee = selectedEmployeeId ? allEmployees.find((e) => e.id === selectedEmployeeId) : null;
 

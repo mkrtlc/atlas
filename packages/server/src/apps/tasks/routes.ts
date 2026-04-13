@@ -5,6 +5,15 @@ import path from 'path';
 import * as taskController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const uploadsDir = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -84,7 +93,7 @@ router.delete('/:id', taskController.deleteTask);
 router.patch('/:id/restore', taskController.restoreTask);
 
 // Seed sample data
-router.post('/seed', taskController.seedSampleTasks);
+router.post('/seed', requireSeedAdmin, taskController.seedSampleTasks);
 
 // Projects
 router.get('/projects/list', taskController.listProjects);

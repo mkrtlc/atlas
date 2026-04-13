@@ -5,7 +5,16 @@ import path from 'path';
 import * as driveController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import googleDriveRoutes from './routes-google';
+
+function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!isTenantAdmin(req.auth?.tenantRole)) {
+    res.status(403).json({ success: false, error: 'Only organization admins can seed demo data' });
+    return;
+  }
+  next();
+}
 
 const uploadsDir = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -66,7 +75,7 @@ router.get('/by-type', driveController.listItemsByType);
 router.post('/batch/delete', driveController.batchDelete);
 router.post('/batch/move', driveController.batchMove);
 router.post('/batch/favourite', driveController.batchFavourite);
-router.post('/seed', driveController.seedSampleData);
+router.post('/seed', requireSeedAdmin, driveController.seedSampleData);
 router.post('/create-document', driveController.createLinkedDocument);
 router.post('/create-drawing', driveController.createLinkedDrawing);
 router.post('/create-spreadsheet', driveController.createLinkedSpreadsheet);

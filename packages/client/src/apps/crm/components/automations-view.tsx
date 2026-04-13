@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Zap, Sparkles } from 'lucide-react';
+import { isTenantAdmin } from '@atlas-platform/shared';
+import { useAuthStore } from '../../../stores/auth-store';
 import {
   useWorkflows, useCreateWorkflow, useDeleteWorkflow, useToggleWorkflow,
   useSeedExampleWorkflows,
@@ -404,18 +406,20 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
   const toggleWorkflow = useToggleWorkflow();
   const deleteWorkflow = useDeleteWorkflow();
   const seedWorkflows = useSeedExampleWorkflows();
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = isTenantAdmin(tenantRole);
 
   const [showCreate, setShowCreate] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Auto-seed example workflows on first visit if none exist
+  // Auto-seed example workflows on first visit if none exist (only for admins/owners)
   const hasSeeded = useRef(false);
   useEffect(() => {
-    if (!isLoading && workflows.length === 0 && !hasSeeded.current && !seedWorkflows.isPending) {
+    if (isAdmin && !isLoading && workflows.length === 0 && !hasSeeded.current && !seedWorkflows.isPending) {
       hasSeeded.current = true;
       seedWorkflows.mutate();
     }
-  }, [isLoading, workflows.length, seedWorkflows]);
+  }, [isAdmin, isLoading, workflows.length, seedWorkflows]);
 
   if (isLoading) {
     return (

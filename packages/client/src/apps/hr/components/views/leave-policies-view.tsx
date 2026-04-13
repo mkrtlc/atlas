@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Download, Pencil, Trash2, Check, X } from 'lucide-react';
+import { isTenantAdmin } from '@atlas-platform/shared';
 import {
   useLeaveTypes, useLeavePolicies, useCreateLeavePolicy,
   useUpdateLeavePolicy, useDeleteLeavePolicy, useResyncPolicyBalances, useSeedLeavePolicies,
 } from '../../hooks';
+import { useAuthStore } from '../../../../stores/auth-store';
 import { useToastStore } from '../../../../stores/toast-store';
 import type { HrLeaveType } from '../../hooks';
 import { Button } from '../../../../components/ui/button';
@@ -495,16 +497,18 @@ export function LeavePoliciesView() {
   const { data: policies, isLoading } = useLeavePolicies();
   const { data: leaveTypes } = useLeaveTypes();
   const seedPolicies = useSeedLeavePolicies();
+  const tenantRole = useAuthStore((s) => s.tenantRole);
+  const isAdmin = isTenantAdmin(tenantRole);
   const [showCreate, setShowCreate] = useState(false);
 
-  // Auto-seed policies on first visit when list is empty
+  // Auto-seed policies on first visit when list is empty (only for admins/owners)
   const hasSeeded = useRef(false);
   useEffect(() => {
-    if (!isLoading && (!policies || policies.length === 0) && !hasSeeded.current) {
+    if (isAdmin && !isLoading && (!policies || policies.length === 0) && !hasSeeded.current) {
       hasSeeded.current = true;
       seedPolicies.mutate();
     }
-  }, [isLoading, policies, seedPolicies]);
+  }, [isAdmin, isLoading, policies, seedPolicies]);
 
   if (isLoading) return <div style={{ padding: 'var(--spacing-xl)' }}><Skeleton height={200} /></div>;
 
