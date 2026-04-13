@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, X } from 'lucide-react';
@@ -19,10 +19,13 @@ import type { Invoice } from '@atlas-platform/shared';
 
 export function InvoicesPage() {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // State
-  const [activeView, setActiveView] = useState('dashboard');
+  // View from URL
+  const activeView = searchParams.get('view') || 'dashboard';
+  const setActiveView = useCallback((view: string) => {
+    setSearchParams({ view }, { replace: true });
+  }, [setSearchParams]);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(searchParams.get('id'));
   const [showBuilder, setShowBuilder] = useState(searchParams.get('new') === 'true');
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
