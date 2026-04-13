@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Play, Pause, Edit2, Trash2, Send, Mail, Repeat } from 'lucide-react';
+import { Plus, Play, Pause, Edit2, Trash2, Send, Mail, Repeat, FileText, Calendar, Hash, Activity } from 'lucide-react';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
@@ -107,6 +107,7 @@ export function RecurringInvoicesList() {
     {
       key: 'title',
       label: t('invoices.recurring.columnTitle'),
+      icon: <FileText size={12} />,
       sortable: true,
       minWidth: 180,
       render: (item) => (
@@ -137,6 +138,7 @@ export function RecurringInvoicesList() {
     {
       key: 'frequency',
       label: t('invoices.recurring.columnFrequency'),
+      icon: <Repeat size={12} />,
       sortable: true,
       width: 120,
       render: (item) => handleFrequencyLabel(item.frequency),
@@ -145,6 +147,7 @@ export function RecurringInvoicesList() {
     {
       key: 'nextRunAt',
       label: t('invoices.recurring.columnNextRun'),
+      icon: <Calendar size={12} />,
       sortable: true,
       width: 140,
       render: (item) => formatDate(item.nextRunAt),
@@ -157,6 +160,7 @@ export function RecurringInvoicesList() {
     {
       key: 'isActive',
       label: t('invoices.recurring.columnStatus'),
+      icon: <Activity size={12} />,
       sortable: true,
       width: 100,
       render: (item) => (
@@ -175,6 +179,7 @@ export function RecurringInvoicesList() {
     {
       key: 'runCount',
       label: t('invoices.recurring.columnRunCount'),
+      icon: <Hash size={12} />,
       sortable: true,
       width: 100,
       render: (item) => t('invoices.recurring.runCountDisplay', { count: item.runCount }),
