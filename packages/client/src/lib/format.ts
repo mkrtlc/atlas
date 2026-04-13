@@ -1,7 +1,8 @@
 import { useSettingsStore } from '../stores/settings-store';
 
 export function formatBytes(bytes: number | null): string {
-  if (bytes === null || bytes === 0) return '\u2014';
+  if (bytes === null) return '\u2014';
+  if (bytes === 0) return '0 B';
   if (!Number.isFinite(bytes) || bytes < 0) return '\u2014';
 
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];

@@ -1976,7 +1976,7 @@
       "delete": "Yorumu sil"
     },
     "storage": {
-      "usage": "{{total}} alanından {{used}} kullanıldı",
+      "usage": "{{used}} / {{total}} kullanıldı",
       "fileCount": "{{count}} dosya"
     },
     "preview": {
