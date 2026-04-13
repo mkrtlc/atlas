@@ -74,9 +74,12 @@ export function useUpdateDocument() {
   return useMutation({
     mutationFn: async ({
       id,
+      updatedAt,
       ...input
-    }: UpdateDocumentInput & { id: string }) => {
-      const { data } = await api.patch(`/docs/${id}`, input);
+    }: UpdateDocumentInput & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/docs/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as Document;
     },
     onSuccess: (doc) => {

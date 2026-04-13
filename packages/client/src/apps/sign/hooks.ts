@@ -82,8 +82,10 @@ export function useUpdateSignDoc(id: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: Partial<Pick<SignatureDocument, 'title' | 'status' | 'tags' | 'pageCount' | 'documentType'>> & { redirectUrl?: string | null; counterpartyName?: string | null }) => {
-      const { data } = await api.put(`/sign/${id}`, input);
+    mutationFn: async ({ updatedAt, ...input }: Partial<Pick<SignatureDocument, 'title' | 'status' | 'tags' | 'pageCount' | 'documentType'>> & { redirectUrl?: string | null; counterpartyName?: string | null; updatedAt?: string }) => {
+      const { data } = await api.put(`/sign/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as SignatureDocument;
     },
     onSuccess: (doc) => {

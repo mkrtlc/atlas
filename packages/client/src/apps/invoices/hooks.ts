@@ -115,7 +115,7 @@ export function useCreateInvoice() {
 export function useUpdateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{
       companyId: string;
       contactId: string | null;
       dealId: string | null;
@@ -128,7 +128,9 @@ export function useUpdateInvoice() {
       notes: string | null;
       eFaturaType: string;
     }>) => {
-      const { data } = await api.patch(`/invoices/${id}`, input);
+      const { data } = await api.patch(`/invoices/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as Invoice;
     },
     onSuccess: (invoice) => {
@@ -386,8 +388,10 @@ export function useCreateRecurringInvoice() {
 export function useUpdateRecurringInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; body: UpdateRecurringInvoiceInput }) => {
-      const { data } = await api.patch(`/invoices/recurring/${input.id}`, input.body);
+    mutationFn: async (input: { id: string; body: UpdateRecurringInvoiceInput; updatedAt?: string }) => {
+      const { data } = await api.patch(`/invoices/recurring/${input.id}`, input.body, {
+        headers: input.updatedAt ? { 'If-Unmodified-Since': input.updatedAt } : undefined,
+      });
       return data.data as RecurringInvoice;
     },
     onSuccess: (_, variables) => {

@@ -203,8 +203,10 @@ export function useCreateCompany() {
 export function useUpdateCompany() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{ name: string; domain: string | null; industry: string | null; size: string | null; address: string | null; phone: string | null; taxId: string | null; taxOffice: string | null; currency: string; postalCode: string | null; state: string | null; country: string | null; logo: string | null; portalToken: string | null; tags: string[]; sortOrder: number; isArchived: boolean }>) => {
-      const { data } = await api.patch(`/crm/companies/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{ name: string; domain: string | null; industry: string | null; size: string | null; address: string | null; phone: string | null; taxId: string | null; taxOffice: string | null; currency: string; postalCode: string | null; state: string | null; country: string | null; logo: string | null; portalToken: string | null; tags: string[]; sortOrder: number; isArchived: boolean }>) => {
+      const { data } = await api.patch(`/crm/companies/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as CrmCompany;
     },
     onSuccess: (company) => {
@@ -285,8 +287,10 @@ export function useCreateContact() {
 export function useUpdateContact() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{ name: string; email: string | null; phone: string | null; companyId: string | null; position: string | null; source: string | null; tags: string[]; sortOrder: number; isArchived: boolean }>) => {
-      const { data } = await api.patch(`/crm/contacts/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{ name: string; email: string | null; phone: string | null; companyId: string | null; position: string | null; source: string | null; tags: string[]; sortOrder: number; isArchived: boolean }>) => {
+      const { data } = await api.patch(`/crm/contacts/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as CrmContact;
     },
     onSuccess: (contact) => {
@@ -432,8 +436,10 @@ export function useCreateDeal() {
 export function useUpdateDeal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{ title: string; value: number; stageId: string; contactId: string | null; companyId: string | null; assignedUserId: string | null; probability: number; expectedCloseDate: string | null; tags: string[]; sortOrder: number; isArchived: boolean }>) => {
-      const { data } = await api.patch(`/crm/deals/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{ title: string; value: number; stageId: string; contactId: string | null; companyId: string | null; assignedUserId: string | null; probability: number; expectedCloseDate: string | null; tags: string[]; sortOrder: number; isArchived: boolean }>) => {
+      const { data } = await api.patch(`/crm/deals/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as CrmDeal;
     },
     onSuccess: (deal) => {
@@ -538,8 +544,10 @@ export function useCreateActivity() {
 export function useUpdateActivity() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{ type: string; body: string; dealId: string | null; contactId: string | null; companyId: string | null; assignedUserId: string | null; scheduledAt: string | null; completedAt: string | null; isArchived: boolean }>) => {
-      const { data } = await api.patch(`/crm/activities/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{ type: string; body: string; dealId: string | null; contactId: string | null; companyId: string | null; assignedUserId: string | null; scheduledAt: string | null; completedAt: string | null; isArchived: boolean }>) => {
+      const { data } = await api.patch(`/crm/activities/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as CrmActivity;
     },
     onSuccess: () => {
@@ -967,8 +975,10 @@ export function useCreateLead() {
 export function useUpdateLead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{ name: string; email: string | null; phone: string | null; companyName: string | null; source: string; status: string; notes: string | null; tags: string[]; expectedRevenue: number; probability: number; assignedUserId: string | null; expectedCloseDate: string | null; sortOrder: number; isArchived: boolean }>) => {
-      const { data } = await api.patch(`/crm/leads/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{ name: string; email: string | null; phone: string | null; companyName: string | null; source: string; status: string; notes: string | null; tags: string[]; expectedRevenue: number; probability: number; assignedUserId: string | null; expectedCloseDate: string | null; sortOrder: number; isArchived: boolean }>) => {
+      const { data } = await api.patch(`/crm/leads/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as CrmLead;
     },
     onSuccess: (lead) => {

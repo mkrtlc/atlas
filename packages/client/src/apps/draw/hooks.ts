@@ -57,9 +57,12 @@ export function useUpdateDrawing() {
   return useMutation({
     mutationFn: async ({
       id,
+      updatedAt,
       ...input
-    }: UpdateDrawingInput & { id: string }) => {
-      const { data } = await api.patch(`/drawings/${id}`, input);
+    }: UpdateDrawingInput & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/drawings/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as Drawing;
     },
     onSuccess: (drawing) => {

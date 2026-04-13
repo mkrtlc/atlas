@@ -237,7 +237,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{
       name: string;
       description: string | null;
       companyId: string | null;
@@ -259,7 +259,9 @@ export function useUpdateProject() {
       if (input.budgetHours !== undefined) payload.estimatedHours = input.budgetHours;
       if (input.budgetAmount !== undefined) payload.estimatedAmount = input.budgetAmount;
       if (input.isArchived !== undefined) payload.isArchived = input.isArchived;
-      const { data } = await api.patch(`/projects/projects/${id}`, payload);
+      const { data } = await api.patch(`/projects/projects/${id}`, payload, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as Project;
     },
     onSuccess: (project) => {
@@ -389,7 +391,7 @@ export function useCreateTimeEntry() {
 export function useUpdateTimeEntry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{
+    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{
       projectId: string;
       date: string;
       hours: number;
@@ -404,7 +406,9 @@ export function useUpdateTimeEntry() {
       if (input.description !== undefined) payload.notes = input.description;
       if (input.tags !== undefined) payload.tags = input.tags;
       if (input.isBillable !== undefined) payload.billable = input.isBillable;
-      const { data } = await api.patch(`/projects/time-entries/${id}`, payload);
+      const { data } = await api.patch(`/projects/time-entries/${id}`, payload, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as TimeEntry;
     },
     onSuccess: () => {

@@ -94,8 +94,10 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateTaskInput & { id: string }) => {
-      const { data } = await api.patch(`/tasks/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: UpdateTaskInput & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/tasks/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as Task;
     },
     onSuccess: (task) => {

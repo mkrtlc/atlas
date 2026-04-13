@@ -188,8 +188,10 @@ export function useCreateEmployee() {
 export function useUpdateEmployee() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: Partial<HrEmployee> & { id: string }) => {
-      const { data } = await api.patch(`/hr/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: Partial<HrEmployee> & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrEmployee;
     },
     onSuccess: (employee) => {
