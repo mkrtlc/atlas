@@ -216,7 +216,17 @@ export function ExcalidrawCanvas({
   canEdit?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const langCode = i18n.language?.split('-')[0] || 'en';
+  // Map Atlas short language codes to Excalidraw's full locale codes.
+  // Excalidraw supports 'en' as short but other languages need the region suffix.
+  const EXCALIDRAW_LANG_MAP: Record<string, string> = {
+    en: 'en',
+    tr: 'tr-TR',
+    de: 'de-DE',
+    fr: 'fr-FR',
+    it: 'it-IT',
+  };
+  const shortLang = i18n.language?.split('-')[0] || 'en';
+  const langCode = EXCALIDRAW_LANG_MAP[shortLang] || 'en';
   const [excalidrawApi, setExcalidrawApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const [isPresenting, setIsPresenting] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
