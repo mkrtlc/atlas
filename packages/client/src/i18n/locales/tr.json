@@ -3743,7 +3743,9 @@
       "tables": "Tablolar",
       "tasks": "Görevler",
       "documents": "Yazı",
-      "projects": "Projeler"
+      "projects": "Projeler",
+      "sign": "Sözleşmeler",
+      "invoices": "Faturalar"
     },
     "panels": {
       "general": "Genel",

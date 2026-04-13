@@ -3743,7 +3743,9 @@
       "tables": "Tableaux",
       "tasks": "Tâches",
       "documents": "Rédaction",
-      "projects": "Projets"
+      "projects": "Projets",
+      "sign": "Accords",
+      "invoices": "Factures"
     },
     "panels": {
       "general": "Général",

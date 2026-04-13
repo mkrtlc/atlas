@@ -3743,7 +3743,9 @@
       "tables": "Tabelle",
       "tasks": "Attività",
       "documents": "Scrivi",
-      "projects": "Progetti"
+      "projects": "Progetti",
+      "sign": "Accordi",
+      "invoices": "Fatture"
     },
     "panels": {
       "general": "Generale",

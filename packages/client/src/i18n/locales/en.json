@@ -3748,7 +3748,9 @@
       "tables": "Tables",
       "tasks": "Tasks",
       "documents": "Write",
-      "projects": "Projects"
+      "projects": "Projects",
+      "sign": "Agreements",
+      "invoices": "Invoices"
     },
     "panels": {
       "general": "General",

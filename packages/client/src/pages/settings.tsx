@@ -45,6 +45,8 @@ const CATEGORY_KEY_MAP: Record<string, string> = {
   tables: 'settingsPanel.categories.tables',
   tasks: 'settingsPanel.categories.tasks',
   projects: 'settingsPanel.categories.projects',
+  sign: 'settingsPanel.categories.sign',
+  invoices: 'settingsPanel.categories.invoices',
 };
 
 export function SettingsModal() {

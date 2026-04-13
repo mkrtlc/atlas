@@ -23,7 +23,7 @@ export const signManifest: ClientAppManifest = {
   ],
   settingsCategory: {
     id: 'sign',
-    label: 'Sign',
+    label: 'Agreements',
     icon: FileSignature,
     color: '#8b5cf6',
     panels: [
