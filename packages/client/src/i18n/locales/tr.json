@@ -770,6 +770,16 @@
     "exportPdf": "PDF olarak dışa aktar",
     "insertImage": "Resim ekle",
     "imageTooLarge": "Resim 10 MB'den küçük olmalıdır",
+    "canvasBackground": "Tuval arka planı",
+    "help": {
+      "title": "Klavye kısayolları",
+      "selection": "Seçim ve taşıma",
+      "drawing": "Çizim araçları",
+      "edit": "Düzenleme",
+      "view": "Görünüm",
+      "group": "Gruplama",
+      "style": "Stil"
+    },
     "empty": {
       "title": "İlk çiziminizi oluşturun",
       "desc": "Diyagramlar, tel kafesler ve görsel fikirler çizin",

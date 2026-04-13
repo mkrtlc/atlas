@@ -768,6 +768,16 @@
     "exportPdf": "Exporter en PDF",
     "insertImage": "Insérer une image",
     "imageTooLarge": "L'image doit faire moins de 10 Mo",
+    "canvasBackground": "Arrière-plan du canevas",
+    "help": {
+      "title": "Raccourcis clavier",
+      "selection": "Sélection et déplacement",
+      "drawing": "Outils de dessin",
+      "edit": "Édition",
+      "view": "Affichage",
+      "group": "Grouper",
+      "style": "Style"
+    },
     "empty": {
       "title": "Créez votre premier dessin",
       "desc": "Esquissez des diagrammes, des maquettes et des idées visuelles",

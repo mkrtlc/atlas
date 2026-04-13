@@ -8,8 +8,12 @@ import {
   Check,
   Maximize,
   Minimize,
+  HelpCircle,
+  Palette,
 } from 'lucide-react';
 import { IconButton } from '../../../components/ui/icon-button';
+import { Popover, PopoverTrigger, PopoverContent } from '../../../components/ui/popover';
+import { DrawHelpModal } from './draw-help-modal';
 import { useSettingsStore } from '../../../stores/settings-store';
 import { useDrawSettingsStore } from '../settings-store';
 import { SmartButtonBar } from '../../../components/shared/SmartButtonBar';
@@ -55,6 +59,8 @@ function EditableTitle({
   presenceSlot,
   visibilitySlot,
   presentSlot,
+  bgPickerSlot,
+  helpSlot,
   canEdit = true,
 }: {
   title: string;
@@ -65,6 +71,8 @@ function EditableTitle({
   presenceSlot?: React.ReactNode;
   visibilitySlot?: React.ReactNode;
   presentSlot?: React.ReactNode;
+  bgPickerSlot?: React.ReactNode;
+  helpSlot?: React.ReactNode;
   canEdit?: boolean;
 }) {
   const { t } = useTranslation();
@@ -175,10 +183,12 @@ function EditableTitle({
           {t('draw.saved')}
         </span>
       )}
+      {bgPickerSlot}
       {visibilitySlot}
       {presenceSlot}
       <InsertImageButton excalidrawApi={excalidrawApi} />
       <ExportMenu excalidrawApi={excalidrawApi} />
+      {helpSlot}
       {presentSlot}
     </div>
   );
@@ -205,9 +215,13 @@ export function ExcalidrawCanvas({
   visibilitySlot?: React.ReactNode;
   canEdit?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const langCode = i18n.language?.split('-')[0] || 'en';
   const [excalidrawApi, setExcalidrawApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const [isPresenting, setIsPresenting] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [bgPickerOpen, setBgPickerOpen] = useState(false);
+  const [currentBgColor, setCurrentBgColor] = useState<string>('#ffffff');
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const theme = useSettingsStore((s) => s.theme);
   const { gridMode, snapToGrid, defaultBackground } = useDrawSettingsStore();
@@ -276,6 +290,51 @@ export function ExcalidrawCanvas({
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
+  // Keyboard shortcut: "?" opens help modal
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement | null;
+        const tag = target?.tagName;
+        const isEditable =
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          target?.isContentEditable;
+        if (isEditable) return;
+        e.preventDefault();
+        setHelpOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Sync current bg color from Excalidraw appState when it becomes available
+  useEffect(() => {
+    if (!excalidrawApi) return;
+    const appState = excalidrawApi.getAppState();
+    if (appState?.viewBackgroundColor) {
+      setCurrentBgColor(appState.viewBackgroundColor);
+    }
+  }, [excalidrawApi]);
+
+  const BG_PRESETS: { color: string; labelKey: string }[] = [
+    { color: '#ffffff', labelKey: 'draw.bgWhite' },
+    { color: '#f8f9fa', labelKey: 'draw.bgLight' },
+    { color: '#f0f8ff', labelKey: 'draw.bgWhite' },
+    { color: '#fffcf0', labelKey: 'draw.bgWhite' },
+  ];
+
+  const handleSelectBg = useCallback(
+    (color: string) => {
+      if (!excalidrawApi) return;
+      excalidrawApi.updateScene({ appState: { viewBackgroundColor: color } } as any);
+      setCurrentBgColor(color);
+      setBgPickerOpen(false);
+    },
+    [excalidrawApi],
+  );
+
   const handlePresent = useCallback(async () => {
     try {
       if (canvasContainerRef.current) {
@@ -309,6 +368,10 @@ export function ExcalidrawCanvas({
       }
 
       const persistedAppState = pickAppState(appState);
+      const bg = appState.viewBackgroundColor as string | undefined;
+      if (bg && bg !== currentBgColor) {
+        setCurrentBgColor(bg);
+      }
       onAutoSave({
         elements: elements as unknown as Record<string, unknown>[],
         appState: persistedAppState,
@@ -322,7 +385,7 @@ export function ExcalidrawCanvas({
         if (dataUrl) onThumbnailRef.current(dataUrl);
       }, THUMBNAIL_DEBOUNCE_MS);
     },
-    [onAutoSave],
+    [onAutoSave, currentBgColor],
   );
 
   return (
@@ -338,6 +401,75 @@ export function ExcalidrawCanvas({
             canEdit={canEdit}
             presenceSlot={<PresenceAvatars appId="draw" recordId={drawing.id} />}
             visibilitySlot={visibilitySlot}
+            bgPickerSlot={
+              <Popover open={bgPickerOpen} onOpenChange={setBgPickerOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={t('draw.canvasBackground')}
+                    title={t('draw.canvasBackground')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '4px 6px',
+                      background: 'transparent',
+                      border: '1px solid var(--color-border-primary)',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      color: 'var(--color-text-tertiary)',
+                    }}
+                  >
+                    <Palette size={12} />
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 14,
+                        height: 14,
+                        borderRadius: 3,
+                        border: '1px solid var(--color-border-primary)',
+                        background: currentBgColor,
+                      }}
+                    />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent sideOffset={6} align="start" style={{ padding: 8 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {BG_PRESETS.map((preset) => (
+                      <button
+                        key={preset.color}
+                        type="button"
+                        onClick={() => handleSelectBg(preset.color)}
+                        aria-label={preset.color}
+                        title={preset.color}
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 4,
+                          background: preset.color,
+                          border:
+                            currentBgColor.toLowerCase() === preset.color.toLowerCase()
+                              ? '2px solid var(--color-accent-primary)'
+                              : '1px solid var(--color-border-primary)',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            }
+            helpSlot={
+              <IconButton
+                icon={<HelpCircle size={14} />}
+                label={t('draw.help.title')}
+                tooltip
+                tooltipSide="bottom"
+                size={26}
+                onClick={() => setHelpOpen(true)}
+              />
+            }
             presentSlot={
               <IconButton
                 icon={<Maximize size={14} />}
@@ -359,6 +491,7 @@ export function ExcalidrawCanvas({
           }}
           initialData={initialData as any}
           theme={effectiveTheme}
+          langCode={langCode}
           viewModeEnabled={!canEdit}
           onChange={handleChange as any}
           UIOptions={{
@@ -398,6 +531,7 @@ export function ExcalidrawCanvas({
           </button>
         )}
       </div>
+      <DrawHelpModal open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }

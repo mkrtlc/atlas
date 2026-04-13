@@ -798,6 +798,16 @@
     "exportPdf": "Export as PDF",
     "insertImage": "Insert image",
     "imageTooLarge": "Image must be under 10 MB",
+    "canvasBackground": "Canvas background",
+    "help": {
+      "title": "Keyboard shortcuts",
+      "selection": "Selection & move",
+      "drawing": "Drawing tools",
+      "edit": "Edit",
+      "view": "View",
+      "group": "Group",
+      "style": "Style"
+    },
     "empty": {
       "title": "Create your first drawing",
       "desc": "Sketch diagrams, wireframes, and visual ideas",

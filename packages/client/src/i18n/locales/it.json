@@ -768,6 +768,16 @@
     "exportPdf": "Esporta come PDF",
     "insertImage": "Inserisci immagine",
     "imageTooLarge": "L'immagine deve essere inferiore a 10 MB",
+    "canvasBackground": "Sfondo tela",
+    "help": {
+      "title": "Scorciatoie da tastiera",
+      "selection": "Selezione e spostamento",
+      "drawing": "Strumenti di disegno",
+      "edit": "Modifica",
+      "view": "Visualizza",
+      "group": "Raggruppa",
+      "style": "Stil"
+    },
     "empty": {
       "title": "Crea il tuo primo disegno",
       "desc": "Disegna diagrammi, wireframe e idee visive",

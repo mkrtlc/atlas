@@ -768,6 +768,16 @@
     "exportPdf": "Als PDF exportieren",
     "insertImage": "Bild einfügen",
     "imageTooLarge": "Bild muss kleiner als 10 MB sein",
+    "canvasBackground": "Canvas-Hintergrund",
+    "help": {
+      "title": "Tastaturkürzel",
+      "selection": "Auswahl und verschieben",
+      "drawing": "Zeichenwerkzeuge",
+      "edit": "Bearbeiten",
+      "view": "Ansicht",
+      "group": "Gruppieren",
+      "style": "Stil"
+    },
     "empty": {
       "title": "Erste Zeichnung erstellen",
       "desc": "Skizzieren Sie Diagramme, Wireframes und visuelle Ideen",
