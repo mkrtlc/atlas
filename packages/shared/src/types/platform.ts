@@ -25,6 +25,7 @@ export interface Tenant {
   quotaCpu: number;
   quotaMemoryMb: number;
   quotaStorageMb: number;
+  storageQuotaBytes: number;
   createdAt: string;
   updatedAt: string;
 }

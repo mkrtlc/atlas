@@ -80,7 +80,7 @@ export function DrivePage() {
           ) : undefined
         }
         footer={d.storageData ? (() => {
-          const totalQuota = 10 * 1024 * 1024 * 1024;
+          const totalQuota = d.storageQuotaBytes;
           const usagePercent = Math.min(100, (d.storageData.totalBytes / totalQuota) * 100);
           return (
             <div className="drive-storage">

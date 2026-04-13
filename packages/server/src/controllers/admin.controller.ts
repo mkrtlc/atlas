@@ -155,6 +155,36 @@ export async function updateTenantStatus(req: Request, res: Response) {
   }
 }
 
+// ─── Update tenant storage quota ──────────────────────────────────────────────
+
+export async function updateTenantStorageQuota(req: Request, res: Response) {
+  try {
+    const id = req.params.id as string;
+    const { storageQuotaBytes } = req.body;
+
+    if (typeof storageQuotaBytes !== 'number' || storageQuotaBytes < 0) {
+      res.status(400).json({ success: false, error: 'storageQuotaBytes must be a non-negative number' });
+      return;
+    }
+
+    const [updated] = await db
+      .update(tenants)
+      .set({ storageQuotaBytes, updatedAt: new Date() })
+      .where(eq(tenants.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ success: false, error: 'Tenant not found' });
+      return;
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    logger.error({ err }, 'Failed to update tenant storage quota');
+    res.status(500).json({ success: false, error: 'Failed to update tenant storage quota' });
+  }
+}
+
 const VALID_PLANS = ['starter', 'pro', 'enterprise'];
 
 export async function updateTenantPlanHandler(req: Request, res: Response) {

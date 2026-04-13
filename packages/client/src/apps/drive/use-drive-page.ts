@@ -22,7 +22,7 @@ import { useDriveSettingsStore, useDriveSettingsSync } from './settings-store';
 import { useUIStore } from '../../stores/ui-store';
 import { useAuthStore } from '../../stores/auth-store';
 import { useAppActions } from '../../hooks/use-app-permissions';
-import { useTenantUsers } from '../../hooks/use-platform';
+import { useTenantUsers, useMyTenants } from '../../hooks/use-platform';
 import { useQuery } from '@tanstack/react-query';
 import type { DriveItem } from '@atlas-platform/shared';
 
@@ -106,6 +106,8 @@ export function useDrivePage() {
   const { data: trashData } = useDriveTrash();
   const { data: searchData } = useDriveSearch(searchQuery);
   const { data: storageData } = useDriveStorage();
+  const { data: tenantsData } = useMyTenants();
+  const storageQuotaBytes = tenantsData?.[0]?.storageQuotaBytes ?? 10 * 1024 * 1024 * 1024;
   const { data: foldersData } = useDriveFolders();
   const previewFileId = previewItem && previewItem.type === 'file' && isTextPreviewable(previewItem.mimeType, previewItem.name) ? previewItem.id : undefined;
   const { data: filePreviewData, isLoading: previewLoading } = useFilePreview(previewFileId);
@@ -549,7 +551,7 @@ export function useDrivePage() {
     currentParentId, displayItems, isLoading, breadcrumbs, hasSelection, viewTitle,
     folderTree, copyFolderTree, batchFolderTree,
     // Query data
-    storageData, filePreviewData, previewLoading,
+    storageData, storageQuotaBytes, filePreviewData, previewLoading,
     linkedDocData, linkedDrawingData, linkedTableData,
     versionsData, shareLinksData, itemSharesData, tenantUsersData,
     activityData, commentsData, account, perm,

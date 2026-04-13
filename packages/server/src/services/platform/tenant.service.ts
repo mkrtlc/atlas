@@ -87,3 +87,12 @@ export async function updateTenantPlan(tenantId: string, plan: TenantPlan) {
     .returning();
   return updated;
 }
+
+export async function updateTenantStorageQuota(tenantId: string, storageQuotaBytes: number) {
+  const [updated] = await db
+    .update(tenants)
+    .set({ storageQuotaBytes, updatedAt: new Date() })
+    .where(eq(tenants.id, tenantId))
+    .returning();
+  return updated;
+}

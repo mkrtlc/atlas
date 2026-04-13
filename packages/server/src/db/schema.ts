@@ -759,6 +759,7 @@ export const tenants = pgTable('tenants', {
   quotaCpu: integer('quota_cpu').notNull().default(2000),
   quotaMemoryMb: integer('quota_memory_mb').notNull().default(4096),
   quotaStorageMb: integer('quota_storage_mb').notNull().default(20480),
+  storageQuotaBytes: bigint('storage_quota_bytes', { mode: 'number' }).notNull().default(10737418240),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
