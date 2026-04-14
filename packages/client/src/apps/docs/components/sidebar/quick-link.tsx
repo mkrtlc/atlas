@@ -24,6 +24,8 @@ export function QuickLink({
       style={{
         width: '100%',
         justifyContent: 'flex-start',
+        // Indent so the icon/label align with tree-item filenames under PRIVATE.
+        paddingLeft: 33,
         color: active ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
         background: active ? 'var(--color-surface-selected)' : 'transparent',
         fontSize: 13,

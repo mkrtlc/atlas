@@ -1,10 +1,19 @@
 import rateLimit from 'express-rate-limit';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
+// Raised from 120 to 600/min. The old cap was easy to hit in normal dev
+// (TanStack Query refetches, StrictMode double-invokes, multiple tabs).
+// In production, 600/min per IP is still well below abuse levels for a
+// single authenticated user.
 export const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120,
+  max: 600,
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip entirely in local dev — the limiter's value is anti-abuse in
+  // production, not defense against your own browser.
+  skip: () => isDev,
   message: { success: false, error: 'Too many requests, please try again later' },
 });
 
