@@ -510,6 +510,9 @@ export const driveShareLinks = pgTable('drive_share_links', {
   shareToken: text('share_token').notNull().unique(),
   passwordHash: text('password_hash'),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
+  mode: varchar('mode', { length: 20 }).notNull().default('view'),
+  uploadInstructions: text('upload_instructions'),
+  requireUploaderEmail: boolean('require_uploader_email').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   tokenIdx: index('idx_share_links_token').on(table.shareToken),
