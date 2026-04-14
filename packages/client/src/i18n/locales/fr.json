@@ -2208,6 +2208,17 @@
     },
     "linkedFrom": {
       "title": "Enregistrements liés"
+    },
+    "upload": {
+      "heading": "Téléverser des fichiers dans {{folder}}",
+      "nameLabel": "Votre nom",
+      "emailLabel": "E-mail",
+      "chooseFiles": "Cliquez ou déposez des fichiers à téléverser",
+      "filesChosen_one": "{{count}} fichier prêt",
+      "filesChosen_other": "{{count}} fichiers prêts",
+      "uploading": "Téléversement en cours…",
+      "submit": "Téléverser",
+      "successTitle": "Fichiers téléversés"
     }
   },
   "hr": {

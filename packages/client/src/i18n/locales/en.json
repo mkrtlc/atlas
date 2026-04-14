@@ -2270,6 +2270,17 @@
     },
     "linkedFrom": {
       "title": "Linked records"
+    },
+    "upload": {
+      "heading": "Upload files to {{folder}}",
+      "nameLabel": "Your name",
+      "emailLabel": "Email",
+      "chooseFiles": "Click or drop files to upload",
+      "filesChosen_one": "{{count}} file ready",
+      "filesChosen_other": "{{count}} files ready",
+      "uploading": "Uploading…",
+      "submit": "Upload",
+      "successTitle": "Files uploaded"
     }
   },
   "hr": {

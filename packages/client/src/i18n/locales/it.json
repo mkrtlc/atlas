@@ -2208,6 +2208,17 @@
     },
     "linkedFrom": {
       "title": "Record collegati"
+    },
+    "upload": {
+      "heading": "Carica file in {{folder}}",
+      "nameLabel": "Il tuo nome",
+      "emailLabel": "Email",
+      "chooseFiles": "Clicca o trascina i file per caricarli",
+      "filesChosen_one": "{{count}} file pronto",
+      "filesChosen_other": "{{count}} file pronti",
+      "uploading": "Caricamento in corso…",
+      "submit": "Carica",
+      "successTitle": "File caricati"
     }
   },
   "hr": {

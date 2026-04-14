@@ -2208,6 +2208,17 @@
     },
     "linkedFrom": {
       "title": "Bağlı kayıtlar"
+    },
+    "upload": {
+      "heading": "{{folder}} klasörüne dosya yükle",
+      "nameLabel": "Adınız",
+      "emailLabel": "E-posta",
+      "chooseFiles": "Dosya seçmek için tıklayın veya sürükleyin",
+      "filesChosen_one": "{{count}} dosya hazır",
+      "filesChosen_other": "{{count}} dosya hazır",
+      "uploading": "Yükleniyor…",
+      "submit": "Yükle",
+      "successTitle": "Dosyalar yüklendi"
     }
   },
   "hr": {

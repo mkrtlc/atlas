@@ -31,6 +31,7 @@ import { ForgotPasswordPage } from './pages/forgot-password';
 import { ResetPasswordPage } from './pages/reset-password';
 import { SignPublicPage } from './pages/sign-public';
 import { ProposalPublicPage } from './pages/proposal-public';
+import { DriveUploadPublicPage } from './pages/drive-upload-public';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -77,6 +78,7 @@ function GlobalDockWrapper() {
   if (path.startsWith('/invitation/')) return null;
   if (path.startsWith('/reset-password/')) return null;
   if (path.startsWith('/sign/') || path.startsWith('/proposal/')) return null;
+  if (path.startsWith('/drive/upload/')) return null;
 
   return <GlobalDock />;
 }
@@ -109,6 +111,7 @@ export function App() {
                 <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
                 <Route path="/sign/:token" element={<SignPublicPage />} />
                 <Route path="/proposal/:token" element={<ProposalPublicPage />} />
+                <Route path="/drive/upload/:token" element={<DriveUploadPublicPage />} />
                 <Route
                   path={ROUTES.HOME}
                   element={
