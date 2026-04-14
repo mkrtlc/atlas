@@ -30,7 +30,7 @@ import { DriveBulkBar } from './components/drive-bulk-bar';
 import { NewFolderModal, MoveModal, TagModal, ShareModal, GoogleDriveModal } from './components/modals';
 import { getSortOptions, getTypeFilterOptions, getModifiedFilterOptions, parseTag } from './lib/helpers';
 import { useDrivePage } from './use-drive-page';
-import { useBatchTrash } from './hooks';
+import { useBatchTrash, useBatchMoveDriveItems } from './hooks';
 
 export function DrivePage() {
   const { t } = useTranslation();
@@ -42,6 +42,16 @@ export function DrivePage() {
   const currentUserId = d.account?.userId;
 
   const batchTrash = useBatchTrash();
+  const batchMove = useBatchMoveDriveItems();
+
+  const handleDragBatchMove = (ids: string[], targetFolderId: string) => {
+    batchMove.mutate({ itemIds: ids, parentId: targetFolderId }, {
+      onSuccess: () => {
+        d.addToast({ type: 'success', message: t('drive.actions.itemsMoved', { count: ids.length }) });
+        d.setSelectedIds(new Set());
+      },
+    });
+  };
 
   const handleBulkTrash = () => {
     if (d.selectedIds.size === 0) return;
@@ -215,7 +225,7 @@ export function DrivePage() {
               : (<FeatureEmptyState illustration="files" title={d.t('drive.empty.title')} description={d.t('drive.empty.desc')} highlights={[{ icon: <Upload size={14} />, title: d.t('drive.empty.h1Title'), description: d.t('drive.empty.h1Desc') }, { icon: <FolderPlus size={14} />, title: d.t('drive.empty.h2Title'), description: d.t('drive.empty.h2Desc') }, { icon: <Share2 size={14} />, title: d.t('drive.empty.h3Title'), description: d.t('drive.empty.h3Desc') }]} actionLabel={canCreate ? d.t('drive.empty.uploadFiles') : undefined} actionIcon={canCreate ? <Upload size={14} /> : undefined} onAction={canCreate ? () => d.fileInputRef.current?.click() : undefined} />)}
             </div>
           ) : d.viewMode === 'list' ? (
-            <DriveDataTableList displayItems={d.displayItems} sortBy={d.sortBy} setSortBy={d.setSortBy} selectedIds={d.selectedIds} setSelectedIds={d.setSelectedIds} renameId={d.renameId} setRenameId={d.setRenameId} renameValue={d.renameValue} setRenameValue={d.setRenameValue} handleRenameSubmit={d.handleRenameSubmit} setPreviewItem={d.setPreviewItem} handleItemDoubleClick={d.handleItemDoubleClick} handleContextMenu={d.handleContextMenu} handleItemDragStart={d.handleItemDragStart} handleItemDragEnd={d.handleItemDragEnd} handleFolderDragOver={d.handleFolderDragOver} handleFolderDragLeave={d.handleFolderDragLeave} handleFolderDrop={d.handleFolderDrop} dragOverFolderId={d.dragOverFolderId} sidebarView={d.sidebarView} tenantUsersData={d.tenantUsersData ?? []} driveSettings={d.driveSettings} renderTags={renderTags} />
+            <DriveDataTableList displayItems={d.displayItems} sortBy={d.sortBy} setSortBy={d.setSortBy} selectedIds={d.selectedIds} setSelectedIds={d.setSelectedIds} renameId={d.renameId} setRenameId={d.setRenameId} renameValue={d.renameValue} setRenameValue={d.setRenameValue} handleRenameSubmit={d.handleRenameSubmit} setPreviewItem={d.setPreviewItem} handleItemDoubleClick={d.handleItemDoubleClick} handleContextMenu={d.handleContextMenu} handleItemDragStart={d.handleItemDragStart} handleItemDragEnd={d.handleItemDragEnd} handleFolderDragOver={d.handleFolderDragOver} handleFolderDragLeave={d.handleFolderDragLeave} handleFolderDrop={d.handleFolderDrop} onBatchMoveToFolder={handleDragBatchMove} dragOverFolderId={d.dragOverFolderId} sidebarView={d.sidebarView} tenantUsersData={d.tenantUsersData ?? []} driveSettings={d.driveSettings} renderTags={renderTags} />
           ) : (
             <DriveGridView displayItems={d.displayItems} selectedIds={d.selectedIds} setSelectedIds={d.setSelectedIds} renameId={d.renameId} renameValue={d.renameValue} setRenameValue={d.setRenameValue} setRenameId={d.setRenameId} handleRenameSubmit={d.handleRenameSubmit} handleItemClick={d.handleItemClick} handleItemDoubleClick={d.handleItemDoubleClick} handleContextMenu={d.handleContextMenu} handleItemDragStart={d.handleItemDragStart} handleItemDragEnd={d.handleItemDragEnd} handleFolderDragOver={d.handleFolderDragOver} handleFolderDragLeave={d.handleFolderDragLeave} handleFolderDrop={d.handleFolderDrop} dragOverFolderId={d.dragOverFolderId} sidebarView={d.sidebarView} tenantUsersData={d.tenantUsersData ?? []} driveSettings={d.driveSettings} renderTags={renderTags} />
           )}

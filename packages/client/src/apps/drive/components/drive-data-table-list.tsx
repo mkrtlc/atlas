@@ -31,6 +31,7 @@ export function DriveDataTableList({
   handleFolderDragOver,
   handleFolderDragLeave,
   handleFolderDrop,
+  onBatchMoveToFolder,
   dragOverFolderId,
   sidebarView,
   tenantUsersData,
@@ -96,11 +97,35 @@ export function DriveDataTableList({
             className="drive-list-name"
             data-drive-id={item.id}
             draggable={!isRenaming}
-            onDragStart={(e) => { e.stopPropagation(); handleItemDragStart(e, item); }}
+            onDragStart={(e) => {
+              e.stopPropagation();
+              const isInSelection = selectedIds.has(item.id);
+              const payload = isInSelection && selectedIds.size > 0
+                ? { ids: Array.from(selectedIds) }
+                : { ids: [item.id] };
+              e.dataTransfer.setData('application/x-atlas-drive-ids', JSON.stringify(payload));
+              e.dataTransfer.effectAllowed = 'move';
+              handleItemDragStart(e, item);
+            }}
             onDragEnd={(e) => { e.stopPropagation(); handleItemDragEnd(); }}
             onDragOver={item.type === 'folder' ? (e) => { e.stopPropagation(); handleFolderDragOver(e, item.id); } : undefined}
             onDragLeave={item.type === 'folder' ? (e) => { e.stopPropagation(); handleFolderDragLeave(e); } : undefined}
-            onDrop={item.type === 'folder' ? (e) => { e.stopPropagation(); handleFolderDrop(e, item.id); } : undefined}
+            onDrop={item.type === 'folder' ? (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleFolderDragLeave(e);
+              const raw = e.dataTransfer.getData('application/x-atlas-drive-ids');
+              if (raw && onBatchMoveToFolder) {
+                try {
+                  const { ids } = JSON.parse(raw) as { ids: string[] };
+                  if (ids.length > 1) {
+                    onBatchMoveToFolder(ids, item.id);
+                    return;
+                  }
+                } catch { /* fall through */ }
+              }
+              handleFolderDrop(e, item.id);
+            } : undefined}
           >
             {item.icon ? (
               <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>

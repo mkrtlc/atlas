@@ -26,6 +26,7 @@ export interface DriveDataTableListProps {
   handleFolderDragOver: (e: React.DragEvent, folderId: string) => void;
   handleFolderDragLeave: (e: React.DragEvent) => void;
   handleFolderDrop: (e: React.DragEvent, targetFolderId: string) => void;
+  onBatchMoveToFolder?: (ids: string[], targetFolderId: string) => void;
   dragOverFolderId: string | null;
   sidebarView: SidebarView;
   tenantUsersData: import('@atlas-platform/shared').TenantUser[];
