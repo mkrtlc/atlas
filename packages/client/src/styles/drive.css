@@ -94,10 +94,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--color-border-secondary);
-  flex-shrink: 0;
-  min-height: 48px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  flex: 1;
+  min-width: 0;
 }
 
 .drive-toolbar-left {
@@ -617,9 +616,7 @@
 /* ─── Upload progress ─────────────────────────────────────────────── */
 
 .drive-upload-progress {
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--color-border-secondary);
-  flex-shrink: 0;
+  padding: var(--spacing-sm) var(--spacing-lg);
 }
 
 .drive-upload-progress-info {
