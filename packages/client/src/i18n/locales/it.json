@@ -1982,7 +1982,8 @@
       "expiry7Days": "Scade in 7 giorni",
       "expiry30Days": "Scade in 30 giorni",
       "shareTitle": "Condividi \"{{name}}\"",
-      "autoSaveHint": "Le modifiche vengono salvate automaticamente mentre condividi, revochi o crei link."
+      "autoSaveHint": "Le modifiche vengono salvate automaticamente mentre condividi, revochi o crei link.",
+      "linkExpired": "Scaduto"
     },
     "activity": {
       "title": "Attività",

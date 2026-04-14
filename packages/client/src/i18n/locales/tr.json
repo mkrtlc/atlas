@@ -1982,7 +1982,8 @@
       "expiry7Days": "7 gün sonra sona erer",
       "expiry30Days": "30 gün sonra sona erer",
       "shareTitle": "\"{{name}}\" paylaş",
-      "autoSaveHint": "Paylaştıkça, iptal ettikçe veya bağlantı oluşturdukça değişiklikler otomatik olarak kaydedilir."
+      "autoSaveHint": "Paylaştıkça, iptal ettikçe veya bağlantı oluşturdukça değişiklikler otomatik olarak kaydedilir.",
+      "linkExpired": "Süresi dolmuş"
     },
     "activity": {
       "title": "Etkinlik",

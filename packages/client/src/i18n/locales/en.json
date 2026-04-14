@@ -2044,7 +2044,8 @@
       "expiry7Days": "Expires in 7 days",
       "expiry30Days": "Expires in 30 days",
       "shareTitle": "Share \"{{name}}\"",
-      "autoSaveHint": "Changes are saved automatically as you share, revoke or create links."
+      "autoSaveHint": "Changes are saved automatically as you share, revoke or create links.",
+      "linkExpired": "Expired"
     },
     "activity": {
       "title": "Activity",
