@@ -533,6 +533,10 @@ export async function batchTrash(req: Request, res: Response) {
       res.status(400).json({ success: false, error: 'itemIds required' });
       return;
     }
+    if (itemIds.length > 500) {
+      res.status(400).json({ success: false, error: 'Too many items (max 500)' });
+      return;
+    }
     const result = await driveService.batchTrash(userId, itemIds);
     res.json({ success: true, data: result });
   } catch (error) {
@@ -554,6 +558,10 @@ export async function batchTag(req: Request, res: Response) {
     const { itemIds, tags, op } = req.body as { itemIds: string[]; tags: string[]; op: 'add' | 'remove' };
     if (!Array.isArray(itemIds) || !Array.isArray(tags) || !['add', 'remove'].includes(op)) {
       res.status(400).json({ success: false, error: 'Invalid payload' });
+      return;
+    }
+    if (itemIds.length > 500) {
+      res.status(400).json({ success: false, error: 'Too many items (max 500)' });
       return;
     }
     const result = await driveService.batchTag(userId, itemIds, tags, op);

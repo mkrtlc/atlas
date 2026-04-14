@@ -716,6 +716,8 @@ export async function batchTag(
   op: 'add' | 'remove',
 ) {
   if (itemIds.length === 0 || tags.length === 0) return { updated: 0 };
+  // TODO: read-modify-write is non-atomic. For scale (thousands of rows, concurrent users),
+  // migrate to a single UPDATE using jsonb_set or a dedicated tags table.
   const rows = await db
     .select({ id: driveItems.id, tags: driveItems.tags })
     .from(driveItems)
