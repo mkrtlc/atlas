@@ -13,6 +13,7 @@ coverage/
 out/
 *.png
 !packages/client/public/pets/**/*.png
+!docs/screenshots/**/*.png
 .playwright-mcp/
 .claude/
 packages/server/data/
