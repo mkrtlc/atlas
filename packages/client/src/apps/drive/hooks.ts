@@ -630,3 +630,29 @@ export function useExportToGoogleDrive() {
     },
   });
 }
+
+export function useBatchTrash() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (itemIds: string[]) => {
+      const { data } = await api.post('/drive/batch/trash', { itemIds });
+      return data.data as { trashed: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}
+
+export function useBatchTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { itemIds: string[]; tags: string[]; op: 'add' | 'remove' }) => {
+      const { data } = await api.post('/drive/batch/tag', input);
+      return data.data as { updated: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.drive.all });
+    },
+  });
+}
