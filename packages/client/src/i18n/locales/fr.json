@@ -2029,7 +2029,9 @@
       "versionHistory": "Historique des versions",
       "noPreviousVersions": "Aucune version précédente",
       "restoreVersion": "Restaurer cette version",
-      "downloadVersion": "Télécharger cette version"
+      "downloadVersion": "Télécharger cette version",
+      "uploadedBy": "Téléversé par {{name}} {{email}}",
+      "anonymous": "Anonyme"
     },
     "table": {
       "name": "Nom",

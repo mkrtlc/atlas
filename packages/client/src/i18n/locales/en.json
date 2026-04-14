@@ -2091,7 +2091,9 @@
       "versionHistory": "Version history",
       "noPreviousVersions": "No previous versions",
       "restoreVersion": "Restore this version",
-      "downloadVersion": "Download this version"
+      "downloadVersion": "Download this version",
+      "uploadedBy": "Uploaded by {{name}} {{email}}",
+      "anonymous": "Anonymous"
     },
     "table": {
       "name": "Name",

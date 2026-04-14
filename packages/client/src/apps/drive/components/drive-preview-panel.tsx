@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   X, Download, ChevronDown, History, Music, ExternalLink,
   RotateCcw, Upload, FolderPlus, Pencil, Trash2, Share2, Link2,
-  Activity, MessageSquare, Send,
+  Activity, MessageSquare, Send, Inbox,
 } from 'lucide-react';
 import { IconButton } from '../../../components/ui/icon-button';
 import { Button } from '../../../components/ui/button';
@@ -109,6 +109,25 @@ export function DrivePreviewPanel({
       />
       <div className="drive-preview-header">
         <span className="drive-preview-title">{previewItem.name}</span>
+        {(previewItem as { uploadSource?: { name: string | null; email: string | null; uploadedAt: string } }).uploadSource && (
+          <div style={{
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-text-secondary)',
+            padding: 'var(--spacing-xs) var(--spacing-md)',
+            background: 'var(--color-bg-secondary)',
+            borderRadius: 'var(--radius-sm)',
+            marginLeft: 'var(--spacing-xs)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          }}>
+            <Inbox size={11} />
+            {t('drive.preview.uploadedBy', {
+              name: (previewItem as { uploadSource?: { name: string | null } }).uploadSource?.name || t('drive.preview.anonymous'),
+              email: (previewItem as { uploadSource?: { email: string | null } }).uploadSource?.email || '',
+            })}
+          </div>
+        )}
         <PresenceAvatars appId="drive" recordId={previewItem?.id} />
         <IconButton
           icon={<X size={16} />}

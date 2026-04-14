@@ -2029,7 +2029,9 @@
       "versionHistory": "Sürüm geçmişi",
       "noPreviousVersions": "Önceki sürüm yok",
       "restoreVersion": "Bu sürümü geri yükle",
-      "downloadVersion": "Bu sürümü indir"
+      "downloadVersion": "Bu sürümü indir",
+      "uploadedBy": "{{name}} {{email}} tarafından yüklendi",
+      "anonymous": "Anonim"
     },
     "table": {
       "name": "Ad",
