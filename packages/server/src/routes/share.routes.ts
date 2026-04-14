@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import * as driveService from '../apps/drive/service';
 import { logger } from '../utils/logger';
 import { db } from '../config/database';
@@ -7,10 +9,38 @@ import { driveItems } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import path from 'node:path';
 import { existsSync, createReadStream, statSync } from 'node:fs';
+import { handlePublicUpload } from '../apps/drive/controllers/public-upload.controller';
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB per file
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20,
+  keyGenerator: (req) => `${req.params.token}:${req.ip}`,
+  message: { success: false, error: 'Too many uploads. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+function handleMulterError(err: unknown, _req: Request, res: Response, next: Function) {
+  const error = err as { code?: string; message?: string };
+  if (error?.code === 'LIMIT_FILE_SIZE') {
+    res.status(413).json({ success: false, error: 'File too large (max 100 MB)' });
+    return;
+  }
+  if (error?.message) {
+    res.status(400).json({ success: false, error: error.message });
+    return;
+  }
+  next();
+}
 
 // GET /api/v1/share/:token — public file metadata
 router.get('/:token', async (req: Request, res: Response) => {
@@ -121,5 +151,7 @@ router.get('/:token/info', async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: 'Failed to load link info' });
   }
 });
+
+router.post('/:token/upload', uploadLimiter, upload.array('files', 10), handleMulterError, handlePublicUpload);
 
 export default router;
