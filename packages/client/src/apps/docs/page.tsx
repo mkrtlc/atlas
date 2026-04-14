@@ -27,6 +27,7 @@ import { useDrawingList } from '../draw/hooks';
 import { SmartButtonBar } from '../../components/shared/SmartButtonBar';
 import { useAuthStore } from '../../stores/auth-store';
 import { FeatureEmptyState } from '../../components/ui/feature-empty-state';
+import { ContentArea } from '../../components/ui/content-area';
 import { TopBar } from './components/top-bar';
 import { DocumentView } from './components/document-view';
 import { TemplateGallery } from './components/template-gallery';
@@ -237,35 +238,29 @@ export function DocsPage() {
         onImport={() => importInputRef.current?.click()}
       />
 
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          paddingBottom: 'var(--global-dock-offset, 0px)',
-        }}
+      <ContentArea
+        headerSlot={
+          doc && !showTemplates ? (
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+              <TopBar
+                doc={doc}
+                breadcrumbs={breadcrumbs}
+                isSaving={isSaving}
+                onNavigate={handleSelect}
+                onShowVersionHistory={() => setShowVersionHistory(true)}
+                onOpenSettings={() => openSettings('documents')}
+                showComments={showComments}
+                onToggleComments={() => setShowComments(!showComments)}
+                visibility={(doc.visibility as 'private' | 'team') || 'private'}
+                onVisibilityToggle={(v) => updateVisibility.mutate({ id: doc.id, visibility: v })}
+                isOwner={doc.userId === account?.userId}
+              />
+              <SmartButtonBar appId="docs" recordId={doc.id} />
+            </div>
+          ) : undefined
+        }
+        title={!doc || showTemplates ? t('docs.title', 'Write') : undefined}
       >
-        {/* Top bar: breadcrumbs + actions */}
-        {doc && !showTemplates && (
-          <TopBar
-            doc={doc}
-            breadcrumbs={breadcrumbs}
-            isSaving={isSaving}
-            onNavigate={handleSelect}
-            onShowVersionHistory={() => setShowVersionHistory(true)}
-            onOpenSettings={() => openSettings('documents')}
-            showComments={showComments}
-            onToggleComments={() => setShowComments(!showComments)}
-            visibility={(doc.visibility as 'private' | 'team') || 'private'}
-            onVisibilityToggle={(v) => updateVisibility.mutate({ id: doc.id, visibility: v })}
-            isOwner={doc.userId === account?.userId}
-          />
-        )}
-
-        {doc && !showTemplates && <SmartButtonBar appId="docs" recordId={doc.id} />}
-
-        {/* Editor area or template gallery */}
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'row' }}>
           <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {showTemplates ? (
@@ -301,7 +296,7 @@ export function DocsPage() {
             <CommentSidebar docId={selectedId} isOpen={showComments} onClose={() => setShowComments(false)} />
           )}
         </div>
-      </div>
+      </ContentArea>
 
       {/* Version history panel */}
       {showVersionHistory && selectedId && (
