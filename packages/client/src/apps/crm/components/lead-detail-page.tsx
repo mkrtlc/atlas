@@ -135,7 +135,7 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
     if (!lead) return;
     const trimmed = editingNotes.trim();
     if (trimmed !== (lead.notes ?? '').trim()) {
-      updateLead.mutate({ id: lead.id, notes: trimmed || null });
+      updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, notes: trimmed || null });
     }
   }, [lead, editingNotes, updateLead]);
 
@@ -177,10 +177,10 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
         {/* Won / Lost */}
         {lead.status !== 'converted' && lead.status !== 'lost' && canUpdateLead && (
           <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
-            <Button variant="primary" size="sm" icon={<Trophy size={13} />} onClick={() => updateLead.mutate({ id: lead.id, status: 'converted' })}>
+            <Button variant="primary" size="sm" icon={<Trophy size={13} />} onClick={() => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, status: 'converted' })}>
               {t('crm.deals.markWon')}
             </Button>
-            <Button variant="danger" size="sm" icon={<XCircle size={13} />} onClick={() => updateLead.mutate({ id: lead.id, status: 'lost' })}>
+            <Button variant="danger" size="sm" icon={<XCircle size={13} />} onClick={() => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, status: 'lost' })}>
               {t('crm.deals.markLost')}
             </Button>
           </div>
@@ -200,7 +200,7 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
         padding: 'var(--spacing-sm) var(--spacing-lg)',
         borderBottom: '1px solid var(--color-border-secondary)', flexShrink: 0,
       }}>
-        <StatusPipeline status={lead.status} onChange={(s) => { if (canUpdateLead) updateLead.mutate({ id: lead.id, status: s }); }} updatedAt={lead.updatedAt} />
+        <StatusPipeline status={lead.status} onChange={(s) => { if (canUpdateLead) updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, status: s }); }} updatedAt={lead.updatedAt} />
       </div>
 
       {/* Main content */}
@@ -214,14 +214,14 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
 
           {/* Field grid — all editable */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
-            <EditableField label={t('crm.leads.expectedRevenue')} value={String(lead.expectedRevenue || 0)} type="number" onSave={(v) => updateLead.mutate({ id: lead.id, expectedRevenue: Number(v) || 0 })} />
-            <EditableField label={t('crm.deals.probability')} value={String(lead.probability || 0)} type="number" suffix="%" onSave={(v) => updateLead.mutate({ id: lead.id, probability: Number(v) || 0 })} />
-            <EditableField label={t('crm.deals.contact')} value={lead.name} onSave={(v) => updateLead.mutate({ id: lead.id, name: v })} />
+            <EditableField label={t('crm.leads.expectedRevenue')} value={String(lead.expectedRevenue || 0)} type="number" onSave={(v) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, expectedRevenue: Number(v) || 0 })} />
+            <EditableField label={t('crm.deals.probability')} value={String(lead.probability || 0)} type="number" suffix="%" onSave={(v) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, probability: Number(v) || 0 })} />
+            <EditableField label={t('crm.deals.contact')} value={lead.name} onSave={(v) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, name: v })} />
             <EditableField label={t('crm.leads.salesperson')} value={lead.assignedUserId || ''} onSave={() => {}} />
-            <EditableField label={t('crm.leads.email')} value={lead.email || ''} onSave={(v) => updateLead.mutate({ id: lead.id, email: v || null })} />
-            <EditableField label={t('crm.leads.expectedClosing')} value={lead.expectedCloseDate ? lead.expectedCloseDate.split('T')[0] : ''} type="date" onSave={(v) => updateLead.mutate({ id: lead.id, expectedCloseDate: v || null })} />
-            <EditableField label={t('crm.leads.phone')} value={lead.phone || ''} onSave={(v) => updateLead.mutate({ id: lead.id, phone: v || null })} />
-            <EditableField label={t('crm.leads.companyName')} value={lead.companyName || ''} onSave={(v) => updateLead.mutate({ id: lead.id, companyName: v || null })} />
+            <EditableField label={t('crm.leads.email')} value={lead.email || ''} onSave={(v) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, email: v || null })} />
+            <EditableField label={t('crm.leads.expectedClosing')} value={lead.expectedCloseDate ? lead.expectedCloseDate.split('T')[0] : ''} type="date" onSave={(v) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, expectedCloseDate: v || null })} />
+            <EditableField label={t('crm.leads.phone')} value={lead.phone || ''} onSave={(v) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, phone: v || null })} />
+            <EditableField label={t('crm.leads.companyName')} value={lead.companyName || ''} onSave={(v) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, companyName: v || null })} />
           </div>
 
           {/* Tags */}
@@ -265,7 +265,7 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
                     onRefresh={() => enrichLead.mutate(lead.id)}
                     isRefreshing={enrichLead.isPending}
                     leadTags={lead.tags || []}
-                    onAddTag={(tag) => updateLead.mutate({ id: lead.id, tags: [...(lead.tags || []), tag] })}
+                    onAddTag={(tag) => updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, tags: [...(lead.tags || []), tag] })}
                   />
                 ) : (
                   <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
