@@ -194,7 +194,7 @@ export function SignPage() {
             onFieldClick={s.handleFieldClick}
             onFieldDelete={s.handleFieldDelete}
             onFieldPropertyUpdate={s.handleFieldPropertyUpdate}
-            onUpdateDoc={(data) => s.updateDoc.mutate(data)}
+            onUpdateDoc={(data) => s.updateDoc.mutate({ ...data, updatedAt: s.selectedDoc?.updatedAt })}
           />
         )}
 

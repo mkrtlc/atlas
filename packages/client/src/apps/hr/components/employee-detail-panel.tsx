@@ -60,7 +60,7 @@ export function EmployeeDetailPanel({
     (updates: Record<string, unknown>) => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
-        updateEmployee.mutate({ id: employee.id, ...updates } as any);
+        updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, ...updates } as any);
       }, 500);
     },
     [employee.id, updateEmployee],
@@ -178,7 +178,7 @@ export function EmployeeDetailPanel({
                 <span className="hr-detail-field-label">{t('hr.fields.department')}</span>
                 <Select
                   value={departmentId}
-                  onChange={(v) => { setDepartmentId(v); updateEmployee.mutate({ id: employee.id, departmentId: v || null }); }}
+                  onChange={(v) => { setDepartmentId(v); updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, departmentId: v || null }); }}
                   options={[
                     { value: '', label: t('hr.fields.none') },
                     ...departments.map((d) => ({
@@ -195,7 +195,7 @@ export function EmployeeDetailPanel({
                 <span className="hr-detail-field-label">{t('hr.fields.status')}</span>
                 <Select
                   value={status}
-                  onChange={(v) => { const newStatus = v as HrEmployee['status']; setStatus(newStatus); updateEmployee.mutate({ id: employee.id, status: newStatus }); }}
+                  onChange={(v) => { const newStatus = v as HrEmployee['status']; setStatus(newStatus); updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, status: newStatus }); }}
                   options={[
                     { value: 'active', label: t('hr.status.active'), color: 'var(--color-success)' },
                     { value: 'on-leave', label: t('hr.status.onLeave'), color: 'var(--color-warning)' },
@@ -223,7 +223,7 @@ export function EmployeeDetailPanel({
                   <Input
                     type="date"
                     value={employee.dateOfBirth || ''}
-                    onChange={(e) => updateEmployee.mutate({ id: employee.id, dateOfBirth: e.target.value || null })}
+                    onChange={(e) => updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, dateOfBirth: e.target.value || null })}
                     size="sm"
                   />
                 </div>
@@ -231,7 +231,7 @@ export function EmployeeDetailPanel({
                   <span className="hr-detail-field-label">{t('hr.fields.gender')}</span>
                   <Select
                     value={employee.gender || ''}
-                    onChange={(v) => updateEmployee.mutate({ id: employee.id, gender: v || null })}
+                    onChange={(v) => updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, gender: v || null })}
                     options={[
                       { value: '', label: t('hr.fields.none') },
                       { value: 'male', label: t('hr.gender.male') },
@@ -276,7 +276,7 @@ export function EmployeeDetailPanel({
                   <span className="hr-detail-field-label">{t('hr.fields.employmentType')}</span>
                   <Select
                     value={employee.employmentType || 'full-time'}
-                    onChange={(v) => updateEmployee.mutate({ id: employee.id, employmentType: v })}
+                    onChange={(v) => updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, employmentType: v })}
                     options={[
                       { value: 'full-time', label: t('hr.employmentType.fullTime') },
                       { value: 'part-time', label: t('hr.employmentType.partTime') },
@@ -307,7 +307,7 @@ export function EmployeeDetailPanel({
                   <span className="hr-detail-field-label">{t('hr.fields.manager')}</span>
                   <Select
                     value={employee.managerId || ''}
-                    onChange={(v) => updateEmployee.mutate({ id: employee.id, managerId: v || null })}
+                    onChange={(v) => updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, managerId: v || null })}
                     options={[
                       { value: '', label: t('hr.fields.none') },
                       ...employees.filter((e) => e.id !== employee.id).map((e) => ({ value: e.id, label: e.name })),
@@ -337,7 +337,7 @@ export function EmployeeDetailPanel({
                     <span className="hr-detail-field-label">{t('hr.fields.currency')}</span>
                     <Select
                       value={employee.salaryCurrency || 'USD'}
-                      onChange={(v) => updateEmployee.mutate({ id: employee.id, salaryCurrency: v })}
+                      onChange={(v) => updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, salaryCurrency: v })}
                       options={[
                         { value: 'USD', label: 'USD' },
                         { value: 'EUR', label: 'EUR' },
@@ -351,7 +351,7 @@ export function EmployeeDetailPanel({
                     <span className="hr-detail-field-label">{t('hr.fields.period')}</span>
                     <Select
                       value={employee.salaryPeriod || 'yearly'}
-                      onChange={(v) => updateEmployee.mutate({ id: employee.id, salaryPeriod: v })}
+                      onChange={(v) => updateEmployee.mutate({ id: employee.id, updatedAt: employee.updatedAt, salaryPeriod: v })}
                       options={[
                         { value: 'yearly', label: t('hr.period.yearly') },
                         { value: 'monthly', label: t('hr.period.monthly') },

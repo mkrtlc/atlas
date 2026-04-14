@@ -1542,6 +1542,37 @@
       "disable": "Disable automation",
       "enable": "Enable automation"
     },
+    "workflows": {
+      "seeds": {
+        "names": {
+          "qualifiedScheduleDemo": "Qualified → Schedule demo",
+          "proposalPrepareDocument": "Proposal → Prepare document",
+          "wonWelcomeTask": "Won → Welcome task",
+          "wonSetProbability": "Won → Set probability",
+          "wonTagCustomer": "Won → Tag customer",
+          "lostReviewTask": "Lost → Review task",
+          "lostLogActivity": "Lost → Log activity",
+          "newContactIntroEmail": "New contact → Intro email task",
+          "callLoggedFollowUp": "Call logged → Follow up",
+          "meetingLoggedNotes": "Meeting logged → Notes"
+        },
+        "taskTitles": {
+          "scheduleDiscoveryCall": "Schedule discovery call with contact",
+          "prepareAndSendProposal": "Prepare and send proposal",
+          "sendWelcomePackage": "Send welcome package to new customer",
+          "scheduleDealLossReview": "Schedule deal loss review",
+          "sendIntroductionEmail": "Send introduction email",
+          "sendFollowUpAfterCall": "Send follow-up email after call",
+          "writeMeetingNotes": "Write meeting notes and share with team"
+        },
+        "bodies": {
+          "dealWasLost": "Deal was lost. Review and follow up."
+        },
+        "tags": {
+          "customer": "customer"
+        }
+      }
+    },
     "permissions": {
       "title": "Permissions",
       "role": "Role",

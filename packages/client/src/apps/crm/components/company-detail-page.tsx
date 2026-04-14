@@ -130,32 +130,32 @@ export function CompanyDetailPage({ companyId, onBack, onNavigate, onContactClic
             <EditableField
               label={t('crm.companies.domain')}
               value={company.domain || ''}
-              onSave={(v) => updateCompany.mutate({ id: company.id, domain: v || null })}
+              onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, domain: v || null })}
             />
             <EditableField
               label={t('crm.companies.industry')}
               value={company.industry || ''}
-              onSave={(v) => updateCompany.mutate({ id: company.id, industry: v || null })}
+              onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, industry: v || null })}
             />
             <EditableField
               label={t('crm.companies.size')}
               value={company.size || ''}
-              onSave={(v) => updateCompany.mutate({ id: company.id, size: v || null })}
+              onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, size: v || null })}
             />
             <EditableField
               label={t('crm.contacts.phone')}
               value={company.phone || ''}
-              onSave={(v) => updateCompany.mutate({ id: company.id, phone: v || null })}
+              onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, phone: v || null })}
             />
             <EditableField
               label={t('crm.companies.address')}
               value={company.address || ''}
-              onSave={(v) => updateCompany.mutate({ id: company.id, address: v || null })}
+              onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, address: v || null })}
             />
             <EditableField
               label={t('crm.companies.taxId')}
               value={company.taxId || ''}
-              onSave={(v) => updateCompany.mutate({ id: company.id, taxId: v || null })}
+              onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, taxId: v || null })}
             />
           </div>
 
@@ -168,27 +168,27 @@ export function CompanyDetailPage({ companyId, onBack, onNavigate, onContactClic
               <EditableField
                 label={t('crm.companies.taxOffice')}
                 value={company.taxOffice || ''}
-                onSave={(v) => updateCompany.mutate({ id: company.id, taxOffice: v || null })}
+                onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, taxOffice: v || null })}
               />
               <EditableField
                 label={t('crm.companies.currency')}
                 value={company.currency || ''}
-                onSave={(v) => updateCompany.mutate({ id: company.id, currency: v || undefined })}
+                onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, currency: v || undefined })}
               />
               <EditableField
                 label={t('crm.companies.postalCode')}
                 value={company.postalCode || ''}
-                onSave={(v) => updateCompany.mutate({ id: company.id, postalCode: v || null })}
+                onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, postalCode: v || null })}
               />
               <EditableField
                 label={t('crm.companies.state')}
                 value={company.state || ''}
-                onSave={(v) => updateCompany.mutate({ id: company.id, state: v || null })}
+                onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, state: v || null })}
               />
               <EditableField
                 label={t('crm.companies.country')}
                 value={company.country || ''}
-                onSave={(v) => updateCompany.mutate({ id: company.id, country: v || null })}
+                onSave={(v) => updateCompany.mutate({ id: company.id, updatedAt: company.updatedAt, country: v || null })}
               />
             </div>
 

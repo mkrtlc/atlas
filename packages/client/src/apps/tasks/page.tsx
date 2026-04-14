@@ -372,7 +372,7 @@ export function TasksPage() {
       isSelected={selectedTaskId === task.id}
       onClick={() => setSelectedTaskId(task.id)}
       onComplete={() => handleComplete(task.id)}
-      onTitleSave={(title) => updateTask.mutate({ id: task.id, title })}
+      onTitleSave={(title) => updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, title })}
       projects={projects}
       members={tenantMembers}
       showWhenBadge={showWhenBadges}

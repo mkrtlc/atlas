@@ -128,17 +128,17 @@ export function ContactDetailPage({ contactId, onBack, onNavigate, onCompanyClic
             <EditableField
               label={t('crm.contacts.email')}
               value={contact.email || ''}
-              onSave={(v) => updateContact.mutate({ id: contact.id, email: v || null })}
+              onSave={(v) => updateContact.mutate({ id: contact.id, updatedAt: contact.updatedAt, email: v || null })}
             />
             <EditableField
               label={t('crm.contacts.phone')}
               value={contact.phone || ''}
-              onSave={(v) => updateContact.mutate({ id: contact.id, phone: v || null })}
+              onSave={(v) => updateContact.mutate({ id: contact.id, updatedAt: contact.updatedAt, phone: v || null })}
             />
             <EditableField
               label={t('crm.contacts.position')}
               value={contact.position || ''}
-              onSave={(v) => updateContact.mutate({ id: contact.id, position: v || null })}
+              onSave={(v) => updateContact.mutate({ id: contact.id, updatedAt: contact.updatedAt, position: v || null })}
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)' }}>
@@ -146,7 +146,7 @@ export function ContactDetailPage({ contactId, onBack, onNavigate, onCompanyClic
               </span>
               <Select
                 value={contact.companyId || ''}
-                onChange={(v) => updateContact.mutate({ id: contact.id, companyId: v || null })}
+                onChange={(v) => updateContact.mutate({ id: contact.id, updatedAt: contact.updatedAt, companyId: v || null })}
                 options={[{ value: '', label: t('crm.deals.noneAssigned') }, ...companies.map(c => ({ value: c.id, label: c.name }))]}
                 size="sm"
               />

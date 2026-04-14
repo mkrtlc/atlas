@@ -61,7 +61,7 @@ export function TaskDetailPanel({
   const autoSave = useCallback((updates: Record<string, unknown>) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      updateTask.mutate({ id: task.id, ...updates } as any);
+      updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, ...updates } as any);
     }, 500);
   }, [task.id, updateTask]);
 
@@ -114,8 +114,8 @@ export function TaskDetailPanel({
             </button>
             {showTaskEmoji && (
               <EmojiPicker
-                onSelect={(emoji) => { updateTask.mutate({ id: task.id, icon: emoji }); setShowTaskEmoji(false); }}
-                onRemove={() => { updateTask.mutate({ id: task.id, icon: null }); setShowTaskEmoji(false); }}
+                onSelect={(emoji) => { updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, icon: emoji }); setShowTaskEmoji(false); }}
+                onRemove={() => { updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, icon: null }); setShowTaskEmoji(false); }}
                 onClose={() => setShowTaskEmoji(false)}
               />
             )}
@@ -158,7 +158,7 @@ export function TaskDetailPanel({
                   onClick={() => {
                     if (!canEdit) return;
                     setWhen(opt.value);
-                    updateTask.mutate({ id: task.id, when: opt.value });
+                    updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, when: opt.value });
                   }}
                 >
                   <opt.icon size={11} />
@@ -180,7 +180,7 @@ export function TaskDetailPanel({
                   onClick={() => {
                     if (!canEdit) return;
                     setPriority(opt.value);
-                    updateTask.mutate({ id: task.id, priority: opt.value });
+                    updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, priority: opt.value });
                   }}
                 >
                   {opt.color !== 'transparent' && (
@@ -203,7 +203,7 @@ export function TaskDetailPanel({
               onChange={e => {
                 if (!canEdit) return;
                 setDueDate(e.target.value);
-                updateTask.mutate({ id: task.id, dueDate: e.target.value || null });
+                updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, dueDate: e.target.value || null });
               }}
             />
             {dueDate && (
@@ -213,7 +213,7 @@ export function TaskDetailPanel({
                 size={24}
                 onClick={() => {
                   setDueDate('');
-                  updateTask.mutate({ id: task.id, dueDate: null });
+                  updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, dueDate: null });
                 }}
               />
             )}
@@ -228,7 +228,7 @@ export function TaskDetailPanel({
               onChange={(v) => {
                 if (!canEdit) return;
                 const val = v || null;
-                updateTask.mutate({ id: task.id, recurrenceRule: val as RecurrenceRule | null });
+                updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, recurrenceRule: val as RecurrenceRule | null });
               }}
               options={RECURRENCE_OPTIONS.map(opt => ({ value: opt.value, label: t(opt.labelKey) }))}
               size="sm"
@@ -260,7 +260,7 @@ export function TaskDetailPanel({
                   disabled={!canEdit}
                   onChange={(v) => {
                     if (!canEdit) return;
-                    updateTask.mutate({ id: task.id, assigneeId: v || null });
+                    updateTask.mutate({ id: task.id, updatedAt: task.updatedAt, assigneeId: v || null });
                   }}
                   options={[
                     { value: '', label: t('tasks.unassigned') },

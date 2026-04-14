@@ -15,6 +15,12 @@ import { Modal } from '../../../components/ui/modal';
 import { Badge } from '../../../components/ui/badge';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { AlertBanner } from '../../../components/ui/alert-banner';
+import {
+  translateWorkflowName,
+  translateWorkflowTaskTitle,
+  translateWorkflowBody,
+  translateWorkflowTag,
+} from '../lib/workflow-i18n';
 
 // ─── Constants ────────────────────────────────────────────────────
 
@@ -94,7 +100,7 @@ function describeAction(workflow: CrmWorkflow, stages: CrmDealStage[], t: (key: 
 
   switch (workflow.action) {
     case 'create_task':
-      return `${t('crm.automations.actionCreateTask')}: "${config.taskTitle || ''}"`;
+      return `${t('crm.automations.actionCreateTask')}: "${translateWorkflowTaskTitle((config.taskTitle as string) || '', t)}"`;
     case 'update_field':
       return `${t('crm.automations.actionUpdateField')}: ${config.fieldName || ''} = "${config.fieldValue || ''}"`;
     case 'change_deal_stage': {
@@ -102,11 +108,11 @@ function describeAction(workflow: CrmWorkflow, stages: CrmDealStage[], t: (key: 
       return `${t('crm.automations.actionChangeDealStage')}: "${stageName}"`;
     }
     case 'add_tag':
-      return `${t('crm.automations.actionAddTag')}: "${config.tag || ''}"`;
+      return `${t('crm.automations.actionAddTag')}: "${translateWorkflowTag((config.tag as string) || '', t)}"`;
     case 'assign_user':
       return `${t('crm.automations.actionAssignUser')}: ${config.assignedUserId || ''}`;
     case 'log_activity':
-      return `${t('crm.automations.actionLogActivity')}: "${config.body || ''}"`;
+      return `${t('crm.automations.actionLogActivity')}: "${translateWorkflowBody((config.body as string) || '', t)}"`;
     case 'send_notification':
       return `${t('crm.automations.actionSendNotification')}: "${config.message || ''}"`;
     default:
@@ -532,7 +538,7 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                 }}>
-                  {workflow.name}
+                  {translateWorkflowName(workflow.name, t)}
                 </div>
                 <div style={{
                   fontSize: 'var(--font-size-xs)',

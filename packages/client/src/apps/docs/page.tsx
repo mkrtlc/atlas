@@ -111,7 +111,7 @@ export function DocsPage() {
   const handleIconChange = useCallback(
     (icon: string | null) => {
       if (selectedId) {
-        updateDoc.mutate({ id: selectedId, icon });
+        updateDoc.mutate({ id: selectedId, updatedAt: doc?.updatedAt, icon });
       }
     },
     [selectedId, updateDoc],
@@ -120,7 +120,7 @@ export function DocsPage() {
   const handleCoverChange = useCallback(
     (coverImage: string | null) => {
       if (selectedId) {
-        updateDoc.mutate({ id: selectedId, coverImage });
+        updateDoc.mutate({ id: selectedId, updatedAt: doc?.updatedAt, coverImage });
       }
     },
     [selectedId, updateDoc],

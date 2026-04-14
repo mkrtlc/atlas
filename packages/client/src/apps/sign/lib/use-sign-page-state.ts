@@ -294,6 +294,7 @@ export function useSignPageState() {
         status: 'pending',
         documentType,
         counterpartyName: counterpartyName.trim() || null,
+        updatedAt: selectedDoc?.updatedAt,
       });
     } catch {
       // Handled by RQ

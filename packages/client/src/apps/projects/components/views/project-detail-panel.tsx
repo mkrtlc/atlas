@@ -97,7 +97,7 @@ export function ProjectDetailPanel({ project, onClose }: { project: Project; onC
               <span className="projects-detail-field-label">{t('projects.projects.status')}</span>
               <Select
                 value={project.status}
-                onChange={(v) => updateProject.mutate({ id: project.id, status: v })}
+                onChange={(v) => updateProject.mutate({ id: project.id, updatedAt: project.updatedAt, status: v })}
                 options={[
                   { value: 'active', label: t('projects.status.active') },
                   { value: 'paused', label: t('projects.status.paused') },

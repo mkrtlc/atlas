@@ -118,7 +118,7 @@ export function DrawPage() {
   const handleTitleChange = useCallback(
     (title: string) => {
       if (selectedId) {
-        updateDrawing.mutate({ id: selectedId, title });
+        updateDrawing.mutate({ id: selectedId, updatedAt: drawing?.updatedAt, title });
       }
     },
     [selectedId, updateDrawing],
@@ -127,7 +127,7 @@ export function DrawPage() {
   const handleThumbnailGenerated = useCallback(
     (thumbnailUrl: string) => {
       if (selectedId) {
-        updateDrawing.mutate({ id: selectedId, thumbnailUrl });
+        updateDrawing.mutate({ id: selectedId, updatedAt: drawing?.updatedAt, thumbnailUrl });
       }
     },
     [selectedId, updateDrawing],
