@@ -47,6 +47,7 @@ export function DriveUploadPublicPage() {
       const j = await r.json();
       if (!j.success) setError(j.error);
       else {
+        setError('');
         setUploaded((prev) => [...prev, ...j.data.uploaded]);
         setFiles([]);
       }
@@ -55,7 +56,7 @@ export function DriveUploadPublicPage() {
     }
   };
 
-  if (error) {
+  if (error && !info) {
     return (
       <div style={{ maxWidth: 480, margin: '80px auto', padding: 'var(--spacing-xl)', textAlign: 'center' }}>
         <AlertCircle size={32} style={{ color: 'var(--color-error)', marginBottom: 16 }} />

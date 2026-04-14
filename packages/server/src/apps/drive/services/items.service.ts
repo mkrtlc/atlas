@@ -694,6 +694,10 @@ export async function updateDriveItemVisibility(userId: string, itemId: string, 
 
 // ─── Batch trash (soft) ──────────────────────────────────────────────
 
+// batchTrash is semantically identical to batchDelete (both soft-delete by
+// setting isArchived=true). It exists as a separate endpoint so the new
+// DriveBulkBar Trash action can invalidate queries independently of the
+// legacy batch/delete path. Safe to unify in a future cleanup.
 export async function batchTrash(userId: string, itemIds: string[]) {
   if (itemIds.length === 0) return { trashed: 0 };
   const result = await db

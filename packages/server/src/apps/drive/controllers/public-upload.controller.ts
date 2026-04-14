@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 import { db } from '../../../config/database';
@@ -47,44 +47,51 @@ export async function handlePublicUpload(req: Request, res: Response) {
     }
 
     const files = (req.files as Express.Multer.File[]) ?? [];
-    const created: Array<{ id: string; name: string; size: number }> = [];
 
+    const fileMetadatas: Array<{ storageRel: string; file: Express.Multer.File }> = [];
     for (const file of files) {
       const storageRel = `${folder.tenantId}/${crypto.randomUUID()}_${Date.now()}_${file.originalname}`;
       const storageAbs = path.join(UPLOADS_DIR, storageRel);
-      fs.mkdirSync(path.dirname(storageAbs), { recursive: true });
-      fs.writeFileSync(storageAbs, file.buffer);
+      await fs.mkdir(path.dirname(storageAbs), { recursive: true });
+      await fs.writeFile(storageAbs, file.buffer);
+      fileMetadatas.push({ storageRel, file });
+    }
 
-      const uploadSourceTag = JSON.stringify({
-        type: 'upload_source',
-        name: name || 'Anonymous',
-        email: email || null,
-        uploadedAt: new Date().toISOString(),
-      });
+    const uploadSourceTag = JSON.stringify({
+      type: 'upload_source',
+      name: name || 'Anonymous',
+      email: email || null,
+      uploadedAt: new Date().toISOString(),
+    });
 
-      const [row] = await db.insert(driveItems).values({
-        tenantId: folder.tenantId,
-        userId: folder.userId,
-        parentId: folder.id,
-        name: file.originalname,
-        type: 'file',
-        mimeType: file.mimetype,
-        size: file.size,
-        storagePath: storageRel,
-        tags: [uploadSourceTag],
-      }).returning();
+    const rows = fileMetadatas.length > 0
+      ? await db.insert(driveItems).values(
+          fileMetadatas.map(({ storageRel, file }) => ({
+            tenantId: folder.tenantId,
+            userId: folder.userId,
+            parentId: folder.id,
+            name: file.originalname,
+            type: 'file' as const,
+            mimeType: file.mimetype,
+            size: file.size,
+            storagePath: storageRel,
+            tags: [uploadSourceTag],
+          })),
+        ).returning()
+      : [];
 
-      // drive_activity_log.tenant_id is NOT NULL — include it.
-      await db.insert(driveActivityLog).values({
+    // drive_activity_log.tenant_id is NOT NULL — include it.
+    if (rows.length > 0) {
+      await db.insert(driveActivityLog).values(rows.map(row => ({
         driveItemId: row.id,
         tenantId: folder.tenantId,
         userId: folder.userId,
         action: 'public_upload',
         metadata: { uploaderName: name, uploaderEmail: email, viaToken: token },
-      });
-
-      created.push({ id: row.id, name: row.name, size: row.size ?? 0 });
+      })));
     }
+
+    const created = rows.map(row => ({ id: row.id, name: row.name, size: row.size ?? 0 }));
 
     res.json({ success: true, data: { uploaded: created } });
   } catch (error) {
