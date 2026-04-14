@@ -1,8 +1,28 @@
 import { db } from '../../../config/database';
-import { crmWorkflows, crmDeals, crmContacts, crmCompanies, crmActivities } from '../../../db/schema';
+import { crmWorkflows, crmDeals, crmContacts, crmCompanies, crmActivities, userSettings } from '../../../db/schema';
 import { tasks as tasksTable } from '../../../db/schema';
 import { eq, and, asc, desc, sql } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
+import { resolveMaybeKey, i18nKey, I18N_KEY_PREFIX } from '../../../utils/i18n';
+import { getAccountIdForUser } from '../../../utils/account-lookup';
+
+// ─── Seed i18n key catalog ──────────────────────────────────────────
+// Every seeded workflow below uses `__i18n:` prefixed keys instead of literal
+// English strings. Translations live in packages/client/src/i18n/locales/*.json
+// under crm.workflows.seeds.{names|taskTitles|bodies|tags}.
+//
+//   name key                                            | taskTitle / body / tag key
+//   ----------------------------------------------------|----------------------------------------------------
+//   crm.workflows.seeds.names.qualifiedScheduleDemo     | crm.workflows.seeds.taskTitles.scheduleDiscoveryCall
+//   crm.workflows.seeds.names.proposalPrepareDocument   | crm.workflows.seeds.taskTitles.prepareAndSendProposal
+//   crm.workflows.seeds.names.wonWelcomeTask            | crm.workflows.seeds.taskTitles.sendWelcomePackage
+//   crm.workflows.seeds.names.wonSetProbability         | (update_field, no translatable string)
+//   crm.workflows.seeds.names.wonTagCustomer            | crm.workflows.seeds.tags.customer
+//   crm.workflows.seeds.names.lostReviewTask            | crm.workflows.seeds.taskTitles.scheduleDealLossReview
+//   crm.workflows.seeds.names.lostLogActivity           | crm.workflows.seeds.bodies.dealWasLost
+//   crm.workflows.seeds.names.newContactIntroEmail      | crm.workflows.seeds.taskTitles.sendIntroductionEmail
+//   crm.workflows.seeds.names.callLoggedFollowUp        | crm.workflows.seeds.taskTitles.sendFollowUpAfterCall
+//   crm.workflows.seeds.names.meetingLoggedNotes        | crm.workflows.seeds.taskTitles.writeMeetingNotes
 
 // ─── Input types ────────────────────────────────────────────────────
 
@@ -175,6 +195,21 @@ function matchesTriggerConfig(
   return true;
 }
 
+async function getUserLanguage(userId: string): Promise<string> {
+  try {
+    const accountId = await getAccountIdForUser(userId);
+    if (!accountId) return 'en';
+    const [row] = await db
+      .select({ language: userSettings.language })
+      .from(userSettings)
+      .where(eq(userSettings.accountId, accountId))
+      .limit(1);
+    return row?.language || 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 async function executeAction(
   userId: string,
   tenantId: string,
@@ -182,9 +217,11 @@ async function executeAction(
   actionConfig: Record<string, unknown>,
   context: Record<string, unknown>,
 ) {
+  const lang = await getUserLanguage(userId);
   switch (action) {
     case 'create_task': {
-      const title = (actionConfig.taskTitle as string) || 'Automated task';
+      const rawTitle = (actionConfig.taskTitle as string) || 'Automated task';
+      const title = resolveMaybeKey(rawTitle, lang) || 'Automated task';
       const now = new Date();
       await db.insert(tasksTable).values({
         tenantId,
@@ -229,7 +266,8 @@ async function executeAction(
       break;
     }
     case 'add_tag': {
-      const tag = (actionConfig.tag as string)?.trim();
+      const rawTag = (actionConfig.tag as string) ?? '';
+      const tag = resolveMaybeKey(rawTag, lang).trim();
       const dealId = context.dealId as string | undefined;
       const contactId = context.contactId as string | undefined;
       const companyId = context.companyId as string | undefined;
@@ -277,7 +315,8 @@ async function executeAction(
     }
     case 'log_activity': {
       const activityType = (actionConfig.activityType as string) || 'note';
-      const body = (actionConfig.body as string) || '';
+      const rawBody = (actionConfig.body as string) || '';
+      const body = resolveMaybeKey(rawBody, lang);
       const dealId = context.dealId as string | undefined;
       const contactId = context.contactId as string | undefined;
       const companyId = context.companyId as string | undefined;
@@ -296,7 +335,7 @@ async function executeAction(
       break;
     }
     case 'send_notification': {
-      const message = (actionConfig.message as string) || '';
+      const message = resolveMaybeKey((actionConfig.message as string) || '', lang);
       logger.info({ message, context }, 'Workflow notification');
       break;
     }
@@ -305,11 +344,102 @@ async function executeAction(
 
 // ─── Seed Example Workflows ──────────────────────────────────────────
 
+// ─── One-shot migration for existing English-literal seeded workflows ──
+
+/**
+ * Map of legacy English seed literals → `__i18n:` key replacements.
+ * Idempotent: rows already using keys are skipped. Only exact string
+ * matches are migrated; user-edited workflow names/strings are preserved.
+ */
+const SEED_NAME_MIGRATIONS: Record<string, string> = {
+  'Qualified → Schedule demo': i18nKey('crm.workflows.seeds.names.qualifiedScheduleDemo'),
+  'Proposal → Prepare document': i18nKey('crm.workflows.seeds.names.proposalPrepareDocument'),
+  'Won → Welcome task': i18nKey('crm.workflows.seeds.names.wonWelcomeTask'),
+  'Won → Set probability': i18nKey('crm.workflows.seeds.names.wonSetProbability'),
+  'Won → Tag customer': i18nKey('crm.workflows.seeds.names.wonTagCustomer'),
+  'Lost → Review task': i18nKey('crm.workflows.seeds.names.lostReviewTask'),
+  'Lost → Log activity': i18nKey('crm.workflows.seeds.names.lostLogActivity'),
+  'New contact → Intro email task': i18nKey('crm.workflows.seeds.names.newContactIntroEmail'),
+  'Call logged → Follow up': i18nKey('crm.workflows.seeds.names.callLoggedFollowUp'),
+  'Meeting logged → Notes': i18nKey('crm.workflows.seeds.names.meetingLoggedNotes'),
+};
+
+const SEED_TASK_TITLE_MIGRATIONS: Record<string, string> = {
+  'Schedule discovery call with contact': i18nKey('crm.workflows.seeds.taskTitles.scheduleDiscoveryCall'),
+  'Prepare and send proposal': i18nKey('crm.workflows.seeds.taskTitles.prepareAndSendProposal'),
+  'Send welcome package to new customer': i18nKey('crm.workflows.seeds.taskTitles.sendWelcomePackage'),
+  'Schedule deal loss review': i18nKey('crm.workflows.seeds.taskTitles.scheduleDealLossReview'),
+  'Send introduction email': i18nKey('crm.workflows.seeds.taskTitles.sendIntroductionEmail'),
+  'Send follow-up email after call': i18nKey('crm.workflows.seeds.taskTitles.sendFollowUpAfterCall'),
+  'Write meeting notes and share with team': i18nKey('crm.workflows.seeds.taskTitles.writeMeetingNotes'),
+};
+
+const SEED_BODY_MIGRATIONS: Record<string, string> = {
+  'Deal was lost. Review and follow up.': i18nKey('crm.workflows.seeds.bodies.dealWasLost'),
+};
+
+const SEED_TAG_MIGRATIONS: Record<string, string> = {
+  customer: i18nKey('crm.workflows.seeds.tags.customer'),
+};
+
+export async function migrateSeedWorkflowsToKeys(tenantId: string): Promise<{ migrated: number }> {
+  const rows = await db
+    .select()
+    .from(crmWorkflows)
+    .where(eq(crmWorkflows.tenantId, tenantId));
+
+  let migrated = 0;
+  for (const row of rows) {
+    const updates: Record<string, unknown> = {};
+
+    // Name
+    if (typeof row.name === 'string' && !row.name.startsWith(I18N_KEY_PREFIX)) {
+      const replacement = SEED_NAME_MIGRATIONS[row.name];
+      if (replacement) updates.name = replacement;
+    }
+
+    // Action config
+    const config = (row.actionConfig ?? {}) as Record<string, unknown>;
+    const nextConfig: Record<string, unknown> = { ...config };
+    let configChanged = false;
+
+    if (typeof config.taskTitle === 'string' && !config.taskTitle.startsWith(I18N_KEY_PREFIX)) {
+      const replacement = SEED_TASK_TITLE_MIGRATIONS[config.taskTitle];
+      if (replacement) { nextConfig.taskTitle = replacement; configChanged = true; }
+    }
+    if (typeof config.body === 'string' && !config.body.startsWith(I18N_KEY_PREFIX)) {
+      const replacement = SEED_BODY_MIGRATIONS[config.body];
+      if (replacement) { nextConfig.body = replacement; configChanged = true; }
+    }
+    if (typeof config.tag === 'string' && !config.tag.startsWith(I18N_KEY_PREFIX)) {
+      const replacement = SEED_TAG_MIGRATIONS[config.tag];
+      if (replacement) { nextConfig.tag = replacement; configChanged = true; }
+    }
+    if (configChanged) updates.actionConfig = nextConfig;
+
+    if (Object.keys(updates).length > 0) {
+      updates.updatedAt = new Date();
+      await db.update(crmWorkflows).set(updates).where(eq(crmWorkflows.id, row.id));
+      migrated++;
+    }
+  }
+
+  if (migrated > 0) {
+    logger.info({ tenantId, migrated }, 'Migrated legacy seed workflows to i18n keys');
+  }
+  return { migrated };
+}
+
 export async function seedExampleWorkflows(userId: string, tenantId: string) {
-  // Idempotency guard — skip if workflows already exist for this account
+  // Idempotency guard — skip if workflows already exist for this account.
+  // If they do exist, opportunistically migrate any English-literal seed rows
+  // to translation keys (idempotent — user-edited names are left alone).
   const existing = await db.select({ id: crmWorkflows.id }).from(crmWorkflows)
     .where(and(eq(crmWorkflows.userId, userId), eq(crmWorkflows.tenantId, tenantId))).limit(1);
-  if (existing.length > 0) return { skipped: true };
+  if (existing.length > 0) {
+    const migrationResult = await migrateSeedWorkflowsToKeys(tenantId);
+    return { skipped: true, ...migrationResult };
+  }
 
   // Look up stages by name for this account
   const { crmDealStages } = await import('../../../db/schema');
@@ -333,74 +463,74 @@ export async function seedExampleWorkflows(userId: string, tenantId: string) {
     actionConfig: Record<string, unknown>;
   }> = [
     {
-      name: 'Qualified → Schedule demo',
+      name: i18nKey('crm.workflows.seeds.names.qualifiedScheduleDemo'),
       trigger: 'deal_stage_changed',
       triggerConfig: qualifiedId ? { toStage: qualifiedId } : {},
       action: 'create_task',
-      actionConfig: { taskTitle: 'Schedule discovery call with contact' },
+      actionConfig: { taskTitle: i18nKey('crm.workflows.seeds.taskTitles.scheduleDiscoveryCall') },
     },
     {
-      name: 'Proposal → Prepare document',
+      name: i18nKey('crm.workflows.seeds.names.proposalPrepareDocument'),
       trigger: 'deal_stage_changed',
       triggerConfig: proposalId ? { toStage: proposalId } : {},
       action: 'create_task',
-      actionConfig: { taskTitle: 'Prepare and send proposal' },
+      actionConfig: { taskTitle: i18nKey('crm.workflows.seeds.taskTitles.prepareAndSendProposal') },
     },
     {
-      name: 'Won → Welcome task',
+      name: i18nKey('crm.workflows.seeds.names.wonWelcomeTask'),
       trigger: 'deal_won',
       triggerConfig: {},
       action: 'create_task',
-      actionConfig: { taskTitle: 'Send welcome package to new customer' },
+      actionConfig: { taskTitle: i18nKey('crm.workflows.seeds.taskTitles.sendWelcomePackage') },
     },
     {
-      name: 'Won → Set probability',
+      name: i18nKey('crm.workflows.seeds.names.wonSetProbability'),
       trigger: 'deal_won',
       triggerConfig: {},
       action: 'update_field',
       actionConfig: { fieldName: 'probability', fieldValue: '100' },
     },
     {
-      name: 'Won → Tag customer',
+      name: i18nKey('crm.workflows.seeds.names.wonTagCustomer'),
       trigger: 'deal_won',
       triggerConfig: {},
       action: 'add_tag',
-      actionConfig: { tag: 'customer' },
+      actionConfig: { tag: i18nKey('crm.workflows.seeds.tags.customer') },
     },
     {
-      name: 'Lost → Review task',
+      name: i18nKey('crm.workflows.seeds.names.lostReviewTask'),
       trigger: 'deal_lost',
       triggerConfig: {},
       action: 'create_task',
-      actionConfig: { taskTitle: 'Schedule deal loss review' },
+      actionConfig: { taskTitle: i18nKey('crm.workflows.seeds.taskTitles.scheduleDealLossReview') },
     },
     {
-      name: 'Lost → Log activity',
+      name: i18nKey('crm.workflows.seeds.names.lostLogActivity'),
       trigger: 'deal_lost',
       triggerConfig: {},
       action: 'log_activity',
-      actionConfig: { activityType: 'note', body: 'Deal was lost. Review and follow up.' },
+      actionConfig: { activityType: 'note', body: i18nKey('crm.workflows.seeds.bodies.dealWasLost') },
     },
     {
-      name: 'New contact → Intro email task',
+      name: i18nKey('crm.workflows.seeds.names.newContactIntroEmail'),
       trigger: 'contact_created',
       triggerConfig: {},
       action: 'create_task',
-      actionConfig: { taskTitle: 'Send introduction email' },
+      actionConfig: { taskTitle: i18nKey('crm.workflows.seeds.taskTitles.sendIntroductionEmail') },
     },
     {
-      name: 'Call logged → Follow up',
+      name: i18nKey('crm.workflows.seeds.names.callLoggedFollowUp'),
       trigger: 'activity_logged',
       triggerConfig: { activityType: 'call' },
       action: 'create_task',
-      actionConfig: { taskTitle: 'Send follow-up email after call' },
+      actionConfig: { taskTitle: i18nKey('crm.workflows.seeds.taskTitles.sendFollowUpAfterCall') },
     },
     {
-      name: 'Meeting logged → Notes',
+      name: i18nKey('crm.workflows.seeds.names.meetingLoggedNotes'),
       trigger: 'activity_logged',
       triggerConfig: { activityType: 'meeting' },
       action: 'create_task',
-      actionConfig: { taskTitle: 'Write meeting notes and share with team' },
+      actionConfig: { taskTitle: i18nKey('crm.workflows.seeds.taskTitles.writeMeetingNotes') },
     },
   ];
 

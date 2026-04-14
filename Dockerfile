@@ -51,6 +51,8 @@ RUN npm ci --legacy-peer-deps --omit=dev
 COPY --from=builder /app/packages/shared/dist packages/shared/dist
 COPY --from=builder /app/packages/server/dist packages/server/dist
 COPY --from=builder /app/packages/client/dist packages/client/dist
+# Locale JSONs — server loads them at runtime for seeded-workflow i18n
+COPY --from=builder /app/packages/client/src/i18n/locales packages/client/src/i18n/locales
 
 # Patch shared package.json to point to compiled JS (source .ts is not available in production)
 RUN sed -i 's|"main": "./src/index.ts"|"main": "./dist/index.js"|' packages/shared/package.json && \
