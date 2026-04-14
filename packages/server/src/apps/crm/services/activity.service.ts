@@ -114,8 +114,9 @@ export async function createActivity(userId: string, tenantId: string, input: Cr
     activityId: created.id,
     dealId: created.dealId,
     contactId: created.contactId,
+    companyId: created.companyId,
     activityType: created.type,
-  }).catch(() => {});
+  }).catch((err) => logger.warn({ err, trigger: 'activity_logged' }, 'Workflow dispatch failed'));
 
   return created;
 }

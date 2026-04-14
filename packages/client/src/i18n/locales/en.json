@@ -1544,6 +1544,7 @@
       "enable": "Enable automation"
     },
     "workflows": {
+      "notificationTitle": "Workflow notification",
       "seeds": {
         "names": {
           "qualifiedScheduleDemo": "Qualified → Schedule demo",

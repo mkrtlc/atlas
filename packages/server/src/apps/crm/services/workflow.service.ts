@@ -1,5 +1,5 @@
 import { db } from '../../../config/database';
-import { crmWorkflows, crmDeals, crmContacts, crmCompanies, crmActivities, userSettings } from '../../../db/schema';
+import { crmWorkflows, crmDeals, crmContacts, crmCompanies, crmActivities, userSettings, notifications } from '../../../db/schema';
 import { tasks as tasksTable } from '../../../db/schema';
 import { eq, and, asc, desc, sql } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
@@ -336,7 +336,26 @@ async function executeAction(
     }
     case 'send_notification': {
       const message = resolveMaybeKey((actionConfig.message as string) || '', lang);
-      logger.info({ message, context }, 'Workflow notification');
+      const title = resolveMaybeKey(
+        (actionConfig.title as string) || i18nKey('crm.workflows.notificationTitle'),
+        lang,
+      );
+      if (message) {
+        const now = new Date();
+        const dealId = context.dealId as string | undefined;
+        const contactId = context.contactId as string | undefined;
+        const companyId = context.companyId as string | undefined;
+        await db.insert(notifications).values({
+          tenantId,
+          userId,
+          type: 'workflow',
+          title,
+          body: message,
+          sourceType: dealId ? 'crm_deal' : contactId ? 'crm_contact' : companyId ? 'crm_company' : 'crm_workflow',
+          sourceId: dealId || contactId || companyId || null,
+          createdAt: now,
+        });
+      }
       break;
     }
   }

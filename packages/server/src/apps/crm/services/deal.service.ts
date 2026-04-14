@@ -298,7 +298,8 @@ export async function createDeal(userId: string, tenantId: string, input: Create
   logger.info({ userId, dealId: created.id }, 'CRM deal created');
 
   // Fire workflow trigger
-  executeWorkflows(tenantId, userId, 'deal_created', { dealId: created.id }).catch(() => {});
+  executeWorkflows(tenantId, userId, 'deal_created', { dealId: created.id })
+    .catch((err) => logger.warn({ err, trigger: 'deal_created' }, 'Workflow dispatch failed'));
 
   return created;
 }
@@ -350,7 +351,7 @@ export async function updateDeal(userId: string, tenantId: string, id: string, i
   if (input.stageId !== undefined && oldStageId && oldStageId !== input.stageId) {
     executeWorkflows(tenantId, userId, 'deal_stage_changed', {
       dealId: id, fromStage: oldStageId, toStage: input.stageId,
-    }).catch(() => {});
+    }).catch((err) => logger.warn({ err, trigger: 'deal_stage_changed' }, 'Workflow dispatch failed'));
 
     // Auto-log stage change activity
     const [oldStage, newStage] = await Promise.all([
@@ -388,7 +389,8 @@ export async function markDealWon(userId: string, tenantId: string, id: string, 
     .where(and(...conditions));
 
   // Fire workflow trigger + log activity
-  executeWorkflows(tenantId, userId, 'deal_won', { dealId: id }).catch(() => {});
+  executeWorkflows(tenantId, userId, 'deal_won', { dealId: id })
+    .catch((err) => logger.warn({ err, trigger: 'deal_won' }, 'Workflow dispatch failed'));
   createActivity(userId, tenantId, { type: 'deal_won', body: 'Deal marked as won', dealId: id }).catch(() => {});
 
   return getDeal(userId, tenantId, id, recordAccess);
@@ -409,7 +411,8 @@ export async function markDealLost(userId: string, tenantId: string, id: string,
     .where(and(...conditions));
 
   // Fire workflow trigger + log activity
-  executeWorkflows(tenantId, userId, 'deal_lost', { dealId: id }).catch(() => {});
+  executeWorkflows(tenantId, userId, 'deal_lost', { dealId: id })
+    .catch((err) => logger.warn({ err, trigger: 'deal_lost' }, 'Workflow dispatch failed'));
   createActivity(userId, tenantId, { type: 'deal_lost', body: reason ? `Deal lost: ${reason}` : 'Deal marked as lost', dealId: id }).catch(() => {});
 
   return getDeal(userId, tenantId, id, recordAccess);

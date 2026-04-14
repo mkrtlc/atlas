@@ -133,7 +133,8 @@ export async function createContact(userId: string, tenantId: string, input: Cre
   logger.info({ userId, contactId: created.id }, 'CRM contact created');
 
   // Fire workflow trigger
-  executeWorkflows(tenantId, userId, 'contact_created', { contactId: created.id }).catch(() => {});
+  executeWorkflows(tenantId, userId, 'contact_created', { contactId: created.id })
+    .catch((err) => logger.warn({ err, trigger: 'contact_created' }, 'Workflow dispatch failed'));
 
   return created;
 }
