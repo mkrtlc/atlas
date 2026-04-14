@@ -2,6 +2,9 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import * as driveService from '../apps/drive/service';
 import { logger } from '../utils/logger';
+import { db } from '../config/database';
+import { driveItems } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import path from 'node:path';
 import { existsSync, createReadStream, statSync } from 'node:fs';
 
@@ -78,6 +81,44 @@ router.get('/:token/download', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error({ error }, 'Failed to download shared file');
     res.status(500).json({ success: false, error: 'Failed to download shared file' });
+  }
+});
+
+// GET /api/v1/share/:token/info — public metadata for file request links
+router.get('/:token/info', async (req: Request, res: Response) => {
+  try {
+    const token = req.params.token as string;
+    const link = await driveService.getShareLinkByToken(token);
+    if (!link) {
+      res.status(404).json({ success: false, error: 'Link not found' });
+      return;
+    }
+    if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
+      res.status(410).json({ success: false, error: 'Link expired' });
+      return;
+    }
+    const [folder] = await db
+      .select({ id: driveItems.id, name: driveItems.name, type: driveItems.type })
+      .from(driveItems)
+      .where(eq(driveItems.id, link.driveItemId))
+      .limit(1);
+    if (!folder) {
+      res.status(404).json({ success: false, error: 'Target not found' });
+      return;
+    }
+    res.json({
+      success: true,
+      data: {
+        mode: link.mode,
+        folderName: folder.name,
+        instructions: link.uploadInstructions,
+        requireEmail: link.requireUploaderEmail,
+        passwordProtected: !!link.passwordHash,
+      },
+    });
+  } catch (error) {
+    logger.error({ error }, 'Failed to load share link info');
+    res.status(500).json({ success: false, error: 'Failed to load link info' });
   }
 });
 
