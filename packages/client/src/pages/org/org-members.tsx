@@ -142,7 +142,7 @@ export function OrgMembersPage() {
     const cols: DataTableColumn<MemberRow>[] = [
       {
         key: 'name',
-        label: 'User',
+        label: t('org.members.columnUser'),
         icon: <User size={12} />,
         sortable: true,
         compare: (a, b) => (a.name ?? '').localeCompare(b.name ?? ''),
@@ -162,7 +162,7 @@ export function OrgMembersPage() {
               }}>
                 {item.name || '—'}
                 {isCurrentUser && (
-                  <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginLeft: 4 }}>(you)</span>
+                  <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginLeft: 4 }}>{t('org.members.you')}</span>
                 )}
               </span>
             </div>
@@ -171,7 +171,7 @@ export function OrgMembersPage() {
       },
       {
         key: 'email',
-        label: 'Email',
+        label: t('org.members.columnEmail'),
         icon: <Mail size={12} />,
         sortable: true,
         compare: (a, b) => a.email.localeCompare(b.email),
@@ -189,11 +189,11 @@ export function OrgMembersPage() {
       },
       {
         key: 'apps',
-        label: 'Apps',
+        label: t('org.members.columnApps'),
         icon: <Shield size={12} />,
         width: 180,
         searchValue: (item) => {
-          if (item.role === 'owner' || item.role === 'admin') return 'All apps';
+          if (item.role === 'owner' || item.role === 'admin') return t('org.members.allApps');
           const perms = userPermissions[item.userId];
           if (!perms) return '';
           return Object.keys(perms).map((id) => appsMap.get(id)?.name || id).join(' ');
@@ -207,7 +207,7 @@ export function OrgMembersPage() {
                 background: 'color-mix(in srgb, var(--color-accent-primary) 12%, transparent)',
                 color: 'var(--color-accent-primary)', whiteSpace: 'nowrap',
               }}>
-                All apps
+                {t('org.members.allApps')}
               </span>
             );
           }
@@ -216,7 +216,7 @@ export function OrgMembersPage() {
           if (appIds.length === 0) {
             return (
               <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-                Default
+                {t('org.members.defaultApps')}
               </span>
             );
           }
@@ -246,7 +246,7 @@ export function OrgMembersPage() {
       },
       {
         key: 'role',
-        label: 'Role',
+        label: t('org.members.columnRole'),
         icon: <Shield size={12} />,
         width: 110,
         sortable: true,
@@ -264,7 +264,7 @@ export function OrgMembersPage() {
       },
       {
         key: 'createdAt',
-        label: 'Joined',
+        label: t('org.members.columnJoined'),
         icon: <Calendar size={12} />,
         width: 100,
         sortable: true,
@@ -295,7 +295,7 @@ export function OrgMembersPage() {
                 icon={<UserMinus size={13} />}
                 onClick={() => setConfirmRemoveUser({ userId: item.userId, displayName: item.name || item.email })}
               >
-                Remove
+                {t('org.members.remove')}
               </Button>
             </div>
           );
@@ -304,7 +304,7 @@ export function OrgMembersPage() {
     }
 
     return cols;
-  }, [currentUserId, isAdminOrOwner, appsMap, userPermissions]);
+  }, [currentUserId, isAdminOrOwner, appsMap, userPermissions, t]);
 
   const handleRowClick = useCallback((item: MemberRow) => {
     if (!isAdminOrOwner) return;
@@ -315,8 +315,8 @@ export function OrgMembersPage() {
   if (!tenantId) {
     return (
       <div style={{ padding: 32, fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)' }}>
-        <h2 style={{ fontSize: 20, marginBottom: 12, color: 'var(--color-text-primary)' }}>Team</h2>
-        <p>Team management requires a company account. Please ask your admin to add you.</p>
+        <h2 style={{ fontSize: 20, marginBottom: 12, color: 'var(--color-text-primary)' }}>{t('org.members.title')}</h2>
+        <p>{t('org.members.teamRequires')}</p>
       </div>
     );
   }
@@ -329,7 +329,7 @@ export function OrgMembersPage() {
       setShowAddModal(false);
       setAddForm({ email: '', name: '', password: '', role: 'member' });
     } catch (err: any) {
-      setAddError(err.response?.data?.error || 'Failed to create user');
+      setAddError(err.response?.data?.error || t('org.members.createFailed'));
     }
   }
 
@@ -344,11 +344,11 @@ export function OrgMembersPage() {
         appPermissions: inviteForm.appPermissions.filter(p => p.enabled),
         crmTeamId: inviteForm.crmTeamId || undefined,
       });
-      setInviteSuccess(`Invitation sent to ${inviteForm.email}`);
+      setInviteSuccess(t('org.members.inviteSent', { email: inviteForm.email }));
       setShowInviteModal(false);
       setInviteForm({ email: '', role: 'member', appPermissions: DEFAULT_APP_PERMS.map(p => ({ ...p })), crmTeamId: '', managerId: '' });
     } catch (err: any) {
-      setInviteError(err.response?.data?.error || 'Failed to send invitation');
+      setInviteError(err.response?.data?.error || t('org.members.inviteFailed'));
     }
   }
 
@@ -358,11 +358,11 @@ export function OrgMembersPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: 0 }}>
-            Team members
+            {t('org.members.title')}
           </h2>
           <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', margin: '4px 0 0' }}>
-            {users ? `${users.length} member${users.length !== 1 ? 's' : ''}` : 'Loading...'}
-            {isAdminOrOwner && ' — click a row to edit role and app access'}
+            {users ? t('org.members.summary', { count: users.length }) : t('org.members.loading')}
+            {isAdminOrOwner && t('org.members.editHint')}
           </p>
         </div>
         {isAdminOrOwner && (
@@ -373,7 +373,7 @@ export function OrgMembersPage() {
             icon={<Mail size={13} />}
             onClick={() => setShowInviteModal(true)}
           >
-            Invite
+            {t('org.members.invite')}
           </Button>
           <Button
             variant="primary"
@@ -381,7 +381,7 @@ export function OrgMembersPage() {
             icon={<UserPlus size={13} />}
             onClick={() => setShowAddModal(true)}
           >
-            Add user
+            {t('org.members.addUser')}
           </Button>
         </div>
         )}
@@ -425,14 +425,14 @@ export function OrgMembersPage() {
         defaultPageSize={25}
         onRowClick={isAdminOrOwner ? handleRowClick : undefined}
         emptyIcon={<User size={40} />}
-        emptyTitle={searchQuery ? 'No members match your search' : 'No team members yet'}
-        emptyDescription={isAdminOrOwner ? 'Invite or add users to get started.' : undefined}
+        emptyTitle={searchQuery ? t('org.members.noMatches') : t('org.members.noMembers')}
+        emptyDescription={isAdminOrOwner ? t('org.members.noMembersHelp') : undefined}
         toolbar={{
           left: (
             <div style={{ maxWidth: 280 }}>
               <Input
                 type="text"
-                placeholder="Search members..."
+                placeholder={t('org.members.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 iconLeft={<Search size={14} />}
@@ -447,9 +447,9 @@ export function OrgMembersPage() {
       <ConfirmDialog
         open={confirmRemoveUser !== null}
         onOpenChange={(open) => { if (!open) setConfirmRemoveUser(null); }}
-        title="Remove team member"
-        description={`Remove ${confirmRemoveUser?.displayName ?? 'this user'} from the team? They will lose access immediately.`}
-        confirmLabel="Remove"
+        title={t('org.members.confirmRemoveTitle')}
+        description={t('org.members.confirmRemoveDesc', { name: confirmRemoveUser?.displayName ?? t('org.members.confirmRemoveFallback') })}
+        confirmLabel={t('org.members.remove')}
         destructive
         onConfirm={() => {
           if (confirmRemoveUser) removeUser.mutate(confirmRemoveUser.userId);
@@ -461,9 +461,9 @@ export function OrgMembersPage() {
         open={showAddModal}
         onOpenChange={(open) => { if (!open) { setShowAddModal(false); setAddError(''); } }}
         width={440}
-        title="Add team member"
+        title={t('org.members.addModalTitle')}
       >
-        <Modal.Header title="Add team member" />
+        <Modal.Header title={t('org.members.addModalTitle')} />
         <form onSubmit={handleAddUser}>
           <Modal.Body>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
@@ -480,40 +480,40 @@ export function OrgMembersPage() {
                 </div>
               )}
               <Input
-                label="Email"
+                label={t('org.members.emailLabel')}
                 type="email"
                 value={addForm.email}
                 onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
                 required
-                placeholder="user@company.com"
+                placeholder={t('org.members.emailPlaceholder')}
               />
               <Input
-                label="Name"
+                label={t('org.members.nameLabel')}
                 type="text"
                 value={addForm.name}
                 onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                 required
-                placeholder="Full name"
+                placeholder={t('org.members.namePlaceholder')}
               />
               <Input
-                label="Password"
+                label={t('org.members.passwordLabel')}
                 type="password"
                 value={addForm.password}
                 onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                 required
                 minLength={8}
-                placeholder="Min. 8 characters"
+                placeholder={t('org.members.passwordPlaceholder')}
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
                 <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-                  Role
+                  {t('org.members.roleLabel')}
                 </label>
                 <Select
                   value={addForm.role}
                   onChange={(val) => setAddForm({ ...addForm, role: val as TenantMemberRole })}
                   options={[
-                    { value: 'member', label: 'Member' },
-                    { value: 'admin', label: 'Admin' },
+                    { value: 'member', label: t('org.members.roleMember') },
+                    { value: 'admin', label: t('org.members.roleAdmin') },
                   ]}
                 />
               </div>
@@ -526,7 +526,7 @@ export function OrgMembersPage() {
               size="md"
               onClick={() => { setShowAddModal(false); setAddError(''); }}
             >
-              Cancel
+              {t('org.settings.cancel')}
             </Button>
             <Button
               type="submit"
@@ -535,7 +535,7 @@ export function OrgMembersPage() {
               disabled={createUser.isPending}
               style={{ opacity: createUser.isPending ? 0.7 : 1 }}
             >
-              {createUser.isPending ? 'Adding...' : 'Add user'}
+              {createUser.isPending ? t('org.members.adding') : t('org.members.addUser')}
             </Button>
           </Modal.Footer>
         </form>
@@ -546,9 +546,9 @@ export function OrgMembersPage() {
         open={showInviteModal}
         onOpenChange={(open) => { if (!open) { setShowInviteModal(false); setInviteError(''); } }}
         width={520}
-        title="Invite team member"
+        title={t('org.members.inviteModalTitle')}
       >
-        <Modal.Header title="Invite team member" />
+        <Modal.Header title={t('org.members.inviteModalTitle')} />
         <form onSubmit={handleInvite}>
           <Modal.Body>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
@@ -565,23 +565,23 @@ export function OrgMembersPage() {
                 </div>
               )}
               <Input
-                label="Email"
+                label={t('org.members.emailLabel')}
                 type="email"
                 value={inviteForm.email}
                 onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                 required
-                placeholder="user@company.com"
+                placeholder={t('org.members.emailPlaceholder')}
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
                 <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-                  Role
+                  {t('org.members.roleLabel')}
                 </label>
                 <Select
                   value={inviteForm.role}
                   onChange={(val) => setInviteForm({ ...inviteForm, role: val as TenantMemberRole })}
                   options={[
-                    { value: 'member', label: 'Member' },
-                    { value: 'admin', label: 'Admin' },
+                    { value: 'member', label: t('org.members.roleMember') },
+                    { value: 'admin', label: t('org.members.roleAdmin') },
                   ]}
                 />
               </div>
@@ -599,7 +599,7 @@ export function OrgMembersPage() {
               {/* App access section */}
               <div style={{ borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-md)' }}>
                 <label style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'var(--font-family)', display: 'block', marginBottom: 'var(--spacing-sm)' }}>
-                  App access
+                  {t('org.members.appAccessSection')}
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
                   {inviteForm.appPermissions.map((perm, i) => {
@@ -664,7 +664,7 @@ export function OrgMembersPage() {
               size="md"
               onClick={() => { setShowInviteModal(false); setInviteError(''); }}
             >
-              Cancel
+              {t('org.settings.cancel')}
             </Button>
             <Button
               type="submit"
@@ -673,7 +673,7 @@ export function OrgMembersPage() {
               disabled={inviteUser.isPending}
               style={{ opacity: inviteUser.isPending ? 0.7 : 1 }}
             >
-              {inviteUser.isPending ? 'Sending...' : 'Send invitation'}
+              {inviteUser.isPending ? t('org.members.sending') : t('org.members.sendInvitation')}
             </Button>
           </Modal.Footer>
         </form>

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Users, UserPlus, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
 import { useTenantUsers, useMyTenants } from '../../hooks/use-platform';
@@ -171,6 +172,7 @@ function QuickActionCard({ icon, label, description, onClick }: {
 // ---------------------------------------------------------------------------
 
 export function OrgOverviewPage() {
+  const { t } = useTranslation();
   const tenantId = useAuthStore((s) => s.tenantId);
   const { data: tenants, isLoading: tenantsLoading } = useMyTenants();
   const effectiveTenantId = tenantId ?? tenants?.[0]?.id;
@@ -198,7 +200,7 @@ export function OrgOverviewPage() {
         ) : (
           <>
             <StatCard
-              label="Team members"
+              label={t('org.overview.teamMembers')}
               value={users?.length ?? 0}
               color="var(--color-accent-primary)"
               icon={<Users size={18} strokeWidth={2} />}
@@ -218,7 +220,7 @@ export function OrgOverviewPage() {
             marginBottom: 'var(--spacing-md)',
           }}
         >
-          Quick actions
+          {t('org.overview.quickActions')}
         </h3>
         <div
           style={{
@@ -229,8 +231,8 @@ export function OrgOverviewPage() {
         >
           <QuickActionCard
             icon={<UserPlus size={16} />}
-            label="Add a team member"
-            description="Create or invite users to your organization"
+            label={t('org.overview.addTeamMember')}
+            description={t('org.overview.addTeamMemberDesc')}
             onClick={() => navigate(ROUTES.ORG_MEMBERS)}
           />
         </div>

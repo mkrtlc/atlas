@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutGrid,
   Settings,
@@ -17,7 +18,7 @@ import { ContentArea } from '../../components/ui/content-area';
 
 interface NavItem {
   to: string;
-  label: string;
+  labelKey: string;
   icon: ReactNode;
   iconColor?: string;
   end?: boolean;
@@ -28,20 +29,20 @@ interface NavItem {
 // ---------------------------------------------------------------------------
 
 const NAV_ITEMS: NavItem[] = [
-  { to: ROUTES.ORG_MEMBERS, label: 'Members', icon: <Users size={15} />, iconColor: '#10b981' },
-  { to: ROUTES.ORG_APPS, label: 'Apps', icon: <LayoutGrid size={15} />, iconColor: '#8b5cf6' },
-  { to: ROUTES.ORG_SETTINGS, label: 'Settings', icon: <Settings size={15} />, iconColor: '#6b7280' },
+  { to: ROUTES.ORG_MEMBERS, labelKey: 'org.nav.members', icon: <Users size={15} />, iconColor: '#10b981' },
+  { to: ROUTES.ORG_APPS, labelKey: 'org.nav.apps', icon: <LayoutGrid size={15} />, iconColor: '#8b5cf6' },
+  { to: ROUTES.ORG_SETTINGS, labelKey: 'org.nav.settings', icon: <Settings size={15} />, iconColor: '#6b7280' },
 ];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getPageTitle(pathname: string): string {
-  if (pathname.startsWith(ROUTES.ORG_MEMBERS)) return 'Members';
-  if (pathname.startsWith(ROUTES.ORG_APPS)) return 'Apps';
-  if (pathname.startsWith(ROUTES.ORG_SETTINGS)) return 'Settings';
-  return 'Organization';
+function getPageTitleKey(pathname: string): string {
+  if (pathname.startsWith(ROUTES.ORG_MEMBERS)) return 'org.nav.members';
+  if (pathname.startsWith(ROUTES.ORG_APPS)) return 'org.nav.apps';
+  if (pathname.startsWith(ROUTES.ORG_SETTINGS)) return 'org.nav.settings';
+  return 'org.nav.organization';
 }
 
 // ---------------------------------------------------------------------------
@@ -49,6 +50,7 @@ function getPageTitle(pathname: string): string {
 // ---------------------------------------------------------------------------
 
 export function OrgLayout() {
+  const { t } = useTranslation();
   const tenantId = useAuthStore((s) => s.tenantId);
   const { data: tenants, isLoading: tenantsLoading } = useMyTenants();
   const activeTenant = tenants?.[0];
@@ -58,7 +60,7 @@ export function OrgLayout() {
   if (tenantsLoading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)' }}>
-        Loading...
+        {t('org.loading')}
       </div>
     );
   }
@@ -70,12 +72,12 @@ export function OrgLayout() {
         height: '100vh', fontFamily: 'var(--font-family)',
         color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)',
       }}>
-        You are not part of an organization. Contact your administrator.
+        {t('org.notInOrg')}
       </div>
     );
   }
 
-  const pageTitle = getPageTitle(pathname);
+  const pageTitle = t(getPageTitleKey(pathname));
 
   return (
     <div style={{
@@ -88,7 +90,7 @@ export function OrgLayout() {
     }}>
       <AppSidebar
         storageKey="atlas_org_sidebar"
-        title={activeTenant?.name ?? 'Organization'}
+        title={activeTenant?.name ?? t('org.nav.organization')}
       >
         <SidebarSection>
           {NAV_ITEMS.map((item) => (
@@ -100,7 +102,7 @@ export function OrgLayout() {
             >
               {({ isActive }) => (
                 <SidebarItem
-                  label={item.label}
+                  label={t(item.labelKey)}
                   icon={item.icon}
                   iconColor={item.iconColor}
                   isActive={isActive}
@@ -114,7 +116,7 @@ export function OrgLayout() {
       {/* Content area */}
       <ContentArea
         breadcrumbs={[
-          { label: 'Organization' },
+          { label: t('org.nav.organization') },
           { label: pageTitle },
         ]}
       >

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Building2,
   CreditCard,
@@ -122,6 +123,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function CopyableValue({ value }: { value: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -147,7 +149,7 @@ function CopyableValue({ value }: { value: string }) {
       </span>
       <IconButton
         icon={copied ? <Check size={13} /> : <Copy size={13} />}
-        label={copied ? 'Copied' : 'Copy to clipboard'}
+        label={copied ? t('org.settings.copied') : t('org.settings.copy')}
         size={24}
         tooltip
         tooltipSide="top"
@@ -180,6 +182,7 @@ function SkeletonBlock() {
 // ---------------------------------------------------------------------------
 
 export function OrgSettingsPage() {
+  const { t } = useTranslation();
   const storeTenantId = useAuthStore((s) => s.tenantId);
   const { data: tenants, isLoading: tenantsLoading } = useMyTenants();
   const tenant = tenants?.[0];
@@ -205,7 +208,7 @@ export function OrgSettingsPage() {
   if (!tenant) {
     return (
       <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-        No organization found.
+        {t('org.settings.notFound')}
       </div>
     );
   }
@@ -232,10 +235,10 @@ export function OrgSettingsPage() {
       {/* Page header */}
       <div>
         <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: 0 }}>
-          Organization settings
+          {t('org.settings.title')}
         </h2>
         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', margin: '4px 0 0' }}>
-          {memberCount} team member{memberCount !== 1 ? 's' : ''} in this organization.
+          {t('org.settings.memberCount', { count: memberCount })}
         </p>
       </div>
 
@@ -243,10 +246,10 @@ export function OrgSettingsPage() {
       <div style={sectionStyle}>
         <div style={sectionHeaderStyle}>
           <Building2 size={15} style={{ color: 'var(--color-text-tertiary)' }} />
-          <span style={sectionTitleStyle}>Organization profile</span>
+          <span style={sectionTitleStyle}>{t('org.settings.profile')}</span>
         </div>
         <div style={rowStyle}>
-          <span style={labelStyle}>Name</span>
+          <span style={labelStyle}>{t('org.settings.name')}</span>
           {editingName ? (
             <div style={{ ...valueStyle, display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
               <Input
@@ -276,11 +279,11 @@ export function OrgSettingsPage() {
                 }}
                 disabled={!nameInput.trim() || updateTenantName.isPending}
               >
-                Save
+                {t('org.settings.save')}
               </Button>
               <IconButton
                 icon={<X size={13} />}
-                label="Cancel"
+                label={t('org.settings.cancel')}
                 size={24}
                 onClick={() => setEditingName(false)}
               />
@@ -291,7 +294,7 @@ export function OrgSettingsPage() {
               {isOwner && (
                 <IconButton
                   icon={<Pencil size={13} />}
-                  label="Edit name"
+                  label={t('org.settings.editName')}
                   size={24}
                   tooltip
                   tooltipSide="top"
@@ -305,19 +308,19 @@ export function OrgSettingsPage() {
           )}
         </div>
         <div style={rowStyle}>
-          <span style={labelStyle}>Organization ID</span>
+          <span style={labelStyle}>{t('org.settings.id')}</span>
           <div style={valueStyle}>
             <CopyableValue value={tenant.id} />
           </div>
         </div>
         <div style={rowStyle}>
-          <span style={labelStyle}>Status</span>
+          <span style={labelStyle}>{t('org.settings.status')}</span>
           <div style={valueStyle}>
             <StatusBadge status={tenant.status} />
           </div>
         </div>
         <div style={{ ...rowStyle, borderBottom: 'none' }}>
-          <span style={labelStyle}>Created</span>
+          <span style={labelStyle}>{t('org.settings.created')}</span>
           <span style={valueStyle}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <Calendar size={13} style={{ color: 'var(--color-text-tertiary)' }} />
@@ -331,10 +334,10 @@ export function OrgSettingsPage() {
       <div style={sectionStyle}>
         <div style={sectionHeaderStyle}>
           <CreditCard size={15} style={{ color: 'var(--color-text-tertiary)' }} />
-          <span style={sectionTitleStyle}>Subscription</span>
+          <span style={sectionTitleStyle}>{t('org.settings.subscription')}</span>
         </div>
         <div style={{ ...rowStyle, borderBottom: 'none' }}>
-          <span style={labelStyle}>Team members</span>
+          <span style={labelStyle}>{t('org.settings.teamMembers')}</span>
           <span style={valueStyle}>{memberCount}</span>
         </div>
       </div>
@@ -342,8 +345,7 @@ export function OrgSettingsPage() {
       {/* HR access warning */}
       {membersWithoutHr > 0 && (
         <AlertBanner variant="warning">
-          {membersWithoutHr} member{membersWithoutHr !== 1 ? 's' : ''} don't have access to HR.
-          They won't be able to view their employee profile, submit leave requests, or check attendance.
+          {t('org.settings.hrWarning', { count: membersWithoutHr })}
         </AlertBanner>
       )}
 

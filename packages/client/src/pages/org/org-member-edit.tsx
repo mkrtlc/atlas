@@ -34,22 +34,28 @@ import { ROLE_COLORS } from '../../config/role-colors';
 // actually honor it.
 const APPS_SUPPORTING_OWN_RECORD_ACCESS = new Set(['crm']);
 
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  owner: 'Full control. Can manage members, change roles, enable apps, and access everything.',
-  admin: 'Can manage members, enable apps, and access everything. Cannot change roles.',
-  member: 'Access only the apps and data you assign below.',
+const ROLE_DESC_KEYS: Record<string, string> = {
+  owner: 'org.memberEdit.roleOwnerDesc',
+  admin: 'org.memberEdit.roleAdminDesc',
+  member: 'org.memberEdit.roleMemberDesc',
 };
 
-const APP_ROLE_DESCRIPTIONS: Record<string, string> = {
-  'no-access': 'App is hidden from the sidebar.',
-  viewer: 'Can see records but cannot create, edit, or delete.',
-  editor: 'Can create, edit, and delete own records. Cannot manage app settings.',
-  admin: 'Full access including settings and all records.',
+const APP_ROLE_DESC_KEYS: Record<string, string> = {
+  'no-access': 'org.memberEdit.accessNoAccessDesc',
+  viewer: 'org.memberEdit.accessViewerDesc',
+  editor: 'org.memberEdit.accessEditorDesc',
+  admin: 'org.memberEdit.accessAdminDesc',
 };
 
-const RECORD_ACCESS_DESCRIPTIONS: Record<string, string> = {
-  all: 'Can see every record in this app across the team.',
-  own: 'Can only see records they created or are assigned to.',
+const RECORD_ACCESS_DESC_KEYS: Record<string, string> = {
+  all: 'org.memberEdit.scopeAllDesc',
+  own: 'org.memberEdit.scopeOwnDesc',
+};
+
+const ROLE_LABEL_KEYS: Record<string, string> = {
+  owner: 'org.memberEdit.roleOwner',
+  admin: 'org.memberEdit.roleAdmin',
+  member: 'org.memberEdit.roleMember',
 };
 
 // ---------------------------------------------------------------------------
@@ -121,7 +127,7 @@ export function OrgMemberEditPage() {
   // Presets
   const PRESETS = [
     {
-      label: 'Sales team',
+      label: t('org.memberEdit.presetSales'),
       apply: () => {
         setDraftPerms({
           crm: { role: 'editor' as AppRole, recordAccess: 'all' as AppRecordAccess },
@@ -133,7 +139,7 @@ export function OrgMemberEditPage() {
       },
     },
     {
-      label: 'HR admin',
+      label: t('org.memberEdit.presetHr'),
       apply: () => {
         setDraftPerms({
           hr: { role: 'admin' as AppRole, recordAccess: 'all' as AppRecordAccess },
@@ -144,7 +150,7 @@ export function OrgMemberEditPage() {
       },
     },
     {
-      label: 'Full access',
+      label: t('org.memberEdit.presetFull'),
       apply: () => {
         const perms: Record<string, { role: AppRole; recordAccess: AppRecordAccess }> = {};
         for (const app of allApps) {
@@ -154,7 +160,7 @@ export function OrgMemberEditPage() {
       },
     },
     {
-      label: 'Reset to default',
+      label: t('org.memberEdit.presetReset'),
       apply: () => {
         const defaults: Record<string, { role: AppRole; recordAccess: AppRecordAccess }> = {};
         const defaultApps = ['tasks', 'drive', 'docs', 'draw', 'tables', 'sign', 'projects'];
@@ -223,10 +229,10 @@ export function OrgMemberEditPage() {
       await Promise.all(promises);
       queryClient.invalidateQueries({ queryKey: queryKeys.permissions.allTenant });
       queryClient.invalidateQueries({ queryKey: queryKeys.platform.tenantUsers(tenantId) });
-      addToast({ type: 'success', message: `Updated ${member.name || member.email}` });
+      addToast({ type: 'success', message: t('org.memberEdit.updated', { name: member.name || member.email }) });
       navigate('/org/members');
     } catch (err: any) {
-      addToast({ type: 'error', message: err?.response?.data?.error || 'Failed to save changes' });
+      addToast({ type: 'error', message: err?.response?.data?.error || t('org.memberEdit.saveFailed') });
     } finally {
       setSaving(false);
     }
@@ -246,9 +252,9 @@ export function OrgMemberEditPage() {
   if (!member) {
     return (
       <div style={{ fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)', padding: 'var(--spacing-xl)' }}>
-        Member not found.{' '}
+        {t('org.memberEdit.memberNotFound')}{' '}
         <button onClick={() => navigate('/org/members')} style={{ color: 'var(--color-accent-primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
-          Back to members
+          {t('org.memberEdit.backToMembers')}
         </button>
       </div>
     );
@@ -273,11 +279,11 @@ export function OrgMemberEditPage() {
           }}
         >
           <ArrowLeft size={14} />
-          Back to members
+          {t('org.memberEdit.backToMembers')}
         </button>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
           <Button variant="secondary" size="sm" onClick={() => navigate('/org/members')}>
-            Cancel
+            {t('org.memberEdit.cancel')}
           </Button>
           <Button
             variant="primary"
@@ -286,7 +292,7 @@ export function OrgMemberEditPage() {
             disabled={!hasChanges || saving}
             style={{ opacity: (!hasChanges || saving) ? 0.6 : 1 }}
           >
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? t('org.memberEdit.saving') : t('org.memberEdit.saveChanges')}
           </Button>
         </div>
       </div>
@@ -313,7 +319,7 @@ export function OrgMemberEditPage() {
           padding: 'var(--spacing-lg)',
         }}>
           <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--spacing-md)' }}>
-            Role
+            {t('org.memberEdit.role')}
           </div>
           <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
             {(['owner', 'admin', 'member'] as TenantMemberRole[])
@@ -339,15 +345,15 @@ export function OrgMemberEditPage() {
                     }}
                   >
                     {isSelected && <Check size={14} style={{ color: ROLE_COLORS[role], flexShrink: 0 }} />}
-                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: isSelected ? ROLE_COLORS[role] : 'var(--color-text-primary)', textTransform: 'capitalize' }}>
-                      {role}
+                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: isSelected ? ROLE_COLORS[role] : 'var(--color-text-primary)' }}>
+                      {t(ROLE_LABEL_KEYS[role] ?? '')}
                     </span>
                   </button>
                 );
               })}
           </div>
           <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', margin: 'var(--spacing-sm) 0 0', lineHeight: 1.4 }}>
-            {ROLE_DESCRIPTIONS[draftRole]}
+            {t(ROLE_DESC_KEYS[draftRole] ?? '')}
           </p>
         </div>
 
@@ -362,10 +368,10 @@ export function OrgMemberEditPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
               <div>
                 <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
-                  App access
+                  {t('org.memberEdit.appAccess')}
                 </div>
                 <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 2 }}>
-                  Choose which apps this person can use and what they can do.
+                  {t('org.memberEdit.appAccessDesc')}
                 </div>
               </div>
             </div>
@@ -394,23 +400,23 @@ export function OrgMemberEditPage() {
                 background: 'var(--color-bg-secondary)',
                 borderBottom: '1px solid var(--color-border-secondary)',
               }}>
-                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)' }}>App</span>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontWeight: 'var(--font-weight-medium)' }}>{t('org.memberEdit.colApp')}</span>
                 <HeaderWithHelp
-                  label="Access level"
-                  subtitle="What can they do?"
+                  label={t('org.memberEdit.colAccessLevel')}
+                  subtitle={t('org.memberEdit.colAccessLevelHint')}
                   helpRows={[
-                    ['No access', APP_ROLE_DESCRIPTIONS['no-access']],
-                    ['View only', APP_ROLE_DESCRIPTIONS.viewer],
-                    ['Can edit', APP_ROLE_DESCRIPTIONS.editor],
-                    ['Full control', APP_ROLE_DESCRIPTIONS.admin],
+                    [t('org.memberEdit.accessNoAccess'), t(APP_ROLE_DESC_KEYS['no-access'])],
+                    [t('org.memberEdit.accessViewOnly'), t(APP_ROLE_DESC_KEYS.viewer)],
+                    [t('org.memberEdit.accessCanEdit'), t(APP_ROLE_DESC_KEYS.editor)],
+                    [t('org.memberEdit.accessFullControl'), t(APP_ROLE_DESC_KEYS.admin)],
                   ]}
                 />
                 <HeaderWithHelp
-                  label="Data scope"
-                  subtitle="What can they see?"
+                  label={t('org.memberEdit.colDataScope')}
+                  subtitle={t('org.memberEdit.colDataScopeHint')}
                   helpRows={[
-                    ['All records', RECORD_ACCESS_DESCRIPTIONS.all],
-                    ['Own records only', RECORD_ACCESS_DESCRIPTIONS.own],
+                    [t('org.memberEdit.scopeAll'), t(RECORD_ACCESS_DESC_KEYS.all)],
+                    [t('org.memberEdit.scopeOwn'), t(RECORD_ACCESS_DESC_KEYS.own)],
                   ]}
                 />
               </div>
@@ -425,10 +431,10 @@ export function OrgMemberEditPage() {
                 const supportsOwnAccess = APPS_SUPPORTING_OWN_RECORD_ACCESS.has(app.id);
                 const recordAccessOptions = supportsOwnAccess
                   ? [
-                      { value: 'all', label: 'All records' },
-                      { value: 'own', label: 'Own records only' },
+                      { value: 'all', label: t('org.memberEdit.scopeAll') },
+                      { value: 'own', label: t('org.memberEdit.scopeOwn') },
                     ]
-                  : [{ value: 'all', label: 'All records' }];
+                  : [{ value: 'all', label: t('org.memberEdit.scopeAll') }];
 
                 return (
                   <div
@@ -472,16 +478,16 @@ export function OrgMemberEditPage() {
                           }
                         }}
                         options={[
-                          { value: 'no-access', label: 'No access' },
-                          { value: 'viewer', label: 'View only' },
-                          { value: 'editor', label: 'Can edit' },
-                          { value: 'admin', label: 'Full control' },
+                          { value: 'no-access', label: t('org.memberEdit.accessNoAccess') },
+                          { value: 'viewer', label: t('org.memberEdit.accessViewOnly') },
+                          { value: 'editor', label: t('org.memberEdit.accessCanEdit') },
+                          { value: 'admin', label: t('org.memberEdit.accessFullControl') },
                         ]}
                         size="sm"
                         width={210}
                       />
                       <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
-                        {APP_ROLE_DESCRIPTIONS[displayRole] ?? ''}
+                        {APP_ROLE_DESC_KEYS[displayRole] ? t(APP_ROLE_DESC_KEYS[displayRole]) : ''}
                       </div>
                     </div>
 
@@ -500,7 +506,7 @@ export function OrgMemberEditPage() {
                       />
                       {hasAccess && (
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 3, lineHeight: 1.3 }}>
-                          {RECORD_ACCESS_DESCRIPTIONS[supportsOwnAccess ? currentAccess : 'all'] ?? ''}
+                          {t(RECORD_ACCESS_DESC_KEYS[supportsOwnAccess ? currentAccess : 'all'] ?? '')}
                         </div>
                       )}
                     </div>
@@ -513,19 +519,19 @@ export function OrgMemberEditPage() {
             {hasCrmAccess && crmTeams && crmTeams.length > 0 && (
               <div style={{ marginTop: 'var(--spacing-lg)' }}>
                 <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', display: 'block', marginBottom: 'var(--spacing-xs)' }}>
-                  CRM sales team
+                  {t('org.memberEdit.crmTeam')}
                 </label>
                 <Select
                   value={draftCrmTeamId || '__none__'}
                   onChange={(val) => setDraftCrmTeamId(val === '__none__' ? '' : val)}
                   options={[
-                    { value: '__none__', label: 'No team assigned' },
+                    { value: '__none__', label: t('org.memberEdit.crmTeamNone') },
                     ...crmTeams.map((team) => ({ value: team.id, label: team.name })),
                   ]}
                   width={240}
                 />
                 <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', margin: '4px 0 0' }}>
-                  When "Which data" is set to "Only theirs", this person can also see their team's CRM records.
+                  {t('org.memberEdit.crmTeamHelp')}
                 </p>
               </div>
             )}
@@ -542,8 +548,8 @@ export function OrgMemberEditPage() {
           }}>
             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.5 }}>
               {draftRole === 'owner'
-                ? 'Owners have full access to all apps and settings. They can manage members, change roles, and configure the organization.'
-                : 'Admins have full access to all apps. They can manage members and configure apps, but cannot change member roles.'}
+                ? t('org.memberEdit.ownerInfo')
+                : t('org.memberEdit.adminInfo')}
             </p>
           </div>
         )}
