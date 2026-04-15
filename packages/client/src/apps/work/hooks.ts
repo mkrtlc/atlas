@@ -726,7 +726,7 @@ export function useWorkProject(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.work.projects.projects.detail(id!),
     queryFn: async () => {
-      const { data } = await api.get(`/work/projects/projects/${id}`);
+      const { data } = await api.get(`/work/projects/${id}`);
       return mapWorkProject(data.data as Record<string, unknown>);
     },
     enabled: !!id,
@@ -748,7 +748,7 @@ export function useCreateProject() {
       budgetAmount?: number | null;
       isBillable?: boolean;
     }) => {
-      const { data } = await api.post('/work/projects/projects', {
+      const { data } = await api.post('/work/projects', {
         name: input.name,
         description: input.description,
         companyId: input.companyId,
@@ -791,7 +791,7 @@ export function useUpdateProject() {
       if (input.budgetHours !== undefined) payload.estimatedHours = input.budgetHours;
       if (input.budgetAmount !== undefined) payload.estimatedAmount = input.budgetAmount;
       if (input.isArchived !== undefined) payload.isArchived = input.isArchived;
-      const { data } = await api.patch(`/work/projects/projects/${id}`, payload, {
+      const { data } = await api.patch(`/work/projects/${id}`, payload, {
         headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
       });
       return data.data as WorkProject;
@@ -807,7 +807,7 @@ export function useDeleteProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/work/projects/projects/${id}`);
+      await api.delete(`/work/projects/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.work.all });
@@ -821,7 +821,7 @@ export function useProjectFinancials(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.work.projects.financials(id!),
     queryFn: async () => {
-      const { data } = await api.get(`/work/projects/projects/${id}/financials`);
+      const { data } = await api.get(`/work/projects/${id}/financials`);
       return data.data as ProjectFinancials;
     },
     enabled: !!id,
@@ -835,7 +835,7 @@ export function useProjectMembers(projectId: string | undefined) {
   return useQuery({
     queryKey: ['work', 'projects', 'members', projectId],
     queryFn: async () => {
-      const { data } = await api.get(`/work/projects/projects/${projectId}/members`);
+      const { data } = await api.get(`/work/projects/${projectId}/members`);
       const result = data.data;
       return (result?.members ?? result) as ProjectMember[];
     },

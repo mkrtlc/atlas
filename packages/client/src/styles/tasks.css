@@ -43,7 +43,10 @@
 
 .tasks-page {
   display: flex;
-  height: 100vh;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   background: var(--color-bg-primary);
   font-family: var(--font-family);
 }
