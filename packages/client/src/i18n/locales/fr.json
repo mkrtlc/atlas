@@ -4397,8 +4397,7 @@
       "dashboard": "Tableau de bord",
       "projects": "Projets",
       "newProject": "Nouveau projet",
-      "inbox": "Boîte de réception",
-      "team": "Équipe"
+      "inbox": "Boîte de réception"
     },
     "createProject": {
       "title": "Créer un projet",

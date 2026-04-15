@@ -1,17 +1,16 @@
 import { useSearchParams } from 'react-router-dom';
 import { WorkSidebar } from './components/work-sidebar';
 import { InboxView } from './components/task-views/inbox-view';
-import { TeamView } from './components/task-views/team-view';
 import { ProjectDetailPage } from './components/project-detail-page';
 import { WorkDashboard } from './components/work-dashboard';
 import { ProjectsListView } from './components/projects-list-view';
 
-export type WorkPageView = 'inbox' | 'team' | 'projects' | 'dashboard';
+export type WorkPageView = 'dashboard' | 'projects' | 'inbox';
 
-const VALID_VIEWS: readonly WorkPageView[] = ['inbox', 'team', 'projects', 'dashboard'];
+const VALID_VIEWS: readonly WorkPageView[] = ['dashboard', 'projects', 'inbox'];
 
 function parseView(raw: string | null): WorkPageView {
-  return (raw && (VALID_VIEWS as readonly string[]).includes(raw)) ? (raw as WorkPageView) : 'inbox';
+  return (raw && (VALID_VIEWS as readonly string[]).includes(raw)) ? (raw as WorkPageView) : 'dashboard';
 }
 
 export function WorkPage() {
@@ -24,14 +23,12 @@ export function WorkPage() {
       <WorkSidebar />
       {projectId ? (
         <ProjectDetailPage projectId={projectId} />
-      ) : view === 'dashboard' ? (
-        <WorkDashboard />
       ) : view === 'projects' ? (
         <ProjectsListView />
-      ) : view === 'team' ? (
-        <TeamView />
-      ) : (
+      ) : view === 'inbox' ? (
         <InboxView />
+      ) : (
+        <WorkDashboard />
       )}
     </div>
   );

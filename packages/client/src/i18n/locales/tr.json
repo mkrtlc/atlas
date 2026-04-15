@@ -4397,8 +4397,7 @@
       "dashboard": "Gösterge paneli",
       "projects": "Projeler",
       "newProject": "Yeni proje",
-      "inbox": "Gelen kutusu",
-      "team": "Ekip"
+      "inbox": "Gelen kutusu"
     },
     "createProject": {
       "title": "Proje oluştur",

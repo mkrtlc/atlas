@@ -4429,8 +4429,7 @@
       "dashboard": "Dashboard",
       "projects": "Projects",
       "newProject": "New project",
-      "inbox": "Inbox",
-      "team": "Team"
+      "inbox": "Inbox"
     },
     "createProject": {
       "title": "Create project",

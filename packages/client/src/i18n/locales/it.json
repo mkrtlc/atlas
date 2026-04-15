@@ -4397,8 +4397,7 @@
       "dashboard": "Dashboard",
       "projects": "Progetti",
       "newProject": "Nuovo progetto",
-      "inbox": "In arrivo",
-      "team": "Team"
+      "inbox": "In arrivo"
     },
     "createProject": {
       "title": "Crea progetto",
