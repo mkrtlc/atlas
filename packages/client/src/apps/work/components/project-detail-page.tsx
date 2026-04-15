@@ -1,7 +1,7 @@
-export function ProjectDetailPage() {
+export function ProjectDetailPage({ projectId }: { projectId: string }) {
   return (
     <div style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
-      Coming soon
+      Project detail coming soon (id: {projectId})
     </div>
   );
 }

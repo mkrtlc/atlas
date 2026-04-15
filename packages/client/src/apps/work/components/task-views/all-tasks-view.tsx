@@ -1,7 +1,5 @@
+import { WorkTasksView } from '../work-tasks-view';
+
 export function AllTasksView() {
-  return (
-    <div style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
-      Coming soon
-    </div>
-  );
+  return <WorkTasksView view="all" title="All tasks" />;
 }

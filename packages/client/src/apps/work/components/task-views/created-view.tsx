@@ -1,7 +1,5 @@
+import { WorkTasksView } from '../work-tasks-view';
+
 export function CreatedView() {
-  return (
-    <div style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
-      Coming soon
-    </div>
-  );
+  return <WorkTasksView view="created" title="Created by me" />;
 }
