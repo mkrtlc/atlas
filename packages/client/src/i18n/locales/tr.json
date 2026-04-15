@@ -4395,12 +4395,10 @@
   "work": {
     "sidebar": {
       "dashboard": "Gösterge paneli",
-      "myTasks": "Görevlerim",
-      "assignedToMe": "Bana atanan",
-      "createdByMe": "Benim oluşturduğum",
-      "allTasks": "Tüm görevler",
       "projects": "Projeler",
-      "newProject": "Yeni proje"
+      "newProject": "Yeni proje",
+      "inbox": "Gelen kutusu",
+      "team": "Ekip"
     },
     "createProject": {
       "title": "Proje oluştur",

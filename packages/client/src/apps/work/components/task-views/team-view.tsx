@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { WorkTasksView } from '../work-tasks-view';
 
-export function MyTasksView() {
+export function TeamView() {
   const { t } = useTranslation();
-  return <WorkTasksView view="my" title={t('work.sidebar.myTasks')} />;
+  return <WorkTasksView view="all" title={t('work.sidebar.team')} />;
 }

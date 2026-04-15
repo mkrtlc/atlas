@@ -4395,12 +4395,10 @@
   "work": {
     "sidebar": {
       "dashboard": "Dashboard",
-      "myTasks": "Le mie attività",
-      "assignedToMe": "Assegnate a me",
-      "createdByMe": "Create da me",
-      "allTasks": "Tutte le attività",
       "projects": "Progetti",
-      "newProject": "Nuovo progetto"
+      "newProject": "Nuovo progetto",
+      "inbox": "In arrivo",
+      "team": "Team"
     },
     "createProject": {
       "title": "Crea progetto",

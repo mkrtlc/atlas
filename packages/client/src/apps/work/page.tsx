@@ -1,19 +1,17 @@
 import { useSearchParams } from 'react-router-dom';
 import { WorkSidebar } from './components/work-sidebar';
-import { MyTasksView } from './components/task-views/my-tasks-view';
-import { AssignedView } from './components/task-views/assigned-view';
-import { CreatedView } from './components/task-views/created-view';
-import { AllTasksView } from './components/task-views/all-tasks-view';
+import { InboxView } from './components/task-views/inbox-view';
+import { TeamView } from './components/task-views/team-view';
 import { ProjectDetailPage } from './components/project-detail-page';
 import { WorkDashboard } from './components/work-dashboard';
 import { ProjectsListView } from './components/projects-list-view';
 
-export type WorkPageView = 'my' | 'dashboard' | 'projects' | 'assigned' | 'created' | 'all';
+export type WorkPageView = 'inbox' | 'team' | 'projects' | 'dashboard';
 
-const VALID_VIEWS: readonly WorkPageView[] = ['my', 'dashboard', 'projects', 'assigned', 'created', 'all'];
+const VALID_VIEWS: readonly WorkPageView[] = ['inbox', 'team', 'projects', 'dashboard'];
 
 function parseView(raw: string | null): WorkPageView {
-  return (raw && (VALID_VIEWS as readonly string[]).includes(raw)) ? (raw as WorkPageView) : 'my';
+  return (raw && (VALID_VIEWS as readonly string[]).includes(raw)) ? (raw as WorkPageView) : 'inbox';
 }
 
 export function WorkPage() {
@@ -30,14 +28,10 @@ export function WorkPage() {
         <WorkDashboard />
       ) : view === 'projects' ? (
         <ProjectsListView />
-      ) : view === 'assigned' ? (
-        <AssignedView />
-      ) : view === 'created' ? (
-        <CreatedView />
-      ) : view === 'all' ? (
-        <AllTasksView />
+      ) : view === 'team' ? (
+        <TeamView />
       ) : (
-        <MyTasksView />
+        <InboxView />
       )}
     </div>
   );

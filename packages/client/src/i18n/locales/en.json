@@ -4427,12 +4427,10 @@
   "work": {
     "sidebar": {
       "dashboard": "Dashboard",
-      "myTasks": "My tasks",
-      "assignedToMe": "Assigned to me",
-      "createdByMe": "Created by me",
-      "allTasks": "All tasks",
       "projects": "Projects",
-      "newProject": "New project"
+      "newProject": "New project",
+      "inbox": "Inbox",
+      "team": "Team"
     },
     "createProject": {
       "title": "Create project",
