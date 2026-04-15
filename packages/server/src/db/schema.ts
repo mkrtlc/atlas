@@ -426,7 +426,8 @@ export const tasks = pgTable('tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  projectId: uuid('project_id').references(() => taskProjects.id, { onDelete: 'set null' }),
+  projectId: uuid('project_id').references(() => projectProjects.id, { onDelete: 'set null' }),
+  isPrivate: boolean('is_private').notNull().default(false),
   title: text('title').notNull().default(''),
   notes: text('notes'),
   description: text('description'),
@@ -455,6 +456,7 @@ export const tasks = pgTable('tasks', {
   userWhenIdx: index('idx_tasks_user_when').on(table.userId, table.when, table.status),
   projectIdx: index('idx_tasks_project').on(table.projectId, table.sortOrder),
   dueDateIdx: index('idx_tasks_due_date').on(table.userId, table.dueDate),
+  userPrivateIdx: index('idx_tasks_user_private').on(table.userId, table.isPrivate),
 }));
 
 // ─── Drive (file storage) ────────────────────────────────────────────
@@ -1856,6 +1858,7 @@ export const invoices = pgTable('invoices', {
   companyId: uuid('company_id').notNull().references(() => crmCompanies.id, { onDelete: 'cascade' }),
   contactId: uuid('contact_id').references(() => crmContacts.id, { onDelete: 'set null' }),
   dealId: uuid('deal_id').references(() => crmDeals.id, { onDelete: 'set null' }),
+  projectId: uuid('project_id').references(() => projectProjects.id, { onDelete: 'set null' }),
   proposalId: uuid('proposal_id').references(() => crmProposals.id, { onDelete: 'set null' }),
   invoiceNumber: varchar('invoice_number', { length: 50 }).notNull(),
   status: varchar('status', { length: 20 }).notNull().default('draft'),
@@ -1888,6 +1891,7 @@ export const invoices = pgTable('invoices', {
   companyIdx: index('idx_invoices_company').on(table.companyId),
   statusIdx: index('idx_invoices_status').on(table.status),
   uniqueNumber: uniqueIndex('idx_invoices_number').on(table.tenantId, table.invoiceNumber),
+  projectIdx: index('idx_invoices_project').on(table.projectId),
 }));
 
 export const invoiceLineItems = pgTable('invoice_line_items', {
