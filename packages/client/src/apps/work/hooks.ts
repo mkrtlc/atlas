@@ -355,8 +355,13 @@ export function useTaskProjectList(includeArchived = false) {
     queryKey: includeArchived ? [...queryKeys.work.tasks.projects, 'archived'] : queryKeys.work.tasks.projects,
     queryFn: async () => {
       const params = includeArchived ? '?includeArchived=true' : '';
-      const { data } = await api.get(`/work/tasks/projects/list${params}`);
-      return data.data as ListProjectsResponse;
+      const { data } = await api.get(`/work/projects${params}`);
+      const raw = data.data as { projects: Array<Record<string, unknown>> };
+      const projects = raw.projects.map((p) => ({
+        ...(p as unknown as TaskProject),
+        title: (p.title as string) ?? (p.name as string) ?? '',
+      }));
+      return { projects } as ListProjectsResponse;
     },
     staleTime: 30_000,
   });
@@ -709,7 +714,7 @@ export function useProjects(filters?: { search?: string; status?: string; compan
       if (filters?.status) params.set('status', filters.status);
       if (filters?.companyId) params.set('companyId', filters.companyId);
       const qs = params.toString();
-      const { data } = await api.get(`/work/projects/projects/list${qs ? `?${qs}` : ''}`);
+      const { data } = await api.get(`/work/projects${qs ? `?${qs}` : ''}`);
       const raw = data.data as { projects: Record<string, unknown>[] };
       return { projects: raw.projects.map(mapWorkProject) };
     },

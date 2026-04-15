@@ -511,7 +511,7 @@ export async function uploadAttachment(req: Request, res: Response) {
       return;
     }
 
-    const attachment = await workService.addAttachment(userId, tenantId, taskId, file as any);
+    const attachment = await workService.addAttachment(userId, tenantId, taskId, file);
     res.json({ success: true, data: attachment });
   } catch (error) {
     logger.error({ error }, 'Failed to upload task attachment');

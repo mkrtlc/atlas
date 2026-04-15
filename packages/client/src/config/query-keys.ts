@@ -273,6 +273,7 @@ export const queryKeys = {
       projects: {
         all: ['work', 'projects', 'projects'] as const,
         detail: (id: string) => ['work', 'projects', 'projects', id] as const,
+        files: (id: string) => ['work', 'projects', 'projects', id, 'files'] as const,
       },
       financials: (id: string) => ['work', 'projects', 'financials', id] as const,
       timeEntries: {

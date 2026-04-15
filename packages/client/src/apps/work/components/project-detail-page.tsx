@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ContentArea } from '../../../components/ui/content-area';
+import { Tabs } from '../../../components/ui/tabs';
 import { useWorkProject } from '../hooks';
 import type { WorkProject } from '../hooks';
 import { ProjectOverviewTab } from './project-overview-tab';
@@ -10,8 +11,8 @@ import { ProjectMembersTab } from './project-members-tab';
 import { ProjectTimeTab } from './project-time-tab';
 import { ProjectFilesTab } from './project-files-tab';
 
-const TABS = ['overview', 'tasks', 'financials', 'members', 'time', 'files'] as const;
-type TabId = typeof TABS[number];
+const TAB_IDS = ['overview', 'tasks', 'financials', 'members', 'time', 'files'] as const;
+type TabId = typeof TAB_IDS[number];
 
 interface Props {
   projectId: string;
@@ -23,14 +24,7 @@ export function ProjectDetailPage({ projectId }: Props) {
   const tab = (searchParams.get('tab') as TabId | null) ?? 'overview';
   const { data: project, isLoading } = useWorkProject(projectId);
 
-  const tabLabels: Record<TabId, string> = {
-    overview: t('work.tabs.overview'),
-    tasks: t('work.tabs.tasks'),
-    financials: t('work.tabs.financials'),
-    members: t('work.tabs.members'),
-    time: t('work.tabs.time'),
-    files: t('work.tabs.files'),
-  };
+  const tabs = TAB_IDS.map((id) => ({ id, label: t(`work.tabs.${id}`) }));
 
   if (isLoading) {
     return (
@@ -52,7 +46,7 @@ export function ProjectDetailPage({ projectId }: Props) {
     );
   }
 
-  const setTab = (next: TabId) => {
+  const setTab = (next: string) => {
     const params = new URLSearchParams();
     params.set('projectId', projectId);
     params.set('tab', next);
@@ -66,29 +60,7 @@ export function ProjectDetailPage({ projectId }: Props) {
           <span style={{ fontSize: 'var(--font-size-md)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', flexShrink: 0 }}>
             {project.name}
           </span>
-          <div style={{ display: 'flex', gap: 2 }}>
-            {TABS.map((id) => (
-              <button
-                key={id}
-                onClick={() => setTab(id)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--font-size-sm)',
-                  color: tab === id ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
-                  fontWeight: tab === id ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
-                  borderBottom: tab === id ? '2px solid var(--color-accent-primary)' : '2px solid transparent',
-                  transition: 'color 0.15s, border-color 0.15s',
-                  fontFamily: 'var(--font-family)',
-                }}
-              >
-                {tabLabels[id]}
-              </button>
-            ))}
-          </div>
+          <Tabs tabs={tabs} activeTab={tab} onChange={setTab} paddingX="0" />
         </div>
       }
     >

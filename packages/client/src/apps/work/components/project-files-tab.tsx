@@ -1,12 +1,14 @@
 import { FileText, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { IconButton } from '../../../components/ui/icon-button';
 import { formatDate, formatBytes } from '../../../lib/format';
 import { ROUTES } from '../../../config/routes';
+import { api } from '../../../lib/api-client';
+import { queryKeys } from '../../../config/query-keys';
 
-// Drive items linked to this project come from record links.
-// For now we use a simple placeholder view — full integration wired in Task 13+.
 interface DriveItem {
   id: string;
   name: string;
@@ -19,18 +21,20 @@ interface Props {
   projectId: string;
 }
 
-function FileIcon({ mimeType }: { mimeType: string | null }) {
-  return <FileText size={16} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />;
-}
-
-// Minimal hook — queries drive items linked to this project via record links.
-// Returns an empty array until Drive <> Work linking is wired (Task 13+).
-function useProjectFiles(_projectId: string): { data: DriveItem[] | undefined; isLoading: boolean } {
-  // TODO(Task 13+): fetch via /work/projects/projects/:id/files or record_links
-  return { data: [], isLoading: false };
+function useProjectFiles(projectId: string) {
+  return useQuery({
+    queryKey: queryKeys.work.projects.projects.files(projectId),
+    queryFn: async () => {
+      const { data } = await api.get(`/work/projects/${projectId}/files`);
+      return (data.data ?? []) as DriveItem[];
+    },
+    enabled: !!projectId,
+    staleTime: 30_000,
+  });
 }
 
 export function ProjectFilesTab({ projectId }: Props) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: files, isLoading } = useProjectFiles(projectId);
 
@@ -46,9 +50,9 @@ export function ProjectFilesTab({ projectId }: Props) {
     return (
       <div style={{ padding: 'var(--spacing-2xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-md)', color: 'var(--color-text-tertiary)' }}>
         <FileText size={32} />
-        <span style={{ fontSize: 'var(--font-size-sm)' }}>No files linked to this project</span>
+        <span style={{ fontSize: 'var(--font-size-sm)' }}>{t('work.files.empty')}</span>
         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
-          Link files from Drive to make them appear here
+          {t('work.files.emptyHint')}
         </span>
       </div>
     );
@@ -57,7 +61,7 @@ export function ProjectFilesTab({ projectId }: Props) {
   return (
     <div style={{ padding: 'var(--spacing-2xl)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', maxWidth: 860 }}>
       <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--spacing-xs)' }}>
-        {files.length} {files.length === 1 ? 'file' : 'files'}
+        {t('work.files.count', { count: files.length })}
       </span>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -74,7 +78,7 @@ export function ProjectFilesTab({ projectId }: Props) {
               border: '1px solid var(--color-border-secondary)',
             }}
           >
-            <FileIcon mimeType={file.mimeType} />
+            <FileText size={16} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {file.name}
@@ -86,7 +90,7 @@ export function ProjectFilesTab({ projectId }: Props) {
             </div>
             <IconButton
               icon={<ExternalLink size={13} />}
-              label="Open in Drive"
+              label={t('work.files.openInDrive')}
               size={24}
               onClick={() => navigate(ROUTES.DRIVE)}
             />

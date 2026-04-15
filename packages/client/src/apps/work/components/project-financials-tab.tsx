@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
+import { StatCard } from '../../../components/ui/stat-card';
 import { useProjectFinancials } from '../hooks';
 import { getInvoiceStatusVariant } from '@atlas-platform/shared';
 import type { InvoiceStatus } from '@atlas-platform/shared';
@@ -34,9 +35,9 @@ export function ProjectFinancialsTab({ projectId, project }: Props) {
   return (
     <div style={{ padding: 'var(--spacing-md)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--spacing-md)' }}>
-        <SummaryCard label={t('work.financials.totalBilled')} value={fmt(summary.totalBilled, summary.currency)} />
-        <SummaryCard label={t('work.financials.totalPaid')} value={fmt(summary.totalPaid, summary.currency)} />
-        <SummaryCard label={t('work.financials.outstanding')} value={fmt(summary.outstanding, summary.currency)} />
+        <StatCard label={t('work.financials.totalBilled')} value={fmt(summary.totalBilled, summary.currency)} />
+        <StatCard label={t('work.financials.totalPaid')} value={fmt(summary.totalPaid, summary.currency)} />
+        <StatCard label={t('work.financials.outstanding')} value={fmt(summary.outstanding, summary.currency)} />
       </div>
 
       <div>
@@ -79,16 +80,3 @@ export function ProjectFinancialsTab({ projectId, project }: Props) {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{
-      padding: 'var(--spacing-md)',
-      border: '1px solid var(--color-border-secondary)',
-      borderRadius: 'var(--radius-md)',
-      background: 'var(--color-bg-secondary)',
-    }}>
-      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginTop: 'var(--spacing-xs)' }}>{value}</div>
-    </div>
-  );
-}

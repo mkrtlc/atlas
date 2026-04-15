@@ -216,12 +216,13 @@ export async function searchGlobal(
   }
   const finalQuery = sql`${combined} LIMIT 25`;
 
-  const rows = await db.execute(finalQuery);
+  const result = await db.execute(finalQuery);
+  const list = (result.rows ?? (result as unknown as Record<string, unknown>[])) as Record<string, unknown>[];
 
-  return ((rows.rows ?? rows) as any[]).map((r) => ({
-    appId: r.app_id,
-    recordId: r.record_id,
-    title: r.title ?? 'Untitled',
-    appName: r.app_name,
+  return list.map((r) => ({
+    appId: r.app_id as string,
+    recordId: r.record_id as string,
+    title: (r.title as string | null) ?? 'Untitled',
+    appName: r.app_name as string,
   }));
 }

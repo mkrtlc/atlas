@@ -3,6 +3,15 @@ import { invoices, invoicePayments } from '../../../db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 
 export async function getProjectFinancials(tenantId: string, projectId: string) {
+  const payments = db
+    .select({
+      invoiceId: invoicePayments.invoiceId,
+      amountPaid: sql<number>`SUM(CASE WHEN ${invoicePayments.type} = 'payment' THEN ${invoicePayments.amount} ELSE -${invoicePayments.amount} END)`.as('amount_paid'),
+    })
+    .from(invoicePayments)
+    .groupBy(invoicePayments.invoiceId)
+    .as('payments');
+
   const rows = await db
     .select({
       id: invoices.id,
@@ -12,13 +21,10 @@ export async function getProjectFinancials(tenantId: string, projectId: string) 
       total: invoices.total,
       status: invoices.status,
       currency: invoices.currency,
-      amountPaid: sql<number>`COALESCE((
-        SELECT SUM(CASE WHEN ${invoicePayments.type} = 'payment' THEN ${invoicePayments.amount} ELSE -${invoicePayments.amount} END)
-        FROM ${invoicePayments}
-        WHERE ${invoicePayments.invoiceId} = ${invoices.id}
-      ), 0)`.as('amount_paid'),
+      amountPaid: sql<number>`COALESCE(${payments.amountPaid}, 0)`.as('amount_paid'),
     })
     .from(invoices)
+    .leftJoin(payments, eq(payments.invoiceId, invoices.id))
     .where(and(
       eq(invoices.tenantId, tenantId),
       eq(invoices.projectId, projectId),
