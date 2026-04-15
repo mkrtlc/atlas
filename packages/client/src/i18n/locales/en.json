@@ -4258,7 +4258,8 @@
       "shareNoCompany": "Could not generate share link — company not found",
       "duplicateSuccess": "Invoice duplicated",
       "markPaidSuccess": "Marked as paid",
-      "waiveSuccess": "Invoice waived"
+      "waiveSuccess": "Invoice waived",
+      "metaProject": "Project"
     },
     "payments": {
       "recordPayment": "Record payment",

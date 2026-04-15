@@ -4226,7 +4226,8 @@
       "shareNoCompany": "Freigabe-Link konnte nicht erstellt werden — Unternehmen nicht gefunden",
       "duplicateSuccess": "Rechnung dupliziert",
       "markPaidSuccess": "Als bezahlt markiert",
-      "waiveSuccess": "Rechnung erlassen"
+      "waiveSuccess": "Rechnung erlassen",
+      "metaProject": "Projekt"
     },
     "payments": {
       "recordPayment": "Zahlung erfassen",

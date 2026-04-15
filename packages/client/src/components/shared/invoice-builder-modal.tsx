@@ -28,6 +28,7 @@ interface InvoiceBuilderModalProps {
     contactId?: string;
     dealId?: string;
     proposalId?: string;
+    projectId?: string;
     lineItems?: LineItem[];
     currency?: string;
   };
@@ -84,6 +85,7 @@ export function InvoiceBuilderModal({
   const [contactId, setContactId] = useState('');
   const [dealId, setDealId] = useState('');
   const [proposalId, setProposalId] = useState('');
+  const [projectId, setProjectId] = useState('');
   const [currency, setCurrency] = useState(defaultCurrency);
   const [issueDate, setIssueDate] = useState(todayISO);
   const [dueDate, setDueDate] = useState(dueDateISO);
@@ -125,6 +127,7 @@ export function InvoiceBuilderModal({
       setContactId(prefill?.contactId ?? '');
       setDealId(prefill?.dealId ?? '');
       setProposalId(prefill?.proposalId ?? '');
+      setProjectId(prefill?.projectId ?? '');
       setCurrency(prefill?.currency ?? defaultCurrency);
       setIssueDate(todayISO());
       setDueDate(dueDateISO());
@@ -153,6 +156,7 @@ export function InvoiceBuilderModal({
       contactId: contactId || undefined,
       dealId: dealId || undefined,
       proposalId: proposalId || undefined,
+      projectId: projectId || undefined,
       currency,
       issueDate,
       dueDate,

@@ -4226,7 +4226,8 @@
       "shareNoCompany": "Impossibile generare il link di condivisione — azienda non trovata",
       "duplicateSuccess": "Fattura duplicata",
       "markPaidSuccess": "Segnata come pagata",
-      "waiveSuccess": "Fattura annullata"
+      "waiveSuccess": "Fattura annullata",
+      "metaProject": "Progetto"
     },
     "payments": {
       "recordPayment": "Registra pagamento",

@@ -4226,7 +4226,8 @@
       "shareNoCompany": "Impossible de générer le lien de partage — société introuvable",
       "duplicateSuccess": "Facture dupliquée",
       "markPaidSuccess": "Marquée comme payée",
-      "waiveSuccess": "Facture annulée"
+      "waiveSuccess": "Facture annulée",
+      "metaProject": "Projet"
     },
     "payments": {
       "recordPayment": "Enregistrer un paiement",

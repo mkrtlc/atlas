@@ -141,18 +141,25 @@ export interface UtilizationReport {
   }>;
 }
 
+export interface ProjectFinancialInvoice {
+  id: string;
+  invoiceNumber: string;
+  issueDate: string;
+  dueDate: string;
+  total: number;
+  balanceDue: number;
+  status: string;
+  currency: string;
+}
+
 export interface ProjectFinancials {
-  projectId: string;
-  budgetHours: number | null;
-  budgetAmount: number | null;
-  totalHours: number;
-  billableHours: number;
-  billedHours: number;
-  totalAmount: number;
-  unbilledHours: number;
-  unbilledAmount: number;
-  invoicedAmount: number;
-  paidAmount: number;
+  summary: {
+    totalBilled: number;
+    totalPaid: number;
+    outstanding: number;
+    currency: string;
+  };
+  invoices: ProjectFinancialInvoice[];
 }
 
 export interface ProjectMember {

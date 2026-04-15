@@ -34,6 +34,7 @@ export function InvoicesPage() {
   // Prefill from URL params
   const prefillCompanyId = searchParams.get('companyId') ?? undefined;
   const prefillDealId = searchParams.get('dealId') ?? undefined;
+  const prefillProjectId = searchParams.get('projectId') ?? undefined;
 
   // Data — fetch all invoices (filtering is done client-side in the list view)
   const { data: invoicesData } = useInvoices();
@@ -160,6 +161,7 @@ export function InvoicesPage() {
         prefill={{
           companyId: prefillCompanyId,
           dealId: prefillDealId,
+          projectId: prefillProjectId,
         }}
         onCreated={(invoice) => {
           setShowBuilder(false);

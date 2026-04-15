@@ -4,6 +4,7 @@ import type { Invoice } from '@atlas-platform/shared';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { useCompanies } from '../../crm/hooks';
+import { useProjects } from '../../work/hooks';
 
 interface Props {
   invoice: Invoice;
@@ -15,6 +16,7 @@ interface Props {
     contactId: string | null;
     currency: string;
     dealId: string | null;
+    projectId: string | null;
   }>) => void;
 }
 
@@ -22,6 +24,8 @@ export function InvoiceMetaBlock({ invoice, onPatch }: Props) {
   const { t } = useTranslation();
   const { data: companiesData } = useCompanies();
   const companies = companiesData?.companies ?? [];
+  const { data: projectsData } = useProjects();
+  const projects = projectsData?.projects ?? [];
 
   return (
     <div
@@ -83,6 +87,14 @@ export function InvoiceMetaBlock({ invoice, onPatch }: Props) {
           { value: 'USD', label: 'USD' }, { value: 'EUR', label: 'EUR' },
           { value: 'GBP', label: 'GBP' }, { value: 'TRY', label: 'TRY' },
         ]}
+      />
+
+      <Label>{t('invoices.detail.metaProject')}</Label>
+      <Select
+        size="sm"
+        value={invoice.projectId ?? ''}
+        onChange={(v) => onPatch({ projectId: v ? v : null })}
+        options={[{ value: '', label: '—' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
       />
     </div>
   );
