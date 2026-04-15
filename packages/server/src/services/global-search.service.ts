@@ -101,13 +101,14 @@ export async function searchGlobal(
       });
   }
 
-  // tasks
+  // work — tasks (with privacy filter)
   {
-    const scope = ownScope(getPerm('tasks'), uid);
+    const scope = ownScope(getPerm('work'), uid);
     if (scope)
       branches.push({
-        sql: sql`(SELECT id::text AS record_id, title, 'tasks' AS app_id, 'Tasks' AS app_name
+        sql: sql`(SELECT id::text AS record_id, title, 'work' AS app_id, 'Work' AS app_name
           FROM tasks WHERE tenant_id = ${tenantId} AND title ILIKE ${term} AND ${scope}
+            AND (is_private = false OR user_id = ${uid})
           ORDER BY updated_at DESC LIMIT 5)`,
       });
   }
@@ -179,18 +180,17 @@ export async function searchGlobal(
       });
   }
 
-  // projects
+  // work — projects
   {
-    const projPerm = getPerm('projects');
     const scope = projectAccessibleScope(
-      projPerm,
+      getPerm('work'),
       uid,
       tenantId,
       sql`project_projects.id`,
     );
     if (scope)
       branches.push({
-        sql: sql`(SELECT id::text AS record_id, name AS title, 'projects' AS app_id, 'Projects' AS app_name
+        sql: sql`(SELECT id::text AS record_id, name AS title, 'work' AS app_id, 'Work' AS app_name
           FROM project_projects WHERE tenant_id = ${tenantId} AND is_archived = false AND name ILIKE ${term} AND ${scope}
           ORDER BY updated_at DESC LIMIT 5)`,
       });
