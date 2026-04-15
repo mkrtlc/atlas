@@ -4406,7 +4406,10 @@
       "title": "Proje oluştur",
       "namePlaceholder": "Proje adı",
       "submit": "Oluştur",
-      "cancel": "İptal"
+      "cancel": "İptal",
+      "company": "Müşteri / Şirket",
+      "noCompany": "— hiçbiri —",
+      "description": "Açıklama"
     },
     "tabs": {
       "overview": "Genel bakış",

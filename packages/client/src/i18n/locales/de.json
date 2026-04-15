@@ -4406,7 +4406,10 @@
       "title": "Projekt erstellen",
       "namePlaceholder": "Projektname",
       "submit": "Erstellen",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "company": "Kunde / Firma",
+      "noCompany": "— keine —",
+      "description": "Beschreibung"
     },
     "tabs": {
       "overview": "Übersicht",

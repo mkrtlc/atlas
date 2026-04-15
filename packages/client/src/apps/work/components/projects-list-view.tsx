@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
+import { Textarea } from '../../../components/ui/textarea';
+import { Select } from '../../../components/ui/select';
 import { Modal } from '../../../components/ui/modal';
 import { Badge } from '../../../components/ui/badge';
 
@@ -12,6 +14,7 @@ import { ContentArea } from '../../../components/ui/content-area';
 import { DataTable, type DataTableColumn } from '../../../components/ui/data-table';
 import { FeatureEmptyState } from '../../../components/ui/feature-empty-state';
 import { useProjects, useCreateProject, type WorkProject } from '../hooks';
+import { useCompanies } from '../../crm/hooks';
 import { useAppActions } from '../../../hooks/use-app-permissions';
 
 const STATUS_VARIANT: Record<string, BadgeVariant> = {
@@ -25,37 +28,73 @@ function CreateProjectModal({ open, onOpenChange }: { open: boolean; onOpenChang
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const createProject = useCreateProject();
+  const { data: companiesData } = useCompanies();
+  const companies = companiesData?.companies ?? [];
+
+  const reset = () => {
+    setName('');
+    setDescription('');
+    setCompanyId('');
+  };
 
   const submit = () => {
     if (!name.trim()) return;
-    createProject.mutate({ name: name.trim() }, {
-      onSuccess: (project) => {
-        onOpenChange(false);
-        setName('');
-        navigate(`/work?projectId=${project.id}`);
+    createProject.mutate(
+      {
+        name: name.trim(),
+        description: description.trim() || null,
+        companyId: companyId || undefined,
       },
-    });
+      {
+        onSuccess: (project) => {
+          onOpenChange(false);
+          reset();
+          navigate(`/work?projectId=${project.id}`);
+        },
+      },
+    );
   };
 
   const close = (next: boolean) => {
-    if (!next) setName('');
+    if (!next) reset();
     onOpenChange(next);
   };
 
   return (
-    <Modal open={open} onOpenChange={close} width={400} title={t('work.createProject.title')}>
+    <Modal open={open} onOpenChange={close} width={460} title={t('work.createProject.title')}>
       <Modal.Header title={t('work.createProject.title')} />
       <Modal.Body>
-        <Input
-          label={t('work.createProject.namePlaceholder')}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={t('work.createProject.namePlaceholder')}
-          size="md"
-          autoFocus
-          onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+          <Input
+            label={t('work.createProject.namePlaceholder')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t('work.createProject.namePlaceholder')}
+            size="md"
+            autoFocus
+            onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+          />
+          <div>
+            <label style={{ display: 'block', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>
+              {t('work.createProject.company')}
+            </label>
+            <Select
+              size="md"
+              value={companyId}
+              onChange={setCompanyId}
+              options={[{ value: '', label: t('work.createProject.noCompany') }, ...companies.map((c) => ({ value: c.id, label: c.name }))]}
+            />
+          </div>
+          <Textarea
+            label={t('work.createProject.description')}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
+        </div>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="ghost" size="md" onClick={() => close(false)}>

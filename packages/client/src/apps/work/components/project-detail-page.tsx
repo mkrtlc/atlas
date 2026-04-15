@@ -1,8 +1,9 @@
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ContentArea } from '../../../components/ui/content-area';
 import { Tabs } from '../../../components/ui/tabs';
-import { useWorkProject } from '../hooks';
+import { Select } from '../../../components/ui/select';
+import { useWorkProject, useProjects } from '../hooks';
 import type { WorkProject } from '../hooks';
 import { ProjectOverviewTab } from './project-overview-tab';
 import { ProjectTasksTab } from './project-tasks-tab';
@@ -20,9 +21,12 @@ interface Props {
 
 export function ProjectDetailPage({ projectId }: Props) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = (searchParams.get('tab') as TabId | null) ?? 'overview';
+  const tab = (searchParams.get('tab') as TabId | null) ?? 'tasks';
   const { data: project, isLoading } = useWorkProject(projectId);
+  const { data: projectsData } = useProjects();
+  const allProjects = projectsData?.projects ?? [];
 
   const tabs = TAB_IDS.map((id) => ({ id, label: t(`work.tabs.${id}`) }));
 
@@ -57,9 +61,18 @@ export function ProjectDetailPage({ projectId }: Props) {
     <ContentArea
       headerSlot={
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', padding: '0 var(--spacing-lg)', width: '100%', height: '100%' }}>
-          <span style={{ fontSize: 'var(--font-size-md)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', flexShrink: 0 }}>
-            {project.name}
-          </span>
+          <div style={{ flexShrink: 0, minWidth: 180, maxWidth: 280 }}>
+            <Select
+              size="sm"
+              value={projectId}
+              onChange={(next) => {
+                if (next && next !== projectId) {
+                  navigate(`/work?projectId=${next}&tab=${tab}`);
+                }
+              }}
+              options={allProjects.map((p) => ({ value: p.id, label: p.name }))}
+            />
+          </div>
           <Tabs tabs={tabs} activeTab={tab} onChange={setTab} paddingX="0" />
         </div>
       }

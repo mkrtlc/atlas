@@ -4438,7 +4438,10 @@
       "title": "Create project",
       "namePlaceholder": "Project name",
       "submit": "Create",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "company": "Client / company",
+      "noCompany": "— none —",
+      "description": "Description"
     },
     "tabs": {
       "overview": "Overview",

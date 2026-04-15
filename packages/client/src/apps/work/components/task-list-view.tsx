@@ -87,6 +87,7 @@ export function TaskListView({
   const tasksSettings = useTasksSettingsStore();
   const [collapsedHeadings, setCollapsedHeadings] = useState<Set<string>>(new Set());
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
+  const defaultVisibility: 'private' | 'team' = projectIdForNew ? 'team' : 'private';
 
   return (
     <div className={`tasks-list-container task-list-scroll${tasksSettings.compactMode ? ' compact' : ''}`}>
@@ -94,17 +95,17 @@ export function TaskListView({
 
       {todayTasks ? (
         <>
-          {canCreate && <NewTaskCreator defaultWhen="today" projectId={projectIdForNew} />}
+          {canCreate && <NewTaskCreator defaultWhen="today" projectId={projectIdForNew} defaultVisibility={defaultVisibility} />}
           {todayTasks.daytime.length > 0 && (
             <CollapsibleSection label={t('tasks.todayLabel')} icon={Sun} color="#d97706" count={todayTasks.daytime.length}>
               {todayTasks.daytime.map(renderTaskItem)}
-              {canCreate && <QuickCaptureInput defaultWhen="today" projectId={projectIdForNew} />}
+              {canCreate && <QuickCaptureInput defaultWhen="today" projectId={projectIdForNew} defaultVisibility={defaultVisibility} />}
             </CollapsibleSection>
           )}
           {todayTasks.evening.length > 0 && (
             <CollapsibleSection label={t('tasks.thisEvening')} icon={Moon} color="#6366f1" count={todayTasks.evening.length}>
               {todayTasks.evening.map(renderTaskItem)}
-              {canCreate && <QuickCaptureInput defaultWhen="evening" projectId={projectIdForNew} />}
+              {canCreate && <QuickCaptureInput defaultWhen="evening" projectId={projectIdForNew} defaultVisibility={defaultVisibility} />}
             </CollapsibleSection>
           )}
           {todayTasks.daytime.length === 0 && todayTasks.evening.length === 0 && !isLoading && (
@@ -113,7 +114,7 @@ export function TaskListView({
         </>
       ) : projectTaskGroups ? (
         <>
-          {canCreate && <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} />}
+          {canCreate && <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} defaultVisibility={defaultVisibility} />}
           {projectTaskGroups.map((group, idx) => (
             <div key={group.heading?.id || `ungrouped-${idx}`}>
               {group.heading && (
@@ -140,6 +141,7 @@ export function TaskListView({
                       defaultWhen={defaultWhen}
                       projectId={projectIdForNew}
                       headingId={group.heading?.id ?? null}
+                      defaultVisibility={defaultVisibility}
                     />
                   )}
                 </>
@@ -153,12 +155,12 @@ export function TaskListView({
         </>
       ) : inboxGroups ? (
         <>
-          {canCreate && <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} />}
+          {canCreate && <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} defaultVisibility={defaultVisibility} />}
           {inboxGroups.map((group) => (
             group.noHeader ? (
               <div key={group.label}>
                 {group.tasks.map(renderTaskItem)}
-                {canCreate && <QuickCaptureInput defaultWhen="inbox" projectId={projectIdForNew} />}
+                {canCreate && <QuickCaptureInput defaultWhen="inbox" projectId={projectIdForNew} defaultVisibility={defaultVisibility} />}
               </div>
             ) : (
               <CollapsibleSection
@@ -179,11 +181,11 @@ export function TaskListView({
       ) : (
         <>
           {canCreate && activeSection !== 'logbook' && activeSection !== 'upcoming' && (
-            <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} />
+            <NewTaskCreator defaultWhen={defaultWhen} projectId={projectIdForNew} defaultVisibility={defaultVisibility} />
           )}
           {displayTasks.map(renderTaskItem)}
           {canCreate && activeSection !== 'logbook' && activeSection !== 'upcoming' && displayTasks.length > 0 && (
-            <QuickCaptureInput defaultWhen={defaultWhen} projectId={projectIdForNew} />
+            <QuickCaptureInput defaultWhen={defaultWhen} projectId={projectIdForNew} defaultVisibility={defaultVisibility} />
           )}
           {displayTasks.length === 0 && !isLoading && (
             <TasksEmptyState section={activeSection} seeding={seeding} onSeed={onSeed} />

@@ -4406,7 +4406,10 @@
       "title": "Crea progetto",
       "namePlaceholder": "Nome del progetto",
       "submit": "Crea",
-      "cancel": "Annulla"
+      "cancel": "Annulla",
+      "company": "Cliente / azienda",
+      "noCompany": "— nessuna —",
+      "description": "Descrizione"
     },
     "tabs": {
       "overview": "Panoramica",
