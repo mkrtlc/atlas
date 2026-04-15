@@ -10,7 +10,7 @@ import {
   usePreviewTimeEntries,
   usePopulateFromTimeEntries,
   type TimeEntryLineItemPreview,
-} from '../../projects/hooks';
+} from '../../work/hooks';
 
 interface ImportTimeEntriesModalProps {
   open: boolean;

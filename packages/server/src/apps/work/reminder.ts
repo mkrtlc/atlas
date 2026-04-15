@@ -68,15 +68,15 @@ export async function sendDueTaskReminders(): Promise<number> {
         await sendEmail({
           to: user.email,
           subject: `Task due today: ${taskTitle}`,
-          text: `Task "${taskTitle}" is due today. Open Atlas to view your tasks: ${clientUrl}/tasks`,
+          text: `Task "${taskTitle}" is due today. Open Atlas to view your tasks: ${clientUrl}/work`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 500px;">
               <h2 style="margin: 0 0 12px; font-size: 18px;">Task due today</h2>
               <p style="margin: 0 0 16px; color: #555;">
                 Your task <strong>"${taskTitle}"</strong> is due today.
               </p>
-              <a href="${clientUrl}/tasks" style="display: inline-block; padding: 10px 20px; background: #13715B; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
-                Open tasks
+              <a href="${clientUrl}/work" style="display: inline-block; padding: 10px 20px; background: #13715B; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                Open work
               </a>
             </div>
           `,

@@ -26,13 +26,11 @@ export const FULL_BLEED_BRAND_ICONS = new Set<string>(['draw', 'docs', 'sign']);
  * than lucide line icons. A few apps need extra presence:
  *   - calendar: 1.44× (dark body + small white type needs to read at small sizes)
  *   - system:   1.79× (colourful glyph has lots of internal whitespace, +15% bump)
- *   - tasks:    1.56× (checklist artwork has wide internal margins)
  *   - drive:    1.38× (folder artwork needs more presence on the tinted card)
  *   - invoices: 1.56× (stacked-pages glyph reads small at 1.2×, +30% bump) */
 export function getBrandIconScale(appId: string): number {
   if (appId === 'calendar') return 1.44;
   if (appId === 'system') return 1.79;
-  if (appId === 'tasks') return 1.56;
   if (appId === 'invoices') return 1.56;
   if (appId === 'drive') return 1.38;
   return 1.2;
@@ -89,38 +87,6 @@ export function HrmIcon({ size = 24, className, style }: IconProps) {
         <linearGradient id="hrm_paint1" x1="63.8854" y1="-3.36797" x2="63.8854" y2="118.259" gradientUnits="userSpaceOnUse">
           <stop stopColor="white" stopOpacity="0"/>
           <stop offset="0.0001" stopColor="white" stopOpacity="0.8"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-export function ProjectsIcon({ size = 24, className, style }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 128 128"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      style={style}
-    >
-      <path d="M73.6667 74.6667C92.0762 74.6667 107 59.7428 107 41.3333C107 22.9238 92.0762 8 73.6667 8H27V74.6667H73.6667Z" fill="url(#projects_paint0)"/>
-      <path d="M27 74.6667V8L67 64V120H27V74.6667Z" fill="url(#projects_paint1)"/>
-      <path d="M79.8721 74.0901C77.8615 74.4687 75.7872 74.6667 73.6667 74.6667H27V8L79.8721 74.0901Z" fill="url(#projects_paint2)"/>
-      <defs>
-        <linearGradient id="projects_paint0" x1="67" y1="8" x2="67" y2="74.6667" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#F38744"/>
-          <stop offset="1" stopColor="#8D4E27"/>
-        </linearGradient>
-        <linearGradient id="projects_paint1" x1="47" y1="8" x2="47" y2="120" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#CAE3FF"/>
-          <stop offset="1" stopColor="#1B5594"/>
-        </linearGradient>
-        <linearGradient id="projects_paint2" x1="53.436" y1="8" x2="53.436" y2="74.6667" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#53B1FD"/>
-          <stop offset="1" stopColor="#326A97"/>
         </linearGradient>
       </defs>
     </svg>
@@ -465,42 +431,6 @@ export function SystemIcon({ size = 24, className, style }: IconProps) {
           <stop stopColor="#60a5fa" />
           <stop offset="1" stopColor="#1d4ed8" />
         </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-export function TasksIcon({ size = 24, className, style }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 128 128"
-      preserveAspectRatio="xMidYMid meet"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      style={style}
-    >
-      <path d="M30 20C34.9706 20 39 24.0294 39 29C39 33.9706 34.9706 38 30 38C25.0294 38 21 33.9706 21 29C21 24.0294 25.0294 20 30 20ZM30 22C26.134 22 23 25.134 23 29C23 32.866 26.134 36 30 36C33.866 36 37 32.866 37 29C37 25.134 33.866 22 30 22ZM30 24C32.7614 24 35 26.2386 35 29C35 31.7614 32.7614 34 30 34C27.2386 34 25 31.7614 25 29C25 26.2386 27.2386 24 30 24Z" fill="#167F98"/>
-      <rect opacity="0.75" x="47" y="26" width="62" height="4" rx="2" fill="#3D3D6C"/>
-      <path d="M30 57C34.9706 57 39 61.0294 39 66C39 70.9706 34.9706 75 30 75C25.0294 75 21 70.9706 21 66C21 61.0294 25.0294 57 30 57ZM30 59C26.134 59 23 62.134 23 66C23 69.866 26.134 73 30 73C33.866 73 37 69.866 37 66C37 62.134 33.866 59 30 59ZM30 61C32.7614 61 35 63.2386 35 66C35 68.7614 32.7614 71 30 71C27.2386 71 25 68.7614 25 66C25 63.2386 27.2386 61 30 61Z" fill="#5F5ABE"/>
-      <rect opacity="0.75" x="47" y="63" width="62" height="4" rx="2" fill="#3D3D6C"/>
-      <g filter="url(#tasks_filter0_i_1105_1550)">
-      <path d="M30 91C34.9706 91 39 95.0294 39 100C39 104.971 34.9706 109 30 109C25.0294 109 21 104.971 21 100C21 95.0294 25.0294 91 30 91ZM30 93C26.134 93 23 96.134 23 100C23 103.866 26.134 107 30 107C33.866 107 37 103.866 37 100C37 96.134 33.866 93 30 93ZM30 95C32.7614 95 35 97.2386 35 100C35 102.761 32.7614 105 30 105C27.2386 105 25 102.761 25 100C25 97.2386 27.2386 95 30 95Z" fill="#E964E7"/>
-      </g>
-      <rect opacity="0.75" x="47" y="97" width="62" height="4" rx="2" fill="#3D3D6C"/>
-      <defs>
-      <filter id="tasks_filter0_i_1105_1550" x="21" y="91" width="18" height="19" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-      <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-      <feOffset dy="1"/>
-      <feGaussianBlur stdDeviation="1"/>
-      <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.754167 0 0 0 0 0.147691 0 0 0 0 0.745564 0 0 0 1 0"/>
-      <feBlend mode="normal" in2="shape" result="effect1_innerShadow_1105_1550"/>
-      </filter>
       </defs>
     </svg>
   );

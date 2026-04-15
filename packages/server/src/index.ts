@@ -8,7 +8,7 @@ import { bootstrapDatabase } from './db/bootstrap';
 import { startSyncWorker, stopSyncWorker } from './workers';
 import { closeRedis } from './config/redis';
 import { startReminderScheduler, stopReminderScheduler } from './apps/sign/reminder';
-import { startTaskReminderScheduler, stopTaskReminderScheduler } from './apps/tasks/reminder';
+import { startTaskReminderScheduler, stopTaskReminderScheduler } from './apps/work/reminder';
 import { startCrmReminderScheduler, stopCrmReminderScheduler } from './apps/crm/activity-reminder';
 import { startLeaveBalanceScheduler, stopLeaveBalanceScheduler } from './apps/hr/services/leave-balance-scheduler';
 import { startRecurringInvoiceScheduler, stopRecurringInvoiceScheduler } from './apps/invoices/recurring-scheduler';

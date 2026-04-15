@@ -32,21 +32,6 @@ export const queryKeys = {
     list: ['drawings', 'list'] as const,
     detail: (id: string) => ['drawings', 'detail', id] as const,
   },
-  tasks: {
-    all: ['tasks'] as const,
-    widget: ['tasks', 'widget'] as const,
-    list: (filters?: string) => ['tasks', 'list', filters] as const,
-    detail: (id: string) => ['tasks', 'detail', id] as const,
-    counts: ['tasks', 'counts'] as const,
-    projects: ['tasks', 'projects'] as const,
-    subtasks: (taskId: string) => ['tasks', 'subtasks', taskId] as const,
-    activities: (taskId: string) => ['tasks', 'activities', taskId] as const,
-    comments: (taskId: string) => ['tasks', 'comments', taskId] as const,
-    templates: ['tasks', 'templates'] as const,
-    attachments: (taskId: string) => ['tasks', 'attachments', taskId] as const,
-    dependencies: (taskId: string) => ['tasks', 'dependencies', taskId] as const,
-    blockedIds: ['tasks', 'blocked-ids'] as const,
-  },
   hr: {
     all: ['hr'] as const,
     widget: ['hr', 'widget'] as const,
@@ -305,37 +290,5 @@ export const queryKeys = {
       },
       settings: ['work', 'projects', 'settings'] as const,
     },
-  },
-  projects: {
-    all: ['projects'] as const,
-    widget: ['projects', 'widget'] as const,
-    clients: {
-      all: ['projects', 'clients'] as const,
-      detail: (id: string) => ['projects', 'clients', id] as const,
-    },
-    projects: {
-      all: ['projects', 'projects'] as const,
-      detail: (id: string) => ['projects', 'projects', id] as const,
-    },
-    timeEntries: {
-      weekly: (weekStart: string) => ['projects', 'time-entries', 'weekly', weekStart] as const,
-      list: (filters?: string) => ['projects', 'time-entries', 'list', filters] as const,
-    },
-    invoices: {
-      all: ['projects', 'invoices'] as const,
-      detail: (id: string) => ['projects', 'invoices', id] as const,
-    },
-    reports: {
-      time: (filters?: string) => ['projects', 'reports', 'time', filters] as const,
-      revenue: (filters?: string) => ['projects', 'reports', 'revenue', filters] as const,
-      profitability: ['projects', 'reports', 'profitability'] as const,
-      utilization: (filters?: string) => ['projects', 'reports', 'utilization', filters] as const,
-    },
-    rates: {
-      all: ['projects', 'rates'] as const,
-    },
-    settings: ['projects', 'settings'] as const,
-    portal: (token: string) => ['projects', 'portal', token] as const,
-    dashboard: ['projects', 'dashboard'] as const,
   },
 };

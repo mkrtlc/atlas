@@ -401,25 +401,6 @@ export const documentVersions = pgTable('document_versions', {
   docIdx: index('idx_document_versions_doc').on(table.documentId, table.createdAt),
 }));
 
-// ─── Task Projects ──────────────────────────────────────────────────
-
-export const taskProjects = pgTable('task_projects', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  title: text('title').notNull().default('Untitled project'),
-  description: text('description'),
-  icon: text('icon'),
-  color: text('color').notNull().default('#5a7fa0'),
-  sortOrder: integer('sort_order').notNull().default(0),
-  isArchived: boolean('is_archived').notNull().default(false),
-  visibility: varchar('visibility', { length: 10 }).notNull().default('private'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  userIdx: index('idx_task_projects_user').on(table.userId, table.isArchived),
-}));
-
 // ─── Tasks ──────────────────────────────────────────────────────────
 
 export const tasks = pgTable('tasks', {

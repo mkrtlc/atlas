@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { isTenantAdmin, isTenantOwner } from '@atlas-platform/shared';
 import { useAuthStore } from '../stores/auth-store';
-import { useTaskCounts } from '../apps/tasks/hooks';
+import { useTaskCounts } from '../apps/work/hooks';
 import { ROUTES } from '../config/routes';
 import { APP_VERSION } from '../config/version';
 import { appRegistry } from '../apps';
@@ -32,11 +32,8 @@ import '../styles/home.css';
 // against a white card.
 const BRAND_ICON_BACKGROUNDS: Record<string, string> = {
   crm: '#ffffff',
-  projects: '#ffffff',
   invoices: '#ffffff',
   hr: '#fff1ea',
-  // Tasks brand colour is indigo #6366f1 — light tint backdrop.
-  tasks: '#eef0ff',
   // System glyph is multicolour — neutral light slate keeps colours honest.
   system: '#f5f5f7',
   // Drive folder artwork is orange/blue gradients — soft peach tint matches.
@@ -1180,7 +1177,7 @@ export function HomePage() {
                     table: <Table2 size={16} color="rgba(255,255,255,0.7)" />,
                     task: <CheckSquare size={16} color="rgba(255,255,255,0.7)" />,
                   };
-                  const typePaths: Record<string, string> = { doc: '/docs/', drawing: '/draw/', table: '/tables/', task: '/tasks' };
+                  const typePaths: Record<string, string> = { doc: '/docs/', drawing: '/draw/', table: '/tables/', task: '/work' };
                   return (
                     <button
                       key={`${item.type}-${item.id}`}

@@ -128,8 +128,7 @@ export function OnboardingPage() {
         const seedSteps = [
           { label: 'CRM', url: '/crm/seed' },
           { label: 'HRM', url: '/hr/seed' },
-          { label: 'Tasks', url: '/tasks/seed' },
-          { label: 'Projects', url: '/projects/seed' },
+          { label: 'Work', url: '/work/seed' },
           { label: 'Tables', url: '/tables/seed' },
           { label: 'Drive', url: '/drive/seed' },
           { label: 'Docs', url: '/docs/seed' },
