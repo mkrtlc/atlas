@@ -12,13 +12,14 @@ export async function listInvoices(req: Request, res: Response) {
     const perm = req.invoicesPerm!;
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
-    const { companyId, contactId, dealId, status, search, includeArchived } = req.query;
+    const { companyId, contactId, dealId, projectId, status, search, includeArchived } = req.query;
 
     const isAdmin = perm.role === 'admin';
     const invoicesList = await invoiceService.listInvoices(userId, tenantId, {
       companyId: companyId as string | undefined,
       contactId: contactId as string | undefined,
       dealId: dealId as string | undefined,
+      projectId: projectId as string | undefined,
       status: status as string | undefined,
       search: search as string | undefined,
       includeArchived: includeArchived === 'true',
@@ -75,7 +76,7 @@ export async function createInvoice(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
     const {
-      companyId, contactId, dealId, proposalId,
+      companyId, contactId, dealId, projectId, proposalId,
       invoiceNumber, status, subtotal, taxPercent, taxAmount,
       discountPercent, discountAmount, total, currency,
       issueDate, dueDate, notes, timeEntryIds,
@@ -87,7 +88,7 @@ export async function createInvoice(req: Request, res: Response) {
     }
 
     const invoice = await invoiceService.createInvoice(userId, tenantId, {
-      companyId, contactId, dealId, proposalId,
+      companyId, contactId, dealId, projectId, proposalId,
       invoiceNumber, status, subtotal, taxPercent, taxAmount,
       discountPercent, discountAmount, total, currency,
       issueDate, dueDate, notes, timeEntryIds,
@@ -112,7 +113,7 @@ export async function updateInvoice(req: Request, res: Response) {
     const tenantId = req.auth!.tenantId;
     const id = req.params.id as string;
     const {
-      companyId, contactId, dealId, proposalId,
+      companyId, contactId, dealId, projectId, proposalId,
       invoiceNumber, status, subtotal, taxPercent, taxAmount,
       discountPercent, discountAmount, total, currency,
       issueDate, dueDate, notes, isArchived, lineItems,
@@ -120,7 +121,7 @@ export async function updateInvoice(req: Request, res: Response) {
 
     const isAdmin = perm.role === 'admin';
     const invoice = await invoiceService.updateInvoice(userId, tenantId, id, {
-      companyId, contactId, dealId, proposalId,
+      companyId, contactId, dealId, projectId, proposalId,
       invoiceNumber, status, subtotal, taxPercent, taxAmount,
       discountPercent, discountAmount, total, currency,
       issueDate, dueDate, notes, isArchived, lineItems,

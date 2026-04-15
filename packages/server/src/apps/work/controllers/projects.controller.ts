@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as projectService from '../services/project.service';
+import * as financialService from '../services/financial.service';
 import { logger } from '../../../utils/logger';
 import { emitAppEvent } from '../../../services/event.service';
 import { canAccess } from '../../../services/app-permissions.service';
@@ -383,8 +384,16 @@ export async function listProjectFiles(req: Request, res: Response) {
   }
 }
 
-// ─── Financials (stub — implemented in Task 7) ───────────────────────
+// ─── Financials ──────────────────────────────────────────────────────
 
-export async function getProjectFinancials(_req: Request, res: Response) {
-  res.status(501).json({ success: false, error: 'Not implemented yet' });
+export async function getProjectFinancials(req: Request, res: Response) {
+  try {
+    const tenantId = req.auth!.tenantId!;
+    const id = req.params.id as string;
+    const data = await financialService.getProjectFinancials(tenantId, id);
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get project financials');
+    res.status(500).json({ success: false, error: 'Failed to get financials' });
+  }
 }

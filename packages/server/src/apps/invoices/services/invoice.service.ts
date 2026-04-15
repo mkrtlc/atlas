@@ -16,6 +16,7 @@ interface CreateInvoiceInput {
   companyId: string;
   contactId?: string | null;
   dealId?: string | null;
+  projectId?: string | null;
   proposalId?: string | null;
   invoiceNumber?: string;
   status?: string;
@@ -36,6 +37,7 @@ interface UpdateInvoiceInput {
   companyId?: string;
   contactId?: string | null;
   dealId?: string | null;
+  projectId?: string | null;
   proposalId?: string | null;
   invoiceNumber?: string;
   status?: string;
@@ -59,6 +61,7 @@ export async function listInvoices(userId: string, tenantId: string, filters?: {
   companyId?: string;
   contactId?: string;
   dealId?: string;
+  projectId?: string;
   status?: string;
   search?: string;
   includeArchived?: boolean;
@@ -81,6 +84,9 @@ export async function listInvoices(userId: string, tenantId: string, filters?: {
   }
   if (filters?.dealId) {
     conditions.push(eq(invoices.dealId, filters.dealId));
+  }
+  if (filters?.projectId) {
+    conditions.push(eq(invoices.projectId, filters.projectId));
   }
   // Status filter supports both stored statuses and computed virtual states
   // ('overdue' and 'unpaid'), which are derived from balance_due + due_date.
@@ -278,6 +284,7 @@ export async function createInvoice(userId: string, tenantId: string, input: Cre
           companyId: input.companyId,
           contactId: input.contactId ?? null,
           dealId: input.dealId ?? null,
+          projectId: input.projectId ?? null,
           proposalId: input.proposalId ?? null,
           invoiceNumber,
           status: input.status ?? 'draft',
@@ -315,6 +322,7 @@ export async function createInvoice(userId: string, tenantId: string, input: Cre
       companyId: input.companyId,
       contactId: input.contactId ?? null,
       dealId: input.dealId ?? null,
+      projectId: input.projectId ?? null,
       proposalId: input.proposalId ?? null,
       invoiceNumber,
       status: input.status ?? 'draft',
@@ -344,6 +352,7 @@ export async function updateInvoice(userId: string, tenantId: string, id: string
   if (input.companyId !== undefined) updates.companyId = input.companyId;
   if (input.contactId !== undefined) updates.contactId = input.contactId;
   if (input.dealId !== undefined) updates.dealId = input.dealId;
+  if (input.projectId !== undefined) updates.projectId = input.projectId;
   if (input.proposalId !== undefined) updates.proposalId = input.proposalId;
   if (input.invoiceNumber !== undefined) updates.invoiceNumber = input.invoiceNumber;
   if (input.status !== undefined) updates.status = input.status;
