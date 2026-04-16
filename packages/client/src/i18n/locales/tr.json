@@ -4428,7 +4428,8 @@
       "thisMonth": "Bu ay",
       "thisQuarter": "Bu çeyrek",
       "thisYear": "Bu yıl"
-    }
+    },
+    "importPdf": "PDF'den içe aktar"
   },
   "work": {
     "quickActions": {
@@ -4535,5 +4536,35 @@
       "time": "Bu projeye işlenen saatler — kim çalıştı, ne zaman ve faturalanabilir mi.",
       "files": "Bu projeye eklenen Drive dosyaları. Dosyaların kendisi Drive’da bulunur."
     }
+  },
+  "pdfImport": {
+    "title": "PDF'den ice aktar",
+    "dropzone": "Bir PDF fatura buraya sürükleyin veya tıklayarak seçin",
+    "dropzoneHint": "Dijital ve taranmış PDF'ler desteklenir (maks 20 MB)",
+    "errorNotPdf": "Lütfen bir PDF dosyası seçin",
+    "errorTooLarge": "Dosya çok büyük (maks 20 MB)",
+    "errorNoText": "Bu PDF'den metin çıkarılamadı",
+    "errorExtraction": "PDF işlenirken hata oluştu",
+    "stage": {
+      "reading": "Dosya okunuyor...",
+      "extracting": "Metin çıkarılıyor...",
+      "ocr": "OCR çalışıyor...",
+      "done": "Tamamlandı"
+    },
+    "extracted": "Veri çıkarıldı",
+    "confidence": {
+      "high": "Yüksek doğruluk",
+      "medium": "Orta doğruluk",
+      "low": "Düşük doğruluk"
+    },
+    "vendor": "Tedarikçi",
+    "invoiceNumber": "Fatura numarası",
+    "currency": "Para birimi",
+    "lineItems": "{{count}} kalem",
+    "total": "Toplam",
+    "reviewHint": "Yukarıdaki verileri gözden geçirin. Fatura formunda düzenleyebilirsiniz.",
+    "tryAnother": "Başka dosya dene",
+    "importToInvoice": "Faturaya aktar",
+    "importedFrom": "{{vendor}} kaynaklı aktarıldı"
   }
 }

@@ -4460,7 +4460,8 @@
       "thisMonth": "This month",
       "thisQuarter": "This quarter",
       "thisYear": "This year"
-    }
+    },
+    "importPdf": "Import from PDF"
   },
   "work": {
     "quickActions": {
@@ -4567,5 +4568,35 @@
       "time": "Logged hours for this project — who worked, when, and whether the time is billable.",
       "files": "Drive files attached to this project. The files themselves live in Drive."
     }
+  },
+  "pdfImport": {
+    "title": "Import from PDF",
+    "dropzone": "Drop a PDF invoice here, or click to browse",
+    "dropzoneHint": "Supports digital and scanned PDFs (max 20 MB)",
+    "errorNotPdf": "Please select a PDF file",
+    "errorTooLarge": "File is too large (max 20 MB)",
+    "errorNoText": "Could not extract text from this PDF",
+    "errorExtraction": "Failed to process the PDF",
+    "stage": {
+      "reading": "Reading file...",
+      "extracting": "Extracting text...",
+      "ocr": "Running OCR (this may take a moment)...",
+      "done": "Done"
+    },
+    "extracted": "Data extracted",
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "low": "Low confidence"
+    },
+    "vendor": "Vendor",
+    "invoiceNumber": "Invoice number",
+    "currency": "Currency",
+    "lineItems": "{{count}} line item(s)",
+    "total": "Total",
+    "reviewHint": "Review the data above. You can edit everything in the invoice form after importing.",
+    "tryAnother": "Try another file",
+    "importToInvoice": "Import to invoice",
+    "importedFrom": "Imported from {{vendor}}"
   }
 }

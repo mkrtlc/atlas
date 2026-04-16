@@ -31,6 +31,10 @@ interface InvoiceBuilderModalProps {
     projectId?: string;
     lineItems?: LineItem[];
     currency?: string;
+    issueDate?: string;
+    dueDate?: string;
+    taxPercent?: number;
+    notes?: string;
   };
 }
 
@@ -129,16 +133,16 @@ export function InvoiceBuilderModal({
       setProposalId(prefill?.proposalId ?? '');
       setProjectId(prefill?.projectId ?? '');
       setCurrency(prefill?.currency ?? defaultCurrency);
-      setIssueDate(todayISO());
-      setDueDate(dueDateISO());
+      setIssueDate(prefill?.issueDate ?? todayISO());
+      setDueDate(prefill?.dueDate ?? dueDateISO());
       setLineItems(
         prefill?.lineItems?.length
           ? prefill.lineItems.map((li) => ({ ...li, id: li.id || crypto.randomUUID() }))
           : [emptyLineItem()],
       );
-      setTaxPercent(defaultTaxRate);
+      setTaxPercent(prefill?.taxPercent ?? defaultTaxRate);
       setDiscountPercent(0);
-      setNotes('');
+      setNotes(prefill?.notes ?? '');
       setEFaturaType('SATIS');
     }
   }, [invoice, open, prefill, defaultCurrency, defaultTaxRate]);

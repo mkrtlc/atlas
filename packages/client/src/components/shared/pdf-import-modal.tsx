@@ -86,11 +86,12 @@ const fieldRow: React.CSSProperties = {
   fontFamily: 'var(--font-family)',
 };
 
-const stageLabels: Record<ProgressStage, string> = {
-  reading: 'Reading file...',
-  extracting: 'Extracting text...',
-  ocr: 'Running OCR (this may take a moment)...',
-  done: 'Done',
+// Stage label keys — resolved via t() at render time
+const stageI18nKeys: Record<ProgressStage, string> = {
+  reading: 'pdfImport.stage.reading',
+  extracting: 'pdfImport.stage.extracting',
+  ocr: 'pdfImport.stage.ocr',
+  done: 'pdfImport.stage.done',
 };
 
 const confidenceBadge: Record<Confidence, 'success' | 'warning' | 'error'> = {
@@ -134,11 +135,11 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
 
   const processFile = useCallback(async (file: File) => {
     if (file.type !== 'application/pdf') {
-      setError('Please select a PDF file.');
+      setError(t('pdfImport.errorNotPdf'));
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      setError('File size exceeds 20 MB limit.');
+      setError(t('pdfImport.errorTooLarge'));
       return;
     }
 
@@ -158,7 +159,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
       setStage('review');
     } catch (err) {
       console.error('PDF extraction failed', err);
-      setError('Failed to extract text from this PDF. Please try another file.');
+      setError(t('pdfImport.errorExtraction'));
       setStage('upload');
     }
   }, []);
@@ -195,7 +196,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
   const handleImport = useCallback(() => {
     if (!parsed) return;
     const notes = parsed.vendorName
-      ? `Imported from ${parsed.vendorName}${parsed.invoiceNumber ? ` — ${parsed.invoiceNumber}` : ''}`
+      ? t('pdfImport.importedFrom', { vendor: parsed.vendorName }) + (parsed.invoiceNumber ? ` — ${parsed.invoiceNumber}` : '')
       : undefined;
     onImport({
       lineItems: parsed.lineItems,
@@ -211,8 +212,8 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
   // ── Render ─────────────────────────────────────────────────────
 
   return (
-    <Modal open={open} onOpenChange={(o) => !o && handleClose()} width={560} title="Import PDF invoice">
-      <Modal.Header title={t('invoices.pdfImport.title', 'Import PDF invoice')} />
+    <Modal open={open} onOpenChange={(o) => !o && handleClose()} width={560} title={t('pdfImport.title')}>
+      <Modal.Header title={t('pdfImport.title')} />
       <Modal.Body>
         {/* ── Upload stage ── */}
         {stage === 'upload' && (
@@ -235,7 +236,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                     fontFamily: 'var(--font-family)',
                   }}
                 >
-                  {t('invoices.pdfImport.dropzone', 'Drag and drop a PDF here, or click to browse')}
+                  {t('pdfImport.dropzone')}
                 </p>
                 <p
                   style={{
@@ -245,7 +246,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                     fontFamily: 'var(--font-family)',
                   }}
                 >
-                  PDF only, max 20 MB
+                  {t('pdfImport.dropzoneHint')}
                 </p>
               </div>
               <input
@@ -300,7 +301,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                 fontFamily: 'var(--font-family)',
               }}
             >
-              {stageLabels[progressStage]}
+              {t(stageI18nKeys[progressStage])}
             </p>
           </div>
         )}
@@ -318,7 +319,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
               }}
             >
               <Badge variant={confidenceBadge[parsed.confidence]}>
-                {parsed.confidence} confidence
+                {t(`pdfImport.confidence.${parsed.confidence}`)}
               </Badge>
               <Badge variant="default">
                 {method === 'digital' ? 'Digital text' : 'OCR'}
@@ -329,7 +330,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
             <div>
               {parsed.vendorName && (
                 <div style={fieldRow}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Vendor</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{t('pdfImport.vendor')}</span>
                   <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                     {parsed.vendorName}
                   </span>
@@ -337,7 +338,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
               )}
               {parsed.invoiceNumber && (
                 <div style={fieldRow}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Invoice number</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{t('pdfImport.invoiceNumber')}</span>
                   <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                     {parsed.invoiceNumber}
                   </span>
@@ -345,7 +346,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
               )}
               {parsed.currency && (
                 <div style={fieldRow}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Currency</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{t('pdfImport.currency')}</span>
                   <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                     {parsed.currency}
                   </span>
@@ -353,7 +354,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
               )}
               {parsed.issueDate && (
                 <div style={fieldRow}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Issue date</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{t('invoices.issueDate')}</span>
                   <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                     {parsed.issueDate}
                   </span>
@@ -361,7 +362,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
               )}
               {parsed.dueDate && (
                 <div style={fieldRow}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Due date</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{t('invoices.dueDate')}</span>
                   <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                     {parsed.dueDate}
                   </span>
@@ -369,7 +370,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
               )}
               {parsed.total != null && (
                 <div style={fieldRow}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Total</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{t('pdfImport.total')}</span>
                   <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                     {parsed.currency ?? ''} {parsed.total.toFixed(2)}
                   </span>
@@ -377,7 +378,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
               )}
               {parsed.taxPercent != null && (
                 <div style={fieldRow}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Tax</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{t('invoices.tax', 'Tax')}</span>
                   <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
                     {parsed.taxPercent}%
                   </span>
@@ -397,7 +398,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                     fontFamily: 'var(--font-family)',
                   }}
                 >
-                  {parsed.lineItems.length} line item{parsed.lineItems.length !== 1 ? 's' : ''} found
+                  {t('pdfImport.lineItems', { count: parsed.lineItems.length })}
                 </p>
                 <div
                   style={{
@@ -429,7 +430,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                             fontWeight: 500,
                           }}
                         >
-                          Description
+                          {t('invoices.builder.description', 'Description')}
                         </th>
                         <th
                           style={{
@@ -439,7 +440,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                             fontWeight: 500,
                           }}
                         >
-                          Qty
+                          {t('invoices.builder.qty', 'Qty')}
                         </th>
                         <th
                           style={{
@@ -449,7 +450,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                             fontWeight: 500,
                           }}
                         >
-                          Unit price
+                          {t('invoices.builder.unitPrice', 'Unit price')}
                         </th>
                       </tr>
                     </thead>
@@ -514,7 +515,7 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
                 }}
               >
                 <AlertTriangle size={14} />
-                No line items could be extracted. You can still import dates and metadata.
+                {t('pdfImport.errorNoText')}
               </div>
             )}
           </div>
@@ -526,11 +527,11 @@ export function PdfImportModal({ open, onClose, onImport }: PdfImportModalProps)
         <Modal.Footer>
           <Button variant="secondary" size="sm" onClick={reset}>
             <RefreshCw size={14} style={{ marginRight: 4 }} />
-            Try another file
+            {t('pdfImport.tryAnother')}
           </Button>
           <Button variant="primary" size="sm" onClick={handleImport}>
             <Download size={14} style={{ marginRight: 4 }} />
-            Import to invoice
+            {t('pdfImport.importToInvoice')}
           </Button>
         </Modal.Footer>
       )}

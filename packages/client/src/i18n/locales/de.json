@@ -4428,7 +4428,8 @@
       "thisMonth": "Dieser Monat",
       "thisQuarter": "Dieses Quartal",
       "thisYear": "Dieses Jahr"
-    }
+    },
+    "importPdf": "Aus PDF importieren"
   },
   "work": {
     "quickActions": {
@@ -4535,5 +4536,35 @@
       "time": "Erfasste Stunden für dieses Projekt — wer wann gearbeitet hat und ob abrechenbar.",
       "files": "Drive-Dateien, die mit diesem Projekt verknüpft sind. Die Dateien selbst liegen in Drive."
     }
+  },
+  "pdfImport": {
+    "title": "Aus PDF importieren",
+    "dropzone": "PDF-Rechnung hierher ziehen oder klicken",
+    "dropzoneHint": "Digitale und gescannte PDFs (max. 20 MB)",
+    "errorNotPdf": "Bitte wählen Sie eine PDF-Datei aus",
+    "errorTooLarge": "Datei ist zu groß (max. 20 MB)",
+    "errorNoText": "Aus diesem PDF konnte kein Text extrahiert werden",
+    "errorExtraction": "PDF konnte nicht verarbeitet werden",
+    "stage": {
+      "reading": "Datei wird gelesen...",
+      "extracting": "Text wird extrahiert...",
+      "ocr": "OCR wird ausgeführt (kann einen Moment dauern)...",
+      "done": "Fertig"
+    },
+    "extracted": "Daten extrahiert",
+    "confidence": {
+      "high": "Hohe Zuverlässigkeit",
+      "medium": "Mittlere Zuverlässigkeit",
+      "low": "Geringe Zuverlässigkeit"
+    },
+    "vendor": "Lieferant",
+    "invoiceNumber": "Rechnungsnummer",
+    "currency": "Währung",
+    "lineItems": "{{count}} Position(en)",
+    "total": "Gesamt",
+    "reviewHint": "Überprüfen Sie die obigen Daten. Sie können alles im Rechnungsformular bearbeiten.",
+    "tryAnother": "Andere Datei versuchen",
+    "importToInvoice": "In Rechnung importieren",
+    "importedFrom": "Importiert von {{vendor}}"
   }
 }

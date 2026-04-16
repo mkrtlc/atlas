@@ -77,12 +77,13 @@ function countByStatus(invoices: Invoice[]): Record<StatusFilter, number> {
 
 const FILTER_OPTIONS: StatusFilter[] = ['all', 'draft', 'unpaid', 'overdue', 'paid', 'waived'];
 
-export function InvoicesListView({ invoices, searchQuery, onOpenDetail, selectedId, onAdd }: {
+export function InvoicesListView({ invoices, searchQuery, onOpenDetail, selectedId, onAdd, onImportPdf }: {
   invoices: Invoice[];
   searchQuery: string;
   onOpenDetail: (id: string) => void;
   selectedId: string | null;
   onAdd?: () => void;
+  onImportPdf?: () => void;
 }) {
   const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');

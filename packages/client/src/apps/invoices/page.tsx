@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, X } from 'lucide-react';
+import { Plus, Search, X, Upload } from 'lucide-react';
 import { useInvoices } from './hooks';
 import { useAppActions } from '../../hooks/use-app-permissions';
 import { InvoicesSidebar } from './components/invoices-sidebar';
@@ -10,6 +10,7 @@ import { InvoiceDetailPage } from './components/invoice-detail-page';
 import { InvoicesDashboard } from './components/invoices-dashboard';
 import { RecurringInvoicesList } from './components/recurring-invoices-list';
 import { InvoiceBuilderModal } from '../../components/shared/invoice-builder-modal';
+import { PdfImportModal } from '../../components/shared/pdf-import-modal';
 import { ContentArea } from '../../components/ui/content-area';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -27,6 +28,8 @@ export function InvoicesPage() {
   }, [setSearchParams]);
   const [showBuilder, setShowBuilder] = useState(searchParams.get('new') === 'true');
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [showPdfImport, setShowPdfImport] = useState(false);
+  const [builderPrefill, setBuilderPrefill] = useState<Record<string, unknown>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -108,9 +111,14 @@ export function InvoicesPage() {
                 }}
               />
               {canCreate && (
-                <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => { setEditingInvoice(null); setShowBuilder(true); }}>
-                  {t('invoices.builder.createInvoice')}
-                </Button>
+                <>
+                  <Button variant="secondary" size="sm" icon={<Upload size={14} />} onClick={() => setShowPdfImport(true)}>
+                    {t('invoices.importPdf')}
+                  </Button>
+                  <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => { setEditingInvoice(null); setBuilderPrefill({}); setShowBuilder(true); }}>
+                    {t('invoices.builder.createInvoice')}
+                  </Button>
+                </>
               )}
             </>
           ) : undefined
@@ -155,7 +163,8 @@ export function InvoicesPage() {
                   searchQuery={searchQuery}
                   selectedId={null}
                   onOpenDetail={(id) => setSearchParams({ view: 'invoice-detail', invoiceId: id }, { replace: true })}
-                  onAdd={canCreate ? () => { setEditingInvoice(null); setShowBuilder(true); } : undefined}
+                  onAdd={canCreate ? () => { setEditingInvoice(null); setBuilderPrefill({}); setShowBuilder(true); } : undefined}
+                  onImportPdf={canCreate ? () => setShowPdfImport(true) : undefined}
                 />
               </div>
             </div>
@@ -166,17 +175,38 @@ export function InvoicesPage() {
       {/* Builder modal */}
       <InvoiceBuilderModal
         open={showBuilder}
-        onClose={() => { setShowBuilder(false); setEditingInvoice(null); }}
+        onClose={() => { setShowBuilder(false); setEditingInvoice(null); setBuilderPrefill({}); }}
         invoice={editingInvoice}
         prefill={{
           companyId: prefillCompanyId,
           dealId: prefillDealId,
           projectId: prefillProjectId,
+          ...builderPrefill,
         }}
         onCreated={(invoice) => {
           setShowBuilder(false);
           setEditingInvoice(null);
+          setBuilderPrefill({});
           setSearchParams({ view: 'invoice-detail', invoiceId: invoice.id }, { replace: true });
+        }}
+      />
+
+      {/* PDF import modal */}
+      <PdfImportModal
+        open={showPdfImport}
+        onClose={() => setShowPdfImport(false)}
+        onImport={(data) => {
+          setShowPdfImport(false);
+          setEditingInvoice(null);
+          setBuilderPrefill({
+            lineItems: data.lineItems,
+            currency: data.currency,
+            issueDate: data.issueDate,
+            dueDate: data.dueDate,
+            taxPercent: data.taxPercent,
+            notes: data.notes,
+          });
+          setShowBuilder(true);
         }}
       />
     </div>

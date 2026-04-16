@@ -4428,7 +4428,8 @@
       "thisMonth": "Ce mois",
       "thisQuarter": "Ce trimestre",
       "thisYear": "Cette année"
-    }
+    },
+    "importPdf": "Importer depuis un PDF"
   },
   "work": {
     "quickActions": {
@@ -4535,5 +4536,35 @@
       "time": "Heures enregistrées pour ce projet — qui a travaillé, quand, et si le temps est facturable.",
       "files": "Fichiers Drive attachés à ce projet. Les fichiers eux-mêmes restent dans Drive."
     }
+  },
+  "pdfImport": {
+    "title": "Importer depuis un PDF",
+    "dropzone": "Déposez une facture PDF ici ou cliquez pour parcourir",
+    "dropzoneHint": "PDF numériques et numérisés pris en charge (max 20 Mo)",
+    "errorNotPdf": "Veuillez sélectionner un fichier PDF",
+    "errorTooLarge": "Le fichier est trop volumineux (max 20 Mo)",
+    "errorNoText": "Impossible d'extraire le texte de ce PDF",
+    "errorExtraction": "Échec du traitement du PDF",
+    "stage": {
+      "reading": "Lecture du fichier...",
+      "extracting": "Extraction du texte...",
+      "ocr": "OCR en cours (cela peut prendre un moment)...",
+      "done": "Terminé"
+    },
+    "extracted": "Données extraites",
+    "confidence": {
+      "high": "Confiance élevée",
+      "medium": "Confiance moyenne",
+      "low": "Confiance faible"
+    },
+    "vendor": "Fournisseur",
+    "invoiceNumber": "Numéro de facture",
+    "currency": "Devise",
+    "lineItems": "{{count}} ligne(s)",
+    "total": "Total",
+    "reviewHint": "Vérifiez les données ci-dessus. Vous pourrez tout modifier dans le formulaire de facture.",
+    "tryAnother": "Essayer un autre fichier",
+    "importToInvoice": "Importer dans la facture",
+    "importedFrom": "Importé de {{vendor}}"
   }
 }
