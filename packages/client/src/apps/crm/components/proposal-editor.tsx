@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToastStore } from '../../../stores/toast-store';
 import { Modal } from '../../../components/ui/modal';
@@ -49,7 +49,7 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
   const { data: companiesData } = useCompanies({});
   const companies = companiesData?.companies ?? [];
   const { data: contactsData } = useContacts(companyId ? { companyId } : {});
-  const contacts = contactsData?.contacts ?? [];
+  const contacts = useMemo(() => contactsData?.contacts ?? [], [contactsData]);
   const { data: dealsData } = useDeals({});
   const deals = dealsData?.deals ?? [];
 
@@ -130,10 +130,10 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
 
   const validate = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    if (!title.trim()) newErrors.title = t('crm.proposals.titleRequired', 'Title is required');
+    if (!title.trim()) newErrors.title = t('crm.proposals.titleRequired');
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
-      addToast({ type: 'error', message: t('crm.proposals.fillRequired', 'Please fill in required fields') });
+      addToast({ type: 'error', message: t('crm.proposals.fillRequired') });
       return false;
     }
     return true;

@@ -1668,7 +1668,9 @@
       "viewDeal": "Vedi trattativa",
       "createProposal": "Crea proposta",
       "convertedBanner": "Questo lead è stato convertito in una trattativa.",
-      "viewConvertedDeal": "Vedi trattativa"
+      "viewConvertedDeal": "Vedi trattativa",
+      "convertError": "Impossibile convertire il lead. Riprova.",
+      "noStagesAvailable": "Nessuna fase deal disponibile. Crea le fasi nelle impostazioni CRM."
     },
     "notes": {
       "title": "Note",
@@ -1842,7 +1844,7 @@
       "copyLink": "Copia link",
       "linkCopied": "Link copiato",
       "duplicated": "Proposta duplicata",
-      "fillRequired": "Si prega di compilare i campi obbligatori",
+      "fillRequired": "Compila tutti i campi obbligatori",
       "titleRequired": "Il titolo è obbligatorio",
       "saveDraft": "Salva bozza",
       "statusLabel": "Stato",

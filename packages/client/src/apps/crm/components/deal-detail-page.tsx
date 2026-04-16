@@ -138,12 +138,13 @@ export function DealDetailPage({ dealId, onBack, onNavigate }: DealDetailPagePro
   useEffect(() => {
     if (searchParams.get('openProposal') === '1') {
       setShowProposalEditor(true);
-      const next = new URLSearchParams(searchParams);
-      next.delete('openProposal');
-      setSearchParams(next, { replace: true });
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('openProposal');
+        return next;
+      }, { replace: true });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dealId]);
+  }, [searchParams, setSearchParams]);
 
   // Navigation
   const currentIdx = deals.findIndex(d => d.id === dealId);

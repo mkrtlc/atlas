@@ -49,7 +49,7 @@ export function ProposalDetailPanel({ proposalId, onBack, onEdit }: ProposalDeta
   const [showHistory, setShowHistory] = useState(false);
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<ProposalRevision | null>(null);
-  const { data: revisions } = useProposalRevisions(proposalId);
+  const { data: revisions = [] } = useProposalRevisions(showHistory ? proposalId : undefined);
   const restoreRevision = useRestoreProposalRevision();
 
   const publicUrl = proposal

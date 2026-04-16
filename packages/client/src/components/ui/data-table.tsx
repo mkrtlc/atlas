@@ -272,8 +272,10 @@ export function DataTable<T extends { id: string }>({
     return null;
   });
 
+  const sortMountedRef = useRef(false);
   useEffect(() => {
     if (!sortStorageKey || typeof window === 'undefined') return;
+    if (!sortMountedRef.current) { sortMountedRef.current = true; return; }
     try {
       if (internalSort) {
         window.localStorage.setItem(sortStorageKey, JSON.stringify(internalSort));

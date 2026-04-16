@@ -153,7 +153,7 @@ export function ConvertLeadModal({
     }, {
       onSuccess: (data) => { setResult(data); },
       onError: () => {
-        addToast({ type: 'error', message: t('crm.leads.convertError', 'Failed to convert lead. Please try again.') });
+        addToast({ type: 'error', message: t('crm.leads.convertError') });
       },
     });
   };
@@ -196,7 +196,7 @@ export function ConvertLeadModal({
               <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>{t('crm.leads.selectStage')}</div>
               {stages.length === 0 ? (
                 <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-error)', padding: 'var(--spacing-sm)' }}>
-                  {t('crm.leads.noStagesAvailable', 'No deal stages available. Please create a stage first.')}
+                  {t('crm.leads.noStagesAvailable')}
                 </div>
               ) : (
                 <Select

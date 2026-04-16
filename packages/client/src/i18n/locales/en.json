@@ -1727,7 +1727,9 @@
       "viewDeal": "View deal",
       "createProposal": "Create proposal",
       "convertedBanner": "This lead was converted to a deal.",
-      "viewConvertedDeal": "View deal"
+      "viewConvertedDeal": "View deal",
+      "convertError": "Failed to convert lead. Please try again.",
+      "noStagesAvailable": "No deal stages available. Create stages in CRM settings first."
     },
     "notes": {
       "title": "Notes",
@@ -1901,7 +1903,7 @@
       "copyLink": "Copy link",
       "linkCopied": "Link copied",
       "duplicated": "Proposal duplicated",
-      "fillRequired": "Please fill in required fields",
+      "fillRequired": "Please fill in all required fields",
       "titleRequired": "Title is required",
       "saveDraft": "Save draft",
       "statusLabel": "Status",

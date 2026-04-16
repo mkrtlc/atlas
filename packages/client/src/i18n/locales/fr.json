@@ -1668,7 +1668,9 @@
       "viewDeal": "Voir l'affaire",
       "createProposal": "Créer un devis",
       "convertedBanner": "Ce prospect a été converti en affaire.",
-      "viewConvertedDeal": "Voir l'affaire"
+      "viewConvertedDeal": "Voir l'affaire",
+      "convertError": "Échec de la conversion du prospect. Veuillez réessayer.",
+      "noStagesAvailable": "Aucune étape de deal disponible. Créez des étapes dans les paramètres CRM."
     },
     "notes": {
       "title": "Notes",
@@ -1842,7 +1844,7 @@
       "copyLink": "Copier le lien",
       "linkCopied": "Lien copié",
       "duplicated": "Proposition dupliquée",
-      "fillRequired": "Veuillez remplir les champs obligatoires",
+      "fillRequired": "Veuillez remplir tous les champs obligatoires",
       "titleRequired": "Le titre est obligatoire",
       "saveDraft": "Enregistrer le brouillon",
       "statusLabel": "Statut",

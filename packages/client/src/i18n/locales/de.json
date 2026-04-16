@@ -1668,7 +1668,9 @@
       "viewDeal": "Deal ansehen",
       "createProposal": "Angebot erstellen",
       "convertedBanner": "Dieser Lead wurde in einen Deal konvertiert.",
-      "viewConvertedDeal": "Deal ansehen"
+      "viewConvertedDeal": "Deal ansehen",
+      "convertError": "Lead konnte nicht konvertiert werden. Bitte erneut versuchen.",
+      "noStagesAvailable": "Keine Deal-Stufen verfügbar. Erstellen Sie zuerst Stufen in den CRM-Einstellungen."
     },
     "notes": {
       "title": "Notizen",

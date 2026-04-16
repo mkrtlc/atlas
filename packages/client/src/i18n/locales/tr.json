@@ -1668,7 +1668,9 @@
       "viewDeal": "Fırsatı görüntüle",
       "createProposal": "Teklif oluştur",
       "convertedBanner": "Bu aday bir fırsata dönüştürüldü.",
-      "viewConvertedDeal": "Fırsatı görüntüle"
+      "viewConvertedDeal": "Fırsatı görüntüle",
+      "convertError": "Müşteri adayı dönüştürülemedi. Lütfen tekrar deneyin.",
+      "noStagesAvailable": "Fırsat aşaması bulunamadı. Önce CRM ayarlarından aşama oluşturun."
     },
     "notes": {
       "title": "Notlar",
@@ -1842,7 +1844,7 @@
       "copyLink": "Bağlantıyı kopyala",
       "linkCopied": "Bağlantı kopyalandı",
       "duplicated": "Teklif kopyalandı",
-      "fillRequired": "Lütfen zorunlu alanları doldurun",
+      "fillRequired": "Lütfen tüm zorunlu alanları doldurun",
       "titleRequired": "Başlık zorunludur",
       "saveDraft": "Taslak kaydet",
       "statusLabel": "Durum",

@@ -7,7 +7,6 @@ import {
   ArrowRightLeft, Trash2, Check, RefreshCw,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Chip } from '../../../components/ui/chip';
@@ -25,6 +24,7 @@ import {
 } from '../hooks';
 import { ConvertLeadModal } from './leads-view';
 import { formatDate } from '../../../lib/format';
+import { AlertBanner } from '../../../components/ui/alert-banner';
 
 // ─── Status pipeline ────────────────────────────────────────────
 
@@ -208,24 +208,16 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
 
       {/* Converted banner */}
       {lead.status === 'converted' && lead.convertedDealId && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)',
-          padding: 'var(--spacing-sm) var(--spacing-lg)',
-          background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-primary))',
-          borderBottom: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
-          flexShrink: 0,
-        }}>
-          <Badge variant="success">{t('crm.leads.convertSuccess')}</Badge>
-          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-            {t('crm.leads.convertedBanner')}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSearchParams({ view: 'deal-detail', dealId: lead.convertedDealId! }, { replace: true })}
-          >
-            {t('crm.leads.viewConvertedDeal')} →
-          </Button>
+        <div style={{ padding: 'var(--spacing-sm) var(--spacing-lg)', flexShrink: 0 }}>
+          <AlertBanner variant="success">
+            {t('crm.leads.convertedBanner')}{' '}
+            <button
+              onClick={() => setSearchParams({ view: 'deal-detail', dealId: lead.convertedDealId! }, { replace: true })}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-accent-primary)', fontSize: 'inherit', fontFamily: 'inherit', padding: 0 }}
+            >
+              {t('crm.leads.viewConvertedDeal')} →
+            </button>
+          </AlertBanner>
         </div>
       )}
 
