@@ -212,6 +212,7 @@ export const queryKeys = {
       all: ['crm', 'proposals'] as const,
       list: (filters?: Record<string, unknown>) => ['crm', 'proposals', 'list', filters] as const,
       detail: (id: string) => ['crm', 'proposals', id] as const,
+      revisions: (id: string) => ['crm', 'proposals', id, 'revisions'] as const,
     },
   },
   permissions: {

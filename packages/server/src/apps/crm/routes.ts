@@ -161,6 +161,8 @@ router.patch('/proposals/:id', crmController.updateProposal);
 router.delete('/proposals/:id', crmController.deleteProposal);
 router.post('/proposals/:id/send', crmController.sendProposal);
 router.post('/proposals/:id/duplicate', crmController.duplicateProposal);
+router.get('/proposals/:id/revisions', crmController.listProposalRevisions);
+router.post('/proposals/:id/revisions/:revisionId/restore', crmController.restoreProposalRevision);
 
 // Read-only helpers for the CRM client. Write/admin endpoints for per-app
 // permissions now live under /system/permissions (owner-only unified grid).

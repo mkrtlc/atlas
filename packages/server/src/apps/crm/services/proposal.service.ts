@@ -1,9 +1,10 @@
 import { db } from '../../../config/database';
 import {
   crmProposals, crmCompanies, crmContacts, crmDeals,
+  crmProposalRevisions,
   invoices, invoiceLineItems,
 } from '../../../db/schema';
-import { eq, and, desc, sql, ilike } from 'drizzle-orm';
+import { eq, and, desc, sql, ilike, max } from 'drizzle-orm';
 import type { CrmRecordAccess } from '@atlas-platform/shared';
 import { logger } from '../../../utils/logger';
 import { getNextInvoiceNumber } from '../../invoices/services/invoice.service';
@@ -52,6 +53,7 @@ interface UpdateProposalInput {
   currency?: string;
   validUntil?: string | null;
   notes?: string | null;
+  changeReason?: string | null;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -183,23 +185,9 @@ export async function updateProposal(tenantId: string, id: string, input: Update
     ownershipConditions.push(eq(crmProposals.userId, userId));
   }
 
-  const now = new Date();
-  const updates: Record<string, unknown> = { updatedAt: now };
-
-  if (input.title !== undefined) updates.title = input.title;
-  if (input.dealId !== undefined) updates.dealId = input.dealId;
-  if (input.contactId !== undefined) updates.contactId = input.contactId;
-  if (input.companyId !== undefined) updates.companyId = input.companyId;
-  if (input.content !== undefined) updates.content = input.content;
-  if (input.currency !== undefined) updates.currency = input.currency;
-  if (input.validUntil !== undefined) updates.validUntil = input.validUntil ? new Date(input.validUntil) : null;
-  if (input.notes !== undefined) updates.notes = input.notes;
-
-  // Recompute totals when line items or financial fields change
-  const needsRecompute = input.lineItems !== undefined || input.taxPercent !== undefined || input.discountPercent !== undefined;
-  if (needsRecompute) {
-    // Need current values to fill in gaps
-    const [existing] = await db
+  return db.transaction(async (tx) => {
+    // 1. Fetch current state (always)
+    const [existing] = await tx
       .select()
       .from(crmProposals)
       .where(and(...ownershipConditions))
@@ -207,27 +195,115 @@ export async function updateProposal(tenantId: string, id: string, input: Update
 
     if (!existing) return null;
 
-    const items = input.lineItems ?? (existing.lineItems as LineItem[]) ?? [];
-    const taxPct = input.taxPercent ?? existing.taxPercent;
-    const discPct = input.discountPercent ?? existing.discountPercent;
-    const { subtotal, taxAmount, discountAmount, total } = computeTotals(items, taxPct, discPct);
+    // 2. Compute next revision number
+    const [{ nextRev }] = await tx
+      .select({ nextRev: sql<number>`COALESCE(MAX(${crmProposalRevisions.revisionNumber}), 0) + 1` })
+      .from(crmProposalRevisions)
+      .where(eq(crmProposalRevisions.proposalId, existing.id));
 
-    updates.lineItems = items;
-    updates.taxPercent = taxPct;
-    updates.discountPercent = discPct;
-    updates.subtotal = subtotal;
-    updates.taxAmount = taxAmount;
-    updates.discountAmount = discountAmount;
-    updates.total = total;
-  }
+    // 3. Snapshot current state before overwriting
+    const snapshot = {
+      title: existing.title,
+      status: existing.status,
+      currency: existing.currency,
+      lineItems: existing.lineItems,
+      subtotal: existing.subtotal,
+      taxPercent: existing.taxPercent,
+      taxAmount: existing.taxAmount,
+      discountPercent: existing.discountPercent,
+      discountAmount: existing.discountAmount,
+      total: existing.total,
+      notes: existing.notes,
+      validUntil: existing.validUntil?.toISOString() ?? null,
+      content: existing.content,
+    };
 
-  const [updated] = await db
-    .update(crmProposals)
-    .set(updates)
-    .where(and(...ownershipConditions))
-    .returning();
+    await tx.insert(crmProposalRevisions).values({
+      proposalId: existing.id,
+      tenantId: existing.tenantId,
+      revisionNumber: nextRev,
+      snapshotJson: snapshot,
+      changedBy: userId ?? existing.userId,
+      changeReason: input.changeReason ?? null,
+    });
 
-  return updated ?? null;
+    // 4. Apply the update
+    const now = new Date();
+    const updates: Record<string, unknown> = { updatedAt: now };
+
+    if (input.title !== undefined) updates.title = input.title;
+    if (input.dealId !== undefined) updates.dealId = input.dealId;
+    if (input.contactId !== undefined) updates.contactId = input.contactId;
+    if (input.companyId !== undefined) updates.companyId = input.companyId;
+    if (input.content !== undefined) updates.content = input.content;
+    if (input.currency !== undefined) updates.currency = input.currency;
+    if (input.validUntil !== undefined) updates.validUntil = input.validUntil ? new Date(input.validUntil) : null;
+    if (input.notes !== undefined) updates.notes = input.notes;
+
+    // Recompute totals when line items or financial fields change
+    const needsRecompute = input.lineItems !== undefined || input.taxPercent !== undefined || input.discountPercent !== undefined;
+    if (needsRecompute) {
+      const items = input.lineItems ?? (existing.lineItems as LineItem[]) ?? [];
+      const taxPct = input.taxPercent ?? existing.taxPercent;
+      const discPct = input.discountPercent ?? existing.discountPercent;
+      const { subtotal, taxAmount, discountAmount, total } = computeTotals(items, taxPct, discPct);
+
+      updates.lineItems = items;
+      updates.taxPercent = taxPct;
+      updates.discountPercent = discPct;
+      updates.subtotal = subtotal;
+      updates.taxAmount = taxAmount;
+      updates.discountAmount = discountAmount;
+      updates.total = total;
+    }
+
+    const [updated] = await tx
+      .update(crmProposals)
+      .set(updates)
+      .where(and(...ownershipConditions))
+      .returning();
+
+    return updated ?? null;
+  });
+}
+
+// ─── Revisions ─────────────────────────────────────────────────────
+
+export async function listProposalRevisions(tenantId: string, proposalId: string) {
+  return db
+    .select()
+    .from(crmProposalRevisions)
+    .where(and(eq(crmProposalRevisions.proposalId, proposalId), eq(crmProposalRevisions.tenantId, tenantId)))
+    .orderBy(desc(crmProposalRevisions.revisionNumber));
+}
+
+export async function restoreProposalRevision(tenantId: string, proposalId: string, revisionId: string, userId: string) {
+  const [revision] = await db
+    .select()
+    .from(crmProposalRevisions)
+    .where(and(eq(crmProposalRevisions.id, revisionId), eq(crmProposalRevisions.proposalId, proposalId), eq(crmProposalRevisions.tenantId, tenantId)))
+    .limit(1);
+
+  if (!revision) return null;
+
+  const snap = revision.snapshotJson as Record<string, unknown>;
+  return updateProposal(
+    tenantId,
+    proposalId,
+    {
+      title: snap.title as string | undefined,
+      content: snap.content,
+      lineItems: snap.lineItems as LineItem[] | undefined,
+      taxPercent: snap.taxPercent as number | undefined,
+      discountPercent: snap.discountPercent as number | undefined,
+      currency: snap.currency as string | undefined,
+      validUntil: snap.validUntil as string | null | undefined,
+      notes: snap.notes as string | null | undefined,
+      changeReason: `Restored from revision #${revision.revisionNumber}`,
+    },
+    'all',
+    userId,
+  );
 }
 
 // ─── Delete (soft) ─────────────────────────────────────────────────

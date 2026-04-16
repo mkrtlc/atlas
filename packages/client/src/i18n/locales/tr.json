@@ -1865,7 +1865,21 @@
         "accepted": "Kabul edildi",
         "declined": "Reddedildi",
         "expired": "Süresi doldu"
-      }
+      },
+      "history": "Geçmiş",
+      "revisions": "{{count}} revizyon",
+      "revisions_plural": "{{count}} revizyon",
+      "showHistory": "Geçmişi göster",
+      "hideHistory": "Geçmişi gizle",
+      "restoredFrom": "Revizyon #{{number}} geri yüklendi",
+      "changeReason": "Değişiklik nedeni",
+      "restoreVersion": "Bu sürümü geri yükle",
+      "restoreConfirmTitle": "Revizyon #{{number}} geri yüklensin mi?",
+      "restoreConfirmBody": "Mevcut teklif üzerine yazılacak. Yeni bir revizyon otomatik olarak kaydedilecek.",
+      "noHistory": "Henüz revizyon geçmişi yok.",
+      "snapshotTotal": "Toplam",
+      "snapshotItems": "{{count}} satır öğesi",
+      "snapshotItems_plural": "{{count}} satır öğesi"
     }
   },
   "drive": {

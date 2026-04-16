@@ -93,7 +93,7 @@ export async function updateProposal(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
     const id = req.params.id as string;
-    const { title, dealId, contactId, companyId, content, lineItems, taxPercent, discountPercent, currency, validUntil, notes } = req.body;
+    const { title, dealId, contactId, companyId, content, lineItems, taxPercent, discountPercent, currency, validUntil, notes, changeReason } = req.body;
 
     const perm = req.crmPerm!;
     if (!canAccessEntity(perm.role, 'contacts', 'update', perm.entityPermissions)) {
@@ -103,7 +103,7 @@ export async function updateProposal(req: Request, res: Response) {
 
     const proposal = await proposalService.updateProposal(tenantId, id, {
       title, dealId, contactId, companyId, content, lineItems,
-      taxPercent, discountPercent, currency, validUntil, notes,
+      taxPercent, discountPercent, currency, validUntil, notes, changeReason,
     }, perm.recordAccess, userId);
 
     if (!proposal) {
@@ -185,6 +185,51 @@ export async function duplicateProposal(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to duplicate proposal');
     res.status(500).json({ success: false, error: 'Failed to duplicate proposal' });
+  }
+}
+
+export async function listProposalRevisions(req: Request, res: Response) {
+  try {
+    const tenantId = req.auth!.tenantId;
+    const id = req.params.id as string;
+
+    const perm = req.crmPerm!;
+    if (!canAccessEntity(perm.role, 'contacts', 'view', perm.entityPermissions)) {
+      res.status(403).json({ success: false, error: 'No permission' });
+      return;
+    }
+
+    const revisions = await proposalService.listProposalRevisions(tenantId, id);
+    res.json({ success: true, data: revisions });
+  } catch (error) {
+    logger.error({ error }, 'Failed to list proposal revisions');
+    res.status(500).json({ success: false, error: 'Failed to list proposal revisions' });
+  }
+}
+
+export async function restoreProposalRevision(req: Request, res: Response) {
+  try {
+    const userId = req.auth!.userId;
+    const tenantId = req.auth!.tenantId;
+    const id = req.params.id as string;
+    const revisionId = req.params.revisionId as string;
+
+    const perm = req.crmPerm!;
+    if (!canAccessEntity(perm.role, 'contacts', 'update', perm.entityPermissions)) {
+      res.status(403).json({ success: false, error: 'No permission' });
+      return;
+    }
+
+    const proposal = await proposalService.restoreProposalRevision(tenantId, id, revisionId, userId);
+    if (!proposal) {
+      res.status(404).json({ success: false, error: 'Revision not found' });
+      return;
+    }
+
+    res.json({ success: true, data: proposal });
+  } catch (error) {
+    logger.error({ error }, 'Failed to restore proposal revision');
+    res.status(500).json({ success: false, error: 'Failed to restore proposal revision' });
   }
 }
 

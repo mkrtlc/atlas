@@ -1865,7 +1865,21 @@
         "accepted": "Angenommen",
         "declined": "Abgelehnt",
         "expired": "Abgelaufen"
-      }
+      },
+      "history": "Verlauf",
+      "revisions": "{{count}} Revision",
+      "revisions_plural": "{{count}} Revisionen",
+      "showHistory": "Verlauf anzeigen",
+      "hideHistory": "Verlauf ausblenden",
+      "restoredFrom": "Revision #{{number}} wiederhergestellt",
+      "changeReason": "Änderungsgrund",
+      "restoreVersion": "Diese Version wiederherstellen",
+      "restoreConfirmTitle": "Revision #{{number}} wiederherstellen?",
+      "restoreConfirmBody": "Das aktuelle Angebot wird überschrieben. Eine neue Revision wird automatisch gespeichert.",
+      "noHistory": "Noch kein Revisionsverlauf vorhanden.",
+      "snapshotTotal": "Gesamt",
+      "snapshotItems": "{{count}} Position",
+      "snapshotItems_plural": "{{count}} Positionen"
     }
   },
   "drive": {

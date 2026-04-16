@@ -1865,7 +1865,21 @@
         "accepted": "Accettata",
         "declined": "Rifiutata",
         "expired": "Scaduta"
-      }
+      },
+      "history": "Cronologia",
+      "revisions": "{{count}} revisione",
+      "revisions_plural": "{{count}} revisioni",
+      "showHistory": "Mostra cronologia",
+      "hideHistory": "Nascondi cronologia",
+      "restoredFrom": "Revisione #{{number}} ripristinata",
+      "changeReason": "Motivo della modifica",
+      "restoreVersion": "Ripristina questa versione",
+      "restoreConfirmTitle": "Ripristinare la revisione #{{number}}?",
+      "restoreConfirmBody": "La proposta corrente verrà sovrascritta. Una nuova revisione verrà salvata automaticamente.",
+      "noHistory": "Nessuna cronologia delle revisioni ancora.",
+      "snapshotTotal": "Totale",
+      "snapshotItems": "{{count}} voce",
+      "snapshotItems_plural": "{{count}} voci"
     }
   },
   "drive": {

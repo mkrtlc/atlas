@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Send, Copy, Trash2, Edit3, Link2, ArrowLeft,
+  Send, Copy, Trash2, Edit3, Link2, ArrowLeft, ChevronDown, ChevronRight, History,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
@@ -16,8 +16,11 @@ import {
   useDuplicateProposal,
   useDeleteProposal,
   useMyCrmPermission,
+  useProposalRevisions,
+  useRestoreProposalRevision,
   canAccess,
   type Proposal,
+  type ProposalRevision,
 } from '../hooks';
 import { getProposalStatusVariant } from '@atlas-platform/shared';
 import { formatDate } from '../../../lib/format';
@@ -43,6 +46,11 @@ export function ProposalDetailPanel({ proposalId, onBack, onEdit }: ProposalDeta
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<ProposalRevision | null>(null);
+  const { data: revisions } = useProposalRevisions(proposalId);
+  const restoreRevision = useRestoreProposalRevision();
 
   const publicUrl = proposal
     ? `${window.location.origin}/proposal/${proposal.publicToken}`
@@ -255,6 +263,57 @@ export function ProposalDetailPanel({ proposalId, onBack, onEdit }: ProposalDeta
             </Button>
           )}
         </div>
+
+        {/* History */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowHistory((v) => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-xs)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0',
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-family)',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-medium)' as never,
+            }}
+          >
+            <History size={14} />
+            {t('crm.proposals.history')}
+            {revisions && revisions.length > 0 && (
+              <span style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)' }}>
+                ({t('crm.proposals.revisions', { count: revisions.length })})
+              </span>
+            )}
+            {showHistory ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          </button>
+
+          {showHistory && (
+            <div style={{ marginTop: 'var(--spacing-sm)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {!revisions || revisions.length === 0 ? (
+                <div style={{ fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)', color: 'var(--color-text-tertiary)', padding: 'var(--spacing-md)' }}>
+                  {t('crm.proposals.noHistory')}
+                </div>
+              ) : (
+                revisions.map((rev) => (
+                  <RevisionRow
+                    key={rev.id}
+                    revision={rev}
+                    isExpanded={expandedRevision === rev.id}
+                    onToggle={() => setExpandedRevision(expandedRevision === rev.id ? null : rev.id)}
+                    canRestore={canUpdate}
+                    onRestore={() => setRestoreTarget(rev)}
+                  />
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <ConfirmDialog
@@ -266,6 +325,26 @@ export function ProposalDetailPanel({ proposalId, onBack, onEdit }: ProposalDeta
         destructive
         onConfirm={() => {
           deleteProposal.mutate(proposal.id, { onSuccess: () => onBack() });
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!restoreTarget}
+        onOpenChange={(open) => { if (!open) setRestoreTarget(null); }}
+        title={t('crm.proposals.restoreConfirmTitle', { number: restoreTarget?.revisionNumber })}
+        description={t('crm.proposals.restoreConfirmBody')}
+        confirmLabel={t('crm.proposals.restoreVersion')}
+        onConfirm={() => {
+          if (!restoreTarget) return;
+          restoreRevision.mutate(
+            { proposalId: proposal.id, revisionId: restoreTarget.id },
+            {
+              onSuccess: () => {
+                addToast({ type: 'success', message: t('crm.proposals.restoredFrom', { number: restoreTarget.revisionNumber }) });
+                setRestoreTarget(null);
+              },
+            },
+          );
         }}
       />
     </div>
@@ -298,3 +377,117 @@ const sectionLabelStyle: React.CSSProperties = {
   fontFamily: 'var(--font-family)',
   marginBottom: 'var(--spacing-xs)',
 };
+
+interface RevisionRowProps {
+  revision: ProposalRevision;
+  isExpanded: boolean;
+  onToggle: () => void;
+  canRestore: boolean;
+  onRestore: () => void;
+}
+
+function RevisionRow({ revision, isExpanded, onToggle, canRestore, onRestore }: RevisionRowProps) {
+  const { t } = useTranslation();
+  const snap = revision.snapshotJson;
+
+  return (
+    <div
+      style={{
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--color-border-secondary)',
+        overflow: 'hidden',
+        fontFamily: 'var(--font-family)',
+      }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-sm)',
+          width: '100%',
+          padding: 'var(--spacing-sm) var(--spacing-md)',
+          background: 'var(--color-bg-secondary)',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        {isExpanded ? <ChevronDown size={13} style={{ flexShrink: 0 }} /> : <ChevronRight size={13} style={{ flexShrink: 0 }} />}
+        <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)' as never, color: 'var(--color-text-primary)' }}>
+          #{revision.revisionNumber}
+        </span>
+        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', flex: 1 }}>
+          {formatDate(revision.createdAt)}
+          {revision.changeReason ? ` — ${revision.changeReason}` : ''}
+        </span>
+        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+          {snap.currency} {snap.total.toFixed(2)}
+        </span>
+      </button>
+
+      {isExpanded && (
+        <div style={{ padding: 'var(--spacing-md)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+          {/* Snapshot summary */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-sm)' }}>
+            <div>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>{t('crm.proposals.statusLabel')}</div>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>{snap.status}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>{t('crm.proposals.snapshotTotal')}</div>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>{snap.currency} {snap.total.toFixed(2)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>{t('crm.proposals.pricing')}</div>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
+                {t('crm.proposals.snapshotItems', { count: snap.lineItems?.length ?? 0 })}
+              </div>
+            </div>
+          </div>
+
+          {/* Line items */}
+          {snap.lineItems && snap.lineItems.length > 0 && (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-xs)', fontFamily: 'var(--font-family)' }}>
+                <thead>
+                  <tr style={{ color: 'var(--color-text-tertiary)' }}>
+                    <th style={{ textAlign: 'left', padding: '2px 4px' }}>{t('crm.proposals.titleLabel')}</th>
+                    <th style={{ textAlign: 'right', padding: '2px 4px' }}>Qty</th>
+                    <th style={{ textAlign: 'right', padding: '2px 4px' }}>Unit</th>
+                    <th style={{ textAlign: 'right', padding: '2px 4px' }}>Amt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {snap.lineItems.map((li, i) => (
+                    <tr key={i} style={{ color: 'var(--color-text-primary)' }}>
+                      <td style={{ padding: '2px 4px' }}>{li.description}</td>
+                      <td style={{ textAlign: 'right', padding: '2px 4px' }}>{li.quantity}</td>
+                      <td style={{ textAlign: 'right', padding: '2px 4px' }}>{li.unitPrice.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right', padding: '2px 4px' }}>{(li.quantity * li.unitPrice).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {snap.notes && (
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap' }}>
+              {snap.notes}
+            </div>
+          )}
+
+          {canRestore && (
+            <div>
+              <Button variant="secondary" size="sm" onClick={onRestore}>
+                {t('crm.proposals.restoreVersion')}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
