@@ -4429,7 +4429,7 @@
       "dashboard": "Dashboard",
       "projects": "Projects",
       "newProject": "New project",
-      "inbox": "Inbox"
+      "myTasks": "My tasks"
     },
     "createProject": {
       "title": "Create project",
@@ -4504,6 +4504,14 @@
       "colName": "Name",
       "colStatus": "Status",
       "colUpdated": "Updated"
+    },
+    "tabDescriptions": {
+      "overview": "A snapshot of this project — status, dates, members, and key numbers at a glance.",
+      "tasks": "The to-do list for this project — what needs doing, who is on it, and what is done.",
+      "financials": "The money side — what has been billed, paid, and what is still outstanding.",
+      "members": "People working on this project, with their hourly rate when set.",
+      "time": "Logged hours for this project — who worked, when, and whether the time is billable.",
+      "files": "Drive files attached to this project. The files themselves live in Drive."
     }
   }
 }

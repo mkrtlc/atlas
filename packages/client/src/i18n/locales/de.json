@@ -4397,7 +4397,7 @@
       "dashboard": "Dashboard",
       "projects": "Projekte",
       "newProject": "Neues Projekt",
-      "inbox": "Posteingang"
+      "myTasks": "Meine Aufgaben"
     },
     "createProject": {
       "title": "Projekt erstellen",
@@ -4472,6 +4472,14 @@
       "colName": "Name",
       "colStatus": "Status",
       "colUpdated": "Aktualisiert"
+    },
+    "tabDescriptions": {
+      "overview": "Eine Übersicht des Projekts — Status, Termine, Mitglieder und wichtige Kennzahlen auf einen Blick.",
+      "tasks": "Die Aufgabenliste dieses Projekts — was zu tun ist, wer dran ist, was erledigt ist.",
+      "financials": "Die finanzielle Seite — was abgerechnet, bezahlt und noch offen ist.",
+      "members": "Personen, die an diesem Projekt arbeiten, mit Stundensatz falls hinterlegt.",
+      "time": "Erfasste Stunden für dieses Projekt — wer wann gearbeitet hat und ob abrechenbar.",
+      "files": "Drive-Dateien, die mit diesem Projekt verknüpft sind. Die Dateien selbst liegen in Drive."
     }
   }
 }

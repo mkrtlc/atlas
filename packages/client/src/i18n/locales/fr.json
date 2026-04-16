@@ -4397,7 +4397,7 @@
       "dashboard": "Tableau de bord",
       "projects": "Projets",
       "newProject": "Nouveau projet",
-      "inbox": "Boîte de réception"
+      "myTasks": "Mes tâches"
     },
     "createProject": {
       "title": "Créer un projet",
@@ -4472,6 +4472,14 @@
       "colName": "Nom",
       "colStatus": "Statut",
       "colUpdated": "Mise à jour"
+    },
+    "tabDescriptions": {
+      "overview": "Un aperçu du projet — statut, dates, membres et chiffres clés en un coup d’œil.",
+      "tasks": "La liste des tâches de ce projet — ce qu’il y a à faire, qui s’en occupe, ce qui est terminé.",
+      "financials": "Le côté financier — ce qui a été facturé, payé, et ce qui reste en attente.",
+      "members": "Les personnes travaillant sur ce projet, avec leur taux horaire si défini.",
+      "time": "Heures enregistrées pour ce projet — qui a travaillé, quand, et si le temps est facturable.",
+      "files": "Fichiers Drive attachés à ce projet. Les fichiers eux-mêmes restent dans Drive."
     }
   }
 }

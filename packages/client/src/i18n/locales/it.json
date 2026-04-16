@@ -4397,7 +4397,7 @@
       "dashboard": "Dashboard",
       "projects": "Progetti",
       "newProject": "Nuovo progetto",
-      "inbox": "In arrivo"
+      "myTasks": "Le mie attività"
     },
     "createProject": {
       "title": "Crea progetto",
@@ -4472,6 +4472,14 @@
       "colName": "Nome",
       "colStatus": "Stato",
       "colUpdated": "Aggiornato"
+    },
+    "tabDescriptions": {
+      "overview": "Una panoramica del progetto — stato, date, membri e numeri chiave in un colpo d’occhio.",
+      "tasks": "L’elenco delle attività di questo progetto — cosa fare, chi se ne occupa, cosa è fatto.",
+      "financials": "Il lato economico — cosa è stato fatturato, pagato, e cosa resta in sospeso.",
+      "members": "Le persone che lavorano a questo progetto, con la tariffa oraria se impostata.",
+      "time": "Ore registrate per questo progetto — chi ha lavorato, quando e se il tempo è fatturabile.",
+      "files": "File Drive collegati a questo progetto. I file restano in Drive."
     }
   }
 }

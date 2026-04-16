@@ -77,6 +77,14 @@ export function ProjectDetailPage({ projectId }: Props) {
         </div>
       }
     >
+      <div style={{
+        padding: 'var(--spacing-md) var(--spacing-lg) 0',
+        fontSize: 'var(--font-size-sm)',
+        color: 'var(--color-text-tertiary)',
+        fontStyle: 'normal',
+      }}>
+        {t(`work.tabDescriptions.${tab}`)}
+      </div>
       {tab === 'overview' && <ProjectOverviewTab project={project as WorkProject} />}
       {tab === 'tasks' && <ProjectTasksTab projectId={projectId} />}
       {tab === 'financials' && <ProjectFinancialsTab projectId={projectId} project={project} />}

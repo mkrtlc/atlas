@@ -4397,7 +4397,7 @@
       "dashboard": "Gösterge paneli",
       "projects": "Projeler",
       "newProject": "Yeni proje",
-      "inbox": "Gelen kutusu"
+      "myTasks": "Görevlerim"
     },
     "createProject": {
       "title": "Proje oluştur",
@@ -4430,7 +4430,7 @@
       "colStatus": "Durum"
     },
     "empty": {
-      "myTasks": "Henüz görev yok. Başlamak için oluşturun.",
+      "myTasks": "Henüz görev yok. Başlamak için bir tane oluşturun.",
       "assigned": "Size henüz hiçbir görev atanmadı.",
       "created": "Henüz hiç görev oluşturmadınız.",
       "allTasks": "Çalışma alanında henüz görev yok.",
@@ -4472,6 +4472,14 @@
       "colName": "Ad",
       "colStatus": "Durum",
       "colUpdated": "Güncelleme"
+    },
+    "tabDescriptions": {
+      "overview": "Bu projenin özeti — durum, tarihler, üyeler ve önemli rakamlar bir bakışta.",
+      "tasks": "Bu projenin yapılacaklar listesi — neyin yapılması gerek, kim üzerinde, ne tamamlandı.",
+      "financials": "Maddi taraf — neyin faturalandığı, ödendiği ve bekleyen tutar.",
+      "members": "Bu projede çalışan kişiler ve ayarlandıysa saatlik ücretleri.",
+      "time": "Bu projeye işlenen saatler — kim çalıştı, ne zaman ve faturalanabilir mi.",
+      "files": "Bu projeye eklenen Drive dosyaları. Dosyaların kendisi Drive’da bulunur."
     }
   }
 }

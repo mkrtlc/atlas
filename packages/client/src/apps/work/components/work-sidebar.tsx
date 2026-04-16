@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Inbox, FolderKanban, BarChart3 } from 'lucide-react';
+import { CheckSquare, FolderKanban, BarChart3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AppSidebar, SidebarItem, SidebarSection } from '../../../components/layout/app-sidebar';
 
@@ -28,10 +28,10 @@ export function WorkSidebar() {
           onClick={() => go('?view=projects')}
         />
         <SidebarItem
-          label={t('work.sidebar.inbox')}
-          icon={<Inbox size={15} />}
-          isActive={activeView === 'inbox' && !activeProjectId}
-          onClick={() => go('?view=inbox')}
+          label={t('work.sidebar.myTasks')}
+          icon={<CheckSquare size={15} />}
+          isActive={activeView === 'my-tasks' && !activeProjectId}
+          onClick={() => go('?view=my-tasks')}
         />
       </SidebarSection>
     </AppSidebar>
