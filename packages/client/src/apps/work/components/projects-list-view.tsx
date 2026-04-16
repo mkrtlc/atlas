@@ -187,6 +187,7 @@ export function ProjectsListView() {
         />
       ) : (
         <DataTable
+          persistSortKey="projects_list"
           data={projects}
           columns={columns}
           onRowClick={(p) => navigate(`/work?projectId=${p.id}`)}

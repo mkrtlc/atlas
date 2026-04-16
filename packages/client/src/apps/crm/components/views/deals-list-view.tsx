@@ -176,6 +176,7 @@ export function DealsListView({
 
   return (
     <DataTable
+      persistSortKey="crm_deals"
       data={filtered}
       columns={dealColumns}
       searchable

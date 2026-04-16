@@ -157,6 +157,7 @@ export function ContactsListView({
 
   return (
     <DataTable
+      persistSortKey="crm_contacts"
       data={filtered}
       columns={contactColumns}
       selectable

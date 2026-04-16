@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { UserPlus, Search, ChevronRight, Trash2, ArrowRightLeft, User, Mail, Building2, Globe, Tag, Plus, Phone, X } from 'lucide-react';
+import { UserPlus, Search, ChevronRight, Trash2, ArrowRightLeft, User, Mail, Building2, Globe, Tag, Plus, Phone, X, CheckCircle2 } from 'lucide-react';
 import {
   useLeads, useCreateLead, useUpdateLead, useDeleteLead, useConvertLead, useStages,
   useMyCrmPermission, canAccess,
@@ -130,6 +130,13 @@ export function ConvertLeadModal({
   const [dealTitle, setDealTitle] = useState('');
   const [dealStageId, setDealStageId] = useState('');
   const [dealValue, setDealValue] = useState('0');
+  const [result, setResult] = useState<{ deal: { id: string; title: string }; contact: { id: string }; company?: { id: string } } | null>(null);
+  const [, setSearchParams] = useSearchParams();
+
+  const handleClose = () => {
+    setResult(null);
+    onClose();
+  };
 
   const defaultStage = stages.find((s) => s.isDefault) ?? stages[0];
   const resolvedStageId = dealStageId || defaultStage?.id || '';
@@ -144,18 +151,42 @@ export function ConvertLeadModal({
       dealStageId: resolvedStageId,
       dealValue: Number(dealValue) || 0,
     }, {
-      onSuccess: () => { onClose(); },
+      onSuccess: (data) => { setResult(data); },
       onError: () => {
         addToast({ type: 'error', message: t('crm.leads.convertError', 'Failed to convert lead. Please try again.') });
       },
     });
   };
 
+  const handleViewDeal = () => {
+    if (!result) return;
+    handleClose();
+    setSearchParams({ view: 'deal-detail', dealId: result.deal.id }, { replace: true });
+  };
+
+  const handleCreateProposal = () => {
+    if (!result) return;
+    handleClose();
+    setSearchParams({ view: 'deal-detail', dealId: result.deal.id, openProposal: '1' }, { replace: true });
+  };
+
   return (
-    <Modal open={open} onOpenChange={(o) => !o && onClose()}>
-      <Modal.Header title={t('crm.leads.convertTitle')} />
+    <Modal open={open} onOpenChange={(o) => !o && handleClose()}>
+      <Modal.Header title={result ? t('crm.leads.convertSuccess') : t('crm.leads.convertTitle')} />
       <Modal.Body>
-        {lead && (
+        {result ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-lg)', padding: 'var(--spacing-xl) 0' }}>
+            <CheckCircle2 size={48} color="var(--color-success)" />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 'var(--font-size-md)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: 4 }}>
+                {result.deal.title}
+              </div>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                {t('crm.leads.convertDescription')}
+              </div>
+            </div>
+          </div>
+        ) : lead && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
             <div style={{ padding: 'var(--spacing-md)', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)' }}>
               <div style={{ fontWeight: 'var(--font-weight-medium)', marginBottom: 4 }}>{t('crm.leads.convertDescription')}</div>
@@ -181,10 +212,20 @@ export function ConvertLeadModal({
         )}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose} size="md">{t('common.cancel')}</Button>
-        <Button variant="primary" onClick={handleSubmit} size="md" disabled={!canSubmit}>
-          {convertLead.isPending ? t('common.loading') : t('crm.leads.convert')}
-        </Button>
+        {result ? (
+          <>
+            <Button variant="secondary" onClick={handleClose} size="md">{t('common.close')}</Button>
+            <Button variant="ghost" onClick={handleViewDeal} size="md">{t('crm.leads.viewDeal')}</Button>
+            <Button variant="primary" onClick={handleCreateProposal} size="md">{t('crm.leads.createProposal')}</Button>
+          </>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={handleClose} size="md">{t('common.cancel')}</Button>
+            <Button variant="primary" onClick={handleSubmit} size="md" disabled={!canSubmit}>
+              {convertLead.isPending ? t('common.loading') : t('crm.leads.convert')}
+            </Button>
+          </>
+        )}
       </Modal.Footer>
     </Modal>
   );
@@ -348,7 +389,23 @@ export function LeadsView() {
   const [editingCell, setEditingCell] = useState<{ rowId: string; column: string } | null>(null);
   const [convertingLead, setConvertingLead] = useState<CrmLead | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortState | null>({ column: 'createdAt', direction: 'desc' });
+  const [sort, setSort] = useState<SortState | null>(() => {
+    try {
+      const raw = localStorage.getItem('atlasmail_dt_sort_crm_leads');
+      if (raw) return JSON.parse(raw) as SortState;
+    } catch { /* ignore */ }
+    return { column: 'createdAt', direction: 'desc' };
+  });
+
+  useEffect(() => {
+    try {
+      if (sort) {
+        localStorage.setItem('atlasmail_dt_sort_crm_leads', JSON.stringify(sort));
+      } else {
+        localStorage.removeItem('atlasmail_dt_sort_crm_leads');
+      }
+    } catch { /* ignore */ }
+  }, [sort]);
 
   const selectedLead = selectedLeadId ? leads.find((l) => l.id === selectedLeadId) ?? null : null;
 

@@ -233,6 +233,7 @@ export function DriveDataTableList({
       style={{ display: 'contents' }}
     >
       <DataTable<DriveItem>
+        persistSortKey="drive_list"
         data={displayItems}
         columns={columns}
         selectable

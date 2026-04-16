@@ -152,6 +152,11 @@ export interface DataTableProps<T extends { id: string }> {
    * the user's preferences won't persist across reloads. */
   storageKey?: string;
 
+  /** When set, persists the active sort to localStorage under the key
+   * `atlasmail_dt_sort_<persistSortKey>`. Has no effect when the caller
+   * provides a controlled `sort` + `onSortChange`. */
+  persistSortKey?: string;
+
   // Misc
   className?: string;
   rowClassName?: (item: T, index: number) => string;
@@ -238,6 +243,7 @@ export function DataTable<T extends { id: string }>({
   columnSelector = false,
   resizableColumns = false,
   storageKey,
+  persistSortKey,
   className,
   rowClassName,
 }: DataTableProps<T>) {
@@ -253,7 +259,30 @@ export function DataTable<T extends { id: string }>({
   const lastSelectedIndex = useRef<number | null>(null);
 
   // ─── Sort state ─────────────────────────────────────────────────
-  const [internalSort, setInternalSort] = useState<SortState | null>(null);
+  const sortStorageKey = persistSortKey ? `atlasmail_dt_sort_${persistSortKey}` : null;
+
+  const [internalSort, setInternalSort] = useState<SortState | null>(() => {
+    if (!sortStorageKey || typeof window === 'undefined') return null;
+    try {
+      const raw = window.localStorage.getItem(sortStorageKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as SortState;
+      if (parsed && typeof parsed.column === 'string' && typeof parsed.direction === 'string') return parsed;
+    } catch { /* ignore */ }
+    return null;
+  });
+
+  useEffect(() => {
+    if (!sortStorageKey || typeof window === 'undefined') return;
+    try {
+      if (internalSort) {
+        window.localStorage.setItem(sortStorageKey, JSON.stringify(internalSort));
+      } else {
+        window.localStorage.removeItem(sortStorageKey);
+      }
+    } catch { /* ignore */ }
+  }, [internalSort, sortStorageKey]);
+
   const sort = controlledSort !== undefined ? controlledSort : internalSort;
   const setSort = onSortChange ?? setInternalSort;
 

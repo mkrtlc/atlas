@@ -136,6 +136,7 @@ export function SignListView({
           />
         ) : (
           <DataTable<DocWithSigners>
+            persistSortKey="sign_list"
             data={visibleDocs}
             columns={[
               {

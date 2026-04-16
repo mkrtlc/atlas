@@ -139,6 +139,7 @@ export function EmployeesListView({
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <DataTable
+        persistSortKey="hr_employees"
         data={filtered}
         columns={empColumns}
         selectable

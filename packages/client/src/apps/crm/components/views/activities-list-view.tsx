@@ -154,6 +154,7 @@ export function ActivitiesListView({
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-lg)' }}>
       <DataTable
+        persistSortKey="crm_activities"
         data={filtered}
         columns={columns}
         storageKey="crm-activities"

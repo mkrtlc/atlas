@@ -244,6 +244,7 @@ export function RecurringInvoicesList() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {isLoading ? null : (
         <DataTable
+          persistSortKey="invoices_recurring"
           data={recurringList}
           columns={columns}
           storageKey="recurring_invoices"

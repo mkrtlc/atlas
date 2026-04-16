@@ -263,6 +263,7 @@ export function InvoicesListView({ invoices, searchQuery, onOpenDetail, selected
       {/* Data table */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <DataTable
+          persistSortKey="invoices_list"
           data={filtered}
           columns={columns}
           searchable

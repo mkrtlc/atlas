@@ -146,6 +146,7 @@ export function CompaniesListView({
 
   return (
     <DataTable
+      persistSortKey="crm_companies"
       data={filtered}
       columns={companyColumns}
       searchable
