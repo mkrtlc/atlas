@@ -7,13 +7,25 @@ import type { CreateTenantInput, TenantPlan } from '@atlas-platform/shared';
 export async function createTenant(input: CreateTenantInput, ownerId: string) {
   const k8sNamespace = `tenant-${input.slug}`;
 
-  const [tenant] = await db.insert(tenants).values({
-    slug: input.slug,
-    name: input.name,
-    plan: input.plan ?? 'starter',
-    ownerId,
-    k8sNamespace,
-  }).returning();
+  let tenant: typeof tenants.$inferSelect;
+  try {
+    const [inserted] = await db.insert(tenants).values({
+      slug: input.slug,
+      name: input.name,
+      plan: input.plan ?? 'starter',
+      ownerId,
+      k8sNamespace,
+    }).returning();
+    tenant = inserted;
+  } catch (err: any) {
+    if (err?.code === '23505' || err?.cause?.code === '23505') {
+      const friendly = new Error(`A tenant with slug "${input.slug}" already exists.`);
+      (friendly as any).code = 'TENANT_SLUG_TAKEN';
+      (friendly as any).statusCode = 409;
+      throw friendly;
+    }
+    throw err;
+  }
 
   // Add owner as first member
   await db.insert(tenantMembers).values({

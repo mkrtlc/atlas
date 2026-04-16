@@ -83,7 +83,7 @@ export async function setup(req: Request, res: Response) {
     });
   } catch (error: any) {
     // Race condition: another request completed setup first
-    if (error?.code === '23505') {
+    if (error?.code === '23505' || error?.code === 'TENANT_SLUG_TAKEN') {
       res.status(409).json({ success: false, error: 'Atlas has already been set up' });
       return;
     }

@@ -15,7 +15,7 @@ import { Textarea } from '../../../components/ui/textarea';
 import { Badge } from '../../../components/ui/badge';
 import { IconButton } from '../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
-import { DataTable, type DataTableColumn } from '../../../components/ui/data-table';
+import { DataTable, type DataTableColumn, type SortState } from '../../../components/ui/data-table';
 import { formatDate } from '../../../lib/format';
 import { useToastStore } from '../../../stores/toast-store';
 
@@ -348,6 +348,7 @@ export function LeadsView() {
   const [editingCell, setEditingCell] = useState<{ rowId: string; column: string } | null>(null);
   const [convertingLead, setConvertingLead] = useState<CrmLead | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState | null>({ column: 'createdAt', direction: 'desc' });
 
   const selectedLead = selectedLeadId ? leads.find((l) => l.id === selectedLeadId) ?? null : null;
 
@@ -399,7 +400,8 @@ export function LeadsView() {
       ),
     },
     {
-      key: 'email', label: t('crm.leads.email'), icon: <Mail size={12} />, width: 180,
+      key: 'email', label: t('crm.leads.email'), icon: <Mail size={12} />, width: 180, sortable: true,
+      compare: (a, b) => (a.email ?? '').localeCompare(b.email ?? ''),
       searchValue: (lead) => lead.email || '',
       render: (lead) => isEd(lead.id, 'email') ? (
         <InlineInput value={lead.email || ''} onSave={(v) => handleSave(lead.id, 'email', v)} onCancel={() => setEditingCell(null)} />
@@ -408,7 +410,8 @@ export function LeadsView() {
       ),
     },
     {
-      key: 'companyName', label: t('crm.leads.companyName'), icon: <Building2 size={12} />, width: 140,
+      key: 'companyName', label: t('crm.leads.companyName'), icon: <Building2 size={12} />, width: 140, sortable: true,
+      compare: (a, b) => (a.companyName ?? '').localeCompare(b.companyName ?? ''),
       searchValue: (lead) => lead.companyName || '',
       render: (lead) => isEd(lead.id, 'companyName') ? (
         <InlineInput value={lead.companyName || ''} onSave={(v) => handleSave(lead.id, 'companyName', v)} onCancel={() => setEditingCell(null)} />
@@ -417,12 +420,14 @@ export function LeadsView() {
       ),
     },
     {
-      key: 'source', label: t('crm.leads.source'), icon: <Globe size={12} />, width: 110,
+      key: 'source', label: t('crm.leads.source'), icon: <Globe size={12} />, width: 110, sortable: true,
+      compare: (a, b) => a.source.localeCompare(b.source),
       searchValue: (lead) => lead.source.replace('_', ' '),
       render: (lead) => <Badge variant={sourceBadgeVariant(lead.source)}>{lead.source.replace('_', ' ')}</Badge>,
     },
     {
-      key: 'status', label: t('crm.leads.status'), icon: <Tag size={12} />, width: 100,
+      key: 'status', label: t('crm.leads.status'), icon: <Tag size={12} />, width: 100, sortable: true,
+      compare: (a, b) => a.status.localeCompare(b.status),
       searchValue: (lead) => lead.status,
       render: (lead) => <Badge variant={statusBadgeVariant(lead.status)}>{lead.status}</Badge>,
     },
@@ -497,7 +502,8 @@ export function LeadsView() {
             addRowLabel={t('crm.actions.addNew')}
             emptyTitle={t('crm.leads.noLeads')}
             paginated={false}
-            searchable
+            sort={sort}
+            onSortChange={setSort}
             exportable
             columnSelector
             resizableColumns

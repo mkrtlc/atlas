@@ -67,8 +67,8 @@ export async function createTenant(req: Request, res: Response) {
     const tenant = await tenantService.createTenant({ slug, name, plan }, req.auth!.userId);
     res.status(201).json({ success: true, data: tenant });
   } catch (err: any) {
-    if (err?.code === '23505') {
-      res.status(409).json({ success: false, error: 'Tenant slug already taken' });
+    if (err?.code === 'TENANT_SLUG_TAKEN' || err?.code === '23505') {
+      res.status(409).json({ success: false, error: err?.code === 'TENANT_SLUG_TAKEN' ? err.message : 'Tenant slug already taken' });
       return;
     }
     logger.error({ err }, 'Failed to create tenant');

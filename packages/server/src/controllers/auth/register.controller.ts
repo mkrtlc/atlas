@@ -73,6 +73,10 @@ export async function register(req: Request, res: Response) {
       },
     });
   } catch (error: any) {
+    if (error?.code === 'TENANT_SLUG_TAKEN') {
+      res.status(409).json({ success: false, error: error.message });
+      return;
+    }
     if (error?.code === '23505') {
       res.status(409).json({ success: false, error: 'An account with this email already exists' });
       return;

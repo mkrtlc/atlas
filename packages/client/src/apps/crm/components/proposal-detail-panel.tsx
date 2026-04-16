@@ -235,7 +235,17 @@ export function ProposalDetailPanel({ proposalId, onBack, onEdit }: ProposalDeta
             </Button>
           )}
           {canCreate && (
-            <Button variant="secondary" size="sm" icon={<Copy size={14} />} onClick={() => duplicateProposal.mutate(proposal.id)} disabled={duplicateProposal.isPending}>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Copy size={14} />}
+              onClick={() => duplicateProposal.mutate(proposal.id, {
+                onSuccess: () => {
+                  addToast({ type: 'success', message: t('crm.proposals.duplicated') });
+                },
+              })}
+              disabled={duplicateProposal.isPending}
+            >
               {t('crm.proposals.duplicate')}
             </Button>
           )}

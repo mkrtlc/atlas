@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToastStore } from '../../../stores/toast-store';
 import { Modal } from '../../../components/ui/modal';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
@@ -31,20 +32,9 @@ interface ProposalEditorProps {
 
 export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEditorProps) {
   const { t } = useTranslation();
-  const { data: companiesData } = useCompanies({});
-  const companies = companiesData?.companies ?? [];
-  const { data: contactsData } = useContacts({});
-  const contacts = contactsData?.contacts ?? [];
-  const { data: dealsData } = useDeals({});
-  const deals = dealsData?.deals ?? [];
+  const { addToast } = useToastStore();
 
-  const createProposal = useCreateProposal();
-  const updateProposal = useUpdateProposal();
-  const sendProposal = useSendProposal();
-
-  const isEditing = !!proposal;
-
-  // Form state
+  // Form state (declared first so hooks below can reference these values)
   const [title, setTitle] = useState('');
   const [companyId, setCompanyId] = useState('');
   const [contactId, setContactId] = useState('');
@@ -54,6 +44,28 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [taxPercent, setTaxPercent] = useState(0);
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { data: companiesData } = useCompanies({});
+  const companies = companiesData?.companies ?? [];
+  const { data: contactsData } = useContacts(companyId ? { companyId } : {});
+  const contacts = contactsData?.contacts ?? [];
+  const { data: dealsData } = useDeals({});
+  const deals = dealsData?.deals ?? [];
+
+  // Reset contactId when company changes and selected contact no longer belongs to it
+  useEffect(() => {
+    if (companyId && contactId) {
+      const stillValid = contacts.some((c) => c.id === contactId);
+      if (!stillValid) setContactId('');
+    }
+  }, [companyId, contacts, contactId]);
+
+  const createProposal = useCreateProposal();
+  const updateProposal = useUpdateProposal();
+  const sendProposal = useSendProposal();
+
+  const isEditing = !!proposal;
 
   // Initialize from proposal or prefill
   useEffect(() => {
@@ -116,16 +128,29 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
     total,
   }), [title, companyId, contactId, dealId, validUntil, notes, lineItems, subtotal, taxPercent, taxAmount, discountPercent, discountAmount, total]);
 
+  const validate = useCallback(() => {
+    const newErrors: Record<string, string> = {};
+    if (!title.trim()) newErrors.title = t('crm.proposals.titleRequired', 'Title is required');
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      addToast({ type: 'error', message: t('crm.proposals.fillRequired', 'Please fill in required fields') });
+      return false;
+    }
+    return true;
+  }, [title, t, addToast]);
+
   const handleSaveDraft = useCallback(() => {
+    if (!validate()) return;
     const input = buildInput();
     if (isEditing && proposal) {
       updateProposal.mutate({ id: proposal.id, ...input }, { onSuccess: () => onClose() });
     } else {
       createProposal.mutate(input, { onSuccess: () => onClose() });
     }
-  }, [buildInput, isEditing, proposal, createProposal, updateProposal, onClose]);
+  }, [validate, buildInput, isEditing, proposal, createProposal, updateProposal, onClose]);
 
   const handleSend = useCallback(() => {
+    if (!validate()) return;
     const input = buildInput();
     if (isEditing && proposal) {
       updateProposal.mutate({ id: proposal.id, ...input }, {
@@ -140,7 +165,7 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
         },
       });
     }
-  }, [buildInput, isEditing, proposal, createProposal, updateProposal, sendProposal, onClose]);
+  }, [validate, buildInput, isEditing, proposal, createProposal, updateProposal, sendProposal, onClose]);
 
   const isSaving = createProposal.isPending || updateProposal.isPending || sendProposal.isPending;
 
@@ -152,9 +177,10 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
           <Input
             label={t('crm.proposals.titleLabel')}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors((prev) => ({ ...prev, title: '' })); }}
             placeholder={t('crm.proposals.titleLabel')}
             size="sm"
+            error={errors.title}
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
