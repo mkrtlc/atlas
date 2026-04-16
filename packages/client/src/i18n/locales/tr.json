@@ -4420,7 +4420,7 @@
       "totalBilled": "Toplam faturalanan",
       "totalPaid": "Toplam ödenen",
       "outstanding": "Bekleyen",
-      "newInvoice": "+ Yeni fatura",
+      "newInvoice": "Yeni fatura",
       "empty": "Bu proje için henüz fatura yok.",
       "colNumber": "Numara",
       "colIssueDate": "Tarih",

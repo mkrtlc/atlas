@@ -4420,7 +4420,7 @@
       "totalBilled": "Gesamt fakturiert",
       "totalPaid": "Gesamt bezahlt",
       "outstanding": "Offen",
-      "newInvoice": "+ Neue Rechnung",
+      "newInvoice": "Neue Rechnung",
       "empty": "Noch keine Rechnungen für dieses Projekt.",
       "colNumber": "Nummer",
       "colIssueDate": "Ausgestellt",

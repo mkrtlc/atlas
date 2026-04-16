@@ -4420,7 +4420,7 @@
       "totalBilled": "Total facturé",
       "totalPaid": "Total payé",
       "outstanding": "En attente",
-      "newInvoice": "+ Nouvelle facture",
+      "newInvoice": "Nouvelle facture",
       "empty": "Aucune facture pour ce projet pour le moment.",
       "colNumber": "Numéro",
       "colIssueDate": "Émise",

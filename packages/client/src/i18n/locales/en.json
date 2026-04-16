@@ -4452,7 +4452,7 @@
       "totalBilled": "Total billed",
       "totalPaid": "Total paid",
       "outstanding": "Outstanding",
-      "newInvoice": "+ New invoice",
+      "newInvoice": "New invoice",
       "empty": "No invoices for this project yet.",
       "colNumber": "Number",
       "colIssueDate": "Issued",
