@@ -4598,5 +4598,11 @@
     "tryAnother": "Try another file",
     "importToInvoice": "Import to invoice",
     "importedFrom": "Imported from {{vendor}}"
+  },
+  "currency": {
+    "converting": "Converting...",
+    "unavailable": "Rate unavailable",
+    "unavailableTooltip": "Exchange rate services are temporarily unavailable. Please try again later.",
+    "rateInfo": "Rate: {{rate}} (via {{provider}})"
   }
 }

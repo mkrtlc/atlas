@@ -4566,5 +4566,11 @@
     "tryAnother": "Andere Datei versuchen",
     "importToInvoice": "In Rechnung importieren",
     "importedFrom": "Importiert von {{vendor}}"
+  },
+  "currency": {
+    "converting": "Wird umgerechnet...",
+    "unavailable": "Kurs nicht verfügbar",
+    "unavailableTooltip": "Wechselkursdienste sind vorübergehend nicht erreichbar. Bitte versuchen Sie es später erneut.",
+    "rateInfo": "Kurs: {{rate}} (über {{provider}})"
   }
 }

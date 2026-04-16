@@ -14,6 +14,7 @@ import { Textarea } from '../ui/textarea';
 import { Modal } from '../ui/modal';
 import { LineItemsEditor, type LineItem } from './line-items-editor';
 import { TotalsBlock } from './totals-block';
+import { CurrencyConverter } from './currency-converter';
 import type { Invoice } from '@atlas-platform/shared';
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -356,6 +357,11 @@ export function InvoiceBuilderModal({
                 editable
                 onTaxChange={setTaxPercent}
                 onDiscountChange={setDiscountPercent}
+              />
+              <CurrencyConverter
+                amount={subtotal + subtotal * (taxPercent / 100) - subtotal * (discountPercent / 100)}
+                fromCurrency={currency}
+                toCurrency={defaultCurrency}
               />
             </div>
           </div>

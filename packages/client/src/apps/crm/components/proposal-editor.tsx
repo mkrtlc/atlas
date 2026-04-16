@@ -8,6 +8,7 @@ import { Textarea } from '../../../components/ui/textarea';
 import { Button } from '../../../components/ui/button';
 import { LineItemsEditor, type LineItem } from '../../../components/shared/line-items-editor';
 import { TotalsBlock } from '../../../components/shared/totals-block';
+import { CurrencyConverter } from '../../../components/shared/currency-converter';
 import {
   useCompanies,
   useContacts,
@@ -18,6 +19,7 @@ import {
   type Proposal,
   type CreateProposalInput,
 } from '../hooks';
+import { useTenantFormatSettings } from '../../../hooks/use-tenant-format-settings';
 
 interface ProposalEditorProps {
   open: boolean;
@@ -42,10 +44,10 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
   const [validUntil, setValidUntil] = useState('');
   const [notes, setNotes] = useState('');
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
-  const [taxPercent, setTaxPercent] = useState(0);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const { data: tenantFormats } = useTenantFormatSettings();
   const { data: companiesData } = useCompanies({});
   const companies = companiesData?.companies ?? [];
   const { data: contactsData } = useContacts(companyId ? { companyId } : {});
@@ -85,7 +87,6 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
           taxRate: li.taxRate,
         })),
       );
-      setTaxPercent(proposal.taxPercent);
       setDiscountPercent(proposal.discountPercent);
     } else {
       setTitle('');
@@ -97,13 +98,13 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
       setLineItems([
         { id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0, taxRate: 0 },
       ]);
-      setTaxPercent(0);
       setDiscountPercent(0);
     }
   }, [proposal, prefill, open]);
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-  const taxAmount = subtotal * (taxPercent / 100);
+  const taxAmount = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice * ((item.taxRate || 0) / 100), 0);
+  const taxPercent = subtotal > 0 ? (taxAmount / subtotal) * 100 : 0;
   const discountAmount = subtotal * (discountPercent / 100);
   const total = subtotal + taxAmount - discountAmount;
 
@@ -253,8 +254,12 @@ export function ProposalEditor({ open, onClose, proposal, prefill }: ProposalEdi
               taxPercent={taxPercent}
               discountPercent={discountPercent}
               editable
-              onTaxChange={setTaxPercent}
               onDiscountChange={setDiscountPercent}
+            />
+            <CurrencyConverter
+              amount={total}
+              fromCurrency={proposal?.currency ?? tenantFormats?.defaultCurrency ?? 'USD'}
+              toCurrency={tenantFormats?.defaultCurrency ?? 'USD'}
             />
           </div>
         </div>

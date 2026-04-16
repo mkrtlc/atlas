@@ -4566,5 +4566,11 @@
     "tryAnother": "Başka dosya dene",
     "importToInvoice": "Faturaya aktar",
     "importedFrom": "{{vendor}} kaynaklı aktarıldı"
+  },
+  "currency": {
+    "converting": "Dönüştürülüyor...",
+    "unavailable": "Kur bilgisi yok",
+    "unavailableTooltip": "Döviz kuru servisleri geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
+    "rateInfo": "Kur: {{rate}} ({{provider}} üzerinden)"
   }
 }

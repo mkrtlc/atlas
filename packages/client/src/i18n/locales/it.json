@@ -4566,5 +4566,11 @@
     "tryAnother": "Prova un altro file",
     "importToInvoice": "Importa nella fattura",
     "importedFrom": "Importato da {{vendor}}"
+  },
+  "currency": {
+    "converting": "Conversione in corso...",
+    "unavailable": "Tasso non disponibile",
+    "unavailableTooltip": "I servizi di cambio valuta sono temporaneamente non disponibili. Riprova più tardi.",
+    "rateInfo": "Tasso: {{rate}} (tramite {{provider}})"
   }
 }
