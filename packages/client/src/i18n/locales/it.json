@@ -4440,7 +4440,8 @@
       "dashboard": "Dashboard",
       "projects": "Progetti",
       "newProject": "Nuovo progetto",
-      "myTasks": "Le mie attività"
+      "myTasks": "Le mie attività",
+      "board": "Bacheca"
     },
     "createProject": {
       "title": "Crea progetto",
@@ -4515,6 +4516,16 @@
       "colName": "Nome",
       "colStatus": "Stato",
       "colUpdated": "Aggiornato"
+    },
+    "board": {
+      "title": "Bacheca progetti",
+      "active": "Attivo",
+      "paused": "In pausa",
+      "completed": "Completato",
+      "archived": "Archiviato",
+      "noProjects": "Nessun progetto",
+      "emptyTitle": "Nessun progetto ancora",
+      "emptyDescription": "Crea prima un progetto, poi usa la bacheca per monitorare lo stato."
     },
     "tabDescriptions": {
       "overview": "Una panoramica del progetto — stato, date, membri e numeri chiave in un colpo d’occhio.",

@@ -4440,7 +4440,8 @@
       "dashboard": "Tableau de bord",
       "projects": "Projets",
       "newProject": "Nouveau projet",
-      "myTasks": "Mes tâches"
+      "myTasks": "Mes tâches",
+      "board": "Tableau"
     },
     "createProject": {
       "title": "Créer un projet",
@@ -4515,6 +4516,16 @@
       "colName": "Nom",
       "colStatus": "Statut",
       "colUpdated": "Mise à jour"
+    },
+    "board": {
+      "title": "Tableau de projets",
+      "active": "Actif",
+      "paused": "En pause",
+      "completed": "Terminé",
+      "archived": "Archivé",
+      "noProjects": "Aucun projet",
+      "emptyTitle": "Aucun projet pour le moment",
+      "emptyDescription": "Créez d'abord un projet, puis utilisez le tableau pour suivre l'avancement."
     },
     "tabDescriptions": {
       "overview": "Un aperçu du projet — statut, dates, membres et chiffres clés en un coup d’œil.",

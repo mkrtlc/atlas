@@ -4440,7 +4440,8 @@
       "dashboard": "Gösterge paneli",
       "projects": "Projeler",
       "newProject": "Yeni proje",
-      "myTasks": "Görevlerim"
+      "myTasks": "Görevlerim",
+      "board": "Pano"
     },
     "createProject": {
       "title": "Proje oluştur",
@@ -4515,6 +4516,16 @@
       "colName": "Ad",
       "colStatus": "Durum",
       "colUpdated": "Güncelleme"
+    },
+    "board": {
+      "title": "Proje panosu",
+      "active": "Aktif",
+      "paused": "Duraklatılmış",
+      "completed": "Tamamlanmış",
+      "archived": "Arşivlenmiş",
+      "noProjects": "Proje yok",
+      "emptyTitle": "Henüz proje yok",
+      "emptyDescription": "Önce bir proje oluşturun, ardından durumu takip etmek için panoyu kullanın."
     },
     "tabDescriptions": {
       "overview": "Bu projenin özeti — durum, tarihler, üyeler ve önemli rakamlar bir bakışta.",

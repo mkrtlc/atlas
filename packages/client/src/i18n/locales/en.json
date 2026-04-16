@@ -4472,7 +4472,8 @@
       "dashboard": "Dashboard",
       "projects": "Projects",
       "newProject": "New project",
-      "myTasks": "My tasks"
+      "myTasks": "My tasks",
+      "board": "Board"
     },
     "createProject": {
       "title": "Create project",
@@ -4547,6 +4548,16 @@
       "colName": "Name",
       "colStatus": "Status",
       "colUpdated": "Updated"
+    },
+    "board": {
+      "title": "Project board",
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "archived": "Archived",
+      "noProjects": "No projects",
+      "emptyTitle": "No projects yet",
+      "emptyDescription": "Create a project first, then use the board to track status."
     },
     "tabDescriptions": {
       "overview": "A snapshot of this project — status, dates, members, and key numbers at a glance.",

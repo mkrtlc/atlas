@@ -140,7 +140,7 @@ function mapWorkProject(raw: Record<string, unknown>): WorkProject {
     companyName: (raw.companyName as string) ?? (raw.clientName as string) ?? null,
     status: (raw.status as WorkProject['status']) ?? 'active',
     color: (raw.color as string) ?? '#6b7280',
-    hourlyRate: 0,
+    hourlyRate: (raw.defaultHourlyRate as number) || (raw.hourlyRate as number) || 0,
     budgetHours: (raw.estimatedHours as number) ?? null,
     budgetAmount: (raw.estimatedAmount as number) ?? null,
     isBillable: (raw.billable as boolean) ?? true,
@@ -666,6 +666,7 @@ export function useCreateProject() {
         billable: input.isBillable,
         estimatedHours: input.budgetHours,
         estimatedAmount: input.budgetAmount,
+        defaultHourlyRate: input.hourlyRate,
       });
       return data.data as WorkProject;
     },
@@ -700,6 +701,7 @@ export function useUpdateProject() {
       if (input.budgetHours !== undefined) payload.estimatedHours = input.budgetHours;
       if (input.budgetAmount !== undefined) payload.estimatedAmount = input.budgetAmount;
       if (input.isArchived !== undefined) payload.isArchived = input.isArchived;
+      if (input.hourlyRate !== undefined) payload.defaultHourlyRate = input.hourlyRate;
       const { data } = await api.patch(`/work/projects/${id}`, payload, {
         headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
       });
@@ -708,6 +710,20 @@ export function useUpdateProject() {
     onSuccess: (project) => {
       queryClient.setQueryData(queryKeys.work.projects.projects.detail(project.id), project);
       queryClient.invalidateQueries({ queryKey: queryKeys.work.all });
+    },
+  });
+}
+
+export function useUpdateProjectStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { data } = await api.patch(`/work/projects/${id}`, { status });
+      return data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.work.projects.projects.all });
+      qc.invalidateQueries({ queryKey: queryKeys.work.projects.dashboard });
     },
   });
 }

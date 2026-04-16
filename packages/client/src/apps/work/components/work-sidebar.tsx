@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckSquare, FolderKanban, BarChart3 } from 'lucide-react';
+import { CheckSquare, FolderKanban, BarChart3, LayoutGrid } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AppSidebar, SidebarItem, SidebarSection } from '../../../components/layout/app-sidebar';
 
@@ -26,6 +26,12 @@ export function WorkSidebar() {
           icon={<FolderKanban size={15} />}
           isActive={activeView === 'projects' || !!activeProjectId}
           onClick={() => go('?view=projects')}
+        />
+        <SidebarItem
+          label={t('work.sidebar.board')}
+          icon={<LayoutGrid size={15} />}
+          isActive={activeView === 'board' && !activeProjectId}
+          onClick={() => go('?view=board')}
         />
         <SidebarItem
           label={t('work.sidebar.myTasks')}
