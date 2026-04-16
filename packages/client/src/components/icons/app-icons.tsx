@@ -566,37 +566,26 @@ export function WorkIcon({ size = 24, className, style }: IconProps) {
       width={size}
       height={size}
       viewBox="0 0 128 128"
-      preserveAspectRatio="xMidYMid meet"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={style}
     >
-      {/* Briefcase body */}
-      <rect x="14" y="48" width="100" height="66" rx="8" fill="url(#work_paint0)" />
-      {/* Briefcase handle */}
-      <path d="M44 48V36C44 30 50 24 64 24C78 24 84 30 84 36V48" stroke="url(#work_paint1)" strokeWidth="8" strokeLinecap="round" fill="none" />
-      {/* Center band */}
-      <rect opacity="0.6" x="14" y="76" width="100" height="12" fill="url(#work_paint2)" />
-      {/* Clasp */}
-      <rect x="56" y="70" width="16" height="16" rx="4" fill="url(#work_paint3)" />
+      <path d="M73.6667 74.6667C92.0762 74.6667 107 59.7428 107 41.3333C107 22.9238 92.0762 8 73.6667 8H27V74.6667H73.6667Z" fill="url(#work_paint0)"/>
+      <path d="M27 74.6667V8L67 64V120H27V74.6667Z" fill="url(#work_paint1)"/>
+      <path d="M79.8721 74.0901C77.8615 74.4687 75.7872 74.6667 73.6667 74.6667H27V8L79.8721 74.0901Z" fill="url(#work_paint2)"/>
       <defs>
-        <linearGradient id="work_paint0" x1="64" y1="48" x2="64" y2="114" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#818cf8" />
-          <stop offset="1" stopColor="#4338ca" />
+        <linearGradient id="work_paint0" x1="67" y1="8" x2="67" y2="74.6667" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#F38744"/>
+          <stop offset="1" stopColor="#8D4E27"/>
         </linearGradient>
-        <linearGradient id="work_paint1" x1="64" y1="24" x2="64" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#a5b4fc" />
-          <stop offset="1" stopColor="#6366f1" />
+        <linearGradient id="work_paint1" x1="47" y1="8" x2="47" y2="120" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#CAE3FF"/>
+          <stop offset="1" stopColor="#1B5594"/>
         </linearGradient>
-        <linearGradient id="work_paint2" x1="14" y1="82" x2="114" y2="82" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#312e81" stopOpacity="0" />
-          <stop offset="0.5" stopColor="#312e81" stopOpacity="0.8" />
-          <stop offset="1" stopColor="#312e81" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="work_paint3" x1="64" y1="70" x2="64" y2="86" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#e0e7ff" />
-          <stop offset="1" stopColor="#a5b4fc" />
+        <linearGradient id="work_paint2" x1="53.436" y1="8" x2="53.436" y2="74.6667" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#53B1FD"/>
+          <stop offset="1" stopColor="#326A97"/>
         </linearGradient>
       </defs>
     </svg>
