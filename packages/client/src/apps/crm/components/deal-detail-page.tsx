@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Trophy, XCircle,
@@ -131,6 +132,18 @@ export function DealDetailPage({ dealId, onBack, onNavigate }: DealDetailPagePro
   const [newActivityType, setNewActivityType] = useState('note');
   const [newActivityBody, setNewActivityBody] = useState('');
   const [showProposalEditor, setShowProposalEditor] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Auto-open proposal editor when navigated with ?openProposal=1
+  useEffect(() => {
+    if (searchParams.get('openProposal') === '1') {
+      setShowProposalEditor(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('openProposal');
+      setSearchParams(next, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dealId]);
 
   // Navigation
   const currentIdx = deals.findIndex(d => d.id === dealId);

@@ -1663,7 +1663,12 @@
       "refreshing": "Actualisation...",
       "refresh": "Actualiser",
       "createdAt": "Créé le",
-      "lead": "prospect"
+      "lead": "prospect",
+      "convertSuccess": "Prospect converti avec succès",
+      "viewDeal": "Voir l'affaire",
+      "createProposal": "Créer un devis",
+      "convertedBanner": "Ce prospect a été converti en affaire.",
+      "viewConvertedDeal": "Voir l'affaire"
     },
     "notes": {
       "title": "Notes",

@@ -1663,7 +1663,12 @@
       "refreshing": "Aggiornamento...",
       "refresh": "Aggiorna",
       "createdAt": "Creato",
-      "lead": "lead"
+      "lead": "lead",
+      "convertSuccess": "Lead convertito con successo",
+      "viewDeal": "Vedi trattativa",
+      "createProposal": "Crea proposta",
+      "convertedBanner": "Questo lead è stato convertito in una trattativa.",
+      "viewConvertedDeal": "Vedi trattativa"
     },
     "notes": {
       "title": "Note",

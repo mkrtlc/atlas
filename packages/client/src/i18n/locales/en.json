@@ -1722,7 +1722,12 @@
       "suggestedTags": "Suggested tags",
       "enriched": "Enriched",
       "refreshing": "Refreshing...",
-      "refresh": "Refresh"
+      "refresh": "Refresh",
+      "convertSuccess": "Lead converted successfully",
+      "viewDeal": "View deal",
+      "createProposal": "Create proposal",
+      "convertedBanner": "This lead was converted to a deal.",
+      "viewConvertedDeal": "View deal"
     },
     "notes": {
       "title": "Notes",
@@ -1919,7 +1924,21 @@
         "accepted": "Accepted",
         "declined": "Declined",
         "expired": "Expired"
-      }
+      },
+      "history": "History",
+      "revisions": "{{count}} revision",
+      "revisions_plural": "{{count}} revisions",
+      "showHistory": "Show history",
+      "hideHistory": "Hide history",
+      "restoredFrom": "Restored from revision #{{number}}",
+      "changeReason": "Change reason",
+      "restoreVersion": "Restore this version",
+      "restoreConfirmTitle": "Restore revision #{{number}}?",
+      "restoreConfirmBody": "The current proposal will be overwritten. A new revision will be saved automatically.",
+      "noHistory": "No revision history yet.",
+      "snapshotTotal": "Total",
+      "snapshotItems": "{{count}} line item",
+      "snapshotItems_plural": "{{count}} line items"
     }
   },
   "drive": {

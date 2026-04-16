@@ -919,6 +919,7 @@ export interface CrmLead {
   expectedCloseDate: string | null;
   convertedContactId: string | null;
   convertedDealId: string | null;
+  convertedDealTitle: string | null;
   tags: string[];
   enrichedData: Record<string, unknown> | null;
   enrichedAt: string | null;
@@ -1558,6 +1559,61 @@ export function useDuplicateProposal() {
       return data.data as Proposal;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.all });
+    },
+  });
+}
+
+// ─── Proposal Revision Types ─────────────────────────────────────
+
+export interface ProposalRevision {
+  id: string;
+  proposalId: string;
+  revisionNumber: number;
+  snapshotJson: {
+    title: string;
+    status: string;
+    currency: string;
+    lineItems: Array<{ description: string; quantity: number; unitPrice: number; taxRate: number }>;
+    subtotal: number;
+    taxPercent: number;
+    taxAmount: number;
+    discountPercent: number;
+    discountAmount: number;
+    total: number;
+    notes: string | null;
+    validUntil: string | null;
+    content: unknown;
+  };
+  changedBy: string;
+  changeReason: string | null;
+  createdAt: string;
+}
+
+// ─── Proposal Revision Queries ───────────────────────────────────
+
+export function useProposalRevisions(proposalId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.crm.proposals.revisions(proposalId!),
+    queryFn: async () => {
+      const { data } = await api.get(`/crm/proposals/${proposalId}/revisions`);
+      return data.data as ProposalRevision[];
+    },
+    enabled: !!proposalId,
+    staleTime: 30_000,
+  });
+}
+
+export function useRestoreProposalRevision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ proposalId, revisionId }: { proposalId: string; revisionId: string }) => {
+      const { data } = await api.post(`/crm/proposals/${proposalId}/revisions/${revisionId}/restore`);
+      return data.data as Proposal;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.detail(vars.proposalId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.revisions(vars.proposalId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.proposals.all });
     },
   });

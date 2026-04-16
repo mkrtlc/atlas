@@ -1,5 +1,5 @@
 import { db } from '../../../config/database';
-import { crmLeads, crmLeadForms } from '../../../db/schema';
+import { crmLeads, crmLeadForms, crmDeals } from '../../../db/schema';
 import { eq, and, or, asc, desc, sql } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
 import crypto from 'crypto';
@@ -73,7 +73,20 @@ export async function getLead(userId: string, tenantId: string, id: string, reco
     )!);
   }
   const [lead] = await db.select().from(crmLeads).where(and(...conditions)).limit(1);
-  return lead || null;
+  if (!lead) return null;
+
+  // Attach convertedDealTitle via a lightweight lookup
+  let convertedDealTitle: string | null = null;
+  if (lead.convertedDealId) {
+    const [deal] = await db
+      .select({ title: crmDeals.title })
+      .from(crmDeals)
+      .where(eq(crmDeals.id, lead.convertedDealId))
+      .limit(1);
+    convertedDealTitle = deal?.title ?? null;
+  }
+
+  return { ...lead, convertedDealTitle };
 }
 
 export async function createLead(userId: string, tenantId: string, input: CreateLeadInput) {

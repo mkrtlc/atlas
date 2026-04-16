@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Trophy, XCircle,
@@ -6,6 +7,7 @@ import {
   ArrowRightLeft, Trash2, Check, RefreshCw,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Chip } from '../../../components/ui/chip';
@@ -98,6 +100,7 @@ interface LeadDetailPageProps {
 
 export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPageProps) {
   const { t } = useTranslation();
+  const [, setSearchParams] = useSearchParams();
   const { data: perm } = useMyCrmPermission();
   const canUpdateLead = canAccess(perm?.role, 'leads', 'update');
   const canDeleteLead = canAccess(perm?.role, 'leads', 'delete');
@@ -202,6 +205,29 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
       }}>
         <StatusPipeline status={lead.status} onChange={(s) => { if (canUpdateLead) updateLead.mutate({ id: lead.id, updatedAt: lead.updatedAt, status: s }); }} updatedAt={lead.updatedAt} />
       </div>
+
+      {/* Converted banner */}
+      {lead.status === 'converted' && lead.convertedDealId && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)',
+          padding: 'var(--spacing-sm) var(--spacing-lg)',
+          background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-primary))',
+          borderBottom: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
+          flexShrink: 0,
+        }}>
+          <Badge variant="success">{t('crm.leads.convertSuccess')}</Badge>
+          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+            {t('crm.leads.convertedBanner')}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSearchParams({ view: 'deal-detail', dealId: lead.convertedDealId! }, { replace: true })}
+          >
+            {t('crm.leads.viewConvertedDeal')} →
+          </Button>
+        </div>
+      )}
 
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>

@@ -1663,7 +1663,12 @@
       "refreshing": "Yenileniyor...",
       "refresh": "Yenile",
       "createdAt": "Oluşturuldu",
-      "lead": "aday"
+      "lead": "aday",
+      "convertSuccess": "Aday başarıyla dönüştürüldü",
+      "viewDeal": "Fırsatı görüntüle",
+      "createProposal": "Teklif oluştur",
+      "convertedBanner": "Bu aday bir fırsata dönüştürüldü.",
+      "viewConvertedDeal": "Fırsatı görüntüle"
     },
     "notes": {
       "title": "Notlar",

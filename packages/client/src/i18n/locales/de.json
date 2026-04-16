@@ -1663,7 +1663,12 @@
       "refreshing": "Aktualisieren...",
       "refresh": "Aktualisieren",
       "createdAt": "Erstellt",
-      "lead": "Lead"
+      "lead": "Lead",
+      "convertSuccess": "Lead erfolgreich konvertiert",
+      "viewDeal": "Deal ansehen",
+      "createProposal": "Angebot erstellen",
+      "convertedBanner": "Dieser Lead wurde in einen Deal konvertiert.",
+      "viewConvertedDeal": "Deal ansehen"
     },
     "notes": {
       "title": "Notizen",
