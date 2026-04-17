@@ -75,9 +75,20 @@ export async function createLeaveApplication(tenantId: string, input: {
 }) {
   const now = new Date();
 
+  // Validate date range
+  if (new Date(input.endDate) < new Date(input.startDate)) {
+    throw new Error('End date must be on or after start date');
+  }
+  if (input.halfDay && input.halfDayDate) {
+    const hd = new Date(input.halfDayDate);
+    if (hd < new Date(input.startDate) || hd > new Date(input.endDate)) {
+      throw new Error('Half-day date must fall within the leave range');
+    }
+  }
+
   // Get leave type
   const [leaveType] = await db.select().from(hrLeaveTypes)
-    .where(eq(hrLeaveTypes.id, input.leaveTypeId)).limit(1);
+    .where(and(eq(hrLeaveTypes.id, input.leaveTypeId), eq(hrLeaveTypes.tenantId, tenantId))).limit(1);
   if (!leaveType) throw new Error('Leave type not found');
 
   // Calculate total days excluding weekends and holidays

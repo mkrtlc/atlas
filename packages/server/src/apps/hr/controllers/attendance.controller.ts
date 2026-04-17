@@ -46,7 +46,8 @@ export async function markAttendance(req: Request, res: Response) {
     res.json({ success: true, data });
   } catch (error) {
     logger.error({ error }, 'Failed to mark attendance');
-    res.status(500).json({ success: false, error: 'Failed to mark attendance' });
+    const message = error instanceof Error ? error.message : 'Failed to mark attendance';
+    res.status(400).json({ success: false, error: message });
   }
 }
 

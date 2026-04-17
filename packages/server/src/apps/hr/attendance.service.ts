@@ -20,14 +20,27 @@ export async function markAttendance(tenantId: string, input: {
 }) {
   const now = new Date();
 
+  // Validate check-in/check-out time ordering when both are provided.
+  if (input.checkInTime && input.checkOutTime) {
+    const [inH, inM] = input.checkInTime.split(':').map(Number);
+    const [outH, outM] = input.checkOutTime.split(':').map(Number);
+    if (outH * 60 + outM <= inH * 60 + inM) {
+      throw new Error('Check-out time must be after check-in time');
+    }
+  }
+
   // Auto-calculate working hours
   const workingHours = (input.checkInTime && input.checkOutTime)
     ? calcWorkingHours(input.checkInTime, input.checkOutTime)
     : null;
 
-  // Upsert - check if record exists for this employee+date
+  // Upsert - check if record exists for this employee+date (tenant-scoped)
   const existing = await db.select().from(hrAttendance)
-    .where(and(eq(hrAttendance.employeeId, input.employeeId), eq(hrAttendance.date, input.date)))
+    .where(and(
+      eq(hrAttendance.tenantId, tenantId),
+      eq(hrAttendance.employeeId, input.employeeId),
+      eq(hrAttendance.date, input.date),
+    ))
     .limit(1);
 
   if (existing.length > 0) {
