@@ -5,6 +5,7 @@ import { useInvoiceSettings, useUpdateInvoiceSettings } from '../hooks';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Button } from '../../../components/ui/button';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { useToastStore } from '../../../stores/toast-store';
 import { api } from '../../../lib/api-client';
 import type { UpdateInvoiceSettingsInput } from '@atlas-platform/shared';
@@ -29,7 +30,7 @@ const sectionBoxStyle: React.CSSProperties = {
 
 export function InvoiceTemplatesPanel() {
   const { t } = useTranslation();
-  const { data: settings, isLoading } = useInvoiceSettings();
+  const { data: settings, isLoading, isError, refetch } = useInvoiceSettings();
   const updateSettings = useUpdateInvoiceSettings();
   const addToast = useToastStore((s) => s.addToast);
 
@@ -136,6 +137,7 @@ export function InvoiceTemplatesPanel() {
     });
   };
 
+  if (isError) return <QueryErrorState onRetry={() => refetch()} />;
   if (isLoading) return <></>;
 
   return (

@@ -2,7 +2,7 @@ import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { db } from '../../../config/database';
 import { crmCompanies, crmContacts } from '../../../db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { getTemplate } from '../templates';
 import type { InvoiceTemplateProps } from '../templates/types';
 import { getInvoiceSettings } from './settings.service';
@@ -21,9 +21,9 @@ export async function generateInvoicePdf(tenantId: string, invoiceId: string): P
 
   // Fetch company and contact in parallel
   const [companyResult, contact] = await Promise.all([
-    db.select().from(crmCompanies).where(eq(crmCompanies.id, invoice.companyId)),
+    db.select().from(crmCompanies).where(and(eq(crmCompanies.id, invoice.companyId), eq(crmCompanies.tenantId, tenantId))),
     invoice.contactId
-      ? db.select().from(crmContacts).where(eq(crmContacts.id, invoice.contactId)).then(r => r[0] ?? null)
+      ? db.select().from(crmContacts).where(and(eq(crmContacts.id, invoice.contactId), eq(crmContacts.tenantId, tenantId))).then(r => r[0] ?? null)
       : Promise.resolve(null),
   ]);
   const company = companyResult[0];

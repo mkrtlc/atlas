@@ -11,7 +11,24 @@ A rule lives here when:
 
 ## Rules
 
-_No rules yet. Rules are added here after 2+ confirmed module hits on a pattern._
+### Query hooks must surface `isError` with a retry fallback
+
+**Why**: Components that destructure `isLoading` but not `isError` render silently empty on a failed GET — the user sees a blank screen with no retry. Confirmed in HRM (15 views), Sign (3 views), and Invoices (6 views) — same bug shape each time.
+
+**How to check**: Grep list/dashboard components for `const { data, isLoading } = useX()` or `const { data = [], isLoading }` without a neighbouring `isError` destructure. The shared fallback component is `packages/client/src/components/ui/query-error-state.tsx`.
+
+**How to apply**:
+```tsx
+const { data, isLoading, isError, refetch } = useSomeQuery();
+
+if (isError) return <QueryErrorState onRetry={() => refetch()} />;
+if (isLoading || !data) return <Skeleton ... />;
+```
+
+Mutations are covered by the central `defaultMutationErrorHandler` in `packages/client/src/providers/query-provider.tsx` and do not need per-call `onError`. This rule is for **queries only**.
+
+**Confirmed in**: HRM, Sign, Invoices.
+**Promoted to CLAUDE.md**: no (pending CRM retro-scan).
 
 ---
 

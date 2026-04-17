@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { Tooltip } from '../../../components/ui/tooltip';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { DataTable, type DataTableColumn } from '../../../components/ui/data-table';
 import { RecurringInvoiceModal } from './recurring-invoice-modal';
 import {
@@ -28,7 +29,7 @@ function formatDate(value: Date | string | null | undefined): string {
 export function RecurringInvoicesList() {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
-  const { data: recurringList = [], isLoading } = useRecurringInvoicesList();
+  const { data: recurringList = [], isLoading, isError, refetch } = useRecurringInvoicesList();
   const pauseMutation = usePauseRecurringInvoice();
   const resumeMutation = useResumeRecurringInvoice();
   const runNowMutation = useRunRecurringInvoiceNow();
@@ -242,7 +243,9 @@ export function RecurringInvoicesList() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {isLoading ? null : (
+      {isError ? (
+        <QueryErrorState onRetry={() => refetch()} />
+      ) : isLoading ? null : (
         <DataTable
           persistSortKey="invoices_recurring"
           data={recurringList}

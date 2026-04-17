@@ -6,6 +6,7 @@ import { formatDate } from '../../../lib/format';
 import { Badge } from '../../../components/ui/badge';
 import { IconButton } from '../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { useInvoicePayments, useDeletePayment } from '../hooks';
 import { useToastStore } from '../../../stores/toast-store';
 import { RecordPaymentModal } from './record-payment-modal';
@@ -49,7 +50,7 @@ export function InvoicePaymentsList({
   isDraft = false,
 }: InvoicePaymentsListProps) {
   const { t } = useTranslation();
-  const { data: payments, isLoading } = useInvoicePayments(invoiceId);
+  const { data: payments, isLoading, isError, refetch } = useInvoicePayments(invoiceId);
   const deletePayment = useDeletePayment();
   const addToast = useToastStore((s) => s.addToast);
   const [editingPayment, setEditingPayment] = useState<InvoicePayment | undefined>(undefined);
@@ -132,7 +133,9 @@ export function InvoicePaymentsList({
       </div>
 
       <div style={{ marginTop: 'var(--spacing-sm)' }}>
-        {isLoading ? (
+        {isError ? (
+          <QueryErrorState onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div
             style={{
               fontSize: 'var(--font-size-sm)',

@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import { useInvoicesDashboard } from '../hooks';
 import { formatCurrency } from '../../../lib/format';
 import { Skeleton } from '../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { QuickActions } from '../../../components/shared/quick-actions';
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -20,11 +21,19 @@ function formatMonthLabel(month: string): string {
 export function InvoicesDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, isLoading } = useInvoicesDashboard();
+  const { data, isLoading, isError, refetch } = useInvoicesDashboard();
 
   const quickActions = [
     { label: t('invoices.quickActions.newInvoice'), icon: <Plus size={13} />, onClick: () => navigate('/invoices?view=invoices&action=create') },
   ];
+
+  if (isError) {
+    return (
+      <div style={{ padding: 'var(--spacing-xl)' }}>
+        <QueryErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (isLoading || !data) {
     return (

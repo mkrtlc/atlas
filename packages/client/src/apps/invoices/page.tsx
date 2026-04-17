@@ -15,6 +15,7 @@ import { ContentArea } from '../../components/ui/content-area';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { IconButton } from '../../components/ui/icon-button';
+import { QueryErrorState } from '../../components/ui/query-error-state';
 import type { Invoice } from '@atlas-platform/shared';
 
 export function InvoicesPage() {
@@ -40,7 +41,7 @@ export function InvoicesPage() {
   const prefillProjectId = searchParams.get('projectId') ?? undefined;
 
   // Data — fetch all invoices (filtering is done client-side in the list view)
-  const { data: invoicesData } = useInvoices();
+  const { data: invoicesData, isError: invoicesError, refetch: refetchInvoices } = useInvoices();
   const invoices = invoicesData?.invoices ?? [];
 
   // Permissions
@@ -158,6 +159,9 @@ export function InvoicesPage() {
 
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {invoicesError ? (
+                  <QueryErrorState onRetry={() => refetchInvoices()} />
+                ) : (
                 <InvoicesListView
                   invoices={invoices}
                   searchQuery={searchQuery}
@@ -166,6 +170,7 @@ export function InvoicesPage() {
                   onAdd={canCreate ? () => { setEditingInvoice(null); setBuilderPrefill({}); setShowBuilder(true); } : undefined}
                   onImportPdf={canCreate ? () => setShowPdfImport(true) : undefined}
                 />
+                )}
               </div>
             </div>
           </>

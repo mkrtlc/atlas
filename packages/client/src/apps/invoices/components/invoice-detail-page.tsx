@@ -15,6 +15,7 @@ import { InvoicePdfViewer } from './invoice-pdf-viewer';
 import { InvoiceMetaBlock } from './invoice-meta-block';
 import { InvoiceLineItemsTable, type LineItem } from './invoice-line-items-table';
 import { InvoicePaymentsList } from './invoice-payments-list';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { StatusTimeline } from '../../../components/shared/status-timeline';
 import { TotalsBlock } from '../../../components/shared/totals-block';
 import { SendInvoiceModal } from './send-invoice-modal';
@@ -44,7 +45,7 @@ function statusToIndex(status: Invoice['status']): number {
 
 export function InvoiceDetailPage({ invoiceId, onBack }: Props) {
   const { t } = useTranslation();
-  const { data: invoice, isLoading } = useInvoice(invoiceId);
+  const { data: invoice, isLoading, isError, refetch } = useInvoice(invoiceId);
   const { data: companiesData } = useCompanies();
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
@@ -83,6 +84,14 @@ export function InvoiceDetailPage({ invoiceId, onBack }: Props) {
       '_blank',
     );
   };
+
+  if (isError) {
+    return (
+      <ContentArea title="">
+        <QueryErrorState onRetry={() => refetch()} />
+      </ContentArea>
+    );
+  }
 
   if (isLoading) {
     return (
