@@ -6,46 +6,66 @@ import { migrateWorkMerge } from './migrations/2026-04-15-work-merge';
 
 const MIGRATIONS_DIR = join(__dirname, 'migrations');
 
+// Postgres error codes we consider "benign" when replaying migrations on
+// a DB that already has most of the schema. Duplicate-object errors mean
+// the statement has already been applied; undefined-object errors on ALTER
+// mean the target table was never on this DB (a later CREATE will handle
+// it if needed).
+const BENIGN_MIGRATION_ERRORS = new Set([
+  '42P07', // duplicate_table
+  '42701', // duplicate_column
+  '42710', // duplicate_object (index/constraint/trigger)
+  '42P06', // duplicate_schema
+  '42723', // duplicate_function
+  '23505', // unique_violation (seed inserts)
+  '42P16', // invalid_table_definition (e.g. re-adding NOT NULL)
+]);
+
 export async function bootstrapDatabase() {
   const client = await pool.connect();
-  let dbAlreadyInitialized = false;
   try {
-    const { rows } = await client.query(
-      `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') AS exists`,
-    );
-    dbAlreadyInitialized = Boolean(rows[0]?.exists);
+    const files = (await readdir(MIGRATIONS_DIR))
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
 
-    if (dbAlreadyInitialized) {
-      logger.info('Database already initialized — skipping initial schema');
-    } else {
-      logger.info('Empty database detected — running initial schema');
+    // Replay every .sql migration on every start. Duplicate-object errors
+    // are swallowed so this is safe for both empty and existing DBs. The
+    // legacy-data patches below handle column-level drift embedded in
+    // CREATE TABLE statements that can't land via a re-CREATE.
+    for (const file of files) {
+      const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
+      const statements = sql
+        .split('--> statement-breakpoint')
+        .map((s) => s.trim())
+        .filter(Boolean);
 
-      const files = (await readdir(MIGRATIONS_DIR))
-        .filter((f) => f.endsWith('.sql'))
-        .sort();
-
-      for (const file of files) {
-        const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
-        const statements = sql
-          .split('--> statement-breakpoint')
-          .map((s) => s.trim())
-          .filter(Boolean);
-        for (const stmt of statements) {
+      let applied = 0;
+      let skipped = 0;
+      for (const stmt of statements) {
+        try {
           await client.query(stmt);
+          applied += 1;
+        } catch (err) {
+          const code = (err as { code?: string })?.code ?? '';
+          if (BENIGN_MIGRATION_ERRORS.has(code)) {
+            skipped += 1;
+          } else if (code === '42P01' && /ALTER TABLE/i.test(stmt)) {
+            skipped += 1;
+          } else {
+            logger.error({ err, file, stmt: stmt.slice(0, 200) }, 'Migration statement failed');
+            throw err;
+          }
         }
-        logger.info({ file }, 'Applied migration');
       }
-
-      logger.info('Database bootstrap complete');
+      logger.info({ file, applied, skipped }, 'Migration replayed');
     }
   } finally {
     client.release();
   }
 
-  // Always run idempotent legacy-data patches — they cover schema drift
-  // introduced after the initial snapshot (e.g. new columns added later).
-  // Safe on both fresh and existing DBs because every statement uses
-  // IF NOT EXISTS / IF EXISTS guards.
+  // Idempotent column-level backfills for drift that lives inside a
+  // CREATE TABLE statement — those columns never land via re-running the
+  // snapshot because duplicate_table swallows the whole statement.
   await migrateLegacyData();
 }
 
@@ -147,6 +167,21 @@ async function migrateLegacyData() {
     }
   } catch (err) {
     logger.error({ err }, 'drive_items.upload_source backfill failed');
+  }
+
+  // tasks.is_private — added to the schema after the initial snapshot.
+  // Missing on any DB that bootstrapped before the column was added.
+  try {
+    const c = await pool.connect();
+    try {
+      await c.query(
+        `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS is_private boolean NOT NULL DEFAULT false`,
+      );
+    } finally {
+      c.release();
+    }
+  } catch (err) {
+    logger.error({ err }, 'tasks.is_private backfill failed');
   }
 
   // Work-app merge: copy task_projects → project_projects, seed isPrivate,
