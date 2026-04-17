@@ -8,9 +8,30 @@ import { ROUTES } from '../config/routes';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import type { Account } from '@atlas-platform/shared';
+import { APP_VERSION } from '../config/version';
 
 // Mountain range — same wallpaper as setup page
 const BG_IMAGE = '/wallpapers/04-mountain-golden.jpg';
+
+function VersionBadge() {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 12,
+        right: 16,
+        fontSize: 'var(--font-size-xs)',
+        color: 'rgba(255,255,255,0.55)',
+        fontFamily: 'var(--font-family)',
+        letterSpacing: '0.02em',
+        userSelect: 'all',
+        zIndex: 1,
+      }}
+    >
+      v{APP_VERSION}
+    </div>
+  );
+}
 
 // Glass-morphism overrides for shared components on photo backgrounds
 const glassInputStyle = {
@@ -87,6 +108,7 @@ export function LoginPage() {
             </Button>
           </div>
         </div>
+        <VersionBadge />
       </div>
     );
   }
@@ -173,6 +195,7 @@ export function LoginPage() {
           </Link>
         </div>
       </div>
+      <VersionBadge />
     </div>
   );
 }
