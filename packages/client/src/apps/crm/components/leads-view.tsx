@@ -17,7 +17,6 @@ import { IconButton } from '../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { DataTable, type DataTableColumn, type SortState } from '../../../components/ui/data-table';
 import { formatDate } from '../../../lib/format';
-import { useToastStore } from '../../../stores/toast-store';
 
 const AVATAR_COLORS = ['#ef4444','#f97316','#f59e0b','#10b981','#06b6d4','#3b82f6','#6366f1','#8b5cf6','#ec4899','#14b8a6'];
 function getAvatarColor(name: string): string {
@@ -124,7 +123,6 @@ export function ConvertLeadModal({
 }: { open: boolean; onClose: () => void; lead: CrmLead | null }) {
   const { t } = useTranslation();
   const convertLead = useConvertLead();
-  const { addToast } = useToastStore();
   const { data: stagesData } = useStages();
   const stages = stagesData?.stages ?? [];
   const [dealTitle, setDealTitle] = useState('');
@@ -152,9 +150,6 @@ export function ConvertLeadModal({
       dealValue: Number(dealValue) || 0,
     }, {
       onSuccess: (data) => { setResult(data); },
-      onError: () => {
-        addToast({ type: 'error', message: t('crm.leads.convertError') });
-      },
     });
   };
 

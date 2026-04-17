@@ -304,7 +304,7 @@ export function useDrivePage() {
     setUploadProgress({ loaded: 0, total: 1 });
     uploadFiles.mutate({ files, parentId: currentParentId, onProgress: (progress) => setUploadProgress(progress) }, {
       onSuccess: (data) => { setUploadProgress(null); addToast({ type: 'success', message: t('drive.actions.filesUploaded', { count: data.items.length }) }); },
-      onError: () => { addToast({ type: 'error', message: t('drive.actions.uploadFailed') }); setUploadProgress(null); },
+      onError: () => { setUploadProgress(null); },
     });
   }, [currentParentId, uploadFiles, addToast]);
 
