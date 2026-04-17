@@ -183,3 +183,48 @@
   color: var(--color-text-secondary);
   font-family: var(--font-family);
 }
+
+/* ─── Employee detail split ─────────────────────────────────── */
+
+.hr-detail-split {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.hr-detail-split > .hr-detail-main {
+  flex: 6;
+  overflow: auto;
+  padding: var(--spacing-xl);
+}
+
+.hr-detail-split > .hr-detail-side {
+  flex: 4;
+  max-width: 360px;
+  border-left: 1px solid var(--color-border-primary);
+  overflow: auto;
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 1280px) {
+  .hr-detail-split {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .hr-detail-split > .hr-detail-main,
+  .hr-detail-split > .hr-detail-side {
+    flex: none;
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+  }
+
+  .hr-detail-split > .hr-detail-side {
+    border-left: none;
+    border-top: 1px solid var(--color-border-primary);
+  }
+}

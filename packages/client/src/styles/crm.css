@@ -13,7 +13,7 @@
 }
 
 .crm-kanban-column {
-  width: 280px;
+  width: 260px;
   flex-shrink: 0;
   background: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
@@ -560,6 +560,7 @@
   border-collapse: collapse;
   font-size: var(--font-size-sm);
   font-family: var(--font-family);
+  table-layout: fixed;
 }
 
 .crm-dashboard-table th {
@@ -578,6 +579,8 @@
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .crm-dashboard-table tr:last-child td {
@@ -754,15 +757,59 @@
   transform: translateX(14px);
 }
 
+/* ─── Detail split (lead/deal/contact) ─────────────────────── */
+
+.crm-detail-split {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.crm-detail-split > .crm-detail-main {
+  flex: 6;
+  overflow: auto;
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.crm-detail-split > .crm-detail-side {
+  flex: 4;
+  overflow: auto;
+  border-left: 1px solid var(--color-border-secondary);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
 /* ─── Responsive ─────────────────────────────────────────────── */
 
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   .crm-kpi-row {
     grid-template-columns: repeat(2, 1fr);
   }
 
   .crm-dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .crm-detail-split {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .crm-detail-split > .crm-detail-main,
+  .crm-detail-split > .crm-detail-side {
+    flex: none;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .crm-detail-split > .crm-detail-side {
+    border-left: none;
+    border-top: 1px solid var(--color-border-secondary);
   }
 }
 

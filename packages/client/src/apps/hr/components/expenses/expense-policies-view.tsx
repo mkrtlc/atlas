@@ -274,7 +274,7 @@ function PolicyDetail({ policyId, onDelete }: { policyId: string; onDelete: () =
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: 'var(--spacing-md)',
             marginBottom: 'var(--spacing-lg)',
           }}>

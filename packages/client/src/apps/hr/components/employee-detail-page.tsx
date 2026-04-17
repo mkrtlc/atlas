@@ -217,9 +217,9 @@ export function EmployeeDetailPage({
       </div>
 
       {/* ─── Content: two columns ─────────────────────────────── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="hr-detail-split">
         {/* Left: tab content */}
-        <div style={{ flex: 6, overflow: 'auto', padding: 'var(--spacing-xl)' }}>
+        <div className="hr-detail-main">
           {activeTab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}>
               <OverviewTab
@@ -271,11 +271,7 @@ export function EmployeeDetailPage({
         </div>
 
         {/* Right: identity card */}
-        <div style={{
-          flex: 4, maxWidth: 360, borderLeft: '1px solid var(--color-border-primary)',
-          overflow: 'auto', padding: 'var(--spacing-xl)',
-          display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)',
-        }}>
+        <div className="hr-detail-side">
           <IdentityCard
             employee={employee}
             department={department}

@@ -33,7 +33,7 @@ export function ForecastView() {
   if (isLoading || !forecast) return <ForecastSkeleton />;
 
   return (
-    <div style={{ padding: 'var(--spacing-xl)', maxWidth: 900 }}>
+    <div style={{ padding: 'var(--spacing-xl)', maxWidth: 1100 }}>
       {/* Summary cards */}
       <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xl)', flexWrap: 'wrap' }}>
         <StatCard

@@ -116,9 +116,9 @@ export function ContactDetailPage({ contactId, onBack, onNavigate, onCompanyClic
       </div>
 
       {/* Main content */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="crm-detail-split">
         {/* Left column — Contact info */}
-        <div style={{ flex: 6, overflow: 'auto', padding: 'var(--spacing-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+        <div className="crm-detail-main">
           <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', margin: 0 }}>
             {contact.name}
           </h2>
@@ -208,12 +208,7 @@ export function ContactDetailPage({ contactId, onBack, onNavigate, onCompanyClic
         </div>
 
         {/* Right column — Activity */}
-        <div style={{
-          flex: 4, overflow: 'auto',
-          borderLeft: '1px solid var(--color-border-secondary)',
-          padding: 'var(--spacing-lg)',
-          display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)',
-        }}>
+        <div className="crm-detail-side">
           <div style={{
             fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)',
             color: 'var(--color-text-tertiary)', textTransform: 'uppercase',
