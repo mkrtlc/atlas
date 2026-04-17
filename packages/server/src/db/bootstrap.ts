@@ -8,38 +8,44 @@ const MIGRATIONS_DIR = join(__dirname, 'migrations');
 
 export async function bootstrapDatabase() {
   const client = await pool.connect();
+  let dbAlreadyInitialized = false;
   try {
     const { rows } = await client.query(
       `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') AS exists`,
     );
-    if (rows[0]?.exists) {
-      logger.info('Database already initialized — skipping bootstrap');
-      return;
-    }
+    dbAlreadyInitialized = Boolean(rows[0]?.exists);
 
-    logger.info('Empty database detected — running initial schema');
+    if (dbAlreadyInitialized) {
+      logger.info('Database already initialized — skipping initial schema');
+    } else {
+      logger.info('Empty database detected — running initial schema');
 
-    const files = (await readdir(MIGRATIONS_DIR))
-      .filter((f) => f.endsWith('.sql'))
-      .sort();
+      const files = (await readdir(MIGRATIONS_DIR))
+        .filter((f) => f.endsWith('.sql'))
+        .sort();
 
-    for (const file of files) {
-      const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
-      const statements = sql
-        .split('--> statement-breakpoint')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      for (const stmt of statements) {
-        await client.query(stmt);
+      for (const file of files) {
+        const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
+        const statements = sql
+          .split('--> statement-breakpoint')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        for (const stmt of statements) {
+          await client.query(stmt);
+        }
+        logger.info({ file }, 'Applied migration');
       }
-      logger.info({ file }, 'Applied migration');
-    }
 
-    logger.info('Database bootstrap complete');
+      logger.info('Database bootstrap complete');
+    }
   } finally {
     client.release();
   }
 
+  // Always run idempotent legacy-data patches — they cover schema drift
+  // introduced after the initial snapshot (e.g. new columns added later).
+  // Safe on both fresh and existing DBs because every statement uses
+  // IF NOT EXISTS / IF EXISTS guards.
   await migrateLegacyData();
 }
 
