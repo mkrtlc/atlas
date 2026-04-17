@@ -14,6 +14,7 @@ import { IconButton } from '../../../components/ui/icon-button';
 import { Modal } from '../../../components/ui/modal';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { formatDate, formatCurrency } from '../../../lib/format';
 
 interface Props {
@@ -25,7 +26,7 @@ export function ProjectMembersTab({ projectId }: Props) {
   const { canCreate, canDelete } = useAppActions('work');
   const tenantId = useAuthStore((s) => s.tenantId);
   const { addToast } = useToastStore();
-  const { data: members, isLoading } = useProjectMembers(projectId);
+  const { data: members, isLoading, isError, refetch } = useProjectMembers(projectId);
   const { data: tenantUsers } = useTenantUsers(tenantId ?? undefined);
   const addMember = useAddProjectMember();
   const removeMember = useRemoveProjectMember();
@@ -65,6 +66,14 @@ export function ProjectMembersTab({ projectId }: Props) {
       },
     );
   };
+
+  if (isError) {
+    return (
+      <div style={{ padding: 'var(--spacing-2xl)' }}>
+        <QueryErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

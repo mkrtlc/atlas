@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/input';
 import { Modal } from '../../../components/ui/modal';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { FeatureEmptyState } from '../../../components/ui/feature-empty-state';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { formatDate, formatBytes } from '../../../lib/format';
 import { useToastStore } from '../../../stores/toast-store';
 import { useAppActions } from '../../../hooks/use-app-permissions';
@@ -48,7 +49,7 @@ function DrivePicker({ linkedIds, onSelect }: { linkedIds: Set<string>; onSelect
   const [search, setSearch] = useState('');
   const [path, setPath] = useState<Array<{ id: string | null; name: string }>>([{ id: null, name: 'Drive' }]);
   const currentFolderId = path[path.length - 1].id;
-  const { data, isLoading } = useDriveItems(currentFolderId);
+  const { data, isLoading, isError, refetch } = useDriveItems(currentFolderId);
 
   const items = (data?.items ?? []).filter((item) => {
     if (item.type !== 'folder' && linkedIds.has(item.id)) return false;
@@ -100,7 +101,9 @@ function DrivePicker({ linkedIds, onSelect }: { linkedIds: Set<string>; onSelect
           </span>
         ))}
       </div>
-      {isLoading ? (
+      {isError ? (
+        <QueryErrorState onRetry={() => refetch()} />
+      ) : isLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {[1, 2, 3].map((i) => <Skeleton key={i} height={36} borderRadius="var(--radius-sm)" />)}
         </div>
@@ -159,7 +162,7 @@ export function ProjectFilesTab({ projectId }: Props) {
   const navigate = useNavigate();
   const { canCreate, canDelete } = useAppActions('work');
   const { addToast } = useToastStore();
-  const { data: files, isLoading } = useProjectFiles(projectId);
+  const { data: files, isLoading, isError: filesError, refetch: refetchFiles } = useProjectFiles(projectId);
   const linkFile = useLinkProjectFile();
   const unlinkFile = useUnlinkProjectFile();
 
@@ -191,6 +194,14 @@ export function ProjectFilesTab({ projectId }: Props) {
       },
     );
   };
+
+  if (filesError) {
+    return (
+      <div style={{ padding: 'var(--spacing-2xl)' }}>
+        <QueryErrorState onRetry={() => refetchFiles()} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

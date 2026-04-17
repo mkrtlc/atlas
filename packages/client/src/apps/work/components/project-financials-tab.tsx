@@ -6,6 +6,7 @@ import { Badge } from '../../../components/ui/badge';
 import { StatCard } from '../../../components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '../../../components/ui/data-table';
 import { FeatureEmptyState } from '../../../components/ui/feature-empty-state';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { useProjectFinancials, type ProjectFinancialInvoice } from '../hooks';
 import { getInvoiceStatusVariant } from '@atlas-platform/shared';
 import type { InvoiceStatus } from '@atlas-platform/shared';
@@ -22,8 +23,9 @@ function fmt(n: number, currency: string) {
 export function ProjectFinancialsTab({ projectId, project }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, isLoading } = useProjectFinancials(projectId);
+  const { data, isLoading, isError, refetch } = useProjectFinancials(projectId);
 
+  if (isError) return <div style={{ padding: 'var(--spacing-md)' }}><QueryErrorState onRetry={() => refetch()} /></div>;
   if (isLoading || !data) return <div style={{ padding: 'var(--spacing-md)' }}>{t('work.loading')}</div>;
   const { summary, invoices } = data;
 

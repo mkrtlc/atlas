@@ -1,6 +1,13 @@
 import { db } from '../../../config/database';
-import { tasks, users } from '../../../db/schema';
+import { tasks, users, tenantMembers } from '../../../db/schema';
 import { eq, and, asc, desc, sql, isNull, isNotNull, or } from 'drizzle-orm';
+
+async function assertAssigneeInTenant(assigneeId: string, tenantId: string) {
+  const [member] = await db.select({ userId: tenantMembers.userId }).from(tenantMembers)
+    .where(and(eq(tenantMembers.userId, assigneeId), eq(tenantMembers.tenantId, tenantId)))
+    .limit(1);
+  if (!member) throw new Error('Assignee is not a member of this tenant');
+}
 import { logger } from '../../../utils/logger';
 import { readableTasksFilter } from '../utils/readable-tasks';
 import type { CreateTaskInput, UpdateTaskInput, RecurrenceRule } from '@atlas-platform/shared';
@@ -135,6 +142,10 @@ export async function getTask(userId: string, taskId: string) {
 export async function createTask(userId: string, tenantId: string, input: Omit<CreateTaskInput, 'isPrivate'> & { sourceEmailId?: string; sourceEmailSubject?: string }) {
   const now = new Date();
 
+  if (input.assigneeId) {
+    await assertAssigneeInTenant(input.assigneeId, tenantId);
+  }
+
   const [maxSort] = await db
     .select({ max: sql<number>`COALESCE(MAX(${tasks.sortOrder}), -1)` })
     .from(tasks)
@@ -216,10 +227,7 @@ export async function updateTask(userId: string, taskId: string, input: Omit<Upd
   if (input.recurrenceRule !== undefined) updates.recurrenceRule = input.recurrenceRule;
   if (input.assigneeId !== undefined) {
     if (input.assigneeId) {
-      const [assignee] = await db.select({ id: users.id }).from(users)
-        .where(eq(users.id, input.assigneeId))
-        .limit(1);
-      if (!assignee) { throw new Error('Assignee user not found'); }
+      await assertAssigneeInTenant(input.assigneeId, existing.tenantId);
     }
     updates.assigneeId = input.assigneeId;
   }

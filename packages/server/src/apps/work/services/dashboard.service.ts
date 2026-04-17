@@ -121,7 +121,7 @@ export async function getDashboardData(userId: string, tenantId: string) {
       updatedAt: invoices.updatedAt,
     })
       .from(invoices)
-      .leftJoin(crmCompanies, eq(invoices.companyId, crmCompanies.id))
+      .leftJoin(crmCompanies, and(eq(invoices.companyId, crmCompanies.id), eq(crmCompanies.tenantId, tenantId)))
       .where(and(
         eq(invoices.tenantId, tenantId),
         eq(invoices.isArchived, false),

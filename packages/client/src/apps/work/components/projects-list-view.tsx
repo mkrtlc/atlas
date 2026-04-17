@@ -13,6 +13,7 @@ type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error';
 import { ContentArea } from '../../../components/ui/content-area';
 import { DataTable, type DataTableColumn } from '../../../components/ui/data-table';
 import { FeatureEmptyState } from '../../../components/ui/feature-empty-state';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { useProjects, useCreateProject, type WorkProject } from '../hooks';
 import { useCompanies } from '../../crm/hooks';
 import { useAppActions } from '../../../hooks/use-app-permissions';
@@ -116,7 +117,7 @@ function CreateProjectModal({ open, onOpenChange }: { open: boolean; onOpenChang
 export function ProjectsListView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, isLoading } = useProjects();
+  const { data, isLoading, isError, refetch } = useProjects();
   const projects = data?.projects ?? [];
   const { canCreate } = useAppActions('work');
   const [createOpen, setCreateOpen] = useState(false);
@@ -184,7 +185,9 @@ export function ProjectsListView() {
       ) : null}
     >
       <CreateProjectModal open={createOpen} onOpenChange={setCreateOpen} />
-      {isLoading ? (
+      {isError ? (
+        <QueryErrorState onRetry={() => refetch()} />
+      ) : isLoading ? (
         <div style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
           {t('work.loading')}
         </div>

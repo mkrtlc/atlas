@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ContentArea } from '../../../components/ui/content-area';
 import { Tabs } from '../../../components/ui/tabs';
 import { Select } from '../../../components/ui/select';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { useWorkProject, useProjects } from '../hooks';
 import type { WorkProject } from '../hooks';
 import { ProjectOverviewTab } from './project-overview-tab';
@@ -24,11 +25,19 @@ export function ProjectDetailPage({ projectId }: Props) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = (searchParams.get('tab') as TabId | null) ?? 'tasks';
-  const { data: project, isLoading } = useWorkProject(projectId);
+  const { data: project, isLoading, isError, refetch } = useWorkProject(projectId);
   const { data: projectsData } = useProjects();
   const allProjects = projectsData?.projects ?? [];
 
   const tabs = TAB_IDS.map((id) => ({ id, label: t(`work.tabs.${id}`) }));
+
+  if (isError) {
+    return (
+      <ContentArea title="">
+        <QueryErrorState onRetry={() => refetch()} />
+      </ContentArea>
+    );
+  }
 
   if (isLoading) {
     return (

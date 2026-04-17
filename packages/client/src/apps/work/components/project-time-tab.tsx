@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { formatDate, formatNumber } from '../../../lib/format';
 import { useToastStore } from '../../../stores/toast-store';
 import { useAppActions } from '../../../hooks/use-app-permissions';
@@ -27,7 +28,7 @@ export function ProjectTimeTab({ projectId }: Props) {
   const { canCreate, canDelete, canEdit } = useAppActions('work');
   const currentUserId = useAuthStore((s) => s.account?.userId ?? null);
   const { addToast } = useToastStore();
-  const { data, isLoading } = useTimeEntries({ projectId });
+  const { data, isLoading, isError, refetch } = useTimeEntries({ projectId });
   const createTimeEntry = useCreateTimeEntry();
   const updateTimeEntry = useUpdateTimeEntry();
   const deleteTimeEntry = useDeleteTimeEntry();
@@ -91,6 +92,14 @@ export function ProjectTimeTab({ projectId }: Props) {
       },
     });
   };
+
+  if (isError) {
+    return (
+      <div style={{ padding: 'var(--spacing-2xl)' }}>
+        <QueryErrorState onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
 import { withConcurrencyCheck } from '../../middleware/concurrency-check';
-import { tasks, projectProjects } from '../../db/schema';
+import { tasks, projectProjects, projectTimeEntries } from '../../db/schema';
 import * as controller from './controller';
 
 const router = Router();
@@ -57,7 +57,7 @@ router.post('/templates/:templateId/use', controller.createTaskFromTemplate);
 // Flat time entries (cross-project)
 router.get('/time-entries', controller.listTimeEntries);
 router.post('/time-entries', controller.createTimeEntry);
-router.patch('/time-entries/:id', controller.updateTimeEntry);
+router.patch('/time-entries/:id', withConcurrencyCheck(projectTimeEntries), controller.updateTimeEntry);
 router.delete('/time-entries/:id', controller.deleteTimeEntry);
 
 // Time billing (preview + populate into invoice)
@@ -77,12 +77,13 @@ router.delete('/projects/:id', controller.deleteProject);
 // Project members
 router.get('/projects/:id/members', controller.listProjectMembers);
 router.post('/projects/:id/members', controller.addProjectMember);
+router.patch('/projects/:id/members/:memberId/rate', controller.updateProjectMemberRate);
 router.delete('/projects/:id/members/:memberId', controller.removeProjectMember);
 
 // Project time entries
 router.get('/projects/:id/time-entries', controller.listProjectTimeEntries);
 router.post('/projects/:id/time-entries', controller.createProjectTimeEntry);
-router.patch('/projects/:id/time-entries/:entryId', controller.updateProjectTimeEntry);
+router.patch('/projects/:id/time-entries/:entryId', withConcurrencyCheck(projectTimeEntries), controller.updateProjectTimeEntry);
 router.delete('/projects/:id/time-entries/:entryId', controller.deleteProjectTimeEntry);
 
 // Project files and financials

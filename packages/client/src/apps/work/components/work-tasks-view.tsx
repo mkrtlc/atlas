@@ -22,6 +22,7 @@ import { useTenantUsers } from '../../../hooks/use-platform';
 import { Button } from '../../../components/ui/button';
 import { IconButton } from '../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { getTodayStr, isInputFocused } from '../lib/helpers';
 import { TaskItem } from './task-item';
 import { CalendarView } from './calendar-view';
@@ -96,7 +97,7 @@ export function WorkTasksView({ view, title }: Props) {
     return base;
   }, [view, currentUserId]);
 
-  const { data: tasksData, isLoading } = useTaskList(taskFilters);
+  const { data: tasksData, isLoading, isError, refetch } = useTaskList(taskFilters);
   const allTasks = tasksData?.tasks ?? [];
 
   const completedFilters = useMemo(() => {
@@ -313,6 +314,16 @@ export function WorkTasksView({ view, title }: Props) {
 
   const _ = counts; // suppress unused warning — counts used for future badge display
   void queryClient;
+
+  if (isError) {
+    return (
+      <div className="tasks-page">
+        <ContentArea title={title}>
+          <QueryErrorState onRetry={() => refetch()} />
+        </ContentArea>
+      </div>
+    );
+  }
 
   return (
     <div className="tasks-page">

@@ -5,6 +5,7 @@ import { Skeleton } from '../../../components/ui/skeleton';
 import { Badge } from '../../../components/ui/badge';
 import { ContentArea } from '../../../components/ui/content-area';
 import { FeatureEmptyState } from '../../../components/ui/feature-empty-state';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import { StatusDot } from '../../../components/ui/status-dot';
 import { useProjects, useUpdateProjectStatus, type WorkProject } from '../hooks';
 import { formatCurrency } from '../../../lib/format';
@@ -28,7 +29,7 @@ const COLUMNS: BoardColumn[] = [
 export function ProjectsBoardView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, isLoading } = useProjects();
+  const { data, isLoading, isError, refetch } = useProjects();
   const updateStatus = useUpdateProjectStatus();
 
   const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null);
@@ -102,6 +103,14 @@ export function ProjectsBoardView() {
     }
     return byStatus;
   }, [projects]);
+
+  if (isError) {
+    return (
+      <ContentArea title={t('work.board.title')}>
+        <QueryErrorState onRetry={() => refetch()} />
+      </ContentArea>
+    );
+  }
 
   if (isLoading) {
     return (
