@@ -9,13 +9,14 @@ import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { Avatar } from '../../../../components/ui/avatar';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { Input } from '../../../../components/ui/input';
 import { formatDate, formatCurrency } from '../../../../lib/format';
 import { useToastStore } from '../../../../stores/toast-store';
 
 export function ExpenseApprovalsView() {
   const { t } = useTranslation();
-  const { data: pending, isLoading } = usePendingExpenses();
+  const { data: pending, isLoading, isError, refetch } = usePendingExpenses();
   const approveExpense = useApproveExpense();
   const refuseExpense = useRefuseExpense();
   const addToast = useToastStore((s) => s.addToast);
@@ -52,6 +53,7 @@ export function ExpenseApprovalsView() {
     setRefuseComment('');
   };
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) {
     return (
       <div style={{ padding: 'var(--spacing-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>

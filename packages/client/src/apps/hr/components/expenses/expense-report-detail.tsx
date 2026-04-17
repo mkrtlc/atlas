@@ -16,6 +16,7 @@ import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { IconButton } from '../../../../components/ui/icon-button';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
 import { Modal } from '../../../../components/ui/modal';
@@ -32,7 +33,7 @@ const STATUS_STEPS = ['draft', 'submitted', 'approved', 'paid'] as const;
 
 export function ExpenseReportDetail({ reportId, onBack }: ExpenseReportDetailProps) {
   const { t } = useTranslation();
-  const { data: report, isLoading } = useExpenseReport(reportId);
+  const { data: report, isLoading, isError, refetch } = useExpenseReport(reportId);
   const submitReport = useSubmitExpenseReport();
   const deleteReport = useDeleteExpenseReport();
   const approveReport = useApproveExpenseReport();
@@ -113,6 +114,7 @@ export function ExpenseReportDetail({ reportId, onBack }: ExpenseReportDetailPro
     );
   };
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading || !report) {
     return (
       <div style={{ padding: 'var(--spacing-xl)' }}>

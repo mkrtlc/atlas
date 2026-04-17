@@ -13,6 +13,7 @@ import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { Badge } from '../../../../components/ui/badge';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
 import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
@@ -494,7 +495,7 @@ function CreatePolicyForm({
 
 export function LeavePoliciesView() {
   const { t } = useTranslation();
-  const { data: policies, isLoading } = useLeavePolicies();
+  const { data: policies, isLoading, isError, refetch } = useLeavePolicies();
   const { data: leaveTypes } = useLeaveTypes();
   const seedPolicies = useSeedLeavePolicies();
   const tenantRole = useAuthStore((s) => s.tenantRole);
@@ -510,6 +511,7 @@ export function LeavePoliciesView() {
     }
   }, [isAdmin, isLoading, policies, seedPolicies]);
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) return <div style={{ padding: 'var(--spacing-xl)' }}><Skeleton height={200} /></div>;
 
   const activeLeaveTypes = leaveTypes?.filter(lt => lt.isActive) ?? [];

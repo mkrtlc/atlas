@@ -6,6 +6,7 @@ import { useMyExpenses } from '../../hooks';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { formatDate, formatCurrency } from '../../../../lib/format';
@@ -28,7 +29,7 @@ const STATUS_TABS: Array<{ value: ExpenseStatus | 'all'; key: string }> = [
 
 export function MyExpensesView({ onSelect, onAdd, searchQuery, selectedId }: MyExpensesViewProps) {
   const { t } = useTranslation();
-  const { data: expenses, isLoading } = useMyExpenses();
+  const { data: expenses, isLoading, isError, refetch } = useMyExpenses();
   const [statusFilter, setStatusFilter] = useState<ExpenseStatus | 'all'>('all');
 
   const filtered = useMemo(() => {
@@ -52,6 +53,7 @@ export function MyExpensesView({ onSelect, onAdd, searchQuery, selectedId }: MyE
     return result;
   }, [expenses, statusFilter, searchQuery]);
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) {
     return (
       <div style={{ padding: 'var(--spacing-xl)' }}>

@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Skeleton } from '../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../components/ui/query-error-state';
 import {
   useLifecycleTimeline, useCreateLifecycleEvent,
   type HrDepartment,
@@ -16,7 +17,7 @@ import { formatDate } from '../../../lib/format';
 
 export function LifecycleTimeline({ employeeId, departments }: { employeeId: string; departments: HrDepartment[] }) {
   const { t } = useTranslation();
-  const { data: events, isLoading } = useLifecycleTimeline(employeeId);
+  const { data: events, isLoading, isError, refetch } = useLifecycleTimeline(employeeId);
   const createEvent = useCreateLifecycleEvent();
   const [showAdd, setShowAdd] = useState(false);
   const [evtType, setEvtType] = useState('other');
@@ -36,6 +37,7 @@ export function LifecycleTimeline({ employeeId, departments }: { employeeId: str
 
   const getDeptName = (id: string | null) => departments.find(d => d.id === id)?.name || '-';
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) return <Skeleton height={100} />;
 
   return (

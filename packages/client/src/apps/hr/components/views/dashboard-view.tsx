@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, CalendarDays, Plus, Clock, Cake, Receipt } from 'lucide-react';
 import { useHrDashboard } from '../../hooks';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { StatCard } from '../../../../components/ui/stat-card';
 import { Avatar } from '../../../../components/ui/avatar';
 import { formatDate } from '../../../../lib/format';
@@ -12,13 +13,15 @@ import { QuickActions } from '../../../../components/shared/quick-actions';
 export function DashboardView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, isLoading } = useHrDashboard();
+  const { data, isLoading, isError, refetch } = useHrDashboard();
 
   const quickActions = [
     { label: t('hr.quickActions.newEmployee'), icon: <Plus size={13} />, onClick: () => navigate('/hr?view=employees&action=create') },
     { label: t('hr.quickActions.requestTimeOff'), icon: <Clock size={13} />, onClick: () => navigate('/hr?view=time-off&action=create') },
     { label: t('hr.quickActions.newExpense'), icon: <Receipt size={13} />, onClick: () => navigate('/hr?view=expenses&action=create') },
   ];
+
+  if (isError) return <QueryErrorState onRetry={refetch} />;
 
   if (isLoading || !data) {
     return (

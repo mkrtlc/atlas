@@ -11,6 +11,7 @@ import { Badge } from '../../../../components/ui/badge';
 import { Avatar } from '../../../../components/ui/avatar';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { Input } from '../../../../components/ui/input';
 import { formatDate } from '../../../../lib/format';
 import { useToastStore } from '../../../../stores/toast-store';
@@ -18,7 +19,7 @@ import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state
 
 export function ApprovalsView() {
   const { t } = useTranslation();
-  const { data: approvals, isLoading } = usePendingApprovals();
+  const { data: approvals, isLoading, isError, refetch } = usePendingApprovals();
   const approveApp = useApproveLeaveApplication();
   const rejectApp = useRejectLeaveApplication();
   const addToast = useToastStore((s) => s.addToast);
@@ -56,6 +57,8 @@ export function ApprovalsView() {
     setRejectingId(null);
     setRejectComment('');
   };
+
+  if (isError) return <QueryErrorState onRetry={refetch} />;
 
   if (isLoading) {
     return (

@@ -13,6 +13,7 @@ import { Select } from '../../../../components/ui/select';
 import { Badge } from '../../../../components/ui/badge';
 import { IconButton } from '../../../../components/ui/icon-button';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { Modal } from '../../../../components/ui/modal';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
@@ -22,7 +23,7 @@ import { useAuthStore } from '../../../../stores/auth-store';
 
 export function MyLeaveView({ employees }: { employees: HrEmployee[] }) {
   const { t } = useTranslation();
-  const { data: applications, isLoading } = useLeaveApplications();
+  const { data: applications, isLoading, isError, refetch } = useLeaveApplications();
   const { data: leaveTypes } = useLeaveTypes();
   const createApp = useCreateLeaveApplication();
   const submitApp = useSubmitLeaveApplication();
@@ -81,6 +82,7 @@ export function MyLeaveView({ employees }: { employees: HrEmployee[] }) {
     return <Badge variant={variants[status] || 'default'}>{t(`hr.leaveAppStatus.${status}`)}</Badge>;
   };
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) return <div style={{ padding: 'var(--spacing-xl)' }}><Skeleton height={200} /></div>;
 
   return (

@@ -6,6 +6,7 @@ import { useExpenses, useBulkPayExpenses } from '../../hooks';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { Input } from '../../../../components/ui/input';
 import { useToastStore } from '../../../../stores/toast-store';
@@ -28,7 +29,7 @@ const STATUS_OPTIONS: Array<{ value: ExpenseStatus | 'all'; key: string }> = [
 export function AllExpensesView({ onSelect, selectedId }: AllExpensesViewProps) {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
-  const { data: expenses, isLoading } = useExpenses();
+  const { data: expenses, isLoading, isError, refetch } = useExpenses();
   const bulkPay = useBulkPayExpenses();
 
   const [statusFilter, setStatusFilter] = useState<ExpenseStatus | 'all'>('all');
@@ -89,6 +90,7 @@ export function AllExpensesView({ onSelect, selectedId }: AllExpensesViewProps) 
     });
   };
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) {
     return (
       <div style={{ padding: 'var(--spacing-xl)' }}>

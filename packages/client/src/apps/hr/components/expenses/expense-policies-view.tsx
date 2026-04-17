@@ -11,6 +11,7 @@ import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { Badge } from '../../../../components/ui/badge';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { IconButton } from '../../../../components/ui/icon-button';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
 import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
@@ -20,10 +21,11 @@ import { formatCurrency } from '../../../../lib/format';
 
 export function ExpensePoliciesView() {
   const { t } = useTranslation();
-  const { data: policies, isLoading } = useExpensePolicies();
+  const { data: policies, isLoading, isError, refetch } = useExpensePolicies();
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) {
     return (
       <div style={{ padding: 'var(--spacing-xl)' }}>

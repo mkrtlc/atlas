@@ -14,6 +14,7 @@ import { Badge } from '../../../../components/ui/badge';
 import { IconButton } from '../../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
 import { formatCurrency } from '../../../../lib/format';
@@ -21,7 +22,7 @@ import { formatCurrency } from '../../../../lib/format';
 export function ExpenseCategoriesView() {
   const { t } = useTranslation();
   const { canDelete } = useAppActions('hr');
-  const { data: categories, isLoading } = useExpenseCategories();
+  const { data: categories, isLoading, isError, refetch } = useExpenseCategories();
   const createCategory = useCreateExpenseCategory();
   const updateCategory = useUpdateExpenseCategory();
   const deleteCategory = useDeleteExpenseCategory();
@@ -65,6 +66,7 @@ export function ExpenseCategoriesView() {
     });
   };
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) {
     return (
       <div style={{ padding: 'var(--spacing-xl)' }}>

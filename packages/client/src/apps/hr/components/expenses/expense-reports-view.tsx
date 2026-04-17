@@ -6,6 +6,7 @@ import { useMyExpenseReports, useCreateExpenseReport } from '../../hooks';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { Input } from '../../../../components/ui/input';
 import { Modal } from '../../../../components/ui/modal';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
@@ -17,7 +18,7 @@ interface ExpenseReportsViewProps {
 
 export function ExpenseReportsView({ onSelectReport }: ExpenseReportsViewProps) {
   const { t } = useTranslation();
-  const { data: reports, isLoading } = useMyExpenseReports();
+  const { data: reports, isLoading, isError, refetch } = useMyExpenseReports();
   const createReport = useCreateExpenseReport();
 
   const [showCreate, setShowCreate] = useState(false);
@@ -34,6 +35,7 @@ export function ExpenseReportsView({ onSelectReport }: ExpenseReportsViewProps) 
     });
   };
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) {
     return (
       <div style={{ padding: 'var(--spacing-xl)' }}>

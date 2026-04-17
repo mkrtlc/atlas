@@ -10,12 +10,13 @@ import { Select } from '../../../../components/ui/select';
 import { useAppActions } from '../../../../hooks/use-app-permissions';
 import { Avatar } from '../../../../components/ui/avatar';
 import { StatusDot } from '../../../../components/ui/status-dot';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 
 export function AttendanceView({ employees }: { employees: HrEmployee[] }) {
   const { t } = useTranslation();
   const today = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(today);
-  const { data: records, isLoading } = useAttendanceList({ date: selectedDate });
+  const { data: records, isLoading, isError, refetch } = useAttendanceList({ date: selectedDate });
   const markAttendance = useMarkAttendance();
   const bulkMark = useBulkMarkAttendance();
   const { canEdit } = useAppActions('hr');
@@ -57,6 +58,8 @@ export function AttendanceView({ employees }: { employees: HrEmployee[] }) {
     present: 'var(--color-success)', absent: 'var(--color-error)',
     'half-day': 'var(--color-warning)', remote: 'var(--color-accent-primary)', 'on-leave': 'var(--color-warning)',
   };
+
+  if (isError) return <QueryErrorState onRetry={refetch} />;
 
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-xl)' }}>

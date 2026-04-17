@@ -10,13 +10,14 @@ import { Input } from '../../../../components/ui/input';
 import { Badge } from '../../../../components/ui/badge';
 import { IconButton } from '../../../../components/ui/icon-button';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { StatusDot } from '../../../../components/ui/status-dot';
 import { FeatureEmptyState } from '../../../../components/ui/feature-empty-state';
 
 export function LeaveTypesView() {
   const { t } = useTranslation();
   const { canDelete } = useAppActions('hr');
-  const { data: leaveTypes, isLoading } = useLeaveTypes(true);
+  const { data: leaveTypes, isLoading, isError, refetch } = useLeaveTypes(true);
   const createLeaveType = useCreateLeaveType();
   const updateLeaveType = useUpdateLeaveType();
   const deleteLeaveType = useDeleteLeaveType();
@@ -47,6 +48,7 @@ export function LeaveTypesView() {
     }, { onSuccess: () => { setShowCreate(false); setName(''); setSlug(''); setDays(0); setCarryForward(0); } });
   };
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading) return <div style={{ padding: 'var(--spacing-xl)' }}><Skeleton height={200} /></div>;
 
   return (

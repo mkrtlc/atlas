@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { DollarSign, Clock, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useExpenseDashboard } from '../../hooks';
 import { Skeleton } from '../../../../components/ui/skeleton';
+import { QueryErrorState } from '../../../../components/ui/query-error-state';
 import { StatCard } from '../../../../components/ui/stat-card';
 import { Avatar } from '../../../../components/ui/avatar';
 import { Badge } from '../../../../components/ui/badge';
@@ -9,8 +10,9 @@ import { formatCurrency, formatDate } from '../../../../lib/format';
 
 export function ExpenseDashboardSection() {
   const { t } = useTranslation();
-  const { data, isLoading } = useExpenseDashboard();
+  const { data, isLoading, isError, refetch } = useExpenseDashboard();
 
+  if (isError) return <QueryErrorState onRetry={refetch} />;
   if (isLoading || !data) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
