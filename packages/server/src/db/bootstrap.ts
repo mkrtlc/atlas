@@ -111,6 +111,38 @@ async function migrateLegacyData() {
     logger.error({ err }, 'crm_proposal_revisions create failed');
   }
 
+  // tenants.storage_quota_bytes — added to the schema after the initial
+  // migration snapshot. Bootstrap only runs the snapshot on empty DBs, so
+  // every existing deployment is missing this column. Idempotent backfill:
+  // add the column with the schema default, then tighten to NOT NULL.
+  try {
+    const c = await pool.connect();
+    try {
+      await c.query(
+        `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS storage_quota_bytes bigint NOT NULL DEFAULT 10737418240`,
+      );
+    } finally {
+      c.release();
+    }
+  } catch (err) {
+    logger.error({ err }, 'tenants.storage_quota_bytes backfill failed');
+  }
+
+  // drive_items.upload_source — added to the schema after the initial
+  // migration snapshot; nullable so no default needed.
+  try {
+    const c = await pool.connect();
+    try {
+      await c.query(
+        `ALTER TABLE drive_items ADD COLUMN IF NOT EXISTS upload_source jsonb`,
+      );
+    } finally {
+      c.release();
+    }
+  } catch (err) {
+    logger.error({ err }, 'drive_items.upload_source backfill failed');
+  }
+
   // Work-app merge: copy task_projects → project_projects, seed isPrivate,
   // collapse tenant_apps. Guard: only run while task_projects still exists.
   try {
