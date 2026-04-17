@@ -5,7 +5,17 @@ import * as hrController from './controller';
 import { authMiddleware } from '../../middleware/auth';
 import { requireAppPermission } from '../../middleware/require-app-permission';
 import { withConcurrencyCheck } from '../../middleware/concurrency-check';
-import { employees } from '../../db/schema';
+import {
+  employees,
+  departments,
+  hrLeaveTypes,
+  hrLeavePolicies,
+  hrLeaveApplications,
+  hrExpenseCategories,
+  hrExpensePolicies,
+  hrExpenses,
+  hrExpenseReports,
+} from '../../db/schema';
 import { isTenantAdmin } from '@atlas-platform/shared';
 
 function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
@@ -45,7 +55,7 @@ router.get('/dashboard', hrController.getDashboard);
 // Leave Types (before /:id to avoid route conflicts)
 router.get('/leave-types', hrController.listLeaveTypes);
 router.post('/leave-types', hrController.createLeaveType);
-router.patch('/leave-types/:id', hrController.updateLeaveType);
+router.patch('/leave-types/:id', withConcurrencyCheck(hrLeaveTypes), hrController.updateLeaveType);
 router.delete('/leave-types/:id', hrController.deleteLeaveType);
 
 // Seed leave defaults (before /:id)
@@ -55,7 +65,7 @@ router.post('/leave-policies/seed', requireSeedAdmin, hrController.seedLeavePoli
 // Leave Policies (before /:id)
 router.get('/leave-policies', hrController.listLeavePolicies);
 router.post('/leave-policies', hrController.createLeavePolicy);
-router.patch('/leave-policies/:id', hrController.updateLeavePolicy);
+router.patch('/leave-policies/:id', withConcurrencyCheck(hrLeavePolicies), hrController.updateLeavePolicy);
 router.post('/leave-policies/:id/resync', hrController.resyncPolicyBalances);
 router.delete('/leave-policies/:id', hrController.deleteLeavePolicy);
 
@@ -79,7 +89,7 @@ router.get('/working-days', hrController.getWorkingDays);
 router.get('/leave-applications', hrController.listLeaveApplications);
 router.post('/leave-applications', hrController.createLeaveApplication);
 router.get('/leave-applications/pending', hrController.getPendingApprovals);
-router.patch('/leave-applications/:id', hrController.updateLeaveApplication);
+router.patch('/leave-applications/:id', withConcurrencyCheck(hrLeaveApplications), hrController.updateLeaveApplication);
 router.post('/leave-applications/:id/submit', hrController.submitLeaveApplication);
 router.post('/leave-applications/:id/approve', hrController.approveLeaveApplication);
 router.post('/leave-applications/:id/reject', hrController.rejectLeaveApplication);
@@ -102,7 +112,7 @@ router.delete('/lifecycle/:id', hrController.deleteLifecycleEvent);
 // Departments (before /:id to avoid route conflicts)
 router.get('/departments/list', hrController.listDepartments);
 router.post('/departments', hrController.createDepartment);
-router.patch('/departments/:id', hrController.updateDepartment);
+router.patch('/departments/:id', withConcurrencyCheck(departments), hrController.updateDepartment);
 router.delete('/departments/:id', hrController.deleteDepartment);
 
 // Time Off (before /:id to avoid route conflicts)
@@ -132,14 +142,14 @@ router.get('/expense-categories/list', hrController.listExpenseCategories);
 router.post('/expense-categories', hrController.createExpenseCategory);
 router.post('/expense-categories/seed', requireSeedAdmin, hrController.seedExpenseCategories);
 router.post('/expense-categories/reorder', hrController.reorderExpenseCategories);
-router.patch('/expense-categories/:id', hrController.updateExpenseCategory);
+router.patch('/expense-categories/:id', withConcurrencyCheck(hrExpenseCategories), hrController.updateExpenseCategory);
 router.delete('/expense-categories/:id', hrController.deleteExpenseCategory);
 
 // ─── Expense Policies ───────────────────────────────────────────
 router.get('/expense-policies/list', hrController.listExpensePolicies);
 router.post('/expense-policies', hrController.createExpensePolicy);
 router.get('/expense-policies/:id', hrController.getExpensePolicy);
-router.patch('/expense-policies/:id', hrController.updateExpensePolicy);
+router.patch('/expense-policies/:id', withConcurrencyCheck(hrExpensePolicies), hrController.updateExpensePolicy);
 router.delete('/expense-policies/:id', hrController.deleteExpensePolicy);
 router.post('/expense-policies/:id/assign', hrController.assignPolicy);
 router.delete('/expense-policies/:id/assign/:assignmentId', hrController.removeAssignment);
@@ -153,7 +163,7 @@ router.get('/expenses/dashboard', hrController.getExpenseDashboard);
 router.post('/expenses', hrController.createExpense);
 router.post('/expenses/bulk-pay', hrController.bulkPayExpenses);
 router.get('/expenses/:id', hrController.getExpense);
-router.patch('/expenses/:id', hrController.updateExpense);
+router.patch('/expenses/:id', withConcurrencyCheck(hrExpenses), hrController.updateExpense);
 router.delete('/expenses/:id', hrController.deleteExpense);
 router.post('/expenses/:id/submit', hrController.submitExpense);
 router.post('/expenses/:id/recall', hrController.recallExpense);
@@ -165,7 +175,7 @@ router.get('/expense-reports/list', hrController.listExpenseReports);
 router.get('/expense-reports/my', hrController.listMyExpenseReports);
 router.post('/expense-reports', hrController.createExpenseReport);
 router.get('/expense-reports/:id', hrController.getExpenseReport);
-router.patch('/expense-reports/:id', hrController.updateExpenseReport);
+router.patch('/expense-reports/:id', withConcurrencyCheck(hrExpenseReports), hrController.updateExpenseReport);
 router.delete('/expense-reports/:id', hrController.deleteExpenseReport);
 router.post('/expense-reports/:id/submit', hrController.submitExpenseReport);
 router.post('/expense-reports/:id/approve', hrController.approveExpenseReport);

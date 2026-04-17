@@ -243,8 +243,10 @@ export function useCreateDepartment() {
 export function useUpdateDepartment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: Partial<HrDepartment> & { id: string }) => {
-      const { data } = await api.patch(`/hr/departments/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: Partial<HrDepartment> & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/departments/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrDepartment;
     },
     onSuccess: () => {
@@ -507,6 +509,7 @@ export interface HrLeaveType {
   isPaid: boolean;
   isActive: boolean;
   sortOrder: number;
+  updatedAt?: string;
 }
 
 export function useLeaveTypes(includeInactive = false) {
@@ -535,8 +538,10 @@ export function useCreateLeaveType() {
 export function useUpdateLeaveType() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: Partial<HrLeaveType> & { id: string }) => {
-      const { data } = await api.patch(`/hr/leave-types/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: Partial<HrLeaveType> & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/leave-types/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrLeaveType;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.hr.all }); },
@@ -597,8 +602,10 @@ export function useCreateLeavePolicy() {
 export function useUpdateLeavePolicy() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: Partial<HrLeavePolicy> & { id: string }) => {
-      const { data } = await api.patch(`/hr/leave-policies/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: Partial<HrLeavePolicy> & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/leave-policies/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrLeavePolicy;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.hr.all }); },
@@ -1062,8 +1069,10 @@ export function useCreateExpenseCategory() {
 export function useUpdateExpenseCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: Partial<HrExpenseCategory> & { id: string }) => {
-      const { data } = await api.patch(`/hr/expense-categories/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: Partial<HrExpenseCategory> & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/expense-categories/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrExpenseCategory;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.hr.expenseCategories.all }); },
@@ -1139,8 +1148,10 @@ export function useCreateExpensePolicy() {
 export function useUpdateExpensePolicy() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: Partial<HrExpensePolicy> & { id: string }) => {
-      const { data } = await api.patch(`/hr/expense-policies/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: Partial<HrExpensePolicy> & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/expense-policies/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrExpensePolicy;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.hr.expensePolicies.all }); },
@@ -1240,8 +1251,10 @@ export function useCreateExpense() {
 export function useUpdateExpense() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateExpenseInput & { id: string }) => {
-      const { data } = await api.patch(`/hr/expenses/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: UpdateExpenseInput & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/expenses/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrExpense;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.hr.expenses.all }); },
@@ -1396,8 +1409,10 @@ export function useCreateExpenseReport() {
 export function useUpdateExpenseReport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: Partial<HrExpenseReport> & { id: string }) => {
-      const { data } = await api.patch(`/hr/expense-reports/${id}`, input);
+    mutationFn: async ({ id, updatedAt, ...input }: Partial<HrExpenseReport> & { id: string; updatedAt?: string }) => {
+      const { data } = await api.patch(`/hr/expense-reports/${id}`, input, {
+        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
+      });
       return data.data as HrExpenseReport;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.hr.expenseReports.all }); },

@@ -134,7 +134,7 @@ export function LeaveTypesView() {
                   icon={lt.isActive ? <XCircle size={14} /> : <Check size={14} />}
                   label={lt.isActive ? t('hr.leaveTypes.deactivate') : t('hr.leaveTypes.activate')}
                   size={26}
-                  onClick={() => updateLeaveType.mutate({ id: lt.id, isActive: !lt.isActive })}
+                  onClick={() => updateLeaveType.mutate({ id: lt.id, updatedAt: lt.updatedAt, isActive: !lt.isActive })}
                 />
                 {canDelete && <IconButton icon={<Trash2 size={14} />} label={t('common.delete')} size={26} destructive onClick={() => deleteLeaveType.mutate(lt.id)} />}
               </div>

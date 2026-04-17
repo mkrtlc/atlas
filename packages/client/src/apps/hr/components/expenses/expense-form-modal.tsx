@@ -152,7 +152,7 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
     const input = buildInput();
 
     if (isEditing) {
-      updateExpense.mutate({ id: expense.id, ...input }, {
+      updateExpense.mutate({ id: expense.id, updatedAt: expense.updatedAt, ...input }, {
         onSuccess: (data) => {
           if (andSubmit && data?.id) {
             submitExpense.mutate(data.id, {
@@ -226,7 +226,7 @@ export function ExpenseFormModal({ open, onClose, expense }: ExpenseFormModalPro
     <Modal
       open={open}
       onOpenChange={(o) => !o && onClose()}
-      width={520}
+      width={580}
       title={isEditing ? t('hr.expenses.editExpense') : t('hr.expenses.newExpense')}
     >
       <Modal.Header title={isEditing ? t('hr.expenses.editExpense') : t('hr.expenses.newExpense')} />

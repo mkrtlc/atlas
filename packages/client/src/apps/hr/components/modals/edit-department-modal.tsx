@@ -34,13 +34,13 @@ export function EditDepartmentModal({
   const handleSubmit = () => {
     if (!name.trim()) return;
     updateDepartment.mutate(
-      { id: department.id, name: name.trim(), description: description.trim() || null, color },
+      { id: department.id, updatedAt: department.updatedAt, name: name.trim(), description: description.trim() || null, color },
       { onSuccess: () => onClose() },
     );
   };
 
   return (
-    <Modal open={open} onOpenChange={(o) => !o && onClose()} width={440} title={t('hr.actions.editDepartment')}>
+    <Modal open={open} onOpenChange={(o) => !o && onClose()} width={480} title={t('hr.actions.editDepartment')}>
       <Modal.Header title={t('hr.actions.editDepartment')} />
       <Modal.Body>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>

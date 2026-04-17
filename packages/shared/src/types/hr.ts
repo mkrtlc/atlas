@@ -144,8 +144,10 @@ export interface HrExpenseCategory {
   maxAmount?: number | null;
   receiptRequired: boolean;
   isActive: boolean;
+  isArchived: boolean;
   sortOrder: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface HrExpensePolicy {
@@ -156,6 +158,7 @@ export interface HrExpensePolicy {
   requireReceiptAbove?: number | null;
   autoApproveBelow?: number | null;
   isActive: boolean;
+  isArchived: boolean;
   createdAt: string;
   updatedAt: string;
 }
