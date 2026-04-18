@@ -1,12 +1,10 @@
-import React from 'react';
 import { Briefcase, Settings, Eye, Zap } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
 import { WorkIcon } from '../../components/icons/app-icons';
 import { WorkPage } from './page';
-
-function PlaceholderPanel() {
-  return React.createElement('div', null);
-}
+import { WorkGeneralPanel } from './components/settings/general-panel';
+import { WorkAppearancePanel } from './components/settings/appearance-panel';
+import { WorkBehaviorPanel } from './components/settings/behavior-panel';
 
 export const workManifest: ClientAppManifest = {
   id: 'work',
@@ -32,9 +30,9 @@ export const workManifest: ClientAppManifest = {
     icon: Briefcase,
     color: '#6366f1',
     panels: [
-      { id: 'general', label: 'General', icon: Settings, component: PlaceholderPanel, adminOnly: true },
-      { id: 'appearance', label: 'Appearance', icon: Eye, component: PlaceholderPanel },
-      { id: 'behavior', label: 'Behavior', icon: Zap, component: PlaceholderPanel },
+      { id: 'general', label: 'General', icon: Settings, component: WorkGeneralPanel, adminOnly: true },
+      { id: 'appearance', label: 'Appearance', icon: Eye, component: WorkAppearancePanel },
+      { id: 'behavior', label: 'Behavior', icon: Zap, component: WorkBehaviorPanel },
     ],
   },
 };

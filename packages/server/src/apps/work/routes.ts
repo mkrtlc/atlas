@@ -10,6 +10,10 @@ const router = Router();
 router.use(authMiddleware);
 router.use(requireAppPermission('work'));
 
+// Tenant-wide work settings (admin-only mutation via canAccess gate)
+router.get('/settings', controller.getWorkSettings);
+router.patch('/settings', controller.updateWorkSettings);
+
 // Tasks
 router.get('/tasks', controller.listTasks);
 router.post('/tasks', controller.createTask);

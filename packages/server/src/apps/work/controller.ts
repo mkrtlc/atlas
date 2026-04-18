@@ -60,3 +60,9 @@ export {
   previewTimeBilling,
   populateFromTimeBilling,
 } from './controllers/projects.controller';
+
+// Re-export settings handlers (tenant-wide, admin-gated)
+export {
+  getSettings as getWorkSettings,
+  updateSettings as updateWorkSettings,
+} from './controllers/settings.controller';

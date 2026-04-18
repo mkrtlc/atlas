@@ -951,3 +951,38 @@ export function usePopulateFromTimeEntries() {
   });
 }
 
+// ─── Work settings (tenant-wide) ──────────────────────────────────
+
+export type WorkWeekStartDay = 'monday' | 'sunday' | 'saturday';
+export type WorkProjectVisibility = 'team' | 'private';
+
+export interface WorkSettings {
+  weekStartDay: WorkWeekStartDay;
+  defaultProjectVisibility: WorkProjectVisibility;
+  defaultBillable: boolean;
+}
+
+export function useWorkSettings() {
+  return useQuery({
+    queryKey: queryKeys.work.projects.settings,
+    queryFn: async () => {
+      const { data } = await api.get('/work/settings');
+      return data.data as WorkSettings;
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateWorkSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<WorkSettings>) => {
+      const { data } = await api.patch('/work/settings', input);
+      return data.data as WorkSettings;
+    },
+    onSuccess: (settings) => {
+      queryClient.setQueryData(queryKeys.work.projects.settings, settings);
+    },
+  });
+}
+
