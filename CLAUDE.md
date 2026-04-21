@@ -16,7 +16,7 @@ Detailed documentation lives in `/docs/`. Read the relevant doc before building 
 
 | Document | What it covers | When to read |
 |----------|---------------|--------------|
-| [API Reference](docs/api-reference.md) | Every API endpoint — method, path, auth, request/response shapes | Building client hooks, testing endpoints, debugging API calls |
+| **Live OpenAPI spec:** `/api/v1/openapi.json` + Scalar UI at `/api/v1/reference` (generated from `packages/server/src/openapi/paths/`). The old `docs/api-reference.md` is deprecated. | Every API endpoint — method, path, auth, request/response shapes | Building client hooks, testing endpoints, debugging API calls |
 | [Database Schema](docs/database-schema.md) | All tables, columns, types, constraints, FK relationships, indexes | Adding tables, writing migrations, building queries |
 | [App Architecture](docs/app-architecture.md) | App registry pattern, per-app features/routes/tables, adding new apps | Building a new app, understanding how apps register |
 | [Design System](docs/design-system.md) | CSS variables, component library (31 components), layout patterns, i18n | Building UI, creating components, styling, translations |

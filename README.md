@@ -88,6 +88,17 @@ npm run dev
 - Server: http://localhost:3001
 - On first visit, you'll be prompted to create an admin account.
 
+## API documentation
+
+Atlas exposes an OpenAPI 3.1 specification and an interactive reference UI:
+
+- **Raw spec:** `http://localhost:3001/api/v1/openapi.json`
+- **Interactive reference** (Scalar): `http://localhost:3001/api/v1/reference`
+
+The spec is generated from Zod schemas in `packages/server/src/openapi/paths/`. When a route adopts `defineRoute()`, the same schema drives both the OpenAPI registration and runtime request validation — so documentation and wire contract cannot drift.
+
+On a self-hosted deployment, replace `localhost:3001` with your Atlas domain.
+
 ## Apps
 
 <table>

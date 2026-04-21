@@ -1,5 +1,14 @@
 # Atlas API reference
 
+> [!WARNING]
+> **This document is deprecated.** The authoritative API reference is now the live OpenAPI 3.1 specification generated from Zod schemas:
+>
+> - **Spec:** [`/api/v1/openapi.json`](http://localhost:3001/api/v1/openapi.json)
+> - **Interactive reference (Scalar UI):** [`/api/v1/reference`](http://localhost:3001/api/v1/reference)
+> - **Source of truth:** `packages/server/src/openapi/paths/`
+>
+> This markdown file is retained as historical context only. It is not updated when new routes are added, and it covers the deprecated Tables app. Do not cite it for current API behaviour — hit the live spec instead.
+
 Base URL: `/api/v1`
 
 All responses follow the shape `{ success: boolean, data?: any, error?: string }`.
