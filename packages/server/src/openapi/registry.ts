@@ -39,6 +39,7 @@ export function buildOpenApiDocument() {
       { name: 'Search' },
       { name: 'Record links' },
       { name: 'Custom fields' },
+      { name: 'Data model' },
       { name: 'Exchange rates' },
       { name: 'Files' },
       { name: 'Stocks' },

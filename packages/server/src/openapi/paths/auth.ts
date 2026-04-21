@@ -133,6 +133,18 @@ register({
 });
 
 register({
+  method: 'get',
+  path: '/auth/google/callback',
+  tags: ['Authentication'],
+  summary: 'Google OAuth callback (Google redirects here after consent)',
+  public: true,
+  query: z.object({ code: z.string(), state: z.string() }),
+  extraResponses: {
+    302: { description: 'Redirect back to the app with the connection complete' },
+  },
+});
+
+register({
   method: 'post',
   path: '/auth/google/disconnect',
   tags: ['Authentication'],

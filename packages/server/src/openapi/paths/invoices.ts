@@ -152,26 +152,62 @@ register({ method: 'delete', path: '/invoices/:id', tags: [TAG], summary: 'Delet
 register({ method: 'get', path: '/invoices/:id/pdf', tags: [TAG], summary: 'Download an invoice as PDF',
   params: z.object({ id: Uuid }),
   extraResponses: { 200: { description: 'PDF binary', schema: z.string().openapi({ format: 'binary' }) } } });
-register({ method: 'post', path: '/invoices/:id/send', tags: [TAG], summary: 'Email an invoice to the client',
+register({ method: 'post', path: '/invoices/:id/send', tags: [TAG], summary: 'Send a payment reminder email',
   params: z.object({ id: Uuid }), body: z.object({ message: z.string().optional() }) });
-register({ method: 'post', path: '/invoices/:id/send-reminder', tags: [TAG], summary: 'Send a payment reminder email',
-  params: z.object({ id: Uuid }) });
-register({ method: 'post', path: '/invoices/:id/mark-paid', tags: [TAG], summary: 'Mark an invoice as paid',
+register({ method: 'post', path: '/invoices/:id/email', tags: [TAG], summary: 'Email an invoice to a custom recipient',
+  params: z.object({ id: Uuid }),
+  body: z.object({ to: z.string().email(), subject: z.string().optional(), message: z.string().optional() }) });
+register({ method: 'post', path: '/invoices/:id/paid', tags: [TAG], summary: 'Mark an invoice as paid',
   params: z.object({ id: Uuid }), response: envelope(Invoice) });
 register({ method: 'post', path: '/invoices/:id/waive', tags: [TAG], summary: 'Waive an invoice',
   params: z.object({ id: Uuid }), response: envelope(Invoice) });
+register({ method: 'post', path: '/invoices/:id/duplicate', tags: [TAG], summary: 'Duplicate an invoice as a new draft',
+  params: z.object({ id: Uuid }), response: envelope(Invoice) });
+
+// Line items
+const LineItemInput = z.object({
+  description: z.string(),
+  quantity: z.number(),
+  unitPrice: z.number(),
+  taxRate: z.number().optional(),
+});
+register({ method: 'get', path: '/invoices/:invoiceId/line-items', tags: [TAG], summary: 'List line items on an invoice',
+  params: z.object({ invoiceId: Uuid }), response: envelope(z.array(LineItem)) });
+register({ method: 'post', path: '/invoices/:invoiceId/line-items', tags: [TAG], summary: 'Add a line item to an invoice',
+  params: z.object({ invoiceId: Uuid }), body: LineItemInput, response: envelope(LineItem) });
+register({ method: 'patch', path: '/invoices/:id/line-items/:itemId', tags: [TAG], summary: 'Update a line item',
+  params: z.object({ id: Uuid, itemId: Uuid }), body: LineItemInput.partial(),
+  response: envelope(LineItem) });
+register({ method: 'delete', path: '/invoices/:id/line-items/:itemId', tags: [TAG], summary: 'Delete a line item',
+  params: z.object({ id: Uuid, itemId: Uuid }) });
 
 // Payments
-register({ method: 'get', path: '/invoices/:id/payments', tags: [TAG], summary: 'List payments on an invoice',
-  params: z.object({ id: Uuid }), response: envelope(z.array(Payment)) });
-register({ method: 'post', path: '/invoices/:id/payments', tags: [TAG], summary: 'Record a payment on an invoice',
-  params: z.object({ id: Uuid }),
+register({ method: 'get', path: '/invoices/:invoiceId/payments', tags: [TAG], summary: 'List payments on an invoice',
+  params: z.object({ invoiceId: Uuid }), response: envelope(z.array(Payment)) });
+register({ method: 'post', path: '/invoices/:invoiceId/payments', tags: [TAG], summary: 'Record a payment on an invoice',
+  params: z.object({ invoiceId: Uuid }),
   body: Payment.omit({ id: true, invoiceId: true, createdAt: true }).partial().extend({
     amount: z.number(), paymentDate: IsoDateTime,
   }),
   response: envelope(Payment) });
-register({ method: 'delete', path: '/invoices/:id/payments/:paymentId', tags: [TAG], summary: 'Delete a payment',
-  params: z.object({ id: Uuid, paymentId: Uuid }) });
+register({ method: 'patch', path: '/invoices/payments/:paymentId', tags: [TAG], summary: 'Update a payment',
+  params: z.object({ paymentId: Uuid }), body: Payment.partial(),
+  response: envelope(Payment) });
+register({ method: 'delete', path: '/invoices/payments/:paymentId', tags: [TAG], summary: 'Delete a payment',
+  params: z.object({ paymentId: Uuid }) });
+
+// Turkish e-Fatura
+register({ method: 'post', path: '/invoices/:id/efatura/generate', tags: [TAG], summary: 'Generate an e-Fatura for this invoice (Turkish tax integration)',
+  params: z.object({ id: Uuid }), response: envelope(Invoice) });
+register({ method: 'get', path: '/invoices/:id/efatura/xml', tags: [TAG], summary: 'Download the e-Fatura XML',
+  params: z.object({ id: Uuid }),
+  extraResponses: { 200: { description: 'XML document', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'get', path: '/invoices/:id/efatura/preview', tags: [TAG], summary: 'Preview the e-Fatura',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.record(z.string(), z.unknown())) });
+register({ method: 'get', path: '/invoices/:id/efatura/pdf', tags: [TAG], summary: 'Download the e-Fatura as PDF',
+  params: z.object({ id: Uuid }),
+  extraResponses: { 200: { description: 'PDF binary', schema: z.string().openapi({ format: 'binary' }) } } });
 
 // Recurring
 register({ method: 'get', path: '/invoices/recurring', tags: [TAG], summary: 'List recurring invoice schedules',

@@ -148,6 +148,33 @@ register({
   params: z.object({ id: Uuid }),
 });
 
+// ---------- Data model introspection ----------
+register({
+  method: 'get',
+  path: '/data-model/objects',
+  tags: ['Data model'],
+  summary: 'List all app/entity objects available for custom fields, record links, etc.',
+  response: envelope(z.array(z.object({
+    appId: z.string(),
+    objectId: z.string(),
+    label: z.string(),
+  }))),
+});
+
+register({
+  method: 'get',
+  path: '/data-model/objects/:appId/:objectId/fields',
+  tags: ['Data model'],
+  summary: 'Get the field list for a specific object (including custom fields)',
+  params: z.object({ appId: z.string(), objectId: z.string() }),
+  response: envelope(z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    label: z.string(),
+    isCustom: z.boolean(),
+  }))),
+});
+
 // ---------- Global search ----------
 register({
   method: 'get',
@@ -292,19 +319,20 @@ const CustomField = z.object({
 
 register({
   method: 'get',
-  path: '/custom-fields',
+  path: '/custom-fields/:appId/:recordType',
   tags: ['Custom fields'],
-  summary: 'List custom field definitions',
-  query: z.object({ appId: z.string().optional(), entity: z.string().optional() }),
+  summary: 'List custom field definitions for an app/record type',
+  params: z.object({ appId: z.string(), recordType: z.string() }),
   response: envelope(z.array(CustomField)),
 });
 
 register({
   method: 'post',
-  path: '/custom-fields',
+  path: '/custom-fields/:appId/:recordType',
   tags: ['Custom fields'],
-  summary: 'Create a custom field definition',
-  body: CustomField.omit({ id: true, createdAt: true }),
+  summary: 'Create a custom field definition for an app/record type',
+  params: z.object({ appId: z.string(), recordType: z.string() }),
+  body: CustomField.omit({ id: true, createdAt: true, appId: true, entity: true }),
   response: envelope(CustomField),
 });
 
@@ -328,19 +356,19 @@ register({
 
 register({
   method: 'get',
-  path: '/custom-field-values/:appId/:recordId',
+  path: '/custom-field-values/:appId/:recordType/:recordId',
   tags: ['Custom fields'],
   summary: 'Get all custom field values for a record',
-  params: z.object({ appId: z.string(), recordId: Uuid }),
+  params: z.object({ appId: z.string(), recordType: z.string(), recordId: Uuid }),
   response: envelope(z.record(z.string(), z.unknown())),
 });
 
 register({
   method: 'put',
-  path: '/custom-field-values/:appId/:recordId',
+  path: '/custom-field-values/:recordId',
   tags: ['Custom fields'],
   summary: 'Set custom field values for a record',
-  params: z.object({ appId: z.string(), recordId: Uuid }),
+  params: z.object({ recordId: Uuid }),
   body: z.record(z.string(), z.unknown()),
 });
 
@@ -356,60 +384,84 @@ register({
 // ---------- Stocks ----------
 register({
   method: 'get',
-  path: '/stocks/quote',
+  path: '/stocks/quotes',
   tags: ['Stocks'],
-  summary: 'Get current quote for a stock symbol',
-  query: z.object({ symbol: z.string().openapi({ example: 'AAPL' }) }),
-  response: envelope(z.object({
+  summary: 'Get quotes for the tenant’s tracked stock symbols',
+  response: envelope(z.array(z.object({
     symbol: z.string(),
     price: z.number(),
     change: z.number(),
     changePercent: z.number(),
     currency: z.string(),
-  })),
+  }))),
 });
 
 // ---------- Presence ----------
 register({
-  method: 'get',
-  path: '/presence',
+  method: 'post',
+  path: '/presence/heartbeat',
   tags: ['Presence'],
-  summary: 'List online users in the tenant',
+  summary: 'Send a presence heartbeat — I’m viewing/editing this record',
+  body: z.object({
+    appId: z.string(),
+    recordId: Uuid,
+    action: z.enum(['viewing', 'editing']).optional(),
+  }),
+});
+
+register({
+  method: 'get',
+  path: '/presence/:appId/:recordId',
+  tags: ['Presence'],
+  summary: 'List users currently present on a record',
+  params: z.object({ appId: z.string(), recordId: Uuid }),
   response: envelope(z.array(z.object({
     userId: Uuid,
-    status: z.enum(['online', 'away', 'offline']),
+    name: z.string().nullable(),
+    action: z.enum(['viewing', 'editing']),
     lastSeen: IsoDateTime,
   }))),
 });
 
-register({
-  method: 'post',
-  path: '/presence/heartbeat',
-  tags: ['Presence'],
-  summary: 'Send a presence heartbeat (keep session active)',
-});
-
-// ---------- Updates ----------
+// ---------- Updates (self-hosted auto-updater) ----------
 register({
   method: 'get',
-  path: '/updates',
+  path: '/updates/status',
   tags: ['Updates'],
-  summary: 'List in-app product updates / changelog entries',
-  response: envelope(z.array(z.object({
-    id: Uuid,
-    title: z.string(),
-    body: z.string(),
-    publishedAt: IsoDateTime,
-    readAt: IsoDateTime.nullable(),
-  }))),
+  summary: 'Get auto-update status and available version',
+  response: envelope(z.object({
+    enabled: z.boolean(),
+    currentVersion: z.string(),
+    latestVersion: z.string().nullable(),
+    updateAvailable: z.boolean(),
+    lastCheckedAt: IsoDateTime.nullable(),
+  })),
 });
 
 register({
   method: 'post',
-  path: '/updates/:id/read',
+  path: '/updates/enable',
   tags: ['Updates'],
-  summary: 'Mark an update as read',
-  params: z.object({ id: Uuid }),
+  summary: 'Enable auto-updates',
+});
+
+register({
+  method: 'post',
+  path: '/updates/disable',
+  tags: ['Updates'],
+  summary: 'Disable auto-updates',
+});
+
+register({
+  method: 'post',
+  path: '/updates/check',
+  tags: ['Updates'],
+  summary: 'Manually check for an update now',
+  response: envelope(z.object({
+    currentVersion: z.string(),
+    latestVersion: z.string(),
+    updateAvailable: z.boolean(),
+  })),
 });
 
 // ---------- Public share links ----------

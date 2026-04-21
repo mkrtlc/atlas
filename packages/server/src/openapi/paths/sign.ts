@@ -80,10 +80,22 @@ register({ method: 'put', path: '/sign/:id', tags: [TAG], summary: 'Update a sig
 register({ method: 'delete', path: '/sign/:id', tags: [TAG], summary: 'Delete a signature document',
   params: z.object({ id: Uuid }) });
 
-// Send / recipients
-register({ method: 'post', path: '/sign/:id/send', tags: [TAG], summary: 'Send a signature document for signing',
+// Document-level actions
+register({ method: 'get', path: '/sign/:id/view', tags: [TAG], summary: 'Stream the signed PDF for inline viewing',
   params: z.object({ id: Uuid }),
-  body: z.object({ recipients: z.array(z.object({ email: z.string().email(), name: z.string().optional() })), message: z.string().optional() }) });
+  extraResponses: { 200: { description: 'PDF binary', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'get', path: '/sign/:id/download', tags: [TAG], summary: 'Download the signed PDF',
+  params: z.object({ id: Uuid }),
+  extraResponses: { 200: { description: 'PDF binary', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'post', path: '/sign/:id/void', tags: [TAG], summary: 'Void a signature document',
+  params: z.object({ id: Uuid }), body: z.object({ reason: z.string().optional() }) });
+register({ method: 'get', path: '/sign/:id/audit', tags: [TAG], summary: 'Get the audit log for a signature document',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(z.record(z.string(), z.unknown()))) });
+register({ method: 'post', path: '/sign/:id/save-as-template', tags: [TAG], summary: 'Save an existing document as a reusable template',
+  params: z.object({ id: Uuid }),
+  body: z.object({ name: z.string() }),
+  response: envelope(Template) });
 
 // Fields
 register({ method: 'get', path: '/sign/:id/fields', tags: [TAG], summary: 'List fields on a signature document',
@@ -94,10 +106,24 @@ register({ method: 'post', path: '/sign/:id/fields', tags: [TAG], summary: 'Add 
     type: SignField.shape.type, pageNumber: z.number().int(), x: z.number(), y: z.number(), width: z.number(), height: z.number(),
   }),
   response: envelope(SignField) });
-register({ method: 'patch', path: '/sign/fields/:fieldId', tags: [TAG], summary: 'Update a signature field',
+register({ method: 'put', path: '/sign/fields/:fieldId', tags: [TAG], summary: 'Update a signature field',
   params: z.object({ fieldId: Uuid }), body: SignField.partial(), response: envelope(SignField) });
 register({ method: 'delete', path: '/sign/fields/:fieldId', tags: [TAG], summary: 'Delete a signature field',
   params: z.object({ fieldId: Uuid }) });
+
+// Signing tokens (per-recipient links)
+register({ method: 'get', path: '/sign/:id/tokens', tags: [TAG], summary: 'List signing tokens issued for a document',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(z.record(z.string(), z.unknown()))) });
+register({ method: 'post', path: '/sign/:id/tokens', tags: [TAG], summary: 'Create a signing token for a recipient',
+  params: z.object({ id: Uuid }),
+  body: z.object({ signerEmail: z.string().email(), signerName: z.string().optional() }),
+  response: envelope(z.record(z.string(), z.unknown())) });
+register({ method: 'post', path: '/sign/:id/tokens/:tokenId/remind', tags: [TAG], summary: 'Send a single reminder to one signer',
+  params: z.object({ id: Uuid, tokenId: Uuid }) });
+
+// Starter templates
+register({ method: 'post', path: '/sign/templates/seed-starter', tags: [TAG], summary: 'Seed starter templates (admin)' });
 
 // Templates
 register({ method: 'get', path: '/sign/templates', tags: [TAG], summary: 'List signature templates',

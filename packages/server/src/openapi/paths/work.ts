@@ -192,14 +192,101 @@ register({ method: 'patch', path: '/work/projects/:id', tags: [TAG], summary: 'U
 register({ method: 'delete', path: '/work/projects/:id', tags: [TAG], summary: 'Delete a project',
   params: z.object({ id: Uuid }) });
 
-// Project members
+// Project members — identified by the join row id (memberId), not userId
 register({ method: 'get', path: '/work/projects/:id/members', tags: [TAG], summary: 'List project members',
   params: z.object({ id: Uuid }), response: envelope(z.array(ProjectMember)) });
 register({ method: 'post', path: '/work/projects/:id/members', tags: [TAG], summary: 'Add a project member',
   params: z.object({ id: Uuid }), body: z.object({ userId: Uuid, hourlyRate: z.number().optional() }),
   response: envelope(ProjectMember) });
-register({ method: 'delete', path: '/work/projects/:id/members/:userId', tags: [TAG], summary: 'Remove a project member',
-  params: z.object({ id: Uuid, userId: Uuid }) });
+register({ method: 'patch', path: '/work/projects/:id/members/:memberId/rate', tags: [TAG], summary: 'Update a project member’s hourly rate',
+  params: z.object({ id: Uuid, memberId: Uuid }),
+  body: z.object({ hourlyRate: z.number() }),
+  response: envelope(ProjectMember) });
+register({ method: 'delete', path: '/work/projects/:id/members/:memberId', tags: [TAG], summary: 'Remove a project member',
+  params: z.object({ id: Uuid, memberId: Uuid }) });
+
+// Project files (attached drive items)
+register({ method: 'get', path: '/work/projects/:id/files', tags: [TAG], summary: 'List drive files attached to a project',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(z.record(z.string(), z.unknown()))) });
+register({ method: 'post', path: '/work/projects/:id/files', tags: [TAG], summary: 'Attach a drive file to a project',
+  params: z.object({ id: Uuid }),
+  body: z.object({ driveItemId: Uuid }) });
+register({ method: 'delete', path: '/work/projects/:id/files/:driveItemId', tags: [TAG], summary: 'Detach a drive file from a project',
+  params: z.object({ id: Uuid, driveItemId: Uuid }) });
+register({ method: 'get', path: '/work/projects/:id/financials', tags: [TAG], summary: 'Get project financials roll-up',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.record(z.string(), z.unknown())) });
+register({ method: 'get', path: '/work/projects/dashboard', tags: [TAG], summary: 'Projects dashboard KPIs',
+  response: envelope(z.record(z.string(), z.unknown())) });
+
+// Project-scoped time entries
+register({ method: 'get', path: '/work/projects/:id/time-entries', tags: [TAG], summary: 'List time entries on a project',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(TimeEntry)) });
+register({ method: 'post', path: '/work/projects/:id/time-entries', tags: [TAG], summary: 'Create a project time entry',
+  params: z.object({ id: Uuid }),
+  body: TimeEntry.omit({ id: true, projectId: true, createdAt: true, updatedAt: true, billed: true, paid: true, locked: true }).partial()
+    .extend({ workDate: z.string(), durationMinutes: z.number().int() }),
+  response: envelope(TimeEntry) });
+register({ method: 'patch', path: '/work/projects/:id/time-entries/:entryId', tags: [TAG], summary: 'Update a project time entry',
+  params: z.object({ id: Uuid, entryId: Uuid }), body: TimeEntry.partial(),
+  concurrency: true, response: envelope(TimeEntry) });
+register({ method: 'delete', path: '/work/projects/:id/time-entries/:entryId', tags: [TAG], summary: 'Delete a project time entry',
+  params: z.object({ id: Uuid, entryId: Uuid }) });
+
+// Time billing helpers
+register({ method: 'post', path: '/work/projects/time-billing/preview', tags: [TAG], summary: 'Preview invoice line items from unbilled time',
+  body: z.object({ projectId: Uuid, from: IsoDate.optional(), to: IsoDate.optional() }),
+  response: envelope(z.record(z.string(), z.unknown())) });
+register({ method: 'post', path: '/work/projects/time-billing/populate', tags: [TAG], summary: 'Populate an invoice with unbilled time entries',
+  body: z.object({ projectId: Uuid, invoiceId: Uuid, from: IsoDate.optional(), to: IsoDate.optional() }) });
+
+// Task attachments
+register({ method: 'get', path: '/work/tasks/:taskId/attachments', tags: [TAG], summary: 'List attachments on a task',
+  params: z.object({ taskId: Uuid }),
+  response: envelope(z.array(z.record(z.string(), z.unknown()))) });
+register({ method: 'post', path: '/work/tasks/:taskId/attachments', tags: [TAG], summary: 'Upload an attachment to a task (multipart/form-data)',
+  params: z.object({ taskId: Uuid }),
+  response: envelope(z.record(z.string(), z.unknown())) });
+register({ method: 'get', path: '/work/tasks/:taskId/attachments/:attachmentId/download', tags: [TAG], summary: 'Download a task attachment',
+  params: z.object({ taskId: Uuid, attachmentId: Uuid }),
+  extraResponses: { 200: { description: 'File binary', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'delete', path: '/work/tasks/:taskId/attachments/:attachmentId', tags: [TAG], summary: 'Delete a task attachment',
+  params: z.object({ taskId: Uuid, attachmentId: Uuid }) });
+
+// Task dependencies (blockers)
+register({ method: 'get', path: '/work/tasks/:taskId/dependencies', tags: [TAG], summary: 'List tasks that block this task',
+  params: z.object({ taskId: Uuid }),
+  response: envelope(z.array(Task)) });
+register({ method: 'post', path: '/work/tasks/:taskId/dependencies', tags: [TAG], summary: 'Add a blocker task',
+  params: z.object({ taskId: Uuid }),
+  body: z.object({ blockerTaskId: Uuid }) });
+register({ method: 'delete', path: '/work/tasks/:taskId/dependencies/:blockerTaskId', tags: [TAG], summary: 'Remove a blocker',
+  params: z.object({ taskId: Uuid, blockerTaskId: Uuid }) });
+
+// Task templates
+const TaskTemplate = z.object({
+  id: Uuid, tenantId: Uuid, name: z.string(),
+  taskDefaults: z.record(z.string(), z.unknown()),
+  subtasks: z.array(z.record(z.string(), z.unknown())),
+  createdAt: IsoDateTime, updatedAt: IsoDateTime,
+});
+register({ method: 'get', path: '/work/templates', tags: [TAG], summary: 'List task templates',
+  response: envelope(z.array(TaskTemplate)) });
+register({ method: 'post', path: '/work/templates', tags: [TAG], summary: 'Create a task template',
+  body: z.object({ name: z.string(), taskDefaults: z.record(z.string(), z.unknown()).optional(), subtasks: z.array(z.record(z.string(), z.unknown())).optional() }),
+  response: envelope(TaskTemplate) });
+register({ method: 'patch', path: '/work/templates/:templateId', tags: [TAG], summary: 'Update a task template',
+  params: z.object({ templateId: Uuid }),
+  body: TaskTemplate.partial(),
+  response: envelope(TaskTemplate) });
+register({ method: 'delete', path: '/work/templates/:templateId', tags: [TAG], summary: 'Delete a task template',
+  params: z.object({ templateId: Uuid }) });
+register({ method: 'post', path: '/work/templates/:templateId/use', tags: [TAG], summary: 'Create a task from a template',
+  params: z.object({ templateId: Uuid }),
+  body: z.object({ projectId: Uuid.optional() }),
+  response: envelope(Task) });
 
 // Time entries
 register({ method: 'get', path: '/work/time-entries', tags: [TAG], summary: 'List time entries',

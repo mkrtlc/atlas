@@ -80,6 +80,9 @@ register({ method: 'post', path: '/drive/create-document', tags: [TAG], summary:
 register({ method: 'post', path: '/drive/create-drawing', tags: [TAG], summary: 'Create a Draw drawing linked into Drive',
   body: z.object({ name: z.string(), parentId: Uuid.optional() }), response: envelope(DriveItem) });
 
+register({ method: 'get', path: '/drive/shared-with-me', tags: [TAG], summary: 'List drive items other users have shared with me',
+  response: envelope(z.array(DriveItem)) });
+
 // Single item ops
 register({ method: 'get', path: '/drive/:id', tags: [TAG], summary: 'Get a drive item',
   params: z.object({ id: Uuid }), response: envelope(DriveItem) });
@@ -92,10 +95,42 @@ register({ method: 'delete', path: '/drive/:id', tags: [TAG], summary: 'Permanen
 register({ method: 'get', path: '/drive/:id/download', tags: [TAG], summary: 'Download a file',
   params: z.object({ id: Uuid }),
   extraResponses: { 200: { description: 'File binary', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'get', path: '/drive/:id/download-zip', tags: [TAG], summary: 'Download a folder as a zip',
+  params: z.object({ id: Uuid }),
+  extraResponses: { 200: { description: 'Zip binary', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'get', path: '/drive/:id/view', tags: [TAG], summary: 'Stream a file for inline viewing',
+  params: z.object({ id: Uuid }),
+  extraResponses: { 200: { description: 'File binary', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'get', path: '/drive/:id/preview', tags: [TAG], summary: 'Fetch a preview (thumbnail or rendered image) of a file',
+  params: z.object({ id: Uuid }),
+  extraResponses: { 200: { description: 'Preview binary', schema: z.string().openapi({ format: 'binary' }) } } });
+register({ method: 'get', path: '/drive/:id/breadcrumbs', tags: [TAG], summary: 'Get the folder breadcrumb path for an item',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(z.object({ id: Uuid, name: z.string() }))) });
+register({ method: 'get', path: '/drive/:id/activity', tags: [TAG], summary: 'Get the activity log for a drive item',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(z.record(z.string(), z.unknown()))) });
+register({ method: 'get', path: '/drive/:id/comments', tags: [TAG], summary: 'List comments on a drive item',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(z.record(z.string(), z.unknown()))) });
+register({ method: 'post', path: '/drive/:id/comments', tags: [TAG], summary: 'Add a comment to a drive item',
+  params: z.object({ id: Uuid }),
+  body: z.object({ body: z.string() }),
+  response: envelope(z.record(z.string(), z.unknown())) });
+register({ method: 'delete', path: '/drive/comments/:commentId', tags: [TAG], summary: 'Delete a drive comment',
+  params: z.object({ commentId: Uuid }) });
+register({ method: 'post', path: '/drive/:id/replace', tags: [TAG], summary: 'Replace the file content with a new upload (creates a new version)',
+  params: z.object({ id: Uuid }),
+  response: envelope(DriveItem) });
+register({ method: 'delete', path: '/drive/:id/permanent', tags: [TAG], summary: 'Permanently delete a drive item (bypass trash)',
+  params: z.object({ id: Uuid }) });
 register({ method: 'get', path: '/drive/:id/versions', tags: [TAG], summary: 'List file versions',
   params: z.object({ id: Uuid }), response: envelope(z.array(DriveVersion)) });
-register({ method: 'post', path: '/drive/:id/restore-version/:versionId', tags: [TAG], summary: 'Restore a specific version',
+register({ method: 'post', path: '/drive/:id/versions/:versionId/restore', tags: [TAG], summary: 'Restore a specific version',
   params: z.object({ id: Uuid, versionId: Uuid }), response: envelope(DriveItem) });
+register({ method: 'get', path: '/drive/:id/versions/:versionId/download', tags: [TAG], summary: 'Download a specific version of a file',
+  params: z.object({ id: Uuid, versionId: Uuid }),
+  extraResponses: { 200: { description: 'File binary', schema: z.string().openapi({ format: 'binary' }) } } });
 
 // Batch
 register({ method: 'post', path: '/drive/batch/delete', tags: [TAG], summary: 'Permanently delete multiple items',
@@ -109,12 +144,22 @@ register({ method: 'post', path: '/drive/batch/trash', tags: [TAG], summary: 'Mo
 register({ method: 'post', path: '/drive/batch/tag', tags: [TAG], summary: 'Tag multiple items',
   body: z.object({ itemIds: z.array(Uuid), tags: z.array(z.string()) }) });
 
-// Share links
-register({ method: 'get', path: '/drive/:id/shares', tags: [TAG], summary: 'List share links for an item',
+// Share links (public, token-based)
+register({ method: 'get', path: '/drive/:id/share', tags: [TAG], summary: 'List public share links for an item',
   params: z.object({ id: Uuid }), response: envelope(z.array(ShareLink)) });
-register({ method: 'post', path: '/drive/:id/shares', tags: [TAG], summary: 'Create a public share link',
+register({ method: 'post', path: '/drive/:id/share', tags: [TAG], summary: 'Create a public share link',
   params: z.object({ id: Uuid }),
-  body: z.object({ expiresAt: IsoDateTime.optional() }),
+  body: z.object({ expiresAt: IsoDateTime.optional(), password: z.string().optional() }),
   response: envelope(ShareLink) });
-register({ method: 'delete', path: '/drive/shares/:shareId', tags: [TAG], summary: 'Revoke a share link',
-  params: z.object({ shareId: Uuid }) });
+register({ method: 'delete', path: '/drive/share/:linkId', tags: [TAG], summary: 'Revoke a public share link',
+  params: z.object({ linkId: Uuid }) });
+
+// Per-user sharing (invite a teammate to a drive item)
+register({ method: 'get', path: '/drive/:id/shares', tags: [TAG], summary: 'List users a drive item is shared with',
+  params: z.object({ id: Uuid }),
+  response: envelope(z.array(z.object({ userId: Uuid, role: z.enum(['viewer', 'editor']) }))) });
+register({ method: 'post', path: '/drive/:id/shares', tags: [TAG], summary: 'Share a drive item with a user',
+  params: z.object({ id: Uuid }),
+  body: z.object({ userId: Uuid, role: z.enum(['viewer', 'editor']) }) });
+register({ method: 'delete', path: '/drive/:id/shares/:userId', tags: [TAG], summary: 'Unshare a drive item from a user',
+  params: z.object({ id: Uuid, userId: Uuid }) });
