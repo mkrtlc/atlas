@@ -9,7 +9,9 @@ const Drawing = z.object({
   userId: Uuid,
   title: z.string(),
   thumbnailUrl: z.string().nullable(),
-  excalidrawData: z.unknown().optional().openapi({ description: 'Only present when fetching a single drawing' }),
+  content: z.unknown().optional().openapi({
+    description: 'Excalidraw scene JSON. Only present when fetching a single drawing; list endpoints omit it.',
+  }),
   sortOrder: z.number().int(),
   isArchived: z.boolean(),
   visibility: z.enum(['private', 'team']),

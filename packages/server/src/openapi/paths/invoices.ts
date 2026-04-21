@@ -129,8 +129,20 @@ register({ method: 'post', path: '/invoices', tags: [TAG], summary: 'Create an i
     })),
   }),
   response: envelope(Invoice) });
-register({ method: 'get', path: '/invoices/:id', tags: [TAG], summary: 'Get an invoice with line items',
-  params: z.object({ id: Uuid }), response: envelope(Invoice) });
+register({ method: 'get', path: '/invoices/:id', tags: [TAG], summary: 'Get an invoice with line items and derived totals',
+  params: z.object({ id: Uuid }),
+  response: envelope(Invoice.extend({
+    companyName: z.string(),
+    contactName: z.string().nullable(),
+    contactEmail: z.string().email().nullable(),
+    dealTitle: z.string().nullable(),
+    amountPaid: z.number(),
+    balanceDue: z.number(),
+    eFaturaType: z.string().nullable(),
+    eFaturaUuid: z.string().nullable(),
+    eFaturaStatus: z.string().nullable(),
+    lineItems: z.array(LineItem),
+  })) });
 register({ method: 'patch', path: '/invoices/:id', tags: [TAG], summary: 'Update an invoice',
   params: z.object({ id: Uuid }), body: Invoice.partial(), concurrency: true, response: envelope(Invoice) });
 register({ method: 'delete', path: '/invoices/:id', tags: [TAG], summary: 'Delete an invoice',

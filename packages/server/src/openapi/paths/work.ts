@@ -23,6 +23,8 @@ const Task = z.object({
   tags: z.array(z.string()),
   recurrenceRule: z.string().nullable(),
   recurrenceParentId: Uuid.nullable(),
+  sourceEmailId: z.string().nullable(),
+  sourceEmailSubject: z.string().nullable(),
   assigneeId: Uuid.nullable(),
   lastReminderAt: IsoDateTime.nullable(),
   sortOrder: z.number().int(),
@@ -178,8 +180,13 @@ register({ method: 'get', path: '/work/projects', tags: [TAG], summary: 'List pr
 register({ method: 'post', path: '/work/projects', tags: [TAG], summary: 'Create a project',
   body: Project.omit({ id: true, createdAt: true, updatedAt: true, isArchived: true, sortOrder: true }).partial().extend({ name: z.string() }),
   response: envelope(Project) });
-register({ method: 'get', path: '/work/projects/:id', tags: [TAG], summary: 'Get a project',
-  params: z.object({ id: Uuid }), response: envelope(Project) });
+register({ method: 'get', path: '/work/projects/:id', tags: [TAG], summary: 'Get a project (with company name and aggregate time/billing)',
+  params: z.object({ id: Uuid }),
+  response: envelope(Project.extend({
+    companyName: z.string().nullable(),
+    totalTrackedMinutes: z.number().int(),
+    totalBilledAmount: z.number(),
+  })) });
 register({ method: 'patch', path: '/work/projects/:id', tags: [TAG], summary: 'Update a project',
   params: z.object({ id: Uuid }), body: Project.partial(), concurrency: true, response: envelope(Project) });
 register({ method: 'delete', path: '/work/projects/:id', tags: [TAG], summary: 'Delete a project',

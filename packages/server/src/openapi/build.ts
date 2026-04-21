@@ -9,7 +9,7 @@ import { buildOpenApiDocument } from './registry';
 
 try {
   const doc = buildOpenApiDocument();
-  const paths = Object.keys(doc.paths);
+  const paths = Object.keys(doc.paths ?? {});
   let ops = 0;
   for (const p of paths) ops += Object.keys((doc.paths as any)[p]).length;
   // eslint-disable-next-line no-console

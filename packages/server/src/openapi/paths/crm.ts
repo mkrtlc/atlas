@@ -291,8 +291,13 @@ export const createCompany = defineRoute({ method: 'post', path: '/crm/companies
 register({ method: 'post', path: '/crm/companies/import', tags: [TAG], summary: 'Bulk import companies from CSV',
   body: z.object({ rows: z.array(z.record(z.string(), z.unknown())) }),
   response: envelope(z.object({ inserted: z.number().int(), skipped: z.number().int() })) });
-register({ method: 'get', path: '/crm/companies/:id', tags: [TAG], summary: 'Get a company',
-  params: z.object({ id: Uuid }), response: envelope(Company) });
+register({ method: 'get', path: '/crm/companies/:id', tags: [TAG], summary: 'Get a company (with derived counts)',
+  params: z.object({ id: Uuid }),
+  response: envelope(Company.extend({
+    sortOrder: z.number().int(),
+    contactCount: z.number().int(),
+    dealCount: z.number().int(),
+  })) });
 register({ method: 'patch', path: '/crm/companies/:id', tags: [TAG], summary: 'Update a company',
   params: z.object({ id: Uuid }), body: Company.partial(), concurrency: true, response: envelope(Company) });
 register({ method: 'delete', path: '/crm/companies/:id', tags: [TAG], summary: 'Delete a company',
@@ -313,8 +318,12 @@ register({ method: 'post', path: '/crm/contacts', tags: [TAG], summary: 'Create 
 register({ method: 'post', path: '/crm/contacts/import', tags: [TAG], summary: 'Bulk import contacts from CSV',
   body: z.object({ rows: z.array(z.record(z.string(), z.unknown())) }),
   response: envelope(z.object({ inserted: z.number().int(), skipped: z.number().int() })) });
-register({ method: 'get', path: '/crm/contacts/:id', tags: [TAG], summary: 'Get a contact',
-  params: z.object({ id: Uuid }), response: envelope(Contact) });
+register({ method: 'get', path: '/crm/contacts/:id', tags: [TAG], summary: 'Get a contact (with joined company name)',
+  params: z.object({ id: Uuid }),
+  response: envelope(Contact.extend({
+    sortOrder: z.number().int(),
+    companyName: z.string().nullable(),
+  })) });
 register({ method: 'patch', path: '/crm/contacts/:id', tags: [TAG], summary: 'Update a contact',
   params: z.object({ id: Uuid }), body: Contact.partial(), concurrency: true, response: envelope(Contact) });
 register({ method: 'delete', path: '/crm/contacts/:id', tags: [TAG], summary: 'Delete a contact',
@@ -356,8 +365,15 @@ register({ method: 'post', path: '/crm/deals/import', tags: [TAG], summary: 'Bul
 register({ method: 'post', path: '/crm/deals', tags: [TAG], summary: 'Create a deal',
   body: Deal.omit({ id: true, tenantId: true, userId: true, createdAt: true, updatedAt: true, isArchived: true, wonAt: true, lostAt: true, stageEnteredAt: true }).partial().extend({ title: z.string(), stageId: Uuid }),
   response: envelope(Deal) });
-register({ method: 'get', path: '/crm/deals/:id', tags: [TAG], summary: 'Get a deal',
-  params: z.object({ id: Uuid }), response: envelope(Deal) });
+register({ method: 'get', path: '/crm/deals/:id', tags: [TAG], summary: 'Get a deal (with joined stage/contact/company names)',
+  params: z.object({ id: Uuid }),
+  response: envelope(Deal.extend({
+    sortOrder: z.number().int(),
+    stageName: z.string(),
+    stageColor: z.string(),
+    contactName: z.string().nullable(),
+    companyName: z.string().nullable(),
+  })) });
 register({ method: 'patch', path: '/crm/deals/:id', tags: [TAG], summary: 'Update a deal',
   params: z.object({ id: Uuid }), body: Deal.partial(), concurrency: true, response: envelope(Deal) });
 register({ method: 'delete', path: '/crm/deals/:id', tags: [TAG], summary: 'Delete a deal',
@@ -447,8 +463,12 @@ register({ method: 'get', path: '/crm/leads/list', tags: [TAG], summary: 'List l
 register({ method: 'post', path: '/crm/leads', tags: [TAG], summary: 'Create a lead',
   body: Lead.omit({ id: true, tenantId: true, userId: true, createdAt: true, updatedAt: true, isArchived: true, convertedContactId: true, convertedDealId: true, enrichedData: true, enrichedAt: true }).partial().extend({ name: z.string() }),
   response: envelope(Lead) });
-register({ method: 'get', path: '/crm/leads/:id', tags: [TAG], summary: 'Get a lead',
-  params: z.object({ id: Uuid }), response: envelope(Lead) });
+register({ method: 'get', path: '/crm/leads/:id', tags: [TAG], summary: 'Get a lead (with converted deal title if converted)',
+  params: z.object({ id: Uuid }),
+  response: envelope(Lead.extend({
+    sortOrder: z.number().int(),
+    convertedDealTitle: z.string().nullable(),
+  })) });
 register({ method: 'patch', path: '/crm/leads/:id', tags: [TAG], summary: 'Update a lead',
   params: z.object({ id: Uuid }), body: Lead.partial(), concurrency: true, response: envelope(Lead) });
 register({ method: 'delete', path: '/crm/leads/:id', tags: [TAG], summary: 'Delete a lead',

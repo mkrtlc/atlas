@@ -14,6 +14,9 @@ import './paths/drive';
 import './paths/docs';
 import './paths/draw';
 import './paths/calendar';
+import './paths/admin';
+import './paths/ai';
+import './paths/permissions';
 import './paths/system';
 
 export function buildOpenApiDocument() {
@@ -51,6 +54,9 @@ export function buildOpenApiDocument() {
       { name: 'Write' },
       { name: 'Draw' },
       { name: 'Calendar' },
+      { name: 'Admin' },
+      { name: 'AI' },
+      { name: 'App permissions' },
       { name: 'System' },
     ],
   });

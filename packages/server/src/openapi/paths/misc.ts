@@ -422,3 +422,39 @@ register({
   params: z.object({ token: z.string() }),
   response: envelope(z.record(z.string(), z.unknown())),
 });
+
+register({
+  method: 'get',
+  path: '/share/:token/info',
+  tags: ['Public share'],
+  summary: 'Get metadata about a shared link (type, expiry, permissions)',
+  public: true,
+  params: z.object({ token: z.string() }),
+  response: envelope(z.object({
+    type: z.enum(['drive', 'invoice', 'proposal', 'sign']),
+    expiresAt: IsoDateTime.nullable(),
+    requiresPassword: z.boolean(),
+    allowUpload: z.boolean(),
+    title: z.string(),
+  })),
+});
+
+register({
+  method: 'get',
+  path: '/share/:token/download',
+  tags: ['Public share'],
+  summary: 'Download a shared file or bundle',
+  public: true,
+  params: z.object({ token: z.string() }),
+  extraResponses: { 200: { description: 'File binary', schema: z.string().openapi({ format: 'binary' }) } },
+});
+
+register({
+  method: 'post',
+  path: '/share/:token/upload',
+  tags: ['Public share'],
+  summary: 'Upload files to a shared drop folder (multipart/form-data)',
+  public: true,
+  params: z.object({ token: z.string() }),
+  response: envelope(z.object({ uploadedCount: z.number().int() })),
+});

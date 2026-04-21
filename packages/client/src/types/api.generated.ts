@@ -523,7 +523,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a company */
+        /** Get a company (with derived counts) */
         get: {
             parameters: {
                 query?: never;
@@ -575,6 +575,9 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                sortOrder: number;
+                                contactCount: number;
+                                dealCount: number;
                             };
                         };
                     };
@@ -1216,7 +1219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a contact */
+        /** Get a contact (with joined company name) */
         get: {
             parameters: {
                 query?: never;
@@ -1260,6 +1263,8 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                sortOrder: number;
+                                companyName: string | null;
                             };
                         };
                     };
@@ -2457,7 +2462,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a deal */
+        /** Get a deal (with joined stage/contact/company names) */
         get: {
             parameters: {
                 query?: never;
@@ -2514,6 +2519,11 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                sortOrder: number;
+                                stageName: string;
+                                stageColor: string;
+                                contactName: string | null;
+                                companyName: string | null;
                             };
                         };
                     };
@@ -5245,7 +5255,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a lead */
+        /** Get a lead (with converted deal title if converted) */
         get: {
             parameters: {
                 query?: never;
@@ -5304,6 +5314,8 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                sortOrder: number;
+                                convertedDealTitle: string | null;
                             };
                         };
                     };
@@ -10550,6 +10562,180 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/share/{token}/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get metadata about a shared link (type, expiry, permissions) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                /** @enum {string} */
+                                type: "drive" | "invoice" | "proposal" | "sign";
+                                /** Format: date-time */
+                                expiresAt: string | null;
+                                requiresPassword: boolean;
+                                allowUpload: boolean;
+                                title: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/share/{token}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a shared file or bundle */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description File binary */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/share/{token}/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload files to a shared drop folder (multipart/form-data) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                uploadedCount: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -16265,6 +16451,8 @@ export interface paths {
                                     recurrenceRule: string | null;
                                     /** Format: uuid */
                                     recurrenceParentId: string | null;
+                                    sourceEmailId: string | null;
+                                    sourceEmailSubject: string | null;
                                     /** Format: uuid */
                                     assigneeId: string | null;
                                     /** Format: date-time */
@@ -16332,6 +16520,8 @@ export interface paths {
                         recurrenceRule?: string | null;
                         /** Format: uuid */
                         recurrenceParentId?: string | null;
+                        sourceEmailId?: string | null;
+                        sourceEmailSubject?: string | null;
                         /** Format: uuid */
                         assigneeId?: string | null;
                         sortOrder?: number;
@@ -16382,6 +16572,8 @@ export interface paths {
                                 recurrenceRule: string | null;
                                 /** Format: uuid */
                                 recurrenceParentId: string | null;
+                                sourceEmailId: string | null;
+                                sourceEmailSubject: string | null;
                                 /** Format: uuid */
                                 assigneeId: string | null;
                                 /** Format: date-time */
@@ -16479,6 +16671,8 @@ export interface paths {
                                 recurrenceRule: string | null;
                                 /** Format: uuid */
                                 recurrenceParentId: string | null;
+                                sourceEmailId: string | null;
+                                sourceEmailSubject: string | null;
                                 /** Format: uuid */
                                 assigneeId: string | null;
                                 /** Format: date-time */
@@ -16695,6 +16889,8 @@ export interface paths {
                                 recurrenceRule: string | null;
                                 /** Format: uuid */
                                 recurrenceParentId: string | null;
+                                sourceEmailId: string | null;
+                                sourceEmailSubject: string | null;
                                 /** Format: uuid */
                                 assigneeId: string | null;
                                 /** Format: date-time */
@@ -16842,6 +17038,8 @@ export interface paths {
                         recurrenceRule?: string | null;
                         /** Format: uuid */
                         recurrenceParentId?: string | null;
+                        sourceEmailId?: string | null;
+                        sourceEmailSubject?: string | null;
                         /** Format: uuid */
                         assigneeId?: string | null;
                         /** Format: date-time */
@@ -16898,6 +17096,8 @@ export interface paths {
                                 recurrenceRule: string | null;
                                 /** Format: uuid */
                                 recurrenceParentId: string | null;
+                                sourceEmailId: string | null;
+                                sourceEmailSubject: string | null;
                                 /** Format: uuid */
                                 assigneeId: string | null;
                                 /** Format: date-time */
@@ -17096,6 +17296,8 @@ export interface paths {
                                 recurrenceRule: string | null;
                                 /** Format: uuid */
                                 recurrenceParentId: string | null;
+                                sourceEmailId: string | null;
+                                sourceEmailSubject: string | null;
                                 /** Format: uuid */
                                 assigneeId: string | null;
                                 /** Format: date-time */
@@ -17201,6 +17403,8 @@ export interface paths {
                                 recurrenceRule: string | null;
                                 /** Format: uuid */
                                 recurrenceParentId: string | null;
+                                sourceEmailId: string | null;
+                                sourceEmailSubject: string | null;
                                 /** Format: uuid */
                                 assigneeId: string | null;
                                 /** Format: date-time */
@@ -17364,6 +17568,8 @@ export interface paths {
                         recurrenceRule?: string | null;
                         /** Format: uuid */
                         recurrenceParentId?: string | null;
+                        sourceEmailId?: string | null;
+                        sourceEmailSubject?: string | null;
                         /** Format: uuid */
                         assigneeId?: string | null;
                         /** Format: date-time */
@@ -17420,6 +17626,8 @@ export interface paths {
                                 recurrenceRule: string | null;
                                 /** Format: uuid */
                                 recurrenceParentId: string | null;
+                                sourceEmailId: string | null;
+                                sourceEmailSubject: string | null;
                                 /** Format: uuid */
                                 assigneeId: string | null;
                                 /** Format: date-time */
@@ -18007,7 +18215,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a project */
+        /** Get a project (with company name and aggregate time/billing) */
         get: {
             parameters: {
                 query?: never;
@@ -18051,6 +18259,9 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
+                                companyName: string | null;
+                                totalTrackedMinutes: number;
+                                totalBilledAmount: number;
                             };
                         };
                     };
@@ -19318,7 +19529,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get an invoice with line items */
+        /** Get an invoice with line items and derived totals */
         get: {
             parameters: {
                 query?: never;
@@ -19390,7 +19601,7 @@ export interface paths {
                                 createdAt: string;
                                 /** Format: date-time */
                                 updatedAt: string;
-                                lineItems?: {
+                                lineItems: {
                                     /** Format: uuid */
                                     id: string;
                                     /** Format: uuid */
@@ -19406,6 +19617,16 @@ export interface paths {
                                     /** Format: date-time */
                                     createdAt: string;
                                 }[];
+                                companyName: string;
+                                contactName: string | null;
+                                /** Format: email */
+                                contactEmail: string | null;
+                                dealTitle: string | null;
+                                amountPaid: number;
+                                balanceDue: number;
+                                eFaturaType: string | null;
+                                eFaturaUuid: string | null;
+                                eFaturaStatus: string | null;
                             };
                         };
                     };
@@ -26792,8 +27013,8 @@ export interface paths {
                                     userId: string;
                                     title: string;
                                     thumbnailUrl: string | null;
-                                    /** @description Only present when fetching a single drawing */
-                                    excalidrawData?: unknown;
+                                    /** @description Excalidraw scene JSON. Only present when fetching a single drawing; list endpoints omit it. */
+                                    content?: unknown;
                                     sortOrder: number;
                                     isArchived: boolean;
                                     /** @enum {string} */
@@ -26858,8 +27079,8 @@ export interface paths {
                                 userId: string;
                                 title: string;
                                 thumbnailUrl: string | null;
-                                /** @description Only present when fetching a single drawing */
-                                excalidrawData?: unknown;
+                                /** @description Excalidraw scene JSON. Only present when fetching a single drawing; list endpoints omit it. */
+                                content?: unknown;
                                 sortOrder: number;
                                 isArchived: boolean;
                                 /** @enum {string} */
@@ -26931,8 +27152,8 @@ export interface paths {
                                 userId: string;
                                 title: string;
                                 thumbnailUrl: string | null;
-                                /** @description Only present when fetching a single drawing */
-                                excalidrawData?: unknown;
+                                /** @description Excalidraw scene JSON. Only present when fetching a single drawing; list endpoints omit it. */
+                                content?: unknown;
                                 sortOrder: number;
                                 isArchived: boolean;
                                 /** @enum {string} */
@@ -27006,8 +27227,8 @@ export interface paths {
                                 userId: string;
                                 title: string;
                                 thumbnailUrl: string | null;
-                                /** @description Only present when fetching a single drawing */
-                                excalidrawData?: unknown;
+                                /** @description Excalidraw scene JSON. Only present when fetching a single drawing; list endpoints omit it. */
+                                content?: unknown;
                                 sortOrder: number;
                                 isArchived: boolean;
                                 /** @enum {string} */
@@ -27129,8 +27350,8 @@ export interface paths {
                         userId?: string;
                         title?: string;
                         thumbnailUrl?: string | null;
-                        /** @description Only present when fetching a single drawing */
-                        excalidrawData?: unknown;
+                        /** @description Excalidraw scene JSON. Only present when fetching a single drawing; list endpoints omit it. */
+                        content?: unknown;
                         sortOrder?: number;
                         isArchived?: boolean;
                         /** @enum {string} */
@@ -27161,8 +27382,8 @@ export interface paths {
                                 userId: string;
                                 title: string;
                                 thumbnailUrl: string | null;
-                                /** @description Only present when fetching a single drawing */
-                                excalidrawData?: unknown;
+                                /** @description Excalidraw scene JSON. Only present when fetching a single drawing; list endpoints omit it. */
+                                content?: unknown;
                                 sortOrder: number;
                                 isArchived: boolean;
                                 /** @enum {string} */
@@ -28188,6 +28409,1142 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/admin/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Super-admin dashboard overview (tenants, users, usage) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tenants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all tenants (super-admin only) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                name: string;
+                                slug: string;
+                                /** @enum {string} */
+                                status: "active" | "suspended" | "trial";
+                                plan: string;
+                                storageQuotaBytes: number;
+                                /** Format: date-time */
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a new tenant (super-admin only) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        slug?: string;
+                        /** Format: email */
+                        ownerEmail: string;
+                        plan?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tenants/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a tenant with full admin detail */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tenants/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change tenant status */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "active" | "suspended";
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tenants/{id}/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change tenant plan */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        plan: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tenants/{id}/storage-quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change tenant storage quota (bytes) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        storageQuotaBytes: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/test-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate an AI provider API key */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        provider: string;
+                        apiKey: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                ok: boolean;
+                                message?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/summarize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate an AI summary of provided text */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        text: string;
+                        maxLength?: number;
+                        /** @enum {string} */
+                        style?: "bullets" | "paragraph" | "tldr";
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                summary: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/quick-replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate suggested quick replies for a message/email */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        context: string;
+                        count?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                replies: string[];
+                            };
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/write-assist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AI writing assistance (rewrite / expand / continue) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        text: string;
+                        /** @enum {string} */
+                        action: "rewrite" | "expand" | "shorten" | "continue" | "fix_grammar";
+                        tone?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                output: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permissions/my-apps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List apps the current user has permission to use */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                appId: string;
+                                canRead: boolean;
+                                canWrite: boolean;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permissions/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all app permissions (admin) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                appId: string;
+                                /** Format: uuid */
+                                userId: string;
+                                role: string;
+                                canRead: boolean;
+                                canWrite: boolean;
+                                canDelete: boolean;
+                                canAdmin: boolean;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permissions/{appId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List permissions for a specific app (admin) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                appId: string;
+                                /** Format: uuid */
+                                userId: string;
+                                role: string;
+                                canRead: boolean;
+                                canWrite: boolean;
+                                canDelete: boolean;
+                                canAdmin: boolean;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permissions/{appId}/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current user’s permission for a specific app */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                            data: {
+                                appId: string;
+                                /** Format: uuid */
+                                userId: string;
+                                role: string;
+                                canRead: boolean;
+                                canWrite: boolean;
+                                canDelete: boolean;
+                                canAdmin: boolean;
+                            };
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permissions/{appId}/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set a user’s permission for an app (admin) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        role?: string;
+                        canRead?: boolean;
+                        canWrite?: boolean;
+                        canDelete?: boolean;
+                        canAdmin?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Revoke a user’s permission for an app (admin) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: false;
+                            error: string;
+                            code?: string;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/health": {
