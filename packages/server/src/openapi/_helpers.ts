@@ -4,6 +4,11 @@ import { validate } from './validate';
 
 extendZodWithOpenApi(z);
 
+/**
+ * The single OpenAPI registry every path module contributes to. Imported
+ * from `openapi/paths/*.ts` via `register()` / `defineRoute()` side effects.
+ * Do not instantiate a second registry — the server serves from this one.
+ */
 export const openApiRegistry = new OpenAPIRegistry();
 
 openApiRegistry.registerComponent('securitySchemes', 'bearerAuth', {
@@ -18,6 +23,12 @@ export const EnvelopeError = z.object({
   code: z.string().optional(),
 });
 
+/**
+ * Wraps a response schema in the standard Atlas envelope:
+ *   `{ success: true, data: <T> }`
+ * Every successful API response follows this shape. For errors, see
+ * EnvelopeError.
+ */
 export function envelope<T extends z.ZodTypeAny>(data: T) {
   return z.object({ success: z.literal(true), data });
 }
@@ -89,6 +100,15 @@ export function defineRoute(def: RouteDef) {
   };
 }
 
+/**
+ * Register a route with the OpenAPI spec only. No runtime effect on the
+ * Express router — call this in an `openapi/paths/*.ts` module for every
+ * real route. Auto-generates 401 (unless public), 404 (for `/:id` paths),
+ * and 409 (if concurrency: true) responses.
+ *
+ * For routes that should also validate requests at runtime from the same
+ * schema, use `defineRoute()` instead.
+ */
 export function register(def: RouteDef) {
   const responses: Record<number, { description: string; content?: any }> = {};
   const okSchema = def.response ?? OkEnvelope;

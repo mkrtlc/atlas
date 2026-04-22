@@ -7,6 +7,17 @@ import {
   STALE_RESOURCE_CODE,
 } from '@atlas-platform/shared';
 
+/**
+ * The one axios instance used by every hook and controller in the client.
+ * - Adds `Authorization: Bearer <access token>` from localStorage automatically.
+ * - On 401, attempts a single refresh via /auth/refresh, then retries the
+ *   original request; if the refresh also fails, triggers session-expired.
+ * - On 409 with STALE_RESOURCE, opens the global ConflictDialog so the user
+ *   can resolve the optimistic-concurrency clash in one place.
+ *
+ * Import this; don't reach for `fetch`. Typed variants in lib/typed-api.ts
+ * layer on top.
+ */
 export const api = axios.create({
   baseURL: config.apiUrl,
   headers: { 'Content-Type': 'application/json' },

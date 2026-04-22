@@ -3,6 +3,18 @@ import jwt from 'jsonwebtoken';
 import type { TenantMemberRole } from '@atlas-platform/shared';
 import { env } from '../config/env';
 
+/**
+ * Shape of `req.auth` after the authMiddleware verifies the JWT.
+ *
+ * - `tenantRole` present means the user is a member of `tenantId`; absent
+ *   means a platform-level request not yet scoped to a tenant.
+ * - `isSuperAdmin` is stamped at login time from `users.is_super_admin`.
+ *   Older tokens may lack this claim — `adminAuthMiddleware` falls back
+ *   to a DB lookup.
+ * - `impersonatedBy` is only present on impersonation tokens minted by
+ *   /admin/tenants/:id/impersonate. Log it on every mutating action for
+ *   audit.
+ */
 export interface AuthPayload {
   userId: string;
   tenantId: string;
