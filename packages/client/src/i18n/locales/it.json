@@ -1529,7 +1529,50 @@
       "notificationMessage": "Messaggio notifica",
       "notificationPlaceholder": "Es., Una trattativa è stata vinta!",
       "disable": "Disattiva automazione",
-      "enable": "Attiva automazione"
+      "enable": "Attiva automazione",
+      "editor": {
+        "triggerSection": "Trigger",
+        "stepsSection": "Passaggi",
+        "addStep": "Aggiungi passaggio",
+        "addFilter": "Aggiungi filtro",
+        "removeCondition": "Rimuovi condizione",
+        "duplicateStep": "Duplica passaggio",
+        "deleteStep": "Elimina passaggio",
+        "lastStepTooltip": "Un workflow deve avere almeno un passaggio",
+        "deleteWorkflow": "Elimina workflow",
+        "deleteWorkflowDesc": "Questa operazione elimina definitivamente il workflow e tutti i suoi passaggi. Non può essere annullata.",
+        "saving": "Salvataggio…",
+        "saved": "Salvato",
+        "saveFailed": "Salvataggio non riuscito",
+        "conditionsCleared": "Rimosse {{count}} condizioni che facevano riferimento al vecchio trigger",
+        "stepCountSummary": "{{count}} passaggi",
+        "moreSteps": "altri",
+        "operators": {
+          "eq": "uguale a",
+          "neq": "diverso da",
+          "gt": "maggiore di",
+          "gte": "maggiore o uguale",
+          "lt": "minore di",
+          "lte": "minore o uguale",
+          "contains": "contiene",
+          "not_contains": "non contiene",
+          "is_empty": "è vuoto",
+          "is_not_empty": "non è vuoto"
+        },
+        "fields": {
+          "trigger_fromStage": "Trigger: fase di partenza",
+          "trigger_toStage": "Trigger: fase di destinazione",
+          "trigger_activityType": "Trigger: tipo di attività",
+          "deal_value": "Valore trattativa",
+          "deal_probability": "Probabilità trattativa",
+          "deal_stageId": "Fase trattativa",
+          "deal_tags": "Tag trattativa",
+          "deal_title": "Titolo trattativa",
+          "contact_email": "Email contatto",
+          "contact_tags": "Tag contatto",
+          "company_tags": "Tag azienda"
+        }
+      }
     },
     "permissions": {
       "title": "Permessi",

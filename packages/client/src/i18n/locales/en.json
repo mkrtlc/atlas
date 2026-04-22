@@ -1556,7 +1556,50 @@
       "notificationMessage": "Notification message",
       "notificationPlaceholder": "e.g., A deal was just won!",
       "disable": "Disable automation",
-      "enable": "Enable automation"
+      "enable": "Enable automation",
+      "editor": {
+        "triggerSection": "Trigger",
+        "stepsSection": "Steps",
+        "addStep": "Add step",
+        "addFilter": "Add filter",
+        "removeCondition": "Remove condition",
+        "duplicateStep": "Duplicate step",
+        "deleteStep": "Delete step",
+        "lastStepTooltip": "A workflow needs at least one step",
+        "deleteWorkflow": "Delete workflow",
+        "deleteWorkflowDesc": "This permanently deletes the workflow and all its steps. This cannot be undone.",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "saveFailed": "Save failed",
+        "conditionsCleared": "Removed {{count}} conditions that referenced the old trigger",
+        "stepCountSummary": "{{count}} steps",
+        "moreSteps": "more",
+        "operators": {
+          "eq": "equals",
+          "neq": "does not equal",
+          "gt": "greater than",
+          "gte": "greater than or equal",
+          "lt": "less than",
+          "lte": "less than or equal",
+          "contains": "contains",
+          "not_contains": "does not contain",
+          "is_empty": "is empty",
+          "is_not_empty": "is not empty"
+        },
+        "fields": {
+          "trigger_fromStage": "Trigger: from stage",
+          "trigger_toStage": "Trigger: to stage",
+          "trigger_activityType": "Trigger: activity type",
+          "deal_value": "Deal value",
+          "deal_probability": "Deal probability",
+          "deal_stageId": "Deal stage",
+          "deal_tags": "Deal tags",
+          "deal_title": "Deal title",
+          "contact_email": "Contact email",
+          "contact_tags": "Contact tags",
+          "company_tags": "Company tags"
+        }
+      }
     },
     "workflows": {
       "notificationTitle": "Workflow notification",

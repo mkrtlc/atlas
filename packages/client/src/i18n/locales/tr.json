@@ -1529,7 +1529,50 @@
       "notificationMessage": "Bildirim mesajı",
       "notificationPlaceholder": "Ör., Bir anlaşma kazanıldı!",
       "disable": "Otomasyonu devre dışı bırak",
-      "enable": "Otomasyonu etkinleştir"
+      "enable": "Otomasyonu etkinleştir",
+      "editor": {
+        "triggerSection": "Tetikleyici",
+        "stepsSection": "Adımlar",
+        "addStep": "Adım ekle",
+        "addFilter": "Koşul ekle",
+        "removeCondition": "Koşulu kaldır",
+        "duplicateStep": "Adımı çoğalt",
+        "deleteStep": "Adımı sil",
+        "lastStepTooltip": "Bir iş akışının en az bir adımı olmalıdır",
+        "deleteWorkflow": "İş akışını sil",
+        "deleteWorkflowDesc": "Bu, iş akışını ve tüm adımlarını kalıcı olarak siler. Bu işlem geri alınamaz.",
+        "saving": "Kaydediliyor…",
+        "saved": "Kaydedildi",
+        "saveFailed": "Kaydetme başarısız",
+        "conditionsCleared": "Eski tetikleyiciye başvuran {{count}} koşul kaldırıldı",
+        "stepCountSummary": "{{count}} adım",
+        "moreSteps": "daha fazla",
+        "operators": {
+          "eq": "eşittir",
+          "neq": "eşit değil",
+          "gt": "büyük",
+          "gte": "büyük veya eşit",
+          "lt": "küçük",
+          "lte": "küçük veya eşit",
+          "contains": "içerir",
+          "not_contains": "içermez",
+          "is_empty": "boş",
+          "is_not_empty": "boş değil"
+        },
+        "fields": {
+          "trigger_fromStage": "Tetikleyici: kaynak aşama",
+          "trigger_toStage": "Tetikleyici: hedef aşama",
+          "trigger_activityType": "Tetikleyici: aktivite türü",
+          "deal_value": "Fırsat değeri",
+          "deal_probability": "Fırsat olasılığı",
+          "deal_stageId": "Fırsat aşaması",
+          "deal_tags": "Fırsat etiketleri",
+          "deal_title": "Fırsat başlığı",
+          "contact_email": "İletişim e-postası",
+          "contact_tags": "İletişim etiketleri",
+          "company_tags": "Şirket etiketleri"
+        }
+      }
     },
     "permissions": {
       "title": "Yetkiler",

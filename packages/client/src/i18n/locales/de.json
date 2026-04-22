@@ -1529,7 +1529,50 @@
       "notificationMessage": "Benachrichtigungstext",
       "notificationPlaceholder": "z.B., Ein Deal wurde gewonnen!",
       "disable": "Automatisierung deaktivieren",
-      "enable": "Automatisierung aktivieren"
+      "enable": "Automatisierung aktivieren",
+      "editor": {
+        "triggerSection": "Auslöser",
+        "stepsSection": "Schritte",
+        "addStep": "Schritt hinzufügen",
+        "addFilter": "Bedingung hinzufügen",
+        "removeCondition": "Bedingung entfernen",
+        "duplicateStep": "Schritt duplizieren",
+        "deleteStep": "Schritt löschen",
+        "lastStepTooltip": "Ein Workflow benötigt mindestens einen Schritt",
+        "deleteWorkflow": "Workflow löschen",
+        "deleteWorkflowDesc": "Dies löscht den Workflow und alle seine Schritte dauerhaft. Dies kann nicht rückgängig gemacht werden.",
+        "saving": "Speichere…",
+        "saved": "Gespeichert",
+        "saveFailed": "Speichern fehlgeschlagen",
+        "conditionsCleared": "{{count}} Bedingungen entfernt, die auf den alten Auslöser verwiesen",
+        "stepCountSummary": "{{count}} Schritte",
+        "moreSteps": "mehr",
+        "operators": {
+          "eq": "ist gleich",
+          "neq": "ist nicht gleich",
+          "gt": "größer als",
+          "gte": "größer oder gleich",
+          "lt": "kleiner als",
+          "lte": "kleiner oder gleich",
+          "contains": "enthält",
+          "not_contains": "enthält nicht",
+          "is_empty": "ist leer",
+          "is_not_empty": "ist nicht leer"
+        },
+        "fields": {
+          "trigger_fromStage": "Auslöser: von Phase",
+          "trigger_toStage": "Auslöser: zu Phase",
+          "trigger_activityType": "Auslöser: Aktivitätstyp",
+          "deal_value": "Deal-Wert",
+          "deal_probability": "Deal-Wahrscheinlichkeit",
+          "deal_stageId": "Deal-Phase",
+          "deal_tags": "Deal-Tags",
+          "deal_title": "Deal-Titel",
+          "contact_email": "Kontakt-E-Mail",
+          "contact_tags": "Kontakt-Tags",
+          "company_tags": "Unternehmens-Tags"
+        }
+      }
     },
     "permissions": {
       "title": "Berechtigungen",

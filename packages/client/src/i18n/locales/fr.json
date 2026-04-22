@@ -1529,7 +1529,50 @@
       "notificationMessage": "Message de notification",
       "notificationPlaceholder": "Ex. Une affaire a été gagnée !",
       "disable": "Désactiver l’automatisation",
-      "enable": "Activer l’automatisation"
+      "enable": "Activer l’automatisation",
+      "editor": {
+        "triggerSection": "Déclencheur",
+        "stepsSection": "Étapes",
+        "addStep": "Ajouter une étape",
+        "addFilter": "Ajouter un filtre",
+        "removeCondition": "Supprimer la condition",
+        "duplicateStep": "Dupliquer l’étape",
+        "deleteStep": "Supprimer l’étape",
+        "lastStepTooltip": "Un workflow doit avoir au moins une étape",
+        "deleteWorkflow": "Supprimer le workflow",
+        "deleteWorkflowDesc": "Ceci supprime définitivement le workflow et toutes ses étapes. Cette action est irréversible.",
+        "saving": "Enregistrement…",
+        "saved": "Enregistré",
+        "saveFailed": "Échec de l’enregistrement",
+        "conditionsCleared": "{{count}} conditions référençant l’ancien déclencheur ont été supprimées",
+        "stepCountSummary": "{{count}} étapes",
+        "moreSteps": "plus",
+        "operators": {
+          "eq": "égal à",
+          "neq": "différent de",
+          "gt": "supérieur à",
+          "gte": "supérieur ou égal",
+          "lt": "inférieur à",
+          "lte": "inférieur ou égal",
+          "contains": "contient",
+          "not_contains": "ne contient pas",
+          "is_empty": "est vide",
+          "is_not_empty": "n’est pas vide"
+        },
+        "fields": {
+          "trigger_fromStage": "Déclencheur : phase de départ",
+          "trigger_toStage": "Déclencheur : phase cible",
+          "trigger_activityType": "Déclencheur : type d’activité",
+          "deal_value": "Valeur de l’affaire",
+          "deal_probability": "Probabilité de l’affaire",
+          "deal_stageId": "Phase de l’affaire",
+          "deal_tags": "Tags de l’affaire",
+          "deal_title": "Titre de l’affaire",
+          "contact_email": "E-mail du contact",
+          "contact_tags": "Tags du contact",
+          "company_tags": "Tags de l’entreprise"
+        }
+      }
     },
     "permissions": {
       "title": "Permissions",
