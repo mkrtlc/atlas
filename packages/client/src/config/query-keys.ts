@@ -174,6 +174,7 @@ export const queryKeys = {
     workflows: {
       all: ['crm', 'workflows'] as const,
     },
+    workflow: (id: string) => ['crm', 'workflow', id] as const,
     leads: {
       all: ['crm', 'leads'] as const,
       detail: (id: string) => ['crm', 'leads', id] as const,

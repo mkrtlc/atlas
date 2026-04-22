@@ -1,17 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Zap, Sparkles } from 'lucide-react';
 import { isTenantAdmin } from '@atlas-platform/shared';
 import { useAuthStore } from '../../../stores/auth-store';
 import {
   useWorkflows, useCreateWorkflow, useDeleteWorkflow, useToggleWorkflow,
   useSeedExampleWorkflows,
-  type CrmWorkflow, type CrmDealStage,
+  type CrmWorkflow, type CrmWorkflowStep, type CrmDealStage,
 } from '../hooks';
 import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Select } from '../../../components/ui/select';
-import { Modal } from '../../../components/ui/modal';
 import { Badge } from '../../../components/ui/badge';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { AlertBanner } from '../../../components/ui/alert-banner';
@@ -44,16 +42,6 @@ function getActionOptions(t: (key: string) => string) {
     { value: 'assign_user', label: t('crm.automations.actionAssignUser') },
     { value: 'log_activity', label: t('crm.automations.actionLogActivity') },
     { value: 'send_notification', label: t('crm.automations.actionSendNotification') },
-  ];
-}
-
-function getActivityTypeOptions(t: (key: string) => string) {
-  return [
-    { value: '', label: t('crm.automations.anyType') },
-    { value: 'note', label: t('crm.activities.note') },
-    { value: 'call', label: t('crm.activities.call') },
-    { value: 'meeting', label: t('crm.activities.meeting') },
-    { value: 'email', label: t('crm.activities.email') },
   ];
 }
 
@@ -96,10 +84,10 @@ function describeTrigger(workflow: CrmWorkflow, stages: CrmDealStage[], t: (key:
   return base;
 }
 
-function describeAction(workflow: CrmWorkflow, stages: CrmDealStage[], t: (key: string) => string): string {
-  const config = workflow.actionConfig;
+function describeFirstStep(step: CrmWorkflowStep, stages: CrmDealStage[], t: (key: string) => string): string {
+  const config = step.actionConfig;
 
-  switch (workflow.action) {
+  switch (step.action) {
     case 'create_task':
       return `${t('crm.automations.actionCreateTask')}: "${translateWorkflowTaskTitle((config.taskTitle as string) || '', t)}"`;
     case 'update_field': {
@@ -121,307 +109,45 @@ function describeAction(workflow: CrmWorkflow, stages: CrmDealStage[], t: (key: 
     case 'send_notification':
       return `${t('crm.automations.actionSendNotification')}: "${config.message || ''}"`;
     default:
-      return getActionLabel(workflow.action, t);
+      return getActionLabel(step.action, t);
   }
-}
-
-// ─── Create Modal ─────────────────────────────────────────────────
-
-function CreateWorkflowModal({
-  open,
-  onClose,
-  stages,
-}: {
-  open: boolean;
-  onClose: () => void;
-  stages: CrmDealStage[];
-}) {
-  const { t } = useTranslation();
-  const createWorkflow = useCreateWorkflow();
-
-  const [name, setName] = useState('');
-  const [trigger, setTrigger] = useState('deal_stage_changed');
-  const [action, setAction] = useState('create_task');
-
-  // Trigger config
-  const [fromStage, setFromStage] = useState('');
-  const [toStage, setToStage] = useState('');
-  const [activityType, setActivityType] = useState('');
-
-  // Action config
-  const [taskTitle, setTaskTitle] = useState('');
-  const [fieldName, setFieldName] = useState('probability');
-  const [fieldValue, setFieldValue] = useState('');
-  const [newStageId, setNewStageId] = useState('');
-  const [tagValue, setTagValue] = useState('');
-  const [assignedUserId, setAssignedUserId] = useState('');
-  const [logActivityType, setLogActivityType] = useState('note');
-  const [logActivityBody, setLogActivityBody] = useState('');
-  const [notificationMessage, setNotificationMessage] = useState('');
-
-  const stageOptions = [
-    { value: '', label: t('crm.automations.anyStage') },
-    ...stages.map((s) => ({ value: s.id, label: s.name })),
-  ];
-
-  const stageOptionsRequired = stages.map((s) => ({ value: s.id, label: s.name }));
-
-  const handleSubmit = () => {
-    if (!name.trim()) return;
-
-    const triggerConfig: Record<string, unknown> = {};
-    if (trigger === 'deal_stage_changed') {
-      if (fromStage) triggerConfig.fromStage = fromStage;
-      if (toStage) triggerConfig.toStage = toStage;
-    }
-    if (trigger === 'activity_logged' && activityType) {
-      triggerConfig.activityType = activityType;
-    }
-
-    const actionConfig: Record<string, unknown> = {};
-    if (action === 'create_task') {
-      actionConfig.taskTitle = taskTitle || 'Automated task';
-    }
-    if (action === 'update_field') {
-      actionConfig.fieldName = fieldName;
-      actionConfig.fieldValue = fieldValue;
-    }
-    if (action === 'change_deal_stage') {
-      actionConfig.newStageId = newStageId;
-    }
-    if (action === 'add_tag') {
-      actionConfig.tag = tagValue || 'tag';
-    }
-    if (action === 'assign_user') {
-      actionConfig.assignedUserId = assignedUserId;
-    }
-    if (action === 'log_activity') {
-      actionConfig.activityType = logActivityType;
-      actionConfig.body = logActivityBody;
-    }
-    if (action === 'send_notification') {
-      actionConfig.message = notificationMessage;
-    }
-
-    createWorkflow.mutate(
-      { name: name.trim(), trigger, triggerConfig, action, actionConfig },
-      {
-        onSuccess: () => {
-          onClose();
-          resetForm();
-        },
-      },
-    );
-  };
-
-  const resetForm = () => {
-    setName('');
-    setTrigger('deal_stage_changed');
-    setAction('create_task');
-    setFromStage('');
-    setToStage('');
-    setActivityType('');
-    setTaskTitle('');
-    setFieldName('probability');
-    setFieldValue('');
-    setNewStageId('');
-    setTagValue('');
-    setAssignedUserId('');
-    setLogActivityType('note');
-    setLogActivityBody('');
-    setNotificationMessage('');
-  };
-
-  return (
-    <Modal open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <Modal.Header title={t('crm.automations.newAutomation')} />
-      <Modal.Body>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-          <Input
-            label={t('crm.automations.name')}
-            placeholder={t('crm.automations.namePlaceholder')}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-
-          <div>
-            <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.whenThisHappens')}</div>
-            <Select
-              value={trigger}
-              onChange={(val) => setTrigger(val)}
-              options={getTriggerOptions(t)}
-            />
-          </div>
-
-          {/* Trigger config */}
-          {trigger === 'deal_stage_changed' && (
-            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.fromStage')}</div>
-                <Select
-                  value={fromStage}
-                  onChange={(val) => setFromStage(val)}
-                  options={stageOptions}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.toStage')}</div>
-                <Select
-                  value={toStage}
-                  onChange={(val) => setToStage(val)}
-                  options={stageOptions}
-                />
-              </div>
-            </div>
-          )}
-
-          {trigger === 'activity_logged' && (
-            <div>
-              <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.activityType')}</div>
-              <Select
-                value={activityType}
-                onChange={(val) => setActivityType(val)}
-                options={getActivityTypeOptions(t)}
-              />
-            </div>
-          )}
-
-          <div style={{ borderTop: '1px solid var(--color-border-primary)', margin: 'var(--spacing-xs) 0' }} />
-
-          <div>
-            <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.thenDoThis')}</div>
-            <Select
-              value={action}
-              onChange={(val) => setAction(val)}
-              options={getActionOptions(t)}
-            />
-          </div>
-
-          {/* Action config */}
-          {action === 'create_task' && (
-            <Input
-              label={t('crm.automations.taskTitle')}
-              placeholder={t('crm.automations.taskTitlePlaceholder')}
-              value={taskTitle}
-              onChange={(e) => setTaskTitle(e.target.value)}
-            />
-          )}
-
-          {action === 'update_field' && (
-            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.field')}</div>
-                <Select
-                  value={fieldName}
-                  onChange={(val) => setFieldName(val)}
-                  options={getFieldOptions(t)}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <Input
-                  label={t('crm.automations.newValue')}
-                  placeholder={t('crm.automations.newValuePlaceholder')}
-                  value={fieldValue}
-                  onChange={(e) => setFieldValue(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
-          {action === 'change_deal_stage' && (
-            <div>
-              <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.newStage')}</div>
-              <Select
-                value={newStageId}
-                onChange={(val) => setNewStageId(val)}
-                options={stageOptionsRequired}
-              />
-            </div>
-          )}
-
-          {action === 'add_tag' && (
-            <Input
-              label={t('crm.automations.tagToAdd')}
-              placeholder={t('crm.automations.tagPlaceholder')}
-              value={tagValue}
-              onChange={(e) => setTagValue(e.target.value)}
-            />
-          )}
-
-          {action === 'assign_user' && (
-            <Input
-              label={t('crm.automations.userId')}
-              placeholder={t('crm.automations.userIdPlaceholder')}
-              value={assignedUserId}
-              onChange={(e) => setAssignedUserId(e.target.value)}
-            />
-          )}
-
-          {action === 'log_activity' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-              <div>
-                <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-xs)' }}>{t('crm.automations.activityType')}</div>
-                <Select
-                  value={logActivityType}
-                  onChange={(val) => setLogActivityType(val)}
-                  options={[
-                    { value: 'note', label: t('crm.activities.note') },
-                    { value: 'call', label: t('crm.activities.call') },
-                    { value: 'meeting', label: t('crm.activities.meeting') },
-                    { value: 'email', label: t('crm.activities.email') },
-                  ]}
-                />
-              </div>
-              <Input
-                label={t('crm.automations.activityBody')}
-                placeholder={t('crm.automations.activityBodyPlaceholder')}
-                value={logActivityBody}
-                onChange={(e) => setLogActivityBody(e.target.value)}
-              />
-            </div>
-          )}
-
-          {action === 'send_notification' && (
-            <Input
-              label={t('crm.automations.notificationMessage')}
-              placeholder={t('crm.automations.notificationPlaceholder')}
-              value={notificationMessage}
-              onChange={(e) => setNotificationMessage(e.target.value)}
-            />
-          )}
-        </div>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" size="sm" onClick={onClose}>
-          {t('common.cancel')}
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={!name.trim() || createWorkflow.isPending}
-        >
-          {createWorkflow.isPending ? t('common.loading') : t('crm.automations.newAutomation')}
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
 }
 
 // ─── Main View ────────────────────────────────────────────────────
 
 export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
   const { t } = useTranslation();
+  const [, setSearchParams] = useSearchParams();
   const { data: workflowsData, isLoading } = useWorkflows();
   const workflows = workflowsData?.workflows ?? [];
+  const createWorkflow = useCreateWorkflow();
   const toggleWorkflow = useToggleWorkflow();
   const deleteWorkflow = useDeleteWorkflow();
   const seedWorkflows = useSeedExampleWorkflows();
   const tenantRole = useAuthStore((s) => s.tenantRole);
   const isAdmin = isTenantAdmin(tenantRole);
 
-  const [showCreate, setShowCreate] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const navigateToEditor = (workflowId: string) => {
+    setSearchParams({ view: 'automation-edit', workflowId }, { replace: true });
+  };
+
+  const handleNewAutomation = () => {
+    createWorkflow.mutate(
+      {
+        name: t('crm.automations.newAutomation'),
+        trigger: 'deal_stage_changed',
+        triggerConfig: {},
+        steps: [{ action: 'create_task', actionConfig: { taskTitle: '' } }],
+      },
+      {
+        onSuccess: (workflow) => {
+          navigateToEditor(workflow.id);
+        },
+      },
+    );
+  };
 
   // Auto-seed example workflows on first visit if none exist (only for admins/owners)
   const hasSeeded = useRef(false);
@@ -465,8 +191,8 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
             {t('crm.automations.subtitle')}
           </div>
         </div>
-        <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => setShowCreate(true)}>
-          {t('crm.automations.newAutomation')}
+        <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={handleNewAutomation} disabled={createWorkflow.isPending}>
+          {createWorkflow.isPending ? t('common.loading') : t('crm.automations.newAutomation')}
         </Button>
       </div>
 
@@ -508,6 +234,7 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
           {workflows.map((workflow) => (
             <div
               key={workflow.id}
+              onClick={() => navigateToEditor(workflow.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -517,6 +244,7 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: workflow.isActive ? 'var(--color-bg-primary)' : 'var(--color-bg-secondary)',
                 opacity: workflow.isActive ? 1 : 0.7,
+                cursor: 'pointer',
               }}
             >
               {/* Icon */}
@@ -553,7 +281,15 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                 }}>
-                  {describeTrigger(workflow, stages, t)} &rarr; {describeAction(workflow, stages, t)}
+                  {describeTrigger(workflow, stages, t)} &rarr;{' '}
+                  {workflow.steps.length > 0
+                    ? describeFirstStep(workflow.steps[0], stages, t)
+                    : t('crm.automations.noSteps', { defaultValue: 'No steps' })}
+                  {workflow.steps.length > 1 && (
+                    <span style={{ marginLeft: 4, color: 'var(--color-text-tertiary)' }}>
+                      {`+${workflow.steps.length - 1} more`}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -566,7 +302,7 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
 
               {/* Toggle */}
               <button
-                onClick={() => toggleWorkflow.mutate(workflow.id)}
+                onClick={(e) => { e.stopPropagation(); toggleWorkflow.mutate(workflow.id); }}
                 style={{
                   position: 'relative',
                   width: 36,
@@ -595,7 +331,7 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
 
               {/* Delete */}
               <button
-                onClick={() => setDeleteId(workflow.id)}
+                onClick={(e) => { e.stopPropagation(); setDeleteId(workflow.id); }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -613,13 +349,6 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
           ))}
         </div>
       )}
-
-      {/* Create modal */}
-      <CreateWorkflowModal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        stages={stages}
-      />
 
       {/* Delete confirmation */}
       <ConfirmDialog

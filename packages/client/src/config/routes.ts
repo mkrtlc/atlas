@@ -22,4 +22,5 @@ export const ROUTES = {
   ONBOARDING: '/onboarding',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password/:token',
+  CRM_AUTOMATION_EDIT: '/crm/automations/:id/edit',
 } as const;

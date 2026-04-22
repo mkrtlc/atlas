@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../lib/api-client';
+import { api, ifUnmodifiedSince } from '../../lib/api-client';
+import type { StepCondition, StepConditionOperator } from '@atlas-platform/shared';
 import { queryKeys } from '../../config/query-keys';
 
 // ─── Inline Types ──────────────────────────────────────────────────
@@ -689,6 +690,19 @@ export function useDashboard() {
 
 // ─── Workflow Types ───────────────────────────────────────────────
 
+export type { StepCondition, StepConditionOperator };
+
+export interface CrmWorkflowStep {
+  id: string;
+  workflowId: string;
+  position: number;
+  action: string;
+  actionConfig: Record<string, unknown>;
+  condition: StepCondition | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CrmWorkflow {
   id: string;
   tenantId: string;
@@ -696,13 +710,12 @@ export interface CrmWorkflow {
   name: string;
   trigger: string;
   triggerConfig: Record<string, unknown>;
-  action: string;
-  actionConfig: Record<string, unknown>;
   isActive: boolean;
   executionCount: number;
   lastExecutedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  steps: CrmWorkflowStep[];
 }
 
 // ─── Workflow Queries ─────────────────────────────────────────────
@@ -721,7 +734,12 @@ export function useWorkflows() {
 export function useCreateWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; trigger: string; triggerConfig?: Record<string, unknown>; action: string; actionConfig: Record<string, unknown> }) => {
+    mutationFn: async (input: {
+      name: string;
+      trigger: string;
+      triggerConfig?: Record<string, unknown>;
+      steps: Array<{ action: string; actionConfig: Record<string, unknown>; condition?: StepCondition | null }>;
+    }) => {
       const { data } = await api.post('/crm/workflows', input);
       return data.data as CrmWorkflow;
     },
@@ -734,14 +752,20 @@ export function useCreateWorkflow() {
 export function useUpdateWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updatedAt, ...input }: { id: string; updatedAt?: string } & Partial<{ name: string; trigger: string; triggerConfig: Record<string, unknown>; action: string; actionConfig: Record<string, unknown>; isActive: boolean }>) => {
-      const { data } = await api.put(`/crm/workflows/${id}`, input, {
-        headers: updatedAt ? { 'If-Unmodified-Since': updatedAt } : undefined,
-      });
+    mutationFn: async ({ id, updatedAt, ...input }: {
+      id: string;
+      name?: string;
+      trigger?: string;
+      triggerConfig?: Record<string, unknown>;
+      isActive?: boolean;
+      updatedAt?: string;
+    }) => {
+      const { data } = await api.put(`/crm/workflows/${id}`, input, ifUnmodifiedSince(updatedAt));
       return data.data as CrmWorkflow;
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflow(vars.id) });
     },
   });
 }
@@ -767,6 +791,71 @@ export function useToggleWorkflow() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
+export function useWorkflow(id: string | null) {
+  return useQuery({
+    queryKey: id ? queryKeys.crm.workflow(id) : ['crm', 'workflow', 'null'],
+    queryFn: async () => {
+      const { data } = await api.get(`/crm/workflows/${id}`);
+      return data.data as CrmWorkflow;
+    },
+    enabled: !!id,
+    staleTime: 10_000,
+  });
+}
+
+export function useAddStep(workflowId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (step: { action: string; actionConfig: Record<string, unknown>; condition?: StepCondition | null }) => {
+      const { data } = await api.post(`/crm/workflows/${workflowId}/steps`, step);
+      return data.data as CrmWorkflowStep;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.crm.workflow(workflowId) });
+      qc.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
+export function useUpdateStep(workflowId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ stepId, patch }: { stepId: string; patch: Partial<{ action: string; actionConfig: Record<string, unknown>; condition: StepCondition | null }> }) => {
+      const { data } = await api.patch(`/crm/workflows/${workflowId}/steps/${stepId}`, patch);
+      return data.data as CrmWorkflowStep;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.crm.workflow(workflowId) });
+      qc.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
+export function useDeleteStep(workflowId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (stepId: string) => {
+      await api.delete(`/crm/workflows/${workflowId}/steps/${stepId}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.crm.workflow(workflowId) });
+      qc.invalidateQueries({ queryKey: queryKeys.crm.workflows.all });
+    },
+  });
+}
+
+export function useReorderSteps(workflowId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (stepIds: string[]) => {
+      await api.post(`/crm/workflows/${workflowId}/steps/reorder`, { stepIds });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.crm.workflow(workflowId) });
     },
   });
 }

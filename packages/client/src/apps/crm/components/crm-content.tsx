@@ -8,6 +8,7 @@ import { DealKanban } from './deal-kanban';
 import { CrmDashboard } from './dashboard';
 import { DashboardCharts } from './dashboard-charts';
 import { AutomationsView } from './automations-view';
+import { AutomationEditor } from './automation-editor';
 import { LeadsView } from './leads-view';
 import { LeadDetailPage } from './lead-detail-page';
 import { DealDetailPage } from './deal-detail-page';
@@ -247,6 +248,13 @@ export function CrmContent({
 
         {activeView === 'automations' && (
           <AutomationsView stages={stages} />
+        )}
+
+        {activeView === 'automation-edit' && searchParams.get('workflowId') && (
+          <AutomationEditor
+            id={searchParams.get('workflowId')!}
+            onBack={() => setActiveView('automations')}
+          />
         )}
 
         {activeView === 'proposals' && (
