@@ -1547,6 +1547,8 @@
         "conditionsCleared": "{{count}} Bedingungen entfernt, die auf den alten Auslöser verwiesen",
         "stepCountSummary": "{{count}} Schritte",
         "moreSteps": "mehr",
+        "noSteps": "Keine Schritte",
+        "stepMenuLabel": "Schritt-Optionen",
         "operators": {
           "eq": "ist gleich",
           "neq": "ist nicht gleich",

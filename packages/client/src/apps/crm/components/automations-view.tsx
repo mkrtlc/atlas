@@ -19,49 +19,11 @@ import {
   translateWorkflowBody,
   translateWorkflowTag,
 } from '../lib/workflow-i18n';
-
-// ─── Constants ────────────────────────────────────────────────────
-
-function getTriggerOptions(t: (key: string) => string) {
-  return [
-    { value: 'deal_stage_changed', label: t('crm.automations.triggerDealStageChanged') },
-    { value: 'deal_created', label: t('crm.automations.triggerDealCreated') },
-    { value: 'deal_won', label: t('crm.automations.triggerDealWon') },
-    { value: 'deal_lost', label: t('crm.automations.triggerDealLost') },
-    { value: 'contact_created', label: t('crm.automations.triggerContactCreated') },
-    { value: 'activity_logged', label: t('crm.automations.triggerActivityLogged') },
-  ];
-}
-
-function getActionOptions(t: (key: string) => string) {
-  return [
-    { value: 'create_task', label: t('crm.automations.actionCreateTask') },
-    { value: 'update_field', label: t('crm.automations.actionUpdateField') },
-    { value: 'change_deal_stage', label: t('crm.automations.actionChangeDealStage') },
-    { value: 'add_tag', label: t('crm.automations.actionAddTag') },
-    { value: 'assign_user', label: t('crm.automations.actionAssignUser') },
-    { value: 'log_activity', label: t('crm.automations.actionLogActivity') },
-    { value: 'send_notification', label: t('crm.automations.actionSendNotification') },
-  ];
-}
-
-function getFieldOptions(t: (key: string) => string) {
-  return [
-    { value: 'probability', label: t('crm.deals.probability') },
-    { value: 'value', label: t('crm.deals.value') },
-    { value: 'title', label: t('crm.deals.title') },
-  ];
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────
-
-function getTriggerLabel(trigger: string, t: (key: string) => string): string {
-  return getTriggerOptions(t).find((o) => o.value === trigger)?.label ?? trigger;
-}
-
-function getActionLabel(action: string, t: (key: string) => string): string {
-  return getActionOptions(t).find((a) => a.value === action)?.label ?? action;
-}
+import {
+  getTriggerLabel,
+  getActionLabel,
+  getUpdateFieldOptions,
+} from '../lib/workflow-options';
 
 function describeTrigger(workflow: CrmWorkflow, stages: CrmDealStage[], t: (key: string, options?: Record<string, unknown>) => string): string {
   const base = getTriggerLabel(workflow.trigger, t);
@@ -92,7 +54,7 @@ function describeFirstStep(step: CrmWorkflowStep, stages: CrmDealStage[], t: (ke
       return `${t('crm.automations.actionCreateTask')}: "${translateWorkflowTaskTitle((config.taskTitle as string) || '', t)}"`;
     case 'update_field': {
       const fieldLabel = config.fieldName
-        ? (getFieldOptions(t).find((o) => o.value === config.fieldName)?.label ?? String(config.fieldName))
+        ? (getUpdateFieldOptions(t).find((o) => o.value === config.fieldName)?.label ?? String(config.fieldName))
         : '';
       return `${t('crm.automations.actionUpdateField')}: ${fieldLabel} = "${config.fieldValue || ''}"`;
     }
@@ -284,10 +246,10 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
                   {describeTrigger(workflow, stages, t)} &rarr;{' '}
                   {workflow.steps.length > 0
                     ? describeFirstStep(workflow.steps[0], stages, t)
-                    : t('crm.automations.noSteps', { defaultValue: 'No steps' })}
+                    : t('crm.automations.editor.noSteps')}
                   {workflow.steps.length > 1 && (
                     <span style={{ marginLeft: 4, color: 'var(--color-text-tertiary)' }}>
-                      {`+${workflow.steps.length - 1} more`}
+                      +{workflow.steps.length - 1} {t('crm.automations.editor.moreSteps')}
                     </span>
                   )}
                 </div>

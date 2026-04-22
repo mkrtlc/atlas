@@ -1547,6 +1547,8 @@
         "conditionsCleared": "Rimosse {{count}} condizioni che facevano riferimento al vecchio trigger",
         "stepCountSummary": "{{count}} passaggi",
         "moreSteps": "altri",
+        "noSteps": "Nessun passaggio",
+        "stepMenuLabel": "Opzioni del passaggio",
         "operators": {
           "eq": "uguale a",
           "neq": "diverso da",

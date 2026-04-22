@@ -23,6 +23,7 @@ import {
 } from '../hooks';
 import { StepCard } from './step-card';
 import { TRIGGER_AVAILABLE_FIELDS, type WorkflowTrigger } from '@atlas-platform/shared';
+import { getTriggerOptions } from '../lib/workflow-options';
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -62,6 +63,13 @@ export function AutomationEditor({ id, onBack }: AutomationEditorProps) {
       setTrigger(workflow.trigger as WorkflowTrigger);
     }
   }, [workflow?.id, workflow?.name, workflow?.trigger]);
+
+  useEffect(() => {
+    return () => {
+      if (nameTimer.current) clearTimeout(nameTimer.current);
+      if (triggerTimer.current) clearTimeout(triggerTimer.current);
+    };
+  }, []);
 
   const saveWorkflow = useCallback((patch: { name?: string; trigger?: WorkflowTrigger }) => {
     if (!workflow) return;
@@ -141,14 +149,7 @@ export function AutomationEditor({ id, onBack }: AutomationEditorProps) {
     setDraggedStepId(null);
   };
 
-  const triggerOptions = useMemo(() => [
-    { value: 'deal_stage_changed', label: t('crm.automations.triggerDealStageChanged') },
-    { value: 'deal_created', label: t('crm.automations.triggerDealCreated') },
-    { value: 'deal_won', label: t('crm.automations.triggerDealWon') },
-    { value: 'deal_lost', label: t('crm.automations.triggerDealLost') },
-    { value: 'contact_created', label: t('crm.automations.triggerContactCreated') },
-    { value: 'activity_logged', label: t('crm.automations.triggerActivityLogged') },
-  ], [t]);
+  const triggerOptions = useMemo(() => getTriggerOptions(t), [t]);
 
   if (isLoading || !workflow) {
     return <div style={{ padding: 'var(--spacing-2xl)', color: 'var(--color-text-tertiary)' }}>{t('common.loading')}</div>;

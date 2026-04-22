@@ -1574,6 +1574,8 @@
         "conditionsCleared": "Removed {{count}} conditions that referenced the old trigger",
         "stepCountSummary": "{{count}} steps",
         "moreSteps": "more",
+        "noSteps": "No steps",
+        "stepMenuLabel": "Step options",
         "operators": {
           "eq": "equals",
           "neq": "does not equal",

@@ -1547,6 +1547,8 @@
         "conditionsCleared": "{{count}} conditions référençant l’ancien déclencheur ont été supprimées",
         "stepCountSummary": "{{count}} étapes",
         "moreSteps": "plus",
+        "noSteps": "Aucune étape",
+        "stepMenuLabel": "Options de l'étape",
         "operators": {
           "eq": "égal à",
           "neq": "différent de",

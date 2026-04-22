@@ -1547,6 +1547,8 @@
         "conditionsCleared": "Eski tetikleyiciye başvuran {{count}} koşul kaldırıldı",
         "stepCountSummary": "{{count}} adım",
         "moreSteps": "daha fazla",
+        "noSteps": "Adım yok",
+        "stepMenuLabel": "Adım seçenekleri",
         "operators": {
           "eq": "eşittir",
           "neq": "eşit değil",

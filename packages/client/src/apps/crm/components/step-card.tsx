@@ -1,13 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { GripVertical, MoreVertical, Trash2, Copy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '../../../components/ui/select';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
+import { IconButton } from '../../../components/ui/icon-button';
 import { Popover, PopoverTrigger, PopoverContent } from '../../../components/ui/popover';
 import { ConditionRow } from './condition-row';
 import type { CrmWorkflowStep, StepCondition, CrmDealStage } from '../hooks';
 import type { WorkflowTrigger } from '@atlas-platform/shared';
+import { TRIGGER_AVAILABLE_FIELDS } from '@atlas-platform/shared';
+import { getActionOptions, getUpdateFieldOptions, getActivityTypeOptions } from '../lib/workflow-options';
 
 interface StepCardProps {
   step: CrmWorkflowStep;
@@ -29,29 +32,34 @@ export function StepCard(props: StepCardProps) {
   const { step, position, trigger, stages, canDelete, onChange, onDuplicate, onDelete } = props;
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const actionOptions = [
-    { value: 'create_task', label: t('crm.automations.actionCreateTask') },
-    { value: 'update_field', label: t('crm.automations.actionUpdateField') },
-    { value: 'change_deal_stage', label: t('crm.automations.actionChangeDealStage') },
-    { value: 'add_tag', label: t('crm.automations.actionAddTag') },
-    { value: 'assign_user', label: t('crm.automations.actionAssignUser') },
-    { value: 'log_activity', label: t('crm.automations.actionLogActivity') },
-    { value: 'send_notification', label: t('crm.automations.actionSendNotification') },
-  ];
+  const actionOptions = useMemo(() => getActionOptions(t), [t]);
+  const updateFieldOptions = useMemo(() => getUpdateFieldOptions(t), [t]);
+  const activityTypeOptions = useMemo(() => getActivityTypeOptions(t), [t]);
+  const stageOptions = useMemo(() => stages.map((s) => ({ value: s.id, label: s.name })), [stages]);
 
   const config = step.actionConfig ?? {};
   const setConfig = (patch: Record<string, unknown>) => onChange({ actionConfig: { ...config, ...patch } });
 
   const addCondition = useCallback(() => {
-    const firstField = trigger === 'deal_stage_changed' ? 'deal.value' : 'deal.value';
+    const firstField = TRIGGER_AVAILABLE_FIELDS[trigger]?.[0] ?? 'deal.value';
     onChange({ condition: { field: firstField, operator: 'eq', value: null } });
   }, [trigger, onChange]);
+
+  const handleDragStart = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.opacity = '0.5';
+    props.onDragStart(e);
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.opacity = '1';
+    props.onDragEnd(e);
+  };
 
   return (
     <div
       draggable
-      onDragStart={props.onDragStart}
-      onDragEnd={props.onDragEnd}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onDragOver={props.onDragOver}
       onDrop={props.onDrop}
       style={{
@@ -78,17 +86,13 @@ export function StepCard(props: StepCardProps) {
 
         {step.action === 'update_field' && (
           <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-            <Select size="sm" value={(config.fieldName as string) ?? 'probability'} onChange={(v) => setConfig({ fieldName: v })} options={[
-              { value: 'probability', label: t('crm.deals.probability') },
-              { value: 'value', label: t('crm.deals.value') },
-              { value: 'title', label: t('crm.deals.title') },
-            ]} />
+            <Select size="sm" value={(config.fieldName as string) ?? 'probability'} onChange={(v) => setConfig({ fieldName: v })} options={updateFieldOptions} />
             <Input size="sm" placeholder={t('crm.automations.newValuePlaceholder')} value={(config.fieldValue as string) ?? ''} onChange={(e) => setConfig({ fieldValue: e.target.value })} />
           </div>
         )}
 
         {step.action === 'change_deal_stage' && (
-          <Select size="sm" value={(config.newStageId as string) ?? ''} onChange={(v) => setConfig({ newStageId: v })} options={stages.map((s) => ({ value: s.id, label: s.name }))} />
+          <Select size="sm" value={(config.newStageId as string) ?? ''} onChange={(v) => setConfig({ newStageId: v })} options={stageOptions} />
         )}
 
         {step.action === 'add_tag' && (
@@ -101,12 +105,7 @@ export function StepCard(props: StepCardProps) {
 
         {step.action === 'log_activity' && (
           <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexDirection: 'column' }}>
-            <Select size="sm" value={(config.activityType as string) ?? 'note'} onChange={(v) => setConfig({ activityType: v })} options={[
-              { value: 'note', label: t('crm.activities.note') },
-              { value: 'call', label: t('crm.activities.call') },
-              { value: 'meeting', label: t('crm.activities.meeting') },
-              { value: 'email', label: t('crm.activities.email') },
-            ]} />
+            <Select size="sm" value={(config.activityType as string) ?? 'note'} onChange={(v) => setConfig({ activityType: v })} options={activityTypeOptions} />
             <Input size="sm" placeholder={t('crm.automations.activityBodyPlaceholder')} value={(config.body as string) ?? ''} onChange={(e) => setConfig({ body: e.target.value })} />
           </div>
         )}
@@ -124,7 +123,7 @@ export function StepCard(props: StepCardProps) {
 
       <Popover open={menuOpen} onOpenChange={setMenuOpen}>
         <PopoverTrigger asChild>
-          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--color-text-tertiary)' }}><MoreVertical size={14} /></button>
+          <span><IconButton icon={<MoreVertical size={14} />} label={t('crm.automations.editor.stepMenuLabel')} size={24} onClick={() => setMenuOpen(true)} /></span>
         </PopoverTrigger>
         <PopoverContent>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
