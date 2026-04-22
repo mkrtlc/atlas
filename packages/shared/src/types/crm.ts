@@ -214,3 +214,85 @@ export interface CrmForecast {
   bestCase: number;
   committed: number;
 }
+
+// ─── Workflow step conditions ──────────────────────────────────────
+
+export type StepConditionOperator =
+  | 'eq' | 'neq'
+  | 'gt' | 'gte' | 'lt' | 'lte'
+  | 'contains' | 'not_contains'
+  | 'is_empty' | 'is_not_empty';
+
+export type StepCondition = {
+  field: string;
+  operator: StepConditionOperator;
+  value: string | number | null;
+};
+
+export const WORKFLOW_ACTIONS = [
+  'create_task',
+  'update_field',
+  'change_deal_stage',
+  'add_tag',
+  'assign_user',
+  'log_activity',
+  'send_notification',
+] as const;
+export type WorkflowAction = (typeof WORKFLOW_ACTIONS)[number];
+
+export const WORKFLOW_TRIGGERS = [
+  'deal_stage_changed',
+  'deal_created',
+  'deal_won',
+  'deal_lost',
+  'contact_created',
+  'activity_logged',
+] as const;
+export type WorkflowTrigger = (typeof WORKFLOW_TRIGGERS)[number];
+
+// Condition field types — drives operator filter in UI and value validation in API.
+export type ConditionFieldType = 'number' | 'string' | 'string[]';
+
+export const CONDITION_FIELD_TYPES: Record<string, ConditionFieldType> = {
+  'trigger.fromStage': 'string',
+  'trigger.toStage': 'string',
+  'trigger.activityType': 'string',
+  'deal.value': 'number',
+  'deal.probability': 'number',
+  'deal.stageId': 'string',
+  'deal.tags': 'string[]',
+  'deal.title': 'string',
+  'contact.email': 'string',
+  'contact.tags': 'string[]',
+  'company.tags': 'string[]',
+};
+
+// Per-trigger, which condition fields are available. Used by the UI to scope the Field
+// Select and by the API to validate incoming condition payloads.
+export const TRIGGER_AVAILABLE_FIELDS: Record<WorkflowTrigger, string[]> = {
+  deal_stage_changed: [
+    'trigger.fromStage', 'trigger.toStage',
+    'deal.value', 'deal.probability', 'deal.stageId', 'deal.tags', 'deal.title',
+    'contact.email', 'contact.tags', 'company.tags',
+  ],
+  deal_created: [
+    'deal.value', 'deal.probability', 'deal.stageId', 'deal.tags', 'deal.title',
+    'contact.email', 'contact.tags', 'company.tags',
+  ],
+  deal_won: [
+    'deal.value', 'deal.probability', 'deal.stageId', 'deal.tags', 'deal.title',
+    'contact.email', 'contact.tags', 'company.tags',
+  ],
+  deal_lost: [
+    'deal.value', 'deal.probability', 'deal.stageId', 'deal.tags', 'deal.title',
+    'contact.email', 'contact.tags', 'company.tags',
+  ],
+  contact_created: [
+    'contact.email', 'contact.tags',
+  ],
+  activity_logged: [
+    'trigger.activityType',
+    'deal.value', 'deal.probability', 'deal.stageId', 'deal.tags', 'deal.title',
+    'contact.email', 'contact.tags', 'company.tags',
+  ],
+};
