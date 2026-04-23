@@ -4684,6 +4684,9 @@
         "confirmBeforeDelete": "Confirm before deleting",
         "confirmBeforeDeleteHelp": "Ask before permanently removing a task."
       }
+    },
+    "notifications": {
+      "taskReassignedAway": "You were unassigned from a task: {{title}}"
     }
   },
   "pdfImport": {

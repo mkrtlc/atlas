@@ -191,8 +191,8 @@ export async function updateTask(userId: string, taskId: string, input: Omit<Upd
   const existing = await getTask(userId, taskId);
   if (!existing) return null;
 
-  // Only the owner can update
-  if (existing.userId !== userId) return null;
+  // Owner or assignee can update
+  if (existing.userId !== userId && existing.assigneeId !== userId) return null;
 
   const now = new Date();
   const updates: Record<string, unknown> = { updatedAt: now };
@@ -239,12 +239,12 @@ export async function updateTask(userId: string, taskId: string, input: Omit<Upd
   await db
     .update(tasks)
     .set(updates)
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)));
+    .where(eq(tasks.id, taskId));
 
   const [updated] = await db
     .select()
     .from(tasks)
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+    .where(eq(tasks.id, taskId))
     .limit(1);
 
   if (!updated) return null;

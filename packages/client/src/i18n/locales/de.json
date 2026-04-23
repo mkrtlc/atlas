@@ -4684,6 +4684,9 @@
         "confirmBeforeDelete": "Vor dem Löschen bestätigen",
         "confirmBeforeDeleteHelp": "Vor dem endgültigen Entfernen einer Aufgabe fragen."
       }
+    },
+    "notifications": {
+      "taskReassignedAway": "Sie wurden von einer Aufgabe abgezogen: {{title}}"
     }
   },
   "pdfImport": {

@@ -4684,6 +4684,9 @@
         "confirmBeforeDelete": "Conferma prima di eliminare",
         "confirmBeforeDeleteHelp": "Chiedi prima di rimuovere definitivamente un’attività."
       }
+    },
+    "notifications": {
+      "taskReassignedAway": "Sei stato rimosso da un’attività: {{title}}"
     }
   },
   "pdfImport": {

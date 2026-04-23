@@ -6,6 +6,7 @@ import { eq, and, asc, desc, sql, type SQL } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
 import { setAppPermission } from '../../../services/app-permissions.service';
 import { createLifecycleEvent } from './lifecycle.service';
+import { createTasksFromTemplate, listOnboardingTemplates } from './onboarding.service';
 
 interface CreateEmployeeInput {
   name: string;
@@ -227,6 +228,17 @@ export async function createEmployee(userId: string, tenantId: string, input: Cr
       logger.warn({ err }, 'Failed to auto-link employee to user');
     }
   }
+
+  // Auto-seed onboarding tasks from the tenant's first template (non-blocking)
+  listOnboardingTemplates(tenantId).then((templates) => {
+    if (templates.length === 0) {
+      logger.debug({ employeeId: created.id }, 'No onboarding template found for tenant — skipping task seed');
+      return;
+    }
+    return createTasksFromTemplate(tenantId, created.id, templates[0].id);
+  }).catch((err) => {
+    logger.warn({ err, employeeId: created.id }, 'Failed to seed onboarding tasks for new employee');
+  });
 
   logger.info({ userId, employeeId: created.id }, 'Employee created');
   return created;

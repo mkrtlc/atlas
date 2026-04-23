@@ -4684,6 +4684,9 @@
         "confirmBeforeDelete": "Confirmer avant de supprimer",
         "confirmBeforeDeleteHelp": "Demander avant la suppression définitive d’une tâche."
       }
+    },
+    "notifications": {
+      "taskReassignedAway": "Vous avez été retiré d’une tâche : {{title}}"
     }
   },
   "pdfImport": {

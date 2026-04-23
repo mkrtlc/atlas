@@ -2,9 +2,9 @@ import { db } from '../../../config/database';
 import { signatureDocuments, signatureFields, signingTokens, signAuditLog, users } from '../../../db/schema';
 import { eq, and, asc, desc, sql, inArray } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
-import { readFile } from 'node:fs/promises';
+import { readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 const UPLOADS_DIR = path.join(__dirname, '../../../../uploads');
 
@@ -229,6 +229,10 @@ export async function updateDocument(
 
 export async function deleteDocument(tenantId: string, documentId: string, userIdFilter?: string) {
   const now = new Date();
+
+  // Fetch the storagePath before archiving so we can unlink the file
+  const doc = await getDocument(tenantId, documentId, userIdFilter);
+
   await db
     .update(signatureDocuments)
     .set({ isArchived: true, updatedAt: now })
@@ -239,7 +243,15 @@ export async function deleteDocument(tenantId: string, documentId: string, userI
         ...(userIdFilter ? [eq(signatureDocuments.userId, userIdFilter)] : []),
       ),
     );
+
   logger.info({ tenantId, documentId }, 'Signature document archived');
+
+  // Unlink PDF from disk (non-blocking — archive response is already sent)
+  if (doc?.storagePath) {
+    unlink(path.join(UPLOADS_DIR, doc.storagePath)).catch((err) => {
+      logger.warn({ err, documentId, storagePath: doc.storagePath }, 'Failed to unlink sign document PDF from disk');
+    });
+  }
 }
 
 export async function voidDocument(
@@ -334,6 +346,62 @@ export async function generateSignedPDF(documentId: string, storagePath: string)
       } catch (err) {
         logger.warn({ err, fieldId: field.id }, 'Failed to embed signature image — skipping');
       }
+    }
+  }
+
+  // ── Audit trail page ────────────────────────────────────────────
+  // Fetch the document record plus audit events for signers
+  const [docRecord] = await db
+    .select({ id: signatureDocuments.id, title: signatureDocuments.title, createdAt: signatureDocuments.createdAt, completedAt: signatureDocuments.updatedAt })
+    .from(signatureDocuments)
+    .where(eq(signatureDocuments.id, documentId))
+    .limit(1);
+
+  const auditRows = await db
+    .select()
+    .from(signAuditLog)
+    .where(and(eq(signAuditLog.documentId, documentId), eq(signAuditLog.action, 'document.signed')))
+    .orderBy(asc(signAuditLog.createdAt));
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const auditPage = pdfDoc.addPage([595, 842]); // A4
+  const { width, height } = auditPage.getSize();
+  const margin = 50;
+  let y = height - margin;
+
+  function drawLine(text: string, size = 11, isBold = false, color = rgb(0, 0, 0)) {
+    auditPage.drawText(text, { x: margin, y, size, font: isBold ? boldFont : font, color });
+    y -= size + 6;
+  }
+
+  drawLine('Signature Audit Trail', 16, true, rgb(0.1, 0.1, 0.1));
+  y -= 4;
+  auditPage.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 1, color: rgb(0.7, 0.7, 0.7) });
+  y -= 12;
+
+  if (docRecord) {
+    drawLine(`Document: ${docRecord.title}`, 11, true);
+    drawLine(`Document ID: ${docRecord.id}`, 10, false, rgb(0.4, 0.4, 0.4));
+    drawLine(`Created: ${docRecord.createdAt?.toISOString() ?? 'N/A'}`, 10, false, rgb(0.4, 0.4, 0.4));
+  }
+
+  y -= 8;
+  drawLine('Signers', 12, true);
+  y -= 4;
+
+  if (auditRows.length === 0) {
+    drawLine('No signed events recorded.', 10, false, rgb(0.5, 0.5, 0.5));
+  } else {
+    for (const row of auditRows) {
+      const meta = (row.metadata ?? {}) as Record<string, string>;
+      const name = row.actorName ?? meta.signerName ?? 'Unknown';
+      const email = row.actorEmail ?? meta.signerEmail ?? '';
+      const ip = row.ipAddress ?? 'N/A';
+      const ts = row.createdAt?.toISOString() ?? 'N/A';
+      drawLine(`• ${name} <${email}>`, 10, true);
+      drawLine(`  Signed: ${ts}    IP: ${ip}`, 9, false, rgb(0.4, 0.4, 0.4));
+      y -= 4;
     }
   }
 

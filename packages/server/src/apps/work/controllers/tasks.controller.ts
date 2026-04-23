@@ -117,6 +117,16 @@ export async function updateTask(req: Request, res: Response) {
         metadata: { taskId: task.id, assigneeId },
         notifyUserIds: [assigneeId],
       }).catch(() => {});
+
+      // Notify previous assignee they were unassigned
+      if (existingTask?.assigneeId) {
+        emitAppEvent({
+          tenantId: req.auth!.tenantId, userId, appId: 'work',
+          eventType: 'task.unassigned', title: `unassigned you from a task: ${task.title}`,
+          metadata: { taskId: task.id, previousAssigneeId: existingTask.assigneeId },
+          notifyUserIds: [existingTask.assigneeId],
+        }).catch(() => {});
+      }
     }
 
     res.json({ success: true, data: task });

@@ -4684,6 +4684,9 @@
         "confirmBeforeDelete": "Silmeden önce onay iste",
         "confirmBeforeDeleteHelp": "Bir görevi kalıcı olarak silmeden önce sor."
       }
+    },
+    "notifications": {
+      "taskReassignedAway": "Bir görevden çıkarıldınız: {{title}}"
     }
   },
   "pdfImport": {
