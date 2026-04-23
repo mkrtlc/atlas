@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreadcrumb } from '../../../lib/breadcrumb-context';
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
   Trash2, RefreshCw, Copy,
@@ -80,6 +81,16 @@ export function CompanyDetailPage({ companyId, onBack, onNavigate, onContactClic
       onSuccess: () => setNewActivityBody(''),
     });
   }, [company, newActivityType, newActivityBody, createActivity]);
+
+  useBreadcrumb(
+    company
+      ? [
+          { label: t('sidebar.crm', 'CRM'), to: '/crm' },
+          { label: t('crm.sidebar.companies', 'Companies'), to: '/crm?view=companies' },
+          { label: company.name },
+        ]
+      : null,
+  );
 
   if (!company) {
     return (

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useBreadcrumb } from '../../../lib/breadcrumb-context';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Trophy, XCircle,
   Mail, Phone, Tag, Sparkles, Loader2,
@@ -152,6 +153,16 @@ export function LeadDetailPage({ leadId, onBack, onNavigate }: LeadDetailPagePro
       onSuccess: () => setNewActivityBody(''),
     });
   }, [lead, newActivityType, newActivityBody, createActivity]);
+
+  useBreadcrumb(
+    lead
+      ? [
+          { label: t('sidebar.crm', 'CRM'), to: '/crm' },
+          { label: t('crm.leads.title', 'Leads'), to: '/crm?view=leads' },
+          { label: lead.name },
+        ]
+      : null,
+  );
 
   if (!lead) {
     return (

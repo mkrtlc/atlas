@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreadcrumb } from '../../../lib/breadcrumb-context';
 import { Button } from '../../../components/ui/button';
 import { ContentArea } from '../../../components/ui/content-area';
 import { ResizeHandle } from '../../../components/ui/resize-handle';
@@ -87,6 +88,15 @@ export function InvoiceDetailPage({ invoiceId, onBack }: Props) {
       '_blank',
     );
   };
+
+  useBreadcrumb(
+    invoice
+      ? [
+          { label: t('invoices.title', 'Invoices'), to: '/invoices' },
+          { label: invoice.invoiceNumber },
+        ]
+      : null,
+  );
 
   if (isError) {
     return (

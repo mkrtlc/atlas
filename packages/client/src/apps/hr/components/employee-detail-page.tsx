@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreadcrumb } from '../../../lib/breadcrumb-context';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Trash2,
   Building2, Briefcase, CalendarDays, Clock,
@@ -105,6 +106,16 @@ export function EmployeeDetailPage({
   useEffect(() => {
     setActiveTab('overview');
   }, [employeeId]);
+
+  useBreadcrumb(
+    employee
+      ? [
+          { label: t('sidebar.hr', 'HRM'), to: '/hr' },
+          { label: t('hr.sidebar.employees', 'Employees'), to: '/hr?view=employees' },
+          { label: employee.name },
+        ]
+      : null,
+  );
 
   if (!employee) {
     return (

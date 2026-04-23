@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useBreadcrumb } from '../../../lib/breadcrumb-context';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Trophy, XCircle,
   Trash2,
@@ -164,6 +165,16 @@ export function DealDetailPage({ dealId, onBack, onNavigate }: DealDetailPagePro
   }, [deal, newActivityType, newActivityBody, createActivity]);
 
   const companyDomain = deal?.companyId ? companies.find((c) => c.id === deal.companyId)?.domain : null;
+
+  useBreadcrumb(
+    deal
+      ? [
+          { label: t('sidebar.crm', 'CRM'), to: '/crm' },
+          { label: t('crm.sidebar.deals', 'Deals'), to: '/crm?view=deals' },
+          { label: deal.title },
+        ]
+      : null,
+  );
 
   if (!deal) {
     return (

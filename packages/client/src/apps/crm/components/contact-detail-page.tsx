@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreadcrumb } from '../../../lib/breadcrumb-context';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Trash2,
 } from 'lucide-react';
@@ -77,6 +78,16 @@ export function ContactDetailPage({ contactId, onBack, onNavigate, onCompanyClic
       onSuccess: () => setNewActivityBody(''),
     });
   }, [contact, newActivityType, newActivityBody, createActivity]);
+
+  useBreadcrumb(
+    contact
+      ? [
+          { label: t('sidebar.crm', 'CRM'), to: '/crm' },
+          { label: t('crm.sidebar.contacts', 'Contacts'), to: '/crm?view=contacts' },
+          { label: contact.name },
+        ]
+      : null,
+  );
 
   if (!contact) {
     return (

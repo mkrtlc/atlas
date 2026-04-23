@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useBreadcrumb } from '../../../lib/breadcrumb-context';
 import { ContentArea } from '../../../components/ui/content-area';
 import { Tabs } from '../../../components/ui/tabs';
 import { Select } from '../../../components/ui/select';
@@ -30,6 +31,15 @@ export function ProjectDetailPage({ projectId }: Props) {
   const allProjects = projectsData?.projects ?? [];
 
   const tabs = TAB_IDS.map((id) => ({ id, label: t(`work.tabs.${id}`) }));
+
+  useBreadcrumb(
+    project
+      ? [
+          { label: t('work.sidebar.projects', 'Projects'), to: '/work' },
+          { label: project.name },
+        ]
+      : null,
+  );
 
   if (isError) {
     return (
