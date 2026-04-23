@@ -160,11 +160,22 @@ export function AutomationEditor({ id, onBack }: AutomationEditorProps) {
   }
 
   const header = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', height: 44, padding: '0 var(--spacing-lg)' }}>
-      <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={onBack}>{t('common.back')}</Button>
-      <Input size="sm" value={name} onChange={(e) => onNameChange(e.target.value)} style={{ maxWidth: 320 }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', height: 44, padding: '0 var(--spacing-lg)', width: '100%' }}>
+      {/* Left: back + name */}
+      <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={onBack} aria-label={t('common.back')} />
+      <Input size="sm" value={name} onChange={(e) => onNameChange(e.target.value)} style={{ minWidth: 120, maxWidth: 360 }} />
+
+      {/* Flex spacer pushes the right cluster to the edge */}
       <div style={{ flex: 1 }} />
-      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+
+      {/* Right: save status + toggle + delete */}
+      <span style={{
+        fontSize: 'var(--font-size-xs)',
+        color: 'var(--color-text-tertiary)',
+        minWidth: 72,
+        textAlign: 'right',
+        flexShrink: 0,
+      }}>
         {saveStatus === 'saving' ? t('crm.automations.editor.saving') :
          saveStatus === 'saved' ? t('crm.automations.editor.saved') :
          saveStatus === 'error' ? t('crm.automations.editor.saveFailed') : ''}
@@ -172,13 +183,14 @@ export function AutomationEditor({ id, onBack }: AutomationEditorProps) {
       <Button variant={workflow.isActive ? 'primary' : 'secondary'} size="sm" onClick={() => toggleWorkflow.mutate(workflow.id)}>
         {workflow.isActive ? t('crm.automations.disable') : t('crm.automations.enable')}
       </Button>
-      <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => setDeleteConfirm(true)} />
+      <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => setDeleteConfirm(true)} aria-label={t('crm.actions.delete')} />
     </div>
   );
 
   return (
     <ContentArea headerSlot={header}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--spacing-2xl)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}>
+      <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--spacing-2xl)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}>
         <section>
           <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
             {t('crm.automations.editor.triggerSection')}
@@ -217,6 +229,7 @@ export function AutomationEditor({ id, onBack }: AutomationEditorProps) {
             </Button>
           </div>
         </section>
+        </div>
       </div>
 
       <ConfirmDialog

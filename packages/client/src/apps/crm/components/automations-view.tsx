@@ -192,7 +192,7 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', minWidth: 0 }}>
           {workflows.map((workflow) => (
             <div
               key={workflow.id}
@@ -207,6 +207,7 @@ export function AutomationsView({ stages }: { stages: CrmDealStage[] }) {
                 backgroundColor: workflow.isActive ? 'var(--color-bg-primary)' : 'var(--color-bg-secondary)',
                 opacity: workflow.isActive ? 1 : 0.7,
                 cursor: 'pointer',
+                minWidth: 0,
               }}
             >
               {/* Icon */}
