@@ -33,22 +33,6 @@ export async function testKey(req: Request, res: Response) {
 }
 
 // ---------------------------------------------------------------------------
-// POST /api/v1/ai/summarize — removed (Gmail mirror removed)
-// ---------------------------------------------------------------------------
-
-export async function summarize(req: Request, res: Response) {
-  res.status(410).json({ success: false, error: 'Email summarization is no longer available' });
-}
-
-// ---------------------------------------------------------------------------
-// POST /api/v1/ai/quick-replies — removed (Gmail mirror removed)
-// ---------------------------------------------------------------------------
-
-export async function quickReplies(req: Request, res: Response) {
-  res.status(410).json({ success: false, error: 'Quick replies are no longer available' });
-}
-
-// ---------------------------------------------------------------------------
 // POST /api/v1/ai/write-assist
 // ---------------------------------------------------------------------------
 

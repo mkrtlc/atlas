@@ -394,9 +394,9 @@ export async function generateSignedPDF(documentId: string, storagePath: string)
     drawLine('No signed events recorded.', 10, false, rgb(0.5, 0.5, 0.5));
   } else {
     for (const row of auditRows) {
-      const meta = (row.metadata ?? {}) as Record<string, string>;
-      const name = row.actorName ?? meta.signerName ?? 'Unknown';
-      const email = row.actorEmail ?? meta.signerEmail ?? '';
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const name = row.actorName ?? (typeof meta.signerName === 'string' ? meta.signerName : undefined) ?? 'Unknown';
+      const email = row.actorEmail ?? (typeof meta.signerEmail === 'string' ? meta.signerEmail : '') ?? '';
       const ip = row.ipAddress ?? 'N/A';
       const ts = row.createdAt?.toISOString() ?? 'N/A';
       drawLine(`• ${name} <${email}>`, 10, true);

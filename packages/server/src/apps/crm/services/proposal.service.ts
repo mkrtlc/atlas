@@ -7,7 +7,8 @@ import {
 import { eq, and, desc, sql, ilike } from 'drizzle-orm';
 import type { CrmRecordAccess } from '@atlas-platform/shared';
 import { logger } from '../../../utils/logger';
-import { getNextInvoiceNumber } from '../../invoices/services/invoice.service';
+import { createInvoice, getNextInvoiceNumber } from '../../invoices/services/invoice.service';
+import { replaceLineItems } from '../../invoices/services/line-item.service';
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -504,54 +505,32 @@ export async function convertProposalToInvoice(
   }
 
   const now = new Date();
-  const invoiceNumber = await getNextInvoiceNumber(tenantId);
   const items = (proposal.lineItems as LineItem[]) ?? [];
 
-  return db.transaction(async (tx) => {
-    const [inv] = await tx
-      .insert(invoices)
-      .values({
-        tenantId,
-        userId,
-        companyId: proposal.companyId ?? '',
-        contactId: proposal.contactId ?? null,
-        dealId: proposal.dealId ?? null,
-        proposalId: proposal.id,
-        invoiceNumber,
-        status: 'draft',
-        subtotal: proposal.subtotal,
-        taxPercent: proposal.taxPercent,
-        taxAmount: proposal.taxAmount,
-        discountPercent: proposal.discountPercent,
-        discountAmount: proposal.discountAmount,
-        total: proposal.total,
-        currency: proposal.currency,
-        issueDate: now,
-        dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-        notes: proposal.notes ?? null,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-
-    if (items.length > 0) {
-      await tx.insert(invoiceLineItems).values(
-        items.map((li, idx) => ({
-          invoiceId: inv.id,
-          description: li.description,
-          quantity: li.quantity,
-          unitPrice: li.unitPrice,
-          amount: li.quantity * li.unitPrice,
-          taxRate: li.taxRate ?? 0,
-          sortOrder: idx,
-          createdAt: now,
-        })),
-      );
-    }
-
-    logger.info({ proposalId, invoiceId: inv.id, tenantId }, 'Proposal converted to invoice');
-    return inv.id;
+  const inv = await createInvoice(userId, tenantId, {
+    companyId: proposal.companyId ?? '',
+    contactId: proposal.contactId ?? undefined,
+    dealId: proposal.dealId ?? undefined,
+    proposalId: proposal.id,
+    status: 'draft',
+    subtotal: proposal.subtotal,
+    taxPercent: proposal.taxPercent,
+    taxAmount: proposal.taxAmount,
+    discountPercent: proposal.discountPercent,
+    discountAmount: proposal.discountAmount,
+    total: proposal.total,
+    currency: proposal.currency,
+    issueDate: now.toISOString(),
+    dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    notes: proposal.notes ?? undefined,
   });
+
+  if (items.length > 0) {
+    await replaceLineItems(inv.id, items);
+  }
+
+  logger.info({ proposalId, invoiceId: inv.id, tenantId }, 'Proposal converted to invoice');
+  return inv.id;
 }
 
 // ─── Public: decline ───────────────────────────────────────────────

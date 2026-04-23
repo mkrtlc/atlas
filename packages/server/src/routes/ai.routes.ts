@@ -11,8 +11,6 @@ router.post('/test-key', authLimiter, aiController.testKey);
 
 // All other AI endpoints require auth
 router.use(authMiddleware);
-router.post('/summarize', aiController.summarize);
-router.post('/quick-replies', aiController.quickReplies);
 router.post('/write-assist', aiController.writeAssist);
 
 export default router;
