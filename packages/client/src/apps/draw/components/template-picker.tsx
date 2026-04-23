@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LayoutTemplate } from 'lucide-react';
 import { DRAWING_TEMPLATES } from '../../../config/drawing-templates';
+import { Modal } from '../../../components/ui/modal';
 
 export function TemplatePicker({
   open,
@@ -15,8 +16,6 @@ export function TemplatePicker({
   const { t } = useTranslation();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  if (!open) return null;
-
   const templates = [
     { id: 'blank', name: t('draw.templateBlank'), description: t('draw.templateBlankDesc') },
     { id: 'flowchart', name: t('draw.templateFlowchart'), description: t('draw.templateFlowchartDesc') },
@@ -27,73 +26,16 @@ export function TemplatePicker({
   ];
 
   return (
-    <>
-      {/* Overlay */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'var(--color-bg-overlay)',
-          zIndex: 200,
-        }}
-      />
-      {/* Modal */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 560,
-          maxWidth: 'calc(100vw - 48px)',
-          maxHeight: 'calc(100vh - 96px)',
-          background: 'var(--color-bg-elevated)',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: 'var(--shadow-elevated)',
-          zIndex: 201,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          fontFamily: 'var(--font-family)',
-        }}
-      >
-        {/* Header */}
+    <Modal open={open} onOpenChange={(o) => !o && onClose()} width={560} title={t('draw.newDrawing')}>
+      <Modal.Header title={t('draw.newDrawing')} subtitle={t('draw.fromTemplate')} />
+      {/* No Modal.Footer: template selection commits immediately on card click — no
+          explicit confirm action required. */}
+      <Modal.Body padding="var(--spacing-lg)">
         <div
           style={{
-            padding: '20px 24px 12px',
-            borderBottom: '1px solid var(--color-border-primary)',
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 'var(--font-size-lg)',
-              fontWeight: 600,
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            {t('draw.newDrawing')}
-          </h2>
-          <p
-            style={{
-              margin: '4px 0 0',
-              fontSize: 13,
-              color: 'var(--color-text-tertiary)',
-            }}
-          >
-            {t('draw.fromTemplate')}
-          </p>
-        </div>
-
-        {/* Template grid */}
-        <div
-          style={{
-            padding: 16,
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 10,
-            overflowY: 'auto',
           }}
         >
           {templates.map((tmpl) => (
@@ -159,7 +101,7 @@ export function TemplatePicker({
             </button>
           ))}
         </div>
-      </div>
-    </>
+      </Modal.Body>
+    </Modal>
   );
 }

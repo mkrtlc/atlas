@@ -249,6 +249,62 @@ export function SignatureModal({ open, onOpenChange, onApply, fieldType }: Signa
             )}
           </div>
         )}
+
+        {/* Upload tab */}
+        {activeTab === 'upload' && (
+          <div>
+            <input
+              ref={uploadInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleUploadFile}
+            />
+            <button
+              type="button"
+              onClick={() => uploadInputRef.current?.click()}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                width: '100%',
+                minHeight: 120,
+                border: `2px dashed var(--color-border-primary)`,
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-bg-tertiary)',
+                cursor: 'pointer',
+                color: 'var(--color-text-tertiary)',
+                fontFamily: 'var(--font-family)',
+                fontSize: 'var(--font-size-sm)',
+              }}
+            >
+              <Upload size={24} />
+              {t('sign.modal.uploadSignature')}
+            </button>
+            {uploadedImage && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: '8px',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-bg-elevated)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <img
+                  src={uploadedImage}
+                  alt="Uploaded signature preview"
+                  style={{ maxWidth: '100%', maxHeight: 80, objectFit: 'contain' }}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -256,7 +312,13 @@ export function SignatureModal({ open, onOpenChange, onApply, fieldType }: Signa
         </Button>
         <Button
           variant="primary"
-          onClick={activeTab === 'draw' ? handleApplyDraw : handleApplyType}
+          onClick={
+            activeTab === 'draw'
+              ? handleApplyDraw
+              : activeTab === 'type'
+                ? handleApplyType
+                : handleApplyUpload
+          }
         >
           {t('sign.modal.apply')}
         </Button>

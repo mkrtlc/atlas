@@ -34,6 +34,8 @@ export function LinkPicker({ open, onOpenChange, sourceAppId, sourceRecordId }: 
   return (
     <Modal open={open} onOpenChange={onOpenChange} width={480}>
       <Modal.Header title="Link to record" />
+      {/* No Modal.Footer: links are created immediately on result-row click.
+          There is no pending selection requiring an explicit confirm action. */}
       <Modal.Body>
         <div style={{ padding: '0 0 8px' }}>
           <div style={{

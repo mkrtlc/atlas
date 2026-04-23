@@ -1,3 +1,10 @@
+/* NOTE: This component intentionally does NOT use the shared <Modal> shell.
+ * Session expiry is a hard interrupt — the shared Modal's Escape-key handler
+ * and pointer-outside handler would let users dismiss it and return to a
+ * broken (unauthenticated) app state. The custom overlay uses z-index 99999
+ * to sit above everything, has no close affordance, and forces the user to
+ * sign back in. Converting to <Modal> would require overriding every dismiss
+ * path, so the bespoke shell is deliberately kept. */
 import { Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/auth-store';

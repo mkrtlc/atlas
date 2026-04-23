@@ -33,7 +33,8 @@ export function MoveModal({
   const { t } = useTranslation();
   return (
     <Modal open={open} onOpenChange={onOpenChange} width={400} title={title}>
-      <div style={{ padding: 'var(--spacing-xl)', maxHeight: 400, overflowY: 'auto' }}>
+      <Modal.Header title={title} />
+      <Modal.Body>
         <button
           onClick={() => setTargetId(null)}
           style={{
@@ -81,16 +82,15 @@ export function MoveModal({
             {folder.name}
           </button>
         ))}
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16, borderTop: '1px solid var(--color-border-secondary)', paddingTop: 16 }}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            {t('drive.modals.cancel')}
-          </Button>
-          <Button variant="primary" onClick={onSubmit}>
-            {mode === 'copy' ? t('drive.modals.copyHere') : t('drive.modals.moveHere')}
-          </Button>
-        </div>
-      </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          {t('drive.modals.cancel')}
+        </Button>
+        <Button variant="primary" onClick={onSubmit}>
+          {mode === 'copy' ? t('drive.modals.copyHere') : t('drive.modals.moveHere')}
+        </Button>
+      </Modal.Footer>
     </Modal>
   );
 }

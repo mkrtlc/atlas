@@ -376,17 +376,11 @@ export function ShareModal({
       {/* Footer: explicit Done button. All share actions auto-save on click,
           so this only closes the dialog — kept to make the close affordance
           obvious since the modal's X can be hard to spot. */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: 'var(--spacing-sm)',
-        padding: 'var(--spacing-md) var(--spacing-xl)',
-        borderTop: '1px solid var(--color-border-secondary)',
-      }}>
-        <Button variant="secondary" size="sm" onClick={handleClose}>
+      <Modal.Footer>
+        <Button variant="ghost" size="sm" onClick={handleClose}>
           {t('common.close')}
         </Button>
-      </div>
+      </Modal.Footer>
     </Modal>
   );
 }

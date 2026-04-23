@@ -26,7 +26,8 @@ export function TagModal({
   const { t } = useTranslation();
   return (
     <Modal open={!!tagModalItem} onOpenChange={() => setTagModalItem(null)} width={360} title={t('drive.modals.addTag')}>
-      <div style={{ padding: 'var(--spacing-xl)' }}>
+      <Modal.Header title={t('drive.modals.addTag')} />
+      <Modal.Body>
         <input
           value={tagLabel}
           onChange={(e) => setTagLabel(e.target.value)}
@@ -64,23 +65,19 @@ export function TagModal({
             />
           ))}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-          <Button variant="secondary" onClick={() => setTagModalItem(null)}>
-            {t('drive.modals.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleTagSubmit}
-            disabled={!tagLabel.trim()}
-            style={{
-              opacity: tagLabel.trim() ? 1 : 0.5,
-              cursor: tagLabel.trim() ? 'pointer' : 'not-allowed',
-            }}
-          >
-            {t('drive.modals.add')}
-          </Button>
-        </div>
-      </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="ghost" onClick={() => setTagModalItem(null)}>
+          {t('drive.modals.cancel')}
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleTagSubmit}
+          disabled={!tagLabel.trim()}
+        >
+          {t('drive.modals.add')}
+        </Button>
+      </Modal.Footer>
     </Modal>
   );
 }

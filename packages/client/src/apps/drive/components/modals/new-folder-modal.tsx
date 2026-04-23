@@ -20,7 +20,8 @@ export function NewFolderModal({
   const { t } = useTranslation();
   return (
     <Modal open={open} onOpenChange={onOpenChange} width={400} title={t('drive.modals.newFolder')}>
-      <div style={{ padding: 'var(--spacing-xl)' }}>
+      <Modal.Header title={t('drive.modals.newFolder')} />
+      <Modal.Body>
         <input
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
@@ -40,23 +41,19 @@ export function NewFolderModal({
             boxSizing: 'border-box',
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            {t('drive.modals.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={onSubmit}
-            disabled={!folderName.trim()}
-            style={{
-              opacity: folderName.trim() ? 1 : 0.5,
-              cursor: folderName.trim() ? 'pointer' : 'not-allowed',
-            }}
-          >
-            {t('drive.modals.create')}
-          </Button>
-        </div>
-      </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          {t('drive.modals.cancel')}
+        </Button>
+        <Button
+          variant="primary"
+          onClick={onSubmit}
+          disabled={!folderName.trim()}
+        >
+          {t('drive.modals.create')}
+        </Button>
+      </Modal.Footer>
     </Modal>
   );
 }
