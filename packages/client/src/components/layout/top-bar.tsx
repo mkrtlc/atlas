@@ -58,6 +58,7 @@ export function TopBar() {
   return (
     <header
       aria-label="Top bar"
+      className="app-top-bar"
       style={{
         height: TOP_BAR_HEIGHT,
         flexShrink: 0,

@@ -453,9 +453,12 @@
   filter: invert(1);
 }
 
-/* App rail — hide on phone widths. Mobile nav is handled in a later phase. */
+/* App rail + top bar — hide on phone widths. Mobile nav is a later phase.
+   Page shells retain their marginLeft:56 offset; content just sits in the
+   remaining width. Full mobile reflow is deferred. */
 @media (max-width: 767px) {
-  .app-rail {
+  .app-rail,
+  .app-top-bar {
     display: none;
   }
 }

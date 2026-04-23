@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ThemeProvider } from './providers/theme-provider';
 import { QueryProvider } from './providers/query-provider';
-import { ShortcutProvider } from './providers/shortcut-provider';
+import { ShortcutProvider, useShortcut } from './providers/shortcut-provider';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useAuthStore } from './stores/auth-store';
 import { useUIStore } from './stores/ui-store';
@@ -94,6 +94,14 @@ function ShortcutHelpWrapper() {
   return <KeyboardShortcutsHelp onClose={toggle} />;
 }
 
+/** Global keyboard shortcut: Cmd+, opens Settings. Active for authenticated users on every route. */
+function GlobalShortcuts() {
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  useShortcut('open_settings', () => navigate('/settings'), 'global', isAuthenticated);
+  return null;
+}
+
 function AppGuard({ appId, children }: { appId: string; children: ReactNode }) {
   const { data: myApps, isLoading } = useMyAccessibleApps();
   if (isLoading || !myApps) return null;
@@ -173,6 +181,7 @@ export function App() {
               </Routes>
               <AppRailWrapper />
               <ShortcutHelpWrapper />
+              <GlobalShortcuts />
               <CommandPalette />
               <ConflictDialog />
               <ImpersonationBanner />

@@ -38,4 +38,5 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'command_palette', keys: 'mod+k', label: 'Command palette', description: 'Open command palette', category: 'ui', when: 'global' },
   { id: 'toggle_sidebar', keys: 'mod+\\', label: 'Toggle sidebar', description: 'Show or hide sidebar', category: 'ui', when: 'global' },
   { id: 'shortcut_help', keys: '?', label: 'Keyboard shortcuts', description: 'Show shortcut help', category: 'ui', when: 'global' },
+  { id: 'open_settings', keys: 'mod+,', label: 'Open settings', description: 'Navigate to the Settings page', category: 'ui', when: 'global' },
 ];
