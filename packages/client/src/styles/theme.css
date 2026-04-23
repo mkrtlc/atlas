@@ -1,22 +1,22 @@
 :root,
 [data-theme="light"] {
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fb;
-  --color-bg-tertiary: #eef0f3;
+  --color-bg-secondary: #fafafa;
+  --color-bg-tertiary: #f7f7f8;
   --color-bg-elevated: #ffffff;
-  --color-bg-overlay: rgba(0, 0, 0, 0.4);
+  --color-bg-overlay: rgba(15, 15, 20, 0.45);
   --color-surface-primary: #ffffff;
-  --color-surface-hover: #ebedf1;
-  --color-surface-active: #e2e5ea;
-  --color-surface-selected: #ebedf1;
-  --color-text-primary: #111318;
-  --color-text-secondary: #3b4253;
-  --color-text-tertiary: #5f6b7a;
+  --color-surface-hover: #f1f1f2;
+  --color-surface-active: #ebecee;
+  --color-surface-selected: #f0f1fd;
+  --color-text-primary: #1c1e21;
+  --color-text-secondary: #4d525c;
+  --color-text-tertiary: #7e838e;
   --color-text-inverse: #ffffff;
-  --color-text-link: #5a7fa0;
-  --color-border-primary: #dce0e6;
+  --color-text-link: #5e6ad2;
+  --color-border-primary: #e6e7ea;
   --color-border-secondary: #ebedf1;
-  --color-border-focus: #7a9ab8;
+  --color-border-focus: #5e6ad2;
   --color-accent-primary: #5e6ad2;
   --color-accent-primary-hover: #4a55b8;
   --color-accent-primary-active: #3f48a3;
@@ -24,11 +24,11 @@
   --color-accent-subtle-hover: color-mix(in srgb, #5e6ad2 16%, transparent);
   --color-success: #10b981;
   --color-warning: #f59e0b;
-  --color-error: #ec4899;
-  --color-info: #5a7fa0;
-  --color-unread-indicator: #5a7fa0;
+  --color-error: #e5484d;
+  --color-info: #3b82f6;
+  --color-unread-indicator: #5e6ad2;
   --color-star: #d4a017;
-  --color-category-important: #5a7fa0;
+  --color-category-important: #5e6ad2;
   --color-category-other: #7a8495;
   --color-category-newsletters: #8b6cc4;
   --color-category-notifications: #c47a3a;
@@ -71,10 +71,10 @@
   --sidebar-width: 220px;
   --email-list-width: 400px;
   --header-height: 48px;
-  --sidebar-bg: #FBFAFB;
+  --sidebar-bg: #fbfbfc;
   --sidebar-text: rgb(18, 18, 18);
-  --sidebar-active: #F0F0F1;
-  --sidebar-hover: #F5F5F6;
+  --sidebar-active: #f0f1fd;
+  --sidebar-hover: #f1f1f2;
 }
 
 [data-theme="dark"] {
