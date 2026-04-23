@@ -115,6 +115,7 @@ export async function getFieldWithOwner(fieldId: string) {
     .select({
       id: signatureFields.id,
       documentId: signatureFields.documentId,
+      signerEmail: signatureFields.signerEmail,
       ownerUserId: signatureDocuments.userId,
     })
     .from(signatureFields)

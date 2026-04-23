@@ -265,6 +265,19 @@ export async function signByToken(req: Request, res: Response) {
       return;
     }
 
+    // Verify the field belongs to this token's document and is assigned to this token's signer.
+    // Without these checks any token holder could sign any field on any document, including
+    // fields belonging to a different recipient.
+    const fieldOwner = await signService.getFieldWithOwner(fieldId);
+    if (!fieldOwner || fieldOwner.documentId !== result.document.id) {
+      res.status(403).json({ success: false, error: 'Field does not belong to this document' });
+      return;
+    }
+    if (fieldOwner.signerEmail && fieldOwner.signerEmail !== result.token.signerEmail) {
+      res.status(403).json({ success: false, error: 'Field is assigned to a different signer' });
+      return;
+    }
+
     const field = await signService.signField(fieldId, signatureData);
     await signService.completeSigningToken(result.token.id);
     const isComplete = await signService.checkDocumentComplete(result.document.id);
