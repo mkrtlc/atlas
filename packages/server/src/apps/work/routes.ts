@@ -20,10 +20,13 @@ router.post('/tasks', controller.createTask);
 router.get('/tasks/search', controller.searchTasks);
 router.get('/tasks/counts', controller.getTaskCounts);
 router.get('/tasks/blocked', controller.getBlockedTaskIds);
+// Collection-level mutations must be declared before /:id so Express
+// doesn't match "reorder" / "bulk" as an id parameter.
+router.patch('/tasks/reorder', controller.reorderTasks);
+router.delete('/tasks/bulk', controller.bulkDeleteTasks);
 router.get('/tasks/:id', controller.getTask);
 router.patch('/tasks/:id', withConcurrencyCheck(tasks), controller.updateTask);
 router.patch('/tasks/:id/visibility', controller.updateTaskVisibility);
-router.delete('/tasks/bulk', controller.bulkDeleteTasks);
 router.delete('/tasks/:id', controller.deleteTask);
 
 // Task subtasks
