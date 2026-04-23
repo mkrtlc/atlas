@@ -186,7 +186,7 @@ export async function createTask(userId: string, tenantId: string, input: Omit<C
   return created;
 }
 
-export async function updateTask(userId: string, taskId: string, input: Omit<UpdateTaskInput, 'isPrivate'> & { isArchived?: boolean }) {
+export async function updateTask(userId: string, taskId: string, input: Omit<UpdateTaskInput, 'isPrivate'> & { isArchived?: boolean; isPrivate?: boolean }) {
   // First verify the task is readable by this user
   const existing = await getTask(userId, taskId);
   if (!existing) return null;
@@ -233,6 +233,7 @@ export async function updateTask(userId: string, taskId: string, input: Omit<Upd
   }
   if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder;
   if (input.isArchived !== undefined) updates.isArchived = input.isArchived;
+  if (input.isPrivate !== undefined) updates.isPrivate = input.isPrivate;
   if ((input as { visibility?: string }).visibility !== undefined) updates.visibility = (input as { visibility?: string }).visibility;
 
   await db

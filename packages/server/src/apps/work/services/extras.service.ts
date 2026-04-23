@@ -302,11 +302,14 @@ export async function removeDependency(taskId: string, blockedByTaskId: string) 
   );
 }
 
-export async function getBlockedTaskIds(userId: string): Promise<string[]> {
+export async function getBlockedTaskIds(userId: string, tenantId: string): Promise<string[]> {
   const allDeps = await db
     .select({ taskId: taskDependencies.taskId, blockerStatus: tasks.status })
     .from(taskDependencies)
-    .innerJoin(tasks, eq(taskDependencies.blockedByTaskId, tasks.id));
+    .innerJoin(tasks, and(
+      eq(taskDependencies.blockedByTaskId, tasks.id),
+      eq(tasks.tenantId, tenantId),
+    ));
 
   const blocked = new Set<string>();
   for (const dep of allDeps) {

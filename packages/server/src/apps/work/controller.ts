@@ -7,6 +7,7 @@ export {
   getTask,
   updateTask,
   deleteTask,
+  bulkDeleteTasks,
   reorderTasks,
   listSubtasks,
   createSubtask,

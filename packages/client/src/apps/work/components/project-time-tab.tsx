@@ -78,7 +78,7 @@ export function ProjectTimeTab({ projectId }: Props) {
       {
         onSuccess: () => {
           setEditingId(null);
-          addToast({ type: 'success', message: 'Time entry saved' });
+          addToast({ type: 'success', message: t('work.time.saved') });
         },
       },
     );
@@ -88,7 +88,7 @@ export function ProjectTimeTab({ projectId }: Props) {
     deleteTimeEntry.mutate(entryId, {
       onSuccess: () => {
         setConfirmDeleteId(null);
-        addToast({ type: 'success', message: 'Time entry deleted' });
+        addToast({ type: 'success', message: t('work.time.deleted') });
       },
     });
   };
@@ -236,7 +236,7 @@ export function ProjectTimeTab({ projectId }: Props) {
                 ) : (
                   <>
                     <span style={{ fontSize: 'var(--font-size-sm)', color: entry.description ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {entry.description || 'No description'}
+                      {entry.description || t('work.time.noDescription')}
                     </span>
                     <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
                       {formatNumber(entry.hours, 1)}h

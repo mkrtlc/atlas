@@ -23,6 +23,7 @@ router.get('/tasks/blocked', controller.getBlockedTaskIds);
 router.get('/tasks/:id', controller.getTask);
 router.patch('/tasks/:id', withConcurrencyCheck(tasks), controller.updateTask);
 router.patch('/tasks/:id/visibility', controller.updateTaskVisibility);
+router.delete('/tasks/bulk', controller.bulkDeleteTasks);
 router.delete('/tasks/:id', controller.deleteTask);
 
 // Task subtasks

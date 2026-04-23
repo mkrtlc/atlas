@@ -8,7 +8,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useTaskList, useUpdateTask, useDeleteTask,
+  useTaskList, useUpdateTask, useDeleteTask, useBulkDeleteTasks,
   useTaskProjectList, useReorderTasks,
   useBlockedTaskIds, useTaskCounts,
 } from '../hooks';
@@ -67,6 +67,7 @@ export function WorkTasksView({ view, title }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteTaskMutation = useDeleteTask();
+  const bulkDeleteMutation = useBulkDeleteTasks();
 
   useEffect(() => { setSelectedIds(new Set()); }, [view]);
 
@@ -220,11 +221,11 @@ export function WorkTasksView({ view, title }: Props) {
   }, [displayTasks, selectedIds]);
 
   const handleBulkDelete = useCallback(async () => {
-    await Promise.all(Array.from(selectedIds).map(id => deleteTaskMutation.mutateAsync(id)));
+    await bulkDeleteMutation.mutateAsync(Array.from(selectedIds));
     setSelectedIds(new Set());
     setShowDeleteConfirm(false);
     setSelectedTaskId(null);
-  }, [selectedIds, deleteTaskMutation]);
+  }, [selectedIds, bulkDeleteMutation]);
 
   const handleComplete = useCallback((taskId: string) => {
     const task = allTasks.find(t => t.id === taskId) ?? completedTasks.find(t => t.id === taskId);

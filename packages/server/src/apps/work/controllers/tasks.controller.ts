@@ -143,7 +143,8 @@ export async function updateTaskVisibility(req: Request, res: Response) {
       return;
     }
 
-    const task = await workService.updateTask(userId, taskId, { visibility } as any);
+    const isPrivate = visibility === 'private';
+    const task = await workService.updateTask(userId, taskId, { isPrivate } as Parameters<typeof workService.updateTask>[2]);
     if (!task) {
       res.status(404).json({ success: false, error: 'Task not found' });
       return;
@@ -179,6 +180,40 @@ export async function deleteTask(req: Request, res: Response) {
   } catch (error) {
     logger.error({ error }, 'Failed to delete work task');
     res.status(500).json({ success: false, error: 'Failed to delete task' });
+  }
+}
+
+export async function bulkDeleteTasks(req: Request, res: Response) {
+  try {
+    const perm = req.workPerm!;
+    if (!canAccess(perm.role, 'delete') && !canAccess(perm.role, 'delete_own')) {
+      res.status(403).json({ success: false, error: 'No permission to delete' });
+      return;
+    }
+
+    const userId = req.auth!.userId;
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ success: false, error: 'ids must be a non-empty array' });
+      return;
+    }
+
+    let deleted = 0;
+    for (const taskId of ids as string[]) {
+      const existing = await workService.getTask(userId, taskId);
+      if (!existing) continue;
+      // Owners can always delete their own; admins can delete any
+      if (canAccess(perm.role, 'delete') || existing.userId === userId) {
+        await workService.deleteTask(existing.userId, taskId);
+        deleted++;
+      }
+    }
+
+    res.json({ success: true, data: { deleted } });
+  } catch (error) {
+    logger.error({ error }, 'Failed to bulk delete work tasks');
+    res.status(500).json({ success: false, error: 'Failed to bulk delete tasks' });
   }
 }
 
@@ -661,7 +696,7 @@ export async function removeDependency(req: Request, res: Response) {
 
 export async function getBlockedTaskIds(req: Request, res: Response) {
   try {
-    const ids = await workService.getBlockedTaskIds(req.auth!.userId);
+    const ids = await workService.getBlockedTaskIds(req.auth!.userId, req.auth!.tenantId!);
     res.json({ success: true, data: ids });
   } catch (error) {
     logger.error({ error }, 'Failed to get blocked task IDs');

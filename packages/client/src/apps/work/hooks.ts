@@ -281,6 +281,19 @@ export function useDeleteTask() {
   });
 }
 
+export function useBulkDeleteTasks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { data } = await api.delete('/work/tasks/bulk', { data: { ids } });
+      return data.data as { deleted: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.work.tasks.all });
+    },
+  });
+}
+
 // ─── Task Project Queries & Mutations ──────────────────────────────
 
 export function useTaskProjectList(includeArchived = false) {

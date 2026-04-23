@@ -10,7 +10,7 @@ describe('Tasks API (integration)', () => {
     const auth = await setupTestAdmin(app, request);
 
     const res = await request(app)
-      .get('/api/v1/tasks')
+      .get('/api/v1/work/tasks')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .expect(200);
 
@@ -23,7 +23,7 @@ describe('Tasks API (integration)', () => {
     const auth = await setupTestAdmin(app, request);
 
     const res = await request(app)
-      .post('/api/v1/tasks')
+      .post('/api/v1/work/tasks')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .send({ title: 'Write tests', priority: 'high' })
       .expect((r: any) => { if (![200, 201].includes(r.status)) throw new Error(`Expected 200/201, got ${r.status}`); });
@@ -38,13 +38,13 @@ describe('Tasks API (integration)', () => {
     const auth = await setupTestAdmin(app, request);
 
     const created = await request(app)
-      .post('/api/v1/tasks')
+      .post('/api/v1/work/tasks')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .send({ title: 'Update me' })
       .expect((r: any) => { if (![200, 201].includes(r.status)) throw new Error(`Expected 200/201, got ${r.status}`); });
 
     const res = await request(app)
-      .patch(`/api/v1/tasks/${created.body.data.id}`)
+      .patch(`/api/v1/work/tasks/${created.body.data.id}`)
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .send({ status: 'done', title: 'Updated' })
       .expect(200);
@@ -57,18 +57,18 @@ describe('Tasks API (integration)', () => {
     const auth = await setupTestAdmin(app, request);
 
     const created = await request(app)
-      .post('/api/v1/tasks')
+      .post('/api/v1/work/tasks')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .send({ title: 'Delete me' })
       .expect((r: any) => { if (![200, 201].includes(r.status)) throw new Error(`Expected 200/201, got ${r.status}`); });
 
     await request(app)
-      .delete(`/api/v1/tasks/${created.body.data.id}`)
+      .delete(`/api/v1/work/tasks/${created.body.data.id}`)
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .expect(200);
 
     const list = await request(app)
-      .get('/api/v1/tasks')
+      .get('/api/v1/work/tasks')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .expect(200);
 
@@ -80,19 +80,19 @@ describe('Tasks API (integration)', () => {
     const auth = await setupTestAdmin(app, request);
 
     await request(app)
-      .post('/api/v1/tasks')
+      .post('/api/v1/work/tasks')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .send({ title: 'Task 1', status: 'todo' })
       .expect((r: any) => { if (![200, 201].includes(r.status)) throw new Error(`Expected 200/201, got ${r.status}`); });
 
     await request(app)
-      .post('/api/v1/tasks')
+      .post('/api/v1/work/tasks')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .send({ title: 'Task 2', status: 'done' })
       .expect((r: any) => { if (![200, 201].includes(r.status)) throw new Error(`Expected 200/201, got ${r.status}`); });
 
     const res = await request(app)
-      .get('/api/v1/tasks/counts')
+      .get('/api/v1/work/tasks/counts')
       .set('Authorization', `Bearer ${auth.accessToken}`)
       .expect(200);
 

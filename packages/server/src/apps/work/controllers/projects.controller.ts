@@ -6,7 +6,7 @@ import { logger } from '../../../utils/logger';
 import { emitAppEvent } from '../../../services/event.service';
 import { canAccess } from '../../../services/app-permissions.service';
 import { db } from '../../../config/database';
-import { projectTimeEntries, invoiceLineItems, projectProjects, invoices } from '../../../db/schema';
+import { projectTimeEntries, invoiceLineItems, projectProjects, invoices, projectMembers, projectRates } from '../../../db/schema';
 import { eq as eqDb, and as andDb, gte, lte, isNull as isNullDb, inArray } from 'drizzle-orm';
 
 // ─── Dashboard ───────────────────────────────────────────────────────
@@ -575,6 +575,8 @@ export async function previewTimeBilling(req: Request, res: Response) {
         notes: projectTimeEntries.notes,
         durationMinutes: projectTimeEntries.durationMinutes,
         companyId: projectProjects.companyId,
+        userId: projectTimeEntries.userId,
+        rateId: projectTimeEntries.rateId,
       })
       .from(projectTimeEntries)
       .innerJoin(projectProjects, eqDb(projectTimeEntries.projectId, projectProjects.id))
@@ -583,14 +585,37 @@ export async function previewTimeBilling(req: Request, res: Response) {
     // Filter by companyId
     const filtered = entries.filter(e => e.companyId === companyId);
 
-    const lineItems = filtered.map(e => ({
-      id: e.id,
-      description: e.notes || '',
-      quantity: parseFloat((e.durationMinutes / 60).toFixed(4)),
-      unitPrice: 0,
-      projectId: e.projectId,
-      projectName: e.projectName || '',
-      workDate: e.workDate,
+    // Resolve member hourly rates and rate multipliers
+    const lineItems = await Promise.all(filtered.map(async (e) => {
+      const hours = parseFloat((e.durationMinutes / 60).toFixed(4));
+
+      const [member] = await db.select({ hourlyRate: projectMembers.hourlyRate })
+        .from(projectMembers)
+        .where(andDb(eqDb(projectMembers.projectId, e.projectId), eqDb(projectMembers.userId, e.userId)))
+        .limit(1);
+      const memberRate = member?.hourlyRate ?? 0;
+
+      let factor = 1;
+      let extraPerHour = 0;
+      if (e.rateId) {
+        const [rate] = await db.select({ factor: projectRates.factor, extraPerHour: projectRates.extraPerHour })
+          .from(projectRates)
+          .where(eqDb(projectRates.id, e.rateId))
+          .limit(1);
+        if (rate) { factor = rate.factor; extraPerHour = rate.extraPerHour; }
+      }
+
+      const unitPrice = parseFloat((memberRate * factor + extraPerHour).toFixed(4));
+
+      return {
+        id: e.id,
+        description: e.notes || '',
+        quantity: hours,
+        unitPrice,
+        projectId: e.projectId,
+        projectName: e.projectName || '',
+        workDate: e.workDate,
+      };
     }));
 
     res.json({ success: true, data: { lineItems } });
@@ -641,6 +666,8 @@ export async function populateFromTimeBilling(req: Request, res: Response) {
         notes: projectTimeEntries.notes,
         durationMinutes: projectTimeEntries.durationMinutes,
         companyId: projectProjects.companyId,
+        userId: projectTimeEntries.userId,
+        rateId: projectTimeEntries.rateId,
       })
       .from(projectTimeEntries)
       .innerJoin(projectProjects, eqDb(projectTimeEntries.projectId, projectProjects.id))
@@ -652,13 +679,33 @@ export async function populateFromTimeBilling(req: Request, res: Response) {
     const now = new Date();
     for (const e of filtered) {
       const hours = parseFloat((e.durationMinutes / 60).toFixed(4));
+
+      const [member] = await db.select({ hourlyRate: projectMembers.hourlyRate })
+        .from(projectMembers)
+        .where(andDb(eqDb(projectMembers.projectId, e.projectId), eqDb(projectMembers.userId, e.userId)))
+        .limit(1);
+      const memberRate = member?.hourlyRate ?? 0;
+
+      let factor = 1;
+      let extraPerHour = 0;
+      if (e.rateId) {
+        const [rate] = await db.select({ factor: projectRates.factor, extraPerHour: projectRates.extraPerHour })
+          .from(projectRates)
+          .where(eqDb(projectRates.id, e.rateId))
+          .limit(1);
+        if (rate) { factor = rate.factor; extraPerHour = rate.extraPerHour; }
+      }
+
+      const unitPrice = parseFloat((memberRate * factor + extraPerHour).toFixed(4));
+      const amount = parseFloat((hours * unitPrice).toFixed(4));
+
       const [lineItem] = await db.insert(invoiceLineItems).values({
         invoiceId,
         timeEntryId: e.id,
         description: e.notes || `${e.projectName || ''} — ${e.workDate}`,
         quantity: hours,
-        unitPrice: 0,
-        amount: 0,
+        unitPrice,
+        amount,
         sortOrder: 0,
         createdAt: now,
       }).returning();
