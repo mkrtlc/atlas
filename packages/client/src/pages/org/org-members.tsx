@@ -89,7 +89,6 @@ export function OrgMembersPage() {
   const [addError, setAddError] = useState('');
   const [inviteError, setInviteError] = useState('');
   const [inviteSuccess, setInviteSuccess] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [confirmRemoveUser, setConfirmRemoveUser] = useState<{ userId: string; displayName: string } | null>(null);
 
   const managerOptions = useMemo(() => {
@@ -121,12 +120,7 @@ export function OrgMembersPage() {
 
   const tableData: MemberRow[] = useMemo(() => {
     if (!users) return [];
-    let filtered = users;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = users.filter((u) => (u.name?.toLowerCase().includes(q)) || u.email.toLowerCase().includes(q));
-    }
-    return filtered.map((u) => ({
+    return users.map((u) => ({
       id: u.userId,
       userId: u.userId,
       name: u.name,
@@ -134,7 +128,7 @@ export function OrgMembersPage() {
       role: u.role as TenantMemberRole,
       createdAt: u.createdAt,
     }));
-  }, [users, searchQuery]);
+  }, [users]);
 
   const columns: DataTableColumn<MemberRow>[] = useMemo(() => {
     const cols: DataTableColumn<MemberRow>[] = [
@@ -142,6 +136,7 @@ export function OrgMembersPage() {
         key: 'name',
         label: t('org.members.columnUser'),
         icon: <User size={12} />,
+        width: 220,
         sortable: true,
         compare: (a, b) => (a.name ?? '').localeCompare(b.name ?? ''),
         searchValue: (item) => item.name ?? '',
@@ -171,6 +166,7 @@ export function OrgMembersPage() {
         key: 'email',
         label: t('org.members.columnEmail'),
         icon: <Mail size={12} />,
+        width: 240,
         sortable: true,
         compare: (a, b) => a.email.localeCompare(b.email),
         searchValue: (item) => item.email,
@@ -189,7 +185,7 @@ export function OrgMembersPage() {
         key: 'apps',
         label: t('org.members.columnApps'),
         icon: <Shield size={12} />,
-        width: 180,
+        minWidth: 320,
         searchValue: (item) => {
           if (item.role === 'owner' || item.role === 'admin') return t('org.members.allApps');
           const perms = userPermissions[item.userId];
@@ -423,22 +419,8 @@ export function OrgMembersPage() {
         defaultPageSize={25}
         onRowClick={isAdminOrOwner ? handleRowClick : undefined}
         emptyIcon={<User size={40} />}
-        emptyTitle={searchQuery ? t('org.members.noMatches') : t('org.members.noMembers')}
+        emptyTitle={t('org.members.noMembers')}
         emptyDescription={isAdminOrOwner ? t('org.members.noMembersHelp') : undefined}
-        toolbar={{
-          left: (
-            <div style={{ maxWidth: 280 }}>
-              <Input
-                type="text"
-                placeholder={t('org.members.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                iconLeft={<Search size={14} />}
-                size="sm"
-              />
-            </div>
-          ),
-        }}
       />
 
       {/* Remove user confirm dialog */}
