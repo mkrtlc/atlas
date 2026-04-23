@@ -77,3 +77,15 @@
   color: var(--color-text-primary);
   padding: 4px 6px 8px;
 }
+
+/* ─── Global focus ring (keyboard focus only) ──────────────────── */
+
+:where(input, select, textarea, button, [role="button"], [role="menuitem"], [role="option"], [tabindex]):focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent-primary) 18%, transparent);
+  border-color: var(--color-border-focus);
+}
+
+/* Disable default browser focus outline in favour of our ring. */
+:where(input, select, textarea, button):focus {
+  outline: none;
+}
