@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { HelpCircle, Search, ChevronRight } from 'lucide-react';
 import { appRegistry } from '../../apps';
 import { useUIStore } from '../../stores/ui-store';
@@ -11,22 +12,33 @@ import { AccountMenu } from './account-menu';
 const RAIL_WIDTH = 56;
 const TOP_BAR_HEIGHT = 48;
 
-function deriveCrumbsFromRoute(pathname: string, viewParam: string | null): BreadcrumbItem[] {
+function formatViewId(viewId: string): string {
+  return viewId
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(' ');
+}
+
+function deriveCrumbsFromRoute(
+  pathname: string,
+  viewParam: string | null,
+  t: TFunction,
+): BreadcrumbItem[] {
   const navItems = appRegistry.getNavItems();
   const match = navItems.find(({ route }) => pathname === route || pathname.startsWith(route + '/') || pathname.startsWith(route + '?'));
   if (!match) {
-    if (pathname.startsWith('/settings')) return [{ label: 'Settings' }];
-    if (pathname.startsWith('/org')) return [{ label: 'Organization' }];
+    if (pathname.startsWith('/settings')) {
+      return [{ label: t('settings.title', 'Settings') }];
+    }
+    if (pathname.startsWith('/org')) {
+      return [{ label: t('sidebar.organization', 'Organization') }];
+    }
     return [];
   }
-  const appLabel = match.id.charAt(0).toUpperCase() + match.id.slice(1);
+  const appLabel = t(match.labelKey, match.id.charAt(0).toUpperCase() + match.id.slice(1));
   const crumbs: BreadcrumbItem[] = [{ label: appLabel, to: match.route }];
   if (viewParam) {
-    const viewLabel = viewParam
-      .split('-')
-      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-      .join(' ');
-    crumbs.push({ label: viewLabel });
+    crumbs.push({ label: formatViewId(viewParam) });
   }
   return crumbs;
 }
@@ -41,8 +53,8 @@ export function TopBar() {
 
   const crumbs = useMemo(() => {
     if (overrideCrumbs) return overrideCrumbs;
-    return deriveCrumbsFromRoute(location.pathname, searchParams.get('view'));
-  }, [overrideCrumbs, location.pathname, searchParams]);
+    return deriveCrumbsFromRoute(location.pathname, searchParams.get('view'), t);
+  }, [overrideCrumbs, location.pathname, searchParams, t]);
 
   return (
     <header
