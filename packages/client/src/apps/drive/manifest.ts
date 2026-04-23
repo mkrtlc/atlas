@@ -1,6 +1,5 @@
 import { HardDrive, Settings, Eye, File } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { DriveIcon } from '../../components/icons/app-icons';
 import { DrivePage } from './page';
 import { DriveGeneralPanel, DriveDisplayPanel, DriveFilesPanel } from './components/drive-settings-modal';
 
@@ -9,7 +8,7 @@ export const driveManifest: ClientAppManifest = {
   name: 'Drive',
   labelKey: 'sidebar.drive',
   iconName: 'HardDrive',
-  icon: DriveIcon,
+  icon: HardDrive,
   color: '#64748b',
   minPlan: 'starter',
   category: 'storage',

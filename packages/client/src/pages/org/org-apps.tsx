@@ -9,19 +9,10 @@ import { LayoutGrid } from 'lucide-react';
 import { Chip } from '../../components/ui/chip';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
-import { FULL_BLEED_BRAND_ICONS, getBrandIconScale } from '../../components/icons/app-icons';
 
 // ---------------------------------------------------------------------------
 // App description i18n keys
 // ---------------------------------------------------------------------------
-
-const BRAND_ICON_BACKGROUNDS: Record<string, string> = {
-  crm: '#ffffff',
-  work: '#ffffff', projects: '#ffffff', invoices: '#ffffff',
-  hr: '#fff1ea', tasks: '#eef0ff',
-  system: '#f5f5f7', drive: '#fff4e6',
-  calendar: 'linear-gradient(145deg, #5dadff 0%, #2563eb 50%, #1e3a8a 100%)',
-};
 
 const APP_DESC_KEYS: Record<string, string> = {
   crm: 'org.apps.crmDesc',
@@ -161,7 +152,7 @@ function AppCard({
   isPending,
   onToggle,
 }: {
-  app: { id: string; name: string; icon: React.ComponentType<{ size?: number; color?: string }>; color: string; category: string };
+  app: { id: string; name: string; icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>; color: string; category: string };
   description: string;
   isEnabled: boolean;
   isPending: boolean;
@@ -188,42 +179,15 @@ function AppCard({
       {/* Header: icon + toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-          {(() => {
-            const brandBg = BRAND_ICON_BACKGROUNDS[app.id];
-            const isBrand = brandBg !== undefined;
-            const isFullBleed = FULL_BLEED_BRAND_ICONS.has(app.id);
-            if (isFullBleed) {
-              return (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 36, height: 36, flexShrink: 0, borderRadius: 'var(--radius-md)',
-                  boxShadow: '0 0 0 1px rgba(0,0,0,0.06)', overflow: 'hidden',
-                }}>
-                  <Icon size={36} />
-                </span>
-              );
-            }
-            if (isBrand) {
-              return (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 36, height: 36, flexShrink: 0, borderRadius: 'var(--radius-md)',
-                  background: brandBg, boxShadow: '0 0 0 1px rgba(0,0,0,0.06)',
-                }}>
-                  <Icon size={Math.round(20 * getBrandIconScale(app.id))} />
-                </span>
-              );
-            }
-            return (
-              <div style={{
-                width: 36, height: 36, borderRadius: 'var(--radius-md)',
-                background: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', flexShrink: 0,
-              }}>
-                <Icon size={18} color="var(--color-text-secondary)" />
-              </div>
-            );
-          })()}
+          <div style={{
+            width: 36, height: 36, borderRadius: 'var(--radius-md)',
+            background: `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', flexShrink: 0,
+            boxShadow: `0 2px 6px ${app.color}44`,
+          }}>
+            <Icon size={18} color="#fff" strokeWidth={1.6} />
+          </div>
           <div>
             <div style={{
               fontSize: 'var(--font-size-sm)',

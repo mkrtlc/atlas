@@ -1,6 +1,5 @@
-import { Briefcase, Settings, Eye, Zap } from 'lucide-react';
+import { Briefcase, Settings, Eye, Zap, FolderKanban } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { WorkIcon } from '../../components/icons/app-icons';
 import { WorkPage } from './page';
 import { WorkGeneralPanel } from './components/settings/general-panel';
 import { WorkAppearancePanel } from './components/settings/appearance-panel';
@@ -11,7 +10,7 @@ export const workManifest: ClientAppManifest = {
   name: 'Work',
   labelKey: 'sidebar.work',
   iconName: 'Briefcase',
-  icon: WorkIcon,
+  icon: FolderKanban,
   color: '#6366f1',
   minPlan: 'starter',
   category: 'productivity',

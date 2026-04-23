@@ -1,6 +1,5 @@
-import { Briefcase, Settings } from 'lucide-react';
+import { Briefcase, Settings, Users } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { CrmIcon } from '../../components/icons/app-icons';
 import { CrmPage } from './page';
 import { CrmStagesPanel, CrmActivityTypesPanel, CrmGeneralPanel, CrmIntegrationsPanel } from './components/crm-settings-modal';
 import { PipelineWidget } from './widgets/pipeline-widget';
@@ -10,7 +9,7 @@ export const crmManifest: ClientAppManifest = {
   name: 'CRM',
   labelKey: 'sidebar.crm',
   iconName: 'Briefcase',
-  icon: CrmIcon,
+  icon: Users,
   color: '#f97316',
   minPlan: 'starter',
   category: 'data',

@@ -1,6 +1,5 @@
-import { Pencil, Palette, Download } from 'lucide-react';
+import { Pencil, Palette, Download, PenTool } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { DrawIcon } from '../../components/icons/app-icons';
 import { DrawPage } from './page';
 import { DrawCanvasPanel, DrawExportPanel } from './components/draw-settings-modal';
 
@@ -9,7 +8,7 @@ export const drawManifest: ClientAppManifest = {
   name: 'Draw',
   labelKey: 'sidebar.draw',
   iconName: 'Pencil',
-  icon: DrawIcon,
+  icon: PenTool,
   color: '#e06c9f',
   minPlan: 'starter',
   category: 'productivity',

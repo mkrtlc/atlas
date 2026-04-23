@@ -1,6 +1,5 @@
-import { Cpu, MemoryStick } from 'lucide-react';
+import { Cpu, MemoryStick, Settings2 } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { SystemIcon } from '../../components/icons/app-icons';
 import { SystemPage } from './page';
 import { CpuWidget } from './widgets/cpu-widget';
 import { MemoryWidget } from './widgets/memory-widget';
@@ -10,7 +9,7 @@ export const systemManifest: ClientAppManifest = {
   name: 'System',
   labelKey: 'sidebar.system',
   iconName: 'Monitor',
-  icon: SystemIcon,
+  icon: Settings2,
   color: '#6b7280',
   minPlan: 'starter',
   category: 'other',

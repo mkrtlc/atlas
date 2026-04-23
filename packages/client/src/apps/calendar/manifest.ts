@@ -1,5 +1,5 @@
+import { Calendar as CalendarIcon } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { CalendarIcon } from '../../components/icons/app-icons';
 import { CalendarPage } from '../../pages/calendar';
 
 export const calendarManifest: ClientAppManifest = {

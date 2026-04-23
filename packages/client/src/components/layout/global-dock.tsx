@@ -5,7 +5,6 @@ import { isTenantOwner } from '@atlas-platform/shared';
 import { appRegistry } from '../../apps';
 import { useMyAccessibleApps } from '../../hooks/use-app-permissions';
 import { useAuthStore } from '../../stores/auth-store';
-import { FULL_BLEED_BRAND_ICONS, getBrandIconScale } from '../icons/app-icons';
 import '../../styles/global-dock.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -20,22 +19,6 @@ const RANGE = 150;
 const BASE_ICON = 20;
 /** Ratio of icon size to card size — used to drive the CSS variable */
 const ICON_RATIO = BASE_ICON / BASE;
-
-/**
- * Per-app background for brand icons. Mirrors the home-page BRAND_ICON_BACKGROUNDS
- * but kept local so the global dock can evolve independently.
- */
-const BRAND_ICON_BACKGROUNDS: Record<string, string> = {
-  crm: '#ffffff',
-  work: '#ffffff',
-  projects: '#ffffff',
-  invoices: '#ffffff',
-  hr: '#fff1ea',
-  tasks: '#eef0ff',
-  system: '#f5f5f7',
-  drive: '#fff4e6',
-  calendar: 'linear-gradient(145deg, #5dadff 0%, #2563eb 50%, #1e3a8a 100%)',
-};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -136,9 +119,6 @@ export function GlobalDock() {
     >
       {dockApps.map((app) => {
         const Icon = app.icon;
-        const brandBg = BRAND_ICON_BACKGROUNDS[app.id];
-        const isBrandIcon = brandBg !== undefined;
-        const isFullBleed = FULL_BLEED_BRAND_ICONS.has(app.id);
         const isActive = activeAppId === app.id;
 
         return (
@@ -150,64 +130,24 @@ export function GlobalDock() {
               ['--dock-icon-size' as string]: `${BASE_ICON}px`,
             }}
           >
-            {isFullBleed ? (
-              <div
-                className="global-dock-icon-inner"
+            <div
+              className="global-dock-icon-inner"
+              style={{
+                background: `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
+                boxShadow: `0 2px 8px ${app.color}44, inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -1px 2px rgba(0,0,0,0.15)`,
+              }}
+            >
+              <Icon
+                size={BASE_ICON}
+                color="#fff"
+                strokeWidth={1.6}
                 style={{
-                  background: 'transparent',
-                  boxShadow:
-                    '0 2px 8px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05)',
-                  overflow: 'hidden',
-                  padding: 0,
+                  width: `var(--dock-icon-size, ${BASE_ICON}px)`,
+                  height: `var(--dock-icon-size, ${BASE_ICON}px)`,
+                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
                 }}
-              >
-                <Icon
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'block',
-                  }}
-                />
-              </div>
-            ) : (
-              <div
-                className="global-dock-icon-inner"
-                style={{
-                  background: isBrandIcon
-                    ? brandBg
-                    : `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
-                  boxShadow: isBrandIcon
-                    ? '0 2px 8px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.05)'
-                    : `0 2px 8px ${app.color}44, inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -1px 2px rgba(0,0,0,0.15)`,
-                }}
-              >
-                {isBrandIcon
-                  ? (() => {
-                      const brandScale = getBrandIconScale(app.id);
-                      return (
-                        <Icon
-                          size={Math.round(BASE_ICON * brandScale)}
-                          style={{
-                            width: `calc(var(--dock-icon-size, ${BASE_ICON}px) * ${brandScale})`,
-                            height: `calc(var(--dock-icon-size, ${BASE_ICON}px) * ${brandScale})`,
-                          }}
-                        />
-                      );
-                    })()
-                  : (
-                    <Icon
-                      size={BASE_ICON}
-                      color="#fff"
-                      strokeWidth={1.6}
-                      style={{
-                        width: `var(--dock-icon-size, ${BASE_ICON}px)`,
-                        height: `var(--dock-icon-size, ${BASE_ICON}px)`,
-                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))',
-                      }}
-                    />
-                  )}
-              </div>
-            )}
+              />
+            </div>
             <span className="global-dock-tooltip">{app.label}</span>
           </div>
         );

@@ -1,6 +1,5 @@
 import { Receipt, Settings, FileText } from 'lucide-react';
 import type { ClientAppManifest } from '../../config/app-manifest.client';
-import { InvoicesIcon } from '../../components/icons/app-icons';
 import { InvoicesPage } from './page';
 import { InvoiceSettingsPanel } from './components/invoice-settings-panel';
 import { InvoiceTemplatesPanel } from './components/invoice-templates-panel';
@@ -10,7 +9,7 @@ export const invoicesManifest: ClientAppManifest = {
   name: 'Invoices',
   labelKey: 'sidebar.invoices',
   iconName: 'Receipt',
-  icon: InvoicesIcon,
+  icon: Receipt,
   color: '#0ea5e9',
   minPlan: 'starter',
   category: 'data',

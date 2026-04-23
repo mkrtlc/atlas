@@ -22,25 +22,7 @@ import { useMyAccessibleApps } from '../hooks/use-app-permissions';
 import { ActivityFeed } from '../components/activity/activity-feed';
 import { DockPet, type PetType } from '../components/home/dock-pet';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
-import { FULL_BLEED_BRAND_ICONS, getBrandIconScale } from '../components/icons/app-icons';
 import '../styles/home.css';
-
-// App ids that use multicolor brand SVGs in the dock instead of lucide icons.
-// They render on a light card so the artwork reads clearly, replacing the
-// per-app gradient. Other apps keep their gradient cards. Calendar uses a
-// blue gradient because its artwork is dark-grey + white and would vanish
-// against a white card.
-const BRAND_ICON_BACKGROUNDS: Record<string, string> = {
-  crm: '#ffffff',
-  work: '#ffffff',
-  invoices: '#ffffff',
-  hr: '#fff1ea',
-  // System glyph is multicolour — neutral light slate keeps colours honest.
-  system: '#f5f5f7',
-  // Drive folder artwork is orange/blue gradients — soft peach tint matches.
-  drive: '#fff4e6',
-  calendar: 'linear-gradient(145deg, #5dadff 0%, #2563eb 50%, #1e3a8a 100%)',
-};
 
 // Base render size of a dock icon when the dock item is at its idle 52px
 // width. The hover handler scales this proportionally up to the magnified
@@ -1292,9 +1274,6 @@ export function HomePage() {
           {orderedDockApps.map((app) => {
             const Icon = app.icon;
             const isBeingDragged = dockDragState?.isDragging && dockDragState.id === app.id;
-            const brandBg = BRAND_ICON_BACKGROUNDS[app.id];
-            const isBrandIcon = brandBg !== undefined;
-            const isFullBleed = FULL_BLEED_BRAND_ICONS.has(app.id);
             return (
               <div
                 key={app.id}
@@ -1316,75 +1295,31 @@ export function HomePage() {
                   opacity: isBeingDragged ? 0.3 : 1,
                   transform: getDockItemTransform(app.id),
                   transition: 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s',
-                  // Initial value of the icon-size CSS variable. The hover
-                  // handler updates this so the icon scales with the card.
-                  // Brand icons get +20% to look more present in the dock.
                   ['--dock-icon-size' as string]: `${BASE_DOCK_ICON_SIZE}px`,
                 }}
               >
-                {isFullBleed ? (
-                  // Full-bleed brand icon: the SVG IS the card. No inner
-                  // background or padding — render at 100% width/height with
-                  // overflow hidden so the artwork is clipped to the dock
-                  // card's rounded corners.
-                  <div
-                    className="dock-icon-inner"
+                <div
+                  className="dock-icon-inner"
+                  style={{
+                    background: `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
+                    boxShadow: `0 3px 10px ${app.color}55, inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -1px 2px rgba(0,0,0,0.2)`,
+                  }}
+                >
+                  <Icon
+                    size={BASE_DOCK_ICON_SIZE}
+                    color="#fff"
+                    strokeWidth={1.6}
                     style={{
-                      background: 'transparent',
-                      boxShadow: '0 3px 10px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)',
-                      overflow: 'hidden',
-                      padding: 0,
+                      width: `var(--dock-icon-size, ${BASE_DOCK_ICON_SIZE}px)`,
+                      height: `var(--dock-icon-size, ${BASE_DOCK_ICON_SIZE}px)`,
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
                     }}
-                  >
-                    <Icon
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'block',
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className="dock-icon-inner"
-                    style={{
-                      background: isBrandIcon
-                        ? brandBg
-                        : `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
-                      boxShadow: isBrandIcon
-                        ? `0 3px 10px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05)`
-                        : `0 3px 10px ${app.color}55, inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -1px 2px rgba(0,0,0,0.2)`,
-                    }}
-                  >
-                    {isBrandIcon ? (() => {
-                      const brandScale = getBrandIconScale(app.id);
-                      return (
-                        <Icon
-                          size={Math.round(BASE_DOCK_ICON_SIZE * brandScale)}
-                          style={{
-                            width: `calc(var(--dock-icon-size, ${BASE_DOCK_ICON_SIZE}px) * ${brandScale})`,
-                            height: `calc(var(--dock-icon-size, ${BASE_DOCK_ICON_SIZE}px) * ${brandScale})`,
-                          }}
-                        />
-                      );
-                    })() : (
-                      <Icon
-                        size={BASE_DOCK_ICON_SIZE}
-                        color="#fff"
-                        strokeWidth={1.6}
-                        style={{
-                          width: `var(--dock-icon-size, ${BASE_DOCK_ICON_SIZE}px)`,
-                          height: `var(--dock-icon-size, ${BASE_DOCK_ICON_SIZE}px)`,
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
-                        }}
-                      />
-                    )}
-                  </div>
-                )}
+                  />
+                </div>
                 {/* Reflection */}
                 <div
                   className="dock-icon-reflection"
-                  style={{ background: isBrandIcon || isFullBleed ? '#000' : app.color }}
+                  style={{ background: app.color }}
                 />
                 <span className="dock-tooltip">{app.label}</span>
               </div>
@@ -1395,9 +1330,6 @@ export function HomePage() {
             const app = orderedDockApps.find(a => a.id === dockDragState.id);
             if (!app) return null;
             const Icon = app.icon;
-            const brandBg = BRAND_ICON_BACKGROUNDS[app.id];
-            const isBrandIcon = brandBg !== undefined;
-            const isFullBleed = FULL_BLEED_BRAND_ICONS.has(app.id);
             return (
               <div style={{
                 position: 'fixed',
@@ -1409,14 +1341,8 @@ export function HomePage() {
                 pointerEvents: 'none',
               }}>
                 <div className="dock-icon-inner" style={{
-                  background: isFullBleed
-                    ? 'transparent'
-                    : isBrandIcon
-                      ? brandBg
-                      : `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
-                  boxShadow: isFullBleed || isBrandIcon
-                    ? '0 8px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05)'
-                    : `0 8px 20px ${app.color}66`,
+                  background: `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
+                  boxShadow: `0 8px 20px ${app.color}66`,
                   transform: 'scale(1.15)',
                   width: 52,
                   height: 52,
@@ -1424,16 +1350,8 @@ export function HomePage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  overflow: isFullBleed ? 'hidden' : undefined,
-                  padding: isFullBleed ? 0 : undefined,
                 }}>
-                  {isFullBleed ? (
-                    <Icon style={{ width: '100%', height: '100%', display: 'block' }} />
-                  ) : isBrandIcon ? (
-                    <Icon size={Math.round(BASE_DOCK_ICON_SIZE * getBrandIconScale(app.id))} />
-                  ) : (
-                    <Icon size={BASE_DOCK_ICON_SIZE} color="#fff" strokeWidth={1.6} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
-                  )}
+                  <Icon size={BASE_DOCK_ICON_SIZE} color="#fff" strokeWidth={1.6} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
                 </div>
               </div>
             );
@@ -1445,9 +1363,6 @@ export function HomePage() {
           const app = orderedDockApps.find(a => a.id === dockDragState.id);
           if (!app) return null;
           const Icon = app.icon;
-          const brandBg = BRAND_ICON_BACKGROUNDS[app.id];
-          const isBrandIcon = brandBg !== undefined;
-          const isFullBleed = FULL_BLEED_BRAND_ICONS.has(app.id);
           const dockRect = dockRef.current?.getBoundingClientRect();
           const isDropping = dockDragState.isDropping;
           const xPos = isDropping ? dockDragState.dropTargetX : dockDragState.currentX;
@@ -1469,30 +1384,14 @@ export function HomePage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                overflow: isFullBleed ? 'hidden' : undefined,
-                padding: isFullBleed ? 0 : undefined,
-                background: isFullBleed
-                  ? 'transparent'
-                  : isBrandIcon
-                    ? brandBg
-                    : `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
-                boxShadow: isFullBleed || isBrandIcon
-                  ? (isDropping
-                      ? '0 3px 10px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05)'
-                      : '0 8px 24px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.3)')
-                  : (isDropping
-                      ? `0 3px 10px ${app.color}55, inset 0 1px 1px rgba(255,255,255,0.25)`
-                      : `0 8px 24px ${app.color}88, 0 4px 12px rgba(0,0,0,0.3)`),
+                background: `linear-gradient(145deg, color-mix(in srgb, ${app.color} 85%, #fff) 0%, ${app.color} 50%, color-mix(in srgb, ${app.color} 70%, #000) 100%)`,
+                boxShadow: isDropping
+                  ? `0 3px 10px ${app.color}55, inset 0 1px 1px rgba(255,255,255,0.25)`
+                  : `0 8px 24px ${app.color}88, 0 4px 12px rgba(0,0,0,0.3)`,
                 transform: isDropping ? 'scale(1)' : 'scale(1.15)',
                 transition: isDropping ? 'transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease' : 'none',
               }}>
-                {isFullBleed ? (
-                  <Icon style={{ width: '100%', height: '100%', display: 'block' }} />
-                ) : isBrandIcon ? (
-                  <Icon size={Math.round(BASE_DOCK_ICON_SIZE * getBrandIconScale(app.id))} />
-                ) : (
-                  <Icon size={BASE_DOCK_ICON_SIZE} color="#fff" strokeWidth={1.6} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
-                )}
+                <Icon size={BASE_DOCK_ICON_SIZE} color="#fff" strokeWidth={1.6} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
               </div>
             </div>
           );
