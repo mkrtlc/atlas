@@ -4,6 +4,8 @@ import { logger } from '../../../utils/logger';
 import { emitAppEvent } from '../../../services/event.service';
 import { canAccess } from '../../../services/app-permissions.service';
 import { parseMentionsAndNotify } from '../../../utils/mentions';
+import { existsSync, createReadStream, statSync } from 'node:fs';
+import { safeFilePath } from '../lib/safe-path';
 
 // GET /api/drive/:id/versions
 export async function listVersions(req: Request, res: Response) {
@@ -113,11 +115,7 @@ export async function downloadVersion(req: Request, res: Response) {
       return;
     }
 
-    const path = require('node:path');
-    const { existsSync, createReadStream, statSync } = require('node:fs');
-    const UPLOADS_DIR = path.join(__dirname, '../../../../uploads');
-
-    const filePath = path.join(UPLOADS_DIR, version.storagePath);
+    const filePath = safeFilePath(version.storagePath);
     if (!existsSync(filePath)) {
       res.status(404).json({ success: false, error: 'Version file not found on disk' });
       return;

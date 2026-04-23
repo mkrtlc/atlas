@@ -7,11 +7,9 @@ import { logger } from '../utils/logger';
 import { db } from '../config/database';
 import { driveItems } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import path from 'node:path';
 import { existsSync, createReadStream, statSync } from 'node:fs';
 import { handlePublicUpload } from '../apps/drive/controllers/public-upload.controller';
-
-const UPLOADS_DIR = path.join(__dirname, '../../uploads');
+import { safeFilePath } from '../apps/drive/lib/safe-path';
 
 const router = Router();
 
@@ -94,7 +92,7 @@ router.get('/:token/download', async (req: Request, res: Response) => {
       }
     }
 
-    const filePath = path.join(UPLOADS_DIR, item.storagePath);
+    const filePath = safeFilePath(item.storagePath);
     if (!existsSync(filePath)) {
       res.status(404).json({ success: false, error: 'File not found on disk' });
       return;

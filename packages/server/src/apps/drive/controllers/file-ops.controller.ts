@@ -2,11 +2,9 @@ import type { Request, Response } from 'express';
 import * as driveService from '../service';
 import { logger } from '../../../utils/logger';
 import { canAccess } from '../../../services/app-permissions.service';
-import path from 'node:path';
-import { existsSync, createReadStream, readFileSync, statSync } from 'node:fs';
+import { existsSync, createReadStream, statSync } from 'node:fs';
 import archiver from 'archiver';
-
-const UPLOADS_DIR = path.join(__dirname, '../../../../uploads');
+import { safeFilePath } from '../lib/safe-path';
 
 // GET /api/drive/:id/download-zip
 export async function downloadZip(req: Request, res: Response) {
@@ -30,7 +28,7 @@ export async function downloadZip(req: Request, res: Response) {
 
     for (const { item: fileItem, relativePath } of contents) {
       if (fileItem.storagePath) {
-        const filePath = path.join(UPLOADS_DIR, fileItem.storagePath);
+        const filePath = safeFilePath(fileItem.storagePath);
         if (existsSync(filePath)) {
           archive.file(filePath, { name: relativePath });
         }
@@ -58,7 +56,7 @@ export async function downloadFile(req: Request, res: Response) {
       return;
     }
 
-    const filePath = path.join(UPLOADS_DIR, item.storagePath);
+    const filePath = safeFilePath(item.storagePath);
     if (!existsSync(filePath)) {
       res.status(404).json({ success: false, error: 'File not found on disk' });
       return;
@@ -90,7 +88,7 @@ export async function viewFile(req: Request, res: Response) {
       return;
     }
 
-    const filePath = path.join(UPLOADS_DIR, item.storagePath);
+    const filePath = safeFilePath(item.storagePath);
     if (!existsSync(filePath)) {
       res.status(404).json({ success: false, error: 'File not found on disk' });
       return;
@@ -141,7 +139,7 @@ export async function previewFile(req: Request, res: Response) {
       return;
     }
 
-    const filePath = path.join(UPLOADS_DIR, item.storagePath);
+    const filePath = safeFilePath(item.storagePath);
     if (!existsSync(filePath)) {
       res.status(404).json({ success: false, error: 'File not found on disk' });
       return;

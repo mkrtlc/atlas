@@ -6,8 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import { getAuthenticatedClient, hasDriveScope } from '../../../services/google-auth';
 import * as itemsService from './items.service';
 import { logger } from '../../../utils/logger';
-
-const UPLOADS_DIR = path.join(__dirname, '../../../../uploads');
+import { UPLOADS_DIR, safeFilePath } from '../lib/safe-path';
 
 // Ensure uploads directory exists at module load
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -116,7 +115,7 @@ export async function importFileFromGoogleDrive(
   const tenantDir = path.join(UPLOADS_DIR, tenantId);
   if (!fs.existsSync(tenantDir)) fs.mkdirSync(tenantDir, { recursive: true });
   const storagePath = `${tenantId}/${userId}_${Date.now()}_${safeName}`;
-  const filePath = path.join(UPLOADS_DIR, storagePath);
+  const filePath = safeFilePath(storagePath);
 
   let fileSize: number;
 
@@ -185,7 +184,7 @@ export async function exportToGoogleDrive(
   }
 
   // 2. Read file from disk as a stream
-  const filePath = path.join(UPLOADS_DIR, item.storagePath);
+  const filePath = safeFilePath(item.storagePath);
   if (!fs.existsSync(filePath)) {
     throw new Error('File not found on disk');
   }

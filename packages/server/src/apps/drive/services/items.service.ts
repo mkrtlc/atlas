@@ -7,8 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import type { CreateDriveItemInput, UpdateDriveItemInput } from '@atlas-platform/shared';
 import { hasSharedAccess } from './sharing.service';
-
-const UPLOADS_DIR = path.join(__dirname, '../../../../uploads');
+import { UPLOADS_DIR, safeFilePath } from '../lib/safe-path';
 
 function normalizeTags(item: any) {
   if (!item) return item;
@@ -275,7 +274,7 @@ export async function permanentDelete(userId: string, itemId: string) {
 
   // If it's a file with a storage path, remove from disk
   if (item.type === 'file' && item.storagePath) {
-    const filePath = path.join(UPLOADS_DIR, item.storagePath);
+    const filePath = safeFilePath(item.storagePath);
     try {
       if (existsSync(filePath)) {
         unlinkSync(filePath);
@@ -467,14 +466,14 @@ export async function duplicateItem(userId: string, itemId: string) {
 
   let newStoragePath: string | null = null;
   if (item.type === 'file' && item.storagePath) {
-    const srcPath = path.join(UPLOADS_DIR, item.storagePath);
+    const srcPath = safeFilePath(item.storagePath);
     if (existsSync(srcPath)) {
       const ext = path.extname(item.storagePath);
       const newFilename = `${userId}_${Date.now()}_copy_${crypto.randomUUID()}${ext}`;
       const tenantDir = path.join(UPLOADS_DIR, item.tenantId);
       if (!existsSync(tenantDir)) mkdirSync(tenantDir, { recursive: true });
       newStoragePath = `${item.tenantId}/${newFilename}`;
-      copyFileSync(srcPath, path.join(UPLOADS_DIR, newStoragePath));
+      copyFileSync(srcPath, safeFilePath(newStoragePath));
     }
   }
 
@@ -545,14 +544,14 @@ export async function copyItem(userId: string, tenantId: string, itemId: string,
 
   let newStoragePath: string | null = null;
   if (item.type === 'file' && item.storagePath) {
-    const srcPath = path.join(UPLOADS_DIR, item.storagePath);
+    const srcPath = safeFilePath(item.storagePath);
     if (existsSync(srcPath)) {
       const ext = path.extname(item.storagePath);
       const newFilename = `${userId}_${Date.now()}_copy_${crypto.randomUUID()}${ext}`;
       const tenantDir = path.join(UPLOADS_DIR, tenantId);
       if (!existsSync(tenantDir)) mkdirSync(tenantDir, { recursive: true });
       newStoragePath = `${tenantId}/${newFilename}`;
-      copyFileSync(srcPath, path.join(UPLOADS_DIR, newStoragePath));
+      copyFileSync(srcPath, safeFilePath(newStoragePath));
     }
   }
 

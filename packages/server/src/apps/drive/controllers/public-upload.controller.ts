@@ -6,8 +6,7 @@ import { db } from '../../../config/database';
 import { driveItems, driveShareLinks, driveActivityLog } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
-
-const UPLOADS_DIR = path.join(__dirname, '../../../../uploads');
+import { safeFilePath, sanitizeFilename } from '../lib/safe-path';
 
 export async function handlePublicUpload(req: Request, res: Response) {
   try {
@@ -48,22 +47,23 @@ export async function handlePublicUpload(req: Request, res: Response) {
 
     const files = (req.files as Express.Multer.File[]) ?? [];
 
-    const fileMetadatas: Array<{ storageRel: string; file: Express.Multer.File }> = [];
+    const fileMetadatas: Array<{ storageRel: string; safeName: string; file: Express.Multer.File }> = [];
     for (const file of files) {
-      const storageRel = `${folder.tenantId}/${crypto.randomUUID()}_${Date.now()}_${file.originalname}`;
-      const storageAbs = path.join(UPLOADS_DIR, storageRel);
+      const safeName = sanitizeFilename(file.originalname);
+      const storageRel = `${folder.tenantId}/${crypto.randomUUID()}_${Date.now()}_${safeName}`;
+      const storageAbs = safeFilePath(storageRel);
       await fs.mkdir(path.dirname(storageAbs), { recursive: true });
       await fs.writeFile(storageAbs, file.buffer);
-      fileMetadatas.push({ storageRel, file });
+      fileMetadatas.push({ storageRel, safeName, file });
     }
 
     const rows = fileMetadatas.length > 0
       ? await db.insert(driveItems).values(
-          fileMetadatas.map(({ storageRel, file }) => ({
+          fileMetadatas.map(({ storageRel, safeName, file }) => ({
             tenantId: folder.tenantId,
             userId: folder.userId,
             parentId: folder.id,
-            name: file.originalname,
+            name: safeName,
             type: 'file' as const,
             mimeType: file.mimetype,
             size: file.size,
