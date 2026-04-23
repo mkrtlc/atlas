@@ -316,4 +316,37 @@ async function migrateLegacyData() {
   } catch (err) {
     logger.error({ err }, 'Failed to drop dead user_settings.tables_* columns');
   }
+
+  // tasks.project_id FK — after the Work app merge (v1.9.x) the old
+  // task_projects table was superseded by project_projects, but the FK
+  // on tasks.project_id still pointed at task_projects. Creating a task
+  // against a post-merge project failed with a stale-FK violation. Swap
+  // the constraint to target project_projects. Idempotent via DO block.
+  try {
+    const c = await pool.connect();
+    try {
+      await c.query(`
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'tasks_project_id_task_projects_id_fk'
+          ) THEN
+            ALTER TABLE tasks DROP CONSTRAINT tasks_project_id_task_projects_id_fk;
+          END IF;
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'tasks_project_id_project_projects_id_fk'
+          ) THEN
+            ALTER TABLE tasks ADD CONSTRAINT tasks_project_id_project_projects_id_fk
+              FOREIGN KEY (project_id) REFERENCES project_projects(id) ON DELETE SET NULL;
+          END IF;
+        END$$;
+      `);
+    } finally {
+      c.release();
+    }
+  } catch (err) {
+    logger.error({ err }, 'Failed to repoint tasks.project_id FK to project_projects');
+  }
 }
