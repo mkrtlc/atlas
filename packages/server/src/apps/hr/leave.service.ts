@@ -2,7 +2,7 @@ import { db } from '../../config/database';
 import { hrLeaveApplications, hrLeaveTypes, leaveBalances, employees, hrHolidays } from '../../db/schema';
 import { eq, and, asc, desc, sql, gte, lte } from 'drizzle-orm';
 import { logger } from '../../utils/logger';
-import { calculateWorkingDays } from './service';
+import { calculateWorkingDays } from './services/leave-config.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -91,9 +91,11 @@ export async function createLeaveApplication(tenantId: string, input: {
     .where(and(eq(hrLeaveTypes.id, input.leaveTypeId), eq(hrLeaveTypes.tenantId, tenantId))).limit(1);
   if (!leaveType) throw new Error('Leave type not found');
 
-  // Calculate total days excluding weekends and holidays
-  // Note: employee-level holiday calendar assignment is not yet supported;
-  // pass undefined so the default calculation (weekdays only) is used.
+  // Calculate total days excluding weekends and holidays.
+  // TODO (#19): look up the employee's `holidayCalendarId` from `input.employeeId`
+  // and pass it here so tenant-specific public holidays are excluded.
+  // Example: const [emp] = await db.select().from(employees).where(eq(employees.id, input.employeeId)).limit(1);
+  //          totalDays = await calculateWorkingDays(tenantId, startDate, endDate, emp?.holidayCalendarId ?? undefined);
   let totalDays = await calculateWorkingDays(tenantId, input.startDate, input.endDate, undefined);
 
   // Half-day adjustment

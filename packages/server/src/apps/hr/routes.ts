@@ -12,6 +12,8 @@ import {
   hrLeaveTypes,
   hrLeavePolicies,
   hrLeaveApplications,
+  hrHolidayCalendars,
+  hrHolidays,
   hrExpenseCategories,
   hrExpensePolicies,
   hrExpenses,
@@ -83,14 +85,14 @@ router.delete('/leave-policies/:id', hrController.deleteLeavePolicy);
 // Holiday Calendars (before /:id)
 router.get('/holiday-calendars', hrController.listHolidayCalendars);
 router.post('/holiday-calendars', hrController.createHolidayCalendar);
-router.patch('/holiday-calendars/:id', hrController.updateHolidayCalendar);
+router.patch('/holiday-calendars/:id', withConcurrencyCheck(hrHolidayCalendars), hrController.updateHolidayCalendar);
 router.delete('/holiday-calendars/:id', hrController.deleteHolidayCalendar);
 router.get('/holiday-calendars/:id/holidays', hrController.listHolidays);
 
 // Holidays (before /:id)
 router.post('/holidays', hrController.createHoliday);
 router.post('/holidays/bulk-import', hrController.bulkImportHolidays);
-router.patch('/holidays/:id', hrController.updateHoliday);
+router.patch('/holidays/:id', withConcurrencyCheck(hrHolidays), hrController.updateHoliday);
 router.delete('/holidays/:id', hrController.deleteHoliday);
 
 // Working days calculator

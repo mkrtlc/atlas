@@ -2,7 +2,7 @@ import { db } from '../../../config/database';
 import {
   employees, departments, timeOffRequests, hrLeaveApplications,
 } from '../../../db/schema';
-import { eq, and, sql, gte, lte } from 'drizzle-orm';
+import { eq, and, sql, gte, lte, count } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
 import { createEmployee, updateEmployee } from './employee.service';
 import { createDepartment, updateDepartment } from './department.service';
@@ -18,17 +18,17 @@ export async function getDashboardData(userId: string, tenantId: string) {
   const allEmployees = await db
     .select()
     .from(employees)
-    .where(and(eq(employees.userId, userId), eq(employees.tenantId, tenantId), eq(employees.isArchived, false)));
+    .where(and(eq(employees.tenantId, tenantId), eq(employees.isArchived, false)));
 
   const allDepartments = await db
     .select()
     .from(departments)
-    .where(and(eq(departments.userId, userId), eq(departments.tenantId, tenantId), eq(departments.isArchived, false)));
+    .where(and(eq(departments.tenantId, tenantId), eq(departments.isArchived, false)));
 
   const allTimeOff = await db
     .select()
     .from(timeOffRequests)
-    .where(and(eq(timeOffRequests.userId, userId), eq(timeOffRequests.tenantId, tenantId), eq(timeOffRequests.isArchived, false)));
+    .where(and(eq(timeOffRequests.tenantId, tenantId), eq(timeOffRequests.isArchived, false)));
 
   const now = new Date();
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 86400000);
@@ -72,8 +72,12 @@ export async function getDashboardData(userId: string, tenantId: string) {
     }
   }
 
-  // Leave stats
-  const pendingRequests = allTimeOff.filter((t) => t.status === 'pending').length;
+  // Leave stats — pending count from the active hrLeaveApplications table (#54)
+  const [pendingAgg] = await db
+    .select({ count: count() })
+    .from(hrLeaveApplications)
+    .where(and(eq(hrLeaveApplications.tenantId, tenantId), eq(hrLeaveApplications.status, 'pending'), eq(hrLeaveApplications.isArchived, false)));
+  const pendingRequests = Number(pendingAgg?.count ?? 0);
   let approvedDaysThisMonth = 0;
   for (const req of allTimeOff) {
     if (req.status !== 'approved') continue;

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import * as attendanceService from '../attendance.service';
+import * as attendanceService from '../services/attendance.service';
 import { logger } from '../../../utils/logger';
 import { canAccess } from '../../../services/app-permissions.service';
 
