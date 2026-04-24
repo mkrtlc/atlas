@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
+import { isTenantAdmin, isTenantOwner } from '@atlas-platform/shared';
 import { useMyTenants, useTenantUsers, useUpdateTenantName } from '../../hooks/use-platform';
 import { useAllTenantPermissions } from '../../hooks/use-app-permissions';
 import { Chip } from '../../components/ui/chip';
@@ -189,6 +190,7 @@ function SkeletonBlock() {
 export function OrgSettingsPage() {
   const { t } = useTranslation();
   const storeTenantId = useAuthStore((s) => s.tenantId);
+  const tenantRole = useAuthStore((s) => s.tenantRole);
   const { data: tenants, isLoading: tenantsLoading } = useMyTenants();
   const tenant = tenants?.[0];
   const effectiveTenantId = storeTenantId ?? tenant?.id;
@@ -347,8 +349,8 @@ export function OrgSettingsPage() {
         </div>
       </div>
 
-      {/* Demo data */}
-      <DemoDataSection />
+      {/* Demo data — owner/admin only (endpoint enforces this too) */}
+      {(isTenantOwner(tenantRole) || isTenantAdmin(tenantRole)) && <DemoDataSection />}
 
       {/* HR access warning */}
       {membersWithoutHr > 0 && (

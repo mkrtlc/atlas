@@ -712,11 +712,14 @@ export function HomePage() {
     }, 400);
   }, []);
 
-  // Clear demo data handler
+  // Clear demo data handler — delegates to the platform registry
+  // endpoint so only seeded rows are deleted.
   const [showClearDemoConfirm, setShowClearDemoConfirm] = useState(false);
   const handleClearDemoData = useCallback(async () => {
     try {
-      await api.post('/settings/clear-demo');
+      await api.post('/platform/demo-data', { action: 'remove' });
+      // Also clear the per-user "pill visible" flag so the badge disappears.
+      await api.put('/settings', { homeDemoDataActive: false }).catch(() => {});
       queryClient.invalidateQueries();
     } catch { /* ignore */ }
     setShowClearDemoConfirm(false);
@@ -1397,8 +1400,8 @@ export function HomePage() {
           );
         })()}
 
-        {/* Demo data pill */}
-        {!!userSettings?.homeDemoDataActive && (
+        {/* Demo data pill — owner/admin only */}
+        {!!userSettings?.homeDemoDataActive && (isOwner || isAdmin) && (
           <div style={{
             position: 'absolute',
             bottom: 24,
