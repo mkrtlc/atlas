@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutGrid,
@@ -10,7 +10,6 @@ import { useAuthStore } from '../../stores/auth-store';
 import { useMyTenants } from '../../hooks/use-platform';
 import { ROUTES } from '../../config/routes';
 import { AppSidebar, SidebarSection, SidebarItem } from '../../components/layout/app-sidebar';
-import { ContentArea } from '../../components/ui/content-area';
 import { TopBar } from '../../components/layout/top-bar';
 
 // ---------------------------------------------------------------------------
@@ -39,13 +38,6 @@ const NAV_ITEMS: NavItem[] = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getPageTitleKey(pathname: string): string {
-  if (pathname.startsWith(ROUTES.ORG_MEMBERS)) return 'org.nav.members';
-  if (pathname.startsWith(ROUTES.ORG_APPS)) return 'org.nav.apps';
-  if (pathname.startsWith(ROUTES.ORG_SETTINGS)) return 'org.nav.settings';
-  return 'org.nav.organization';
-}
-
 // ---------------------------------------------------------------------------
 // OrgLayout
 // ---------------------------------------------------------------------------
@@ -56,7 +48,6 @@ export function OrgLayout() {
   const { data: tenants, isLoading: tenantsLoading } = useMyTenants();
   const activeTenant = tenants?.[0];
   const hasTenant = !!tenantId || !!activeTenant;
-  const { pathname } = useLocation();
 
   if (tenantsLoading) {
     return (
@@ -78,11 +69,10 @@ export function OrgLayout() {
     );
   }
 
-  const pageTitle = t(getPageTitleKey(pathname));
-
   return (
     <div style={{
       display: 'flex',
+      flexDirection: 'column',
       height: '100vh',
       overflow: 'hidden',
       fontFamily: 'var(--font-family)',
@@ -90,44 +80,36 @@ export function OrgLayout() {
       background: 'var(--color-bg-primary)',
       color: 'var(--color-text-primary)',
     }}>
-      <AppSidebar
-        storageKey="atlas_org_sidebar"
-        title={activeTenant?.name ?? t('org.nav.organization')}
-      >
-        <SidebarSection>
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end ?? false}
-              style={{ textDecoration: 'none' }}
-            >
-              {({ isActive }) => (
-                <SidebarItem
-                  label={t(item.labelKey)}
-                  icon={item.icon}
-                  iconColor={item.iconColor}
-                  isActive={isActive}
-                />
-              )}
-            </NavLink>
-          ))}
-        </SidebarSection>
-      </AppSidebar>
-
-      {/* Content column */}
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-        <TopBar />
-        <ContentArea
-          breadcrumbs={[
-            { label: t('org.nav.organization') },
-            { label: pageTitle },
-          ]}
+      <TopBar />
+      <div style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <AppSidebar
+          storageKey="atlas_org_sidebar"
+          title={activeTenant?.name ?? t('org.nav.organization')}
         >
-          <main style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-xl)' }}>
-            <Outlet />
-          </main>
-        </ContentArea>
+          <SidebarSection>
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end ?? false}
+                style={{ textDecoration: 'none' }}
+              >
+                {({ isActive }) => (
+                  <SidebarItem
+                    label={t(item.labelKey)}
+                    icon={item.icon}
+                    iconColor={item.iconColor}
+                    isActive={isActive}
+                  />
+                )}
+              </NavLink>
+            ))}
+          </SidebarSection>
+        </AppSidebar>
+
+        <main style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-xl)' }}>
+          <Outlet />
+        </main>
       </div>
     </div>
   );

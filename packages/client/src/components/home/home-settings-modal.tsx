@@ -123,7 +123,7 @@ export function HomeBackgroundPanel() {
   return (
     <div>
       <SettingsSection title={t('widgets.bgType', 'Background type')} description={t('widgets.bgTypeDesc', 'Choose what appears behind the home screen')}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {typeOptions.map((opt) => {
             const isActive = bgType === opt.value;
             return (
@@ -402,7 +402,7 @@ export function HomeWidgetsPanel() {
   return (
     <div>
       <SettingsSection title={t('widgets.homeWidgets')} description={t('widgets.homeWidgetsDesc')}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {widgetRegistry.map((widget) => {
             const Icon = widget.icon;
             return (
@@ -510,7 +510,7 @@ export function HomeWidgetsPanel() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>
                 {widgets[0].appName}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {widgets.map((widget) => {
                   const Icon = widget.icon;
                   return (

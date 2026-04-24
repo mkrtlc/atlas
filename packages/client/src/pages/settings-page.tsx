@@ -90,6 +90,7 @@ function SettingsPanelView({ categories, category, panel }: PanelViewProps) {
 
   const shellStyle: CSSProperties = {
     display: 'flex',
+    flexDirection: 'column',
     height: '100vh',
     overflow: 'hidden',
     marginLeft: 56,
@@ -97,13 +98,13 @@ function SettingsPanelView({ categories, category, panel }: PanelViewProps) {
 
   return (
     <div style={shellStyle}>
-      <SettingsSidebar
-        categories={categories}
-        activeCategoryId={category.id}
-        activePanelId={panel.id}
-      />
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-        <TopBar />
+      <TopBar />
+      <div style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <SettingsSidebar
+          categories={categories}
+          activeCategoryId={category.id}
+          activePanelId={panel.id}
+        />
         <main
           ref={scrollRef}
           style={{

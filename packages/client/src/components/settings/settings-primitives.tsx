@@ -16,17 +16,31 @@ export function SettingsSection({
   children: ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 'var(--spacing-2xl)' }}>
-      <div style={{ marginBottom: description ? 'var(--spacing-sm)' : 'var(--spacing-md)' }}>
+    <section
+      style={{
+        marginBottom: 'var(--spacing-lg)',
+        background: 'transparent',
+        border: '1px solid var(--color-border-secondary)',
+        borderRadius: 'var(--radius-md)',
+        overflow: 'hidden',
+      }}
+    >
+      <header
+        style={{
+          padding: '12px 18px',
+          background: 'color-mix(in srgb, var(--color-bg-secondary) 55%, transparent)',
+          borderBottom: '1px solid var(--color-border-secondary)',
+        }}
+      >
         <h3
           style={{
             margin: 0,
-            fontSize: 'var(--font-size-sm)',
+            fontSize: 12,
             fontWeight: 'var(--font-weight-semibold)' as CSSProperties['fontWeight'],
             color: 'var(--color-text-primary)',
             fontFamily: 'var(--font-family)',
             textTransform: 'uppercase',
-            letterSpacing: '0.06em',
+            letterSpacing: '0.07em',
           }}
         >
           {title}
@@ -34,19 +48,19 @@ export function SettingsSection({
         {description && (
           <p
             style={{
-              margin: '6px 0 0',
-              fontSize: 'var(--font-size-sm)',
+              margin: '4px 0 0',
+              fontSize: 12.5,
               color: 'var(--color-text-tertiary)',
               fontFamily: 'var(--font-family)',
-              lineHeight: 'var(--line-height-normal)',
+              lineHeight: 1.45,
             }}
           >
             {description}
           </p>
         )}
-      </div>
-      {children}
-    </div>
+      </header>
+      <div style={{ padding: '10px 18px' }}>{children}</div>
+    </section>
   );
 }
 
@@ -71,7 +85,6 @@ export function SettingsRow({
         justifyContent: 'space-between',
         gap: 'var(--spacing-xl)',
         padding: 'var(--spacing-md) 0',
-        borderBottom: '1px solid var(--color-border-secondary)',
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
