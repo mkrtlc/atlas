@@ -36,6 +36,7 @@ import { ResetPasswordPage } from './pages/reset-password';
 import { SignPublicPage } from './pages/sign-public';
 import { ProposalPublicPage } from './pages/proposal-public';
 import { DriveUploadPublicPage } from './pages/drive-upload-public';
+import { DevCardAPage, DevCardBPage, DevCardCPage, DevCardDPage } from './pages/dev-card-preview';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -131,6 +132,10 @@ export function App() {
                 <Route path="/sign/:token" element={<SignPublicPage />} />
                 <Route path="/proposal/:token" element={<ProposalPublicPage />} />
                 <Route path="/drive/upload/:token" element={<DriveUploadPublicPage />} />
+                <Route path="/dev/card-a" element={<DevCardAPage />} />
+                <Route path="/dev/card-b" element={<DevCardBPage />} />
+                <Route path="/dev/card-c" element={<DevCardCPage />} />
+                <Route path="/dev/card-d" element={<DevCardDPage />} />
                 <Route
                   path={ROUTES.HOME}
                   element={
