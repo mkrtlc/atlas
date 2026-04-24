@@ -223,7 +223,12 @@ export function SetupPage({ preview = false }: { preview?: boolean }) {
       // 1. Create account
       setSeedingStep(t('setup.creatingAccount', 'Creating account...'));
       setSeedingProgress(5);
-      const { data } = await api.post('/auth/setup', { adminName, adminEmail, adminPassword, companyName });
+      // Don't seed server-side during setup — we call /platform/demo-data
+      // below so the UI can show progress and the registry is populated.
+      const { data } = await api.post('/auth/setup', {
+        adminName, adminEmail, adminPassword, companyName,
+        includeDemoData: false,
+      });
       const { accessToken, refreshToken, account } = data.data;
       addAccount(account as Account, accessToken, refreshToken);
 
@@ -240,33 +245,16 @@ export function SetupPage({ preview = false }: { preview?: boolean }) {
         });
       } catch { /* non-critical */ }
 
-      // 3. Seed all apps with sample data (only if user chose demo data)
+      // 3. Seed all apps with sample data (only if user chose demo data).
+      // Uses the platform demo-data endpoint which registers every
+      // planted row in demo_data_seeds so Settings → Demo data can
+      // later undo the seed cleanly.
       if (withDemoData) {
-        const seedSteps = [
-          { label: 'CRM', url: '/crm/seed' },
-          { label: 'HRM', url: '/hr/seed' },
-          { label: 'Work', url: '/work/seed' },
-          { label: 'Tables', url: '/tables/seed' },
-          { label: 'Drive', url: '/drive/seed' },
-          { label: 'Docs', url: '/docs/seed' },
-          { label: 'Draw', url: '/drawings/seed' },
-          { label: 'Agreements', url: '/sign/seed' },
-          { label: 'Invoices', url: '/invoices/seed' },
-        ];
-
-        for (let i = 0; i < seedSteps.length; i++) {
-          const s = seedSteps[i];
-          setSeedingStep(t('setup.seedingApp', 'Setting up {{app}}...', { app: s.label }));
-          setSeedingProgress(20 + Math.round(((i + 1) / seedSteps.length) * 75));
-          try {
-            await api.post(s.url);
-          } catch { /* non-critical — seed may already exist */ }
-        }
-
-        // Flag so the dashboard shows the "clear demo data" pill
+        setSeedingStep(t('setup.seedingSample', 'Adding sample data…'));
+        setSeedingProgress(50);
         try {
-          await api.put('/settings', { homeDemoDataActive: true });
-        } catch { /* non-critical */ }
+          await api.post('/platform/demo-data', { action: 'seed' });
+        } catch { /* non-critical — seed may already exist */ }
       }
 
       setSeedingProgress(100);

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as tenantService from '../services/platform/tenant.service';
 import * as tenantUserService from '../services/platform/tenant-user.service';
 import * as tenantAppService from '../services/platform/tenant-app.service';
+import * as demoDataService from '../services/platform/demo-data.service';
 import { logger } from '../utils/logger';
 import { emitAppEvent, getTenantMemberUserIds } from '../services/event.service';
 import { validatePasswordStrength } from '../utils/password';
@@ -371,5 +372,64 @@ export async function disableTenantApp(req: Request, res: Response) {
   } catch (err: any) {
     logger.error({ err }, 'Failed to disable app');
     res.status(400).json({ success: false, error: err?.message || 'Failed to disable app' });
+  }
+}
+
+// ─── Demo data ──────────────────────────────────────────────────────
+
+/**
+ * GET /platform/demo-data — summary of which demo rows exist for the
+ * caller's active tenant. Used by Settings → Organization to decide
+ * whether to show "Insert" or "Remove".
+ */
+export async function getDemoDataStatus(req: Request, res: Response) {
+  try {
+    const tenantId = req.auth?.tenantId;
+    if (!tenantId) {
+      res.status(400).json({ success: false, error: 'No active tenant' });
+      return;
+    }
+    const summary = await demoDataService.getDemoDataSummary(tenantId);
+    res.json({ success: true, data: summary });
+  } catch (err: any) {
+    logger.error({ err }, 'Failed to read demo-data status');
+    res.status(500).json({ success: false, error: err?.message || 'Failed' });
+  }
+}
+
+const manageDemoSchema = z.object({
+  action: z.enum(['seed', 'remove']),
+});
+
+/**
+ * POST /platform/demo-data — seed or remove demo data. Owner-only.
+ */
+export async function manageDemoData(req: Request, res: Response) {
+  try {
+    const tenantId = req.auth?.tenantId;
+    const userId = req.auth?.userId;
+    const tenantRole = req.auth?.tenantRole;
+    if (!tenantId || !userId) {
+      res.status(400).json({ success: false, error: 'No active tenant' });
+      return;
+    }
+    if (tenantRole !== 'owner' && tenantRole !== 'admin') {
+      res.status(403).json({ success: false, error: 'Only owners and admins can manage demo data' });
+      return;
+    }
+
+    const body = validateBody(manageDemoSchema, req.body, res);
+    if (!body) return;
+
+    if (body.action === 'seed') {
+      const result = await demoDataService.seedDemoData(tenantId, userId);
+      res.json({ success: true, data: result });
+      return;
+    }
+    const result = await demoDataService.removeDemoData(tenantId);
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    logger.error({ err }, 'Failed to manage demo data');
+    res.status(500).json({ success: false, error: err?.message || 'Failed' });
   }
 }

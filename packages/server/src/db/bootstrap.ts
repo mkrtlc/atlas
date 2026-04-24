@@ -151,6 +151,34 @@ async function migrateLegacyData() {
     logger.error({ err }, 'crm_proposal_revisions create failed');
   }
 
+  // demo_data_seeds — registry of every row the demo seeder planted, so
+  // the "Remove demo data" action can delete exactly those and nothing
+  // the user created themselves.
+  try {
+    const c = await pool.connect();
+    try {
+      await c.query(`
+        CREATE TABLE IF NOT EXISTS demo_data_seeds (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+          entity_type varchar(64) NOT NULL,
+          entity_id uuid NOT NULL,
+          created_at timestamptz NOT NULL DEFAULT now()
+        )
+      `);
+      await c.query(
+        `CREATE INDEX IF NOT EXISTS idx_demo_data_seeds_tenant ON demo_data_seeds(tenant_id)`,
+      );
+      await c.query(
+        `CREATE INDEX IF NOT EXISTS idx_demo_data_seeds_tenant_entity ON demo_data_seeds(tenant_id, entity_type)`,
+      );
+    } finally {
+      c.release();
+    }
+  } catch (err) {
+    logger.error({ err }, 'demo_data_seeds create failed');
+  }
+
   // tenants.storage_quota_bytes — added to the schema after the initial
   // migration snapshot. Bootstrap only runs the snapshot on empty DBs, so
   // every existing deployment is missing this column. Idempotent backfill:

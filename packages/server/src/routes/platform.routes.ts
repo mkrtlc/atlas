@@ -23,4 +23,8 @@ router.get('/tenants/:id/apps', ctrl.listTenantApps);
 router.post('/tenants/:id/apps/:appId/enable', ctrl.enableTenantApp);
 router.post('/tenants/:id/apps/:appId/disable', ctrl.disableTenantApp);
 
+// ─── Demo data ──────────────────────────────────────────────────────
+router.get('/demo-data', ctrl.getDemoDataStatus);
+router.post('/demo-data', ctrl.manageDemoData);
+
 export default router;

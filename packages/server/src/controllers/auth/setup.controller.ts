@@ -4,6 +4,7 @@ import { logger } from '../../utils/logger';
 import { hashPassword, validatePasswordStrength } from '../../utils/password';
 import { slugify } from '../../utils/slugify';
 import * as tenantService from '../../services/platform/tenant.service';
+import * as demoDataService from '../../services/platform/demo-data.service';
 
 // ─── Setup ──────────────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ export async function setup(req: Request, res: Response) {
       return;
     }
 
-    const { adminName, adminEmail, adminPassword, companyName } = req.body;
+    const { adminName, adminEmail, adminPassword, companyName, includeDemoData } = req.body;
 
     if (!adminName || !adminEmail || !adminPassword || !companyName) {
       res.status(400).json({ success: false, error: 'adminName, adminEmail, adminPassword, and companyName are required' });
@@ -59,6 +60,17 @@ export async function setup(req: Request, res: Response) {
 
     // Generate tokens (with tenant + owner tenantRole)
     const jwtTokens = await authService.generateTokens(account, tenant.id, 'owner');
+
+    // Optional demo data — default ON so new users see a populated
+    // Atlas. Failures here are non-fatal (logged, not thrown) so the
+    // setup flow always completes successfully.
+    if (includeDemoData !== false) {
+      try {
+        await demoDataService.seedDemoData(tenant.id, user.id);
+      } catch (err) {
+        logger.error({ err, tenantId: tenant.id }, 'Demo data seed failed during setup — continuing');
+      }
+    }
 
     logger.info({ userId: user.id, tenantId: tenant.id, email: adminEmail }, 'Atlas initial setup completed');
 

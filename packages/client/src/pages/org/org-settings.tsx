@@ -19,6 +19,11 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { IconButton } from '../../components/ui/icon-button';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
+import { Database } from 'lucide-react';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { useToastStore } from '../../stores/toast-store';
+import { api } from '../../lib/api-client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ---------------------------------------------------------------------------
 // Styles
@@ -342,6 +347,9 @@ export function OrgSettingsPage() {
         </div>
       </div>
 
+      {/* Demo data */}
+      <DemoDataSection />
+
       {/* HR access warning */}
       {membersWithoutHr > 0 && (
         <AlertBanner variant="warning">
@@ -350,5 +358,119 @@ export function OrgSettingsPage() {
       )}
 
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DemoDataSection
+// ---------------------------------------------------------------------------
+
+interface DemoDataSummary {
+  hasDemoData: boolean;
+  counts: Record<string, number>;
+}
+
+function DemoDataSection() {
+  const { t } = useTranslation();
+  const addToast = useToastStore((s) => s.addToast);
+  const qc = useQueryClient();
+  const [showConfirmRemove, setShowConfirmRemove] = useState(false);
+
+  const summary = useQuery({
+    queryKey: ['platform', 'demo-data'],
+    queryFn: async () => {
+      const { data } = await api.get('/platform/demo-data');
+      return data.data as DemoDataSummary;
+    },
+  });
+
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/platform/demo-data', { action: 'seed' });
+      return data.data;
+    },
+    onSuccess: () => {
+      addToast({ type: 'success', message: t('org.settings.demoData.seeded', 'Sample data added') });
+      qc.invalidateQueries({ queryKey: ['platform', 'demo-data'] });
+    },
+    onError: (err: any) => {
+      addToast({ type: 'error', message: err?.response?.data?.error ?? 'Seed failed' });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/platform/demo-data', { action: 'remove' });
+      return data.data;
+    },
+    onSuccess: () => {
+      addToast({ type: 'success', message: t('org.settings.demoData.removed', 'Sample data removed') });
+      qc.invalidateQueries({ queryKey: ['platform', 'demo-data'] });
+    },
+    onError: (err: any) => {
+      addToast({ type: 'error', message: err?.response?.data?.error ?? 'Remove failed' });
+    },
+  });
+
+  const hasDemoData = summary.data?.hasDemoData ?? false;
+  const totalCount = Object.values(summary.data?.counts ?? {}).reduce((a, b) => a + b, 0);
+
+  return (
+    <>
+      <div style={sectionStyle}>
+        <div style={sectionHeaderStyle}>
+          <Database size={15} style={{ color: 'var(--color-text-tertiary)' }} />
+          <span style={sectionTitleStyle}>{t('org.settings.demoData.title', 'Sample data')}</span>
+        </div>
+        <div style={{ ...rowStyle, borderBottom: 'none', gap: 'var(--spacing-md)' }}>
+          <span style={labelStyle}>
+            {hasDemoData
+              ? t('org.settings.demoData.present', '{{count}} sample records', { count: totalCount })
+              : t('org.settings.demoData.absent', 'No sample data')}
+          </span>
+          <span style={valueStyle}>
+            {hasDemoData ? (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => setShowConfirmRemove(true)}
+                disabled={removeMutation.isPending}
+              >
+                {removeMutation.isPending
+                  ? t('org.settings.demoData.removing', 'Removing…')
+                  : t('org.settings.demoData.remove', 'Remove sample data')}
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => seedMutation.mutate()}
+                disabled={seedMutation.isPending}
+              >
+                {seedMutation.isPending
+                  ? t('org.settings.demoData.seeding', 'Adding…')
+                  : t('org.settings.demoData.seed', 'Add sample data')}
+              </Button>
+            )}
+          </span>
+        </div>
+      </div>
+
+      <ConfirmDialog
+        open={showConfirmRemove}
+        onOpenChange={setShowConfirmRemove}
+        title={t('org.settings.demoData.confirmRemoveTitle', 'Remove sample data?')}
+        description={t(
+          'org.settings.demoData.confirmRemoveDesc',
+          'This deletes only the rows Atlas planted during setup — contacts, deals, invoices, employees, and files you created yourself are left alone.',
+        )}
+        confirmLabel={t('org.settings.demoData.remove', 'Remove sample data')}
+        destructive
+        onConfirm={() => {
+          setShowConfirmRemove(false);
+          removeMutation.mutate();
+        }}
+      />
+    </>
   );
 }

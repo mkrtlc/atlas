@@ -651,6 +651,22 @@ export const tenants = pgTable('tenants', {
   ownerIdx: index('idx_tenants_owner').on(table.ownerId),
 }));
 
+// ─── Platform: Demo Data Registry ─────────────────────────────────
+// Tracks every row inserted by the demo-data seeder. Reading this table
+// lets the "Remove demo data" action delete only what was planted —
+// never rows the user created themselves.
+
+export const demoDataSeeds = pgTable('demo_data_seeds', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  entityType: varchar('entity_type', { length: 64 }).notNull(),
+  entityId: uuid('entity_id').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  tenantIdx: index('idx_demo_data_seeds_tenant').on(table.tenantId),
+  tenantEntityIdx: index('idx_demo_data_seeds_tenant_entity').on(table.tenantId, table.entityType),
+}));
+
 // ─── Platform: Tenant Members ───────────────────────────────────────
 
 export const tenantMembers = pgTable('tenant_members', {
