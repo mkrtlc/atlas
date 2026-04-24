@@ -26,6 +26,10 @@ export function HrGeneralPanel() {
             { value: 'departments', label: t('hr.sidebar.departments') },
             { value: 'org-chart', label: t('hr.sidebar.orgChart') },
             { value: 'time-off', label: t('hr.sidebar.timeOff') },
+            { value: 'attendance', label: t('hr.sidebar.attendance') },
+            { value: 'leave', label: t('hr.sidebar.leaveSection') },
+            { value: 'expenses', label: t('hr.sidebar.expensesSection', 'Expenses') },
+            { value: 'my-profile', label: t('hr.sidebar.myProfile') },
           ]}
           onChange={setDefaultView}
         />

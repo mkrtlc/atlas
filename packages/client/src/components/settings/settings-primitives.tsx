@@ -182,13 +182,12 @@ export function SelectableCard({
     ? '1px solid var(--color-accent-primary)'
     : `1px solid ${hovered ? 'var(--color-border-primary)' : 'var(--color-border-secondary)'}`;
 
-  // Unified selected background: a faint gradient that mixes accent-primary
-  // into the elevated surface. The same value is used everywhere (theme, font,
-  // background-type) so cards look consistent across settings pages.
+  // Unified selected background: a very subtle gradient that mixes accent-primary
+  // into the elevated surface. Kept intentionally faint — selection is carried
+  // mostly by the border color; the gradient just adds a hint of depth.
   const selectedBg =
-    'linear-gradient(180deg, color-mix(in srgb, var(--color-accent-primary) 10%, var(--color-bg-elevated)) 0%, color-mix(in srgb, var(--color-accent-primary) 4%, var(--color-bg-elevated)) 100%)';
-  const idleBg =
-    'linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg-tertiary) 100%)';
+    'linear-gradient(180deg, color-mix(in srgb, var(--color-accent-primary) 5%, var(--color-bg-elevated)) 0%, color-mix(in srgb, var(--color-accent-primary) 2%, var(--color-bg-elevated)) 100%)';
+  const idleBg = 'var(--color-bg-elevated)';
 
   return (
     <button
@@ -206,7 +205,7 @@ export function SelectableCard({
         border,
         background: selected ? selectedBg : hovered ? 'var(--color-surface-hover)' : idleBg,
         boxShadow: selected
-          ? 'inset 0 0 0 1px color-mix(in srgb, var(--color-accent-primary) 40%, transparent)'
+          ? 'inset 0 0 0 1px color-mix(in srgb, var(--color-accent-primary) 20%, transparent)'
           : 'none',
         cursor: 'pointer',
         transition: 'border-color var(--transition-normal), background var(--transition-normal), box-shadow var(--transition-normal)',
@@ -444,9 +443,7 @@ export function SettingsSelect<T extends string | number>({
                   borderRadius: 'var(--radius-sm)',
                   background: opt.value === value ? 'var(--color-surface-selected)' : 'transparent',
                   color: opt.value === value ? 'var(--color-accent-primary)' : 'var(--color-text-primary)',
-                  fontWeight: opt.value === value
-                    ? ('var(--font-weight-medium)' as CSSProperties['fontWeight'])
-                    : ('var(--font-weight-normal)' as CSSProperties['fontWeight']),
+                  fontWeight: 'var(--font-weight-normal)' as CSSProperties['fontWeight'],
                   whiteSpace: 'nowrap',
                 }}
               >

@@ -1,6 +1,15 @@
 import { createAppSettingsStore } from '../../lib/create-app-settings-store';
 
-export type HrDefaultView = 'dashboard' | 'employees' | 'departments' | 'org-chart' | 'time-off';
+export type HrDefaultView =
+  | 'dashboard'
+  | 'employees'
+  | 'departments'
+  | 'org-chart'
+  | 'time-off'
+  | 'attendance'
+  | 'my-profile'
+  | 'leave'
+  | 'expenses';
 
 interface HrSettings {
   defaultView: HrDefaultView;

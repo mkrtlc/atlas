@@ -1791,8 +1791,9 @@
       "connected": "Bağlı",
       "syncNow": "Şimdi senkronize et",
       "syncing": "Senkronize ediliyor...",
-      "notConfigured": "Google entegrasyonu yapılandırılmamış",
-      "redisRequired": "Senkronizasyon için Redis gerekli"
+      "notConfigured": "Google entegrasyonu bu sunucuda yapılandırılmamış",
+      "redisRequired": "Senkronizasyon için Redis gerekli",
+      "notConfiguredHelp": "Gmail senkronizasyonu ve Takvim özelliklerini etkinleştirmek için sunucu yöneticisinden GOOGLE_CLIENT_ID ve GOOGLE_CLIENT_SECRET ortam değişkenlerini ayarlamasını isteyin."
     },
     "emails": {
       "title": "E-postalar",

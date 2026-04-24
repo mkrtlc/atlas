@@ -1791,8 +1791,9 @@
       "connected": "Verbunden",
       "syncNow": "Jetzt synchronisieren",
       "syncing": "Synchronisiert...",
-      "notConfigured": "Google-Integration ist nicht konfiguriert",
-      "redisRequired": "Redis für Synchronisierung erforderlich"
+      "notConfigured": "Google-Integration ist auf diesem Server nicht eingerichtet",
+      "redisRequired": "Redis für Synchronisierung erforderlich",
+      "notConfiguredHelp": "Bitten Sie den Serveradministrator, die Umgebungsvariablen GOOGLE_CLIENT_ID und GOOGLE_CLIENT_SECRET zu setzen, um Gmail-Synchronisierung und Kalenderfunktionen zu aktivieren."
     },
     "emails": {
       "title": "E-Mails",

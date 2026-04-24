@@ -122,7 +122,7 @@ function SortableStageRow({
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-            <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1 }}>
+            <div style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', flexShrink: 0 }}>
               {STAGE_COLORS.map((c) => (
                 <button
                   key={c}
@@ -131,7 +131,7 @@ function SortableStageRow({
                   style={{
                     width: 16, height: 16, borderRadius: '50%', background: c,
                     border: editColor === c ? '2px solid var(--color-text-primary)' : '2px solid transparent',
-                    cursor: 'pointer', padding: 0,
+                    cursor: 'pointer', padding: 0, flexShrink: 0,
                   }}
                 />
               ))}
@@ -264,7 +264,7 @@ export function CrmStagesPanel() {
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             />
-            <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', flexShrink: 0 }}>
               {STAGE_COLORS.slice(0, 5).map((c) => (
                 <button
                   key={c}
@@ -273,7 +273,7 @@ export function CrmStagesPanel() {
                   style={{
                     width: 16, height: 16, borderRadius: '50%', background: c,
                     border: newColor === c ? '2px solid var(--color-text-primary)' : '2px solid transparent',
-                    cursor: 'pointer', padding: 0,
+                    cursor: 'pointer', padding: 0, flexShrink: 0,
                   }}
                 />
               ))}
@@ -371,12 +371,12 @@ export function CrmActivityTypesPanel() {
                     {isEditing ? (
                       <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
                         <Input value={editName} onChange={(e) => setEditName(e.target.value)} size="sm" style={{ flex: 1 }} autoFocus onKeyDown={(e) => e.key === 'Enter' && saveEdit()} />
-                        <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', flexShrink: 0 }}>
                           {STAGE_COLORS.map((c) => (
                             <button key={c} onClick={() => setEditColor(c)} style={{
                               width: 14, height: 14, borderRadius: '50%', background: c,
                               border: editColor === c ? '2px solid var(--color-text-primary)' : '2px solid transparent',
-                              cursor: 'pointer', padding: 0,
+                              cursor: 'pointer', padding: 0, flexShrink: 0,
                             }} />
                           ))}
                         </div>
@@ -501,8 +501,11 @@ export function CrmIntegrationsPanel() {
       <SettingsSection title={t('crm.settings.googleIntegration')} description={t('crm.settings.googleIntegrationDesc')}>
         {!status?.googleConfigured ? (
           <div style={{ padding: 'var(--spacing-lg)', background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-secondary)' }}>
-            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', marginBottom: 4 }}>
               {t('crm.google.notConfigured')}
+            </div>
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', lineHeight: 1.5 }}>
+              {t('crm.google.notConfiguredHelp')}
             </div>
           </div>
         ) : !status?.connected ? (

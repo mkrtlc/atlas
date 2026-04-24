@@ -174,25 +174,43 @@ export function HomeBackgroundPanel() {
           {!bgRotate && (
             <SettingsSection title={t('widgets.chooseWallpaper', 'Choose a wallpaper')} description={t('widgets.chooseWallpaperDesc', 'Select a photo for your home screen')}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {WALLPAPER_PHOTOS.map((photo) => (
-                  <div
-                    key={photo.url}
-                    onClick={() => setBg('unsplash', photo.url)}
-                    title={photo.label}
-                    style={{
-                      width: 80,
-                      height: 56,
-                      borderRadius: 'var(--radius-md)',
-                      cursor: 'pointer',
-                      border: bgValue === photo.url ? '2px solid var(--color-accent-primary)' : '2px solid transparent',
-                      backgroundImage: `url(${photo.thumb})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      flexShrink: 0,
-                      transition: 'border-color 0.15s',
-                    }}
-                  />
-                ))}
+                {WALLPAPER_PHOTOS.map((photo) => {
+                  const isActive = bgValue === photo.url;
+                  return (
+                    <div
+                      key={photo.url}
+                      onClick={() => setBg('unsplash', photo.url)}
+                      title={photo.label}
+                      style={{
+                        width: isActive ? 110 : 90,
+                        height: isActive ? 76 : 62,
+                        borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer',
+                        outline: isActive ? '2px solid var(--color-accent-primary)' : '1px solid var(--color-border-secondary)',
+                        outlineOffset: isActive ? 2 : 0,
+                        backgroundImage: `url(${photo.thumb})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        flexShrink: 0,
+                        boxShadow: isActive ? 'var(--shadow-md)' : 'none',
+                        transform: isActive ? 'translateZ(0)' : 'none',
+                        transition: 'width 220ms cubic-bezier(0.2, 0.8, 0.2, 1), height 220ms cubic-bezier(0.2, 0.8, 0.2, 1), outline-color 160ms ease, box-shadow 220ms ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.outline = '1px solid var(--color-border-primary)';
+                          e.currentTarget.style.transform = 'scale(1.04)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.outline = '1px solid var(--color-border-secondary)';
+                          e.currentTarget.style.transform = 'none';
+                        }
+                      }}
+                    />
+                  );
+                })}
               </div>
             </SettingsSection>
           )}
