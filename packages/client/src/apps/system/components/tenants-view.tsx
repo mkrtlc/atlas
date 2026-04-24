@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { UserCog } from 'lucide-react';
 import { api } from '../../../lib/api-client';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { Modal } from '../../../components/ui/modal';
+import { Tooltip } from '../../../components/ui/tooltip';
 import { DataTable, type DataTableColumn } from '../../../components/ui/data-table';
 import { formatBytes } from '../../../lib/format';
 import { startImpersonation } from '../impersonation';
@@ -132,19 +134,24 @@ export function TenantsView() {
     {
       key: 'actions',
       label: '',
-      width: 180,
+      width: 170,
       hideable: false,
       resizable: false,
       align: 'right',
       render: (t) => (
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={impersonate.isPending}
-          onClick={(e) => { e.stopPropagation(); impersonate.mutate(t.id); }}
-        >
-          Open as this tenant
-        </Button>
+        <div style={{ whiteSpace: 'nowrap' }}>
+          <Tooltip content="Open the app as this tenant (super-admin impersonation, 15 min)">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={impersonate.isPending}
+              onClick={(e) => { e.stopPropagation(); impersonate.mutate(t.id); }}
+            >
+              <UserCog size={14} style={{ marginRight: 6 }} />
+              Impersonate
+            </Button>
+          </Tooltip>
+        </div>
       ),
     },
   ];
