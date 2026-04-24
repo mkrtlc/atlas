@@ -292,6 +292,13 @@ interface UpdateLeadFormInput {
   name?: string;
   fields?: LeadFormFieldDef[];
   isActive?: boolean;
+  buttonLabel?: string;
+  thankYouMessage?: string;
+  accentColor?: string;
+  borderColor?: string;
+  borderRadius?: number;
+  fontFamily?: string;
+  customCss?: string | null;
 }
 
 export async function listLeadForms(userId: string, tenantId: string) {
@@ -318,6 +325,47 @@ export async function createLeadForm(userId: string, tenantId: string, name: str
   return created;
 }
 
+/**
+ * Lightweight CSS safety check. We don't rewrite the string; we reject it
+ * if it contains patterns we won't serve under our own origin:
+ *   - remote @import / @charset (exfiltration, slow load)
+ *   - javascript: / data: URIs in url()
+ *   - expression(…) / -moz-binding / behavior: (legacy IE/FX script vectors)
+ *   - <script or any literal HTML tag close to </style>
+ * Thrown string becomes a 400 on the route.
+ */
+const CSS_DISALLOWED = [
+  /@import\b/i,
+  /@charset\b/i,
+  /expression\s*\(/i,
+  /-moz-binding\b/i,
+  /\bbehavior\s*:/i,
+  /url\s*\(\s*["']?\s*javascript:/i,
+  /url\s*\(\s*["']?\s*data:text\/html/i,
+  /<\/?\s*script\b/i,
+  /<\/?\s*style\b/i,
+];
+
+const CSS_MAX_BYTES = 32 * 1024;
+
+function validateCustomCss(css: string): void {
+  if (Buffer.byteLength(css, 'utf8') > CSS_MAX_BYTES) {
+    throw new Error('Custom CSS exceeds 32 KB limit');
+  }
+  for (const rx of CSS_DISALLOWED) {
+    if (rx.test(css)) {
+      throw new Error(`Custom CSS contains a disallowed pattern (${rx.source})`);
+    }
+  }
+}
+
+function coerceHexColor(v: string, field: string): string {
+  if (!/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(v)) {
+    throw new Error(`${field} must be a hex color like #RRGGBB`);
+  }
+  return v;
+}
+
 export async function updateLeadForm(userId: string, tenantId: string, id: string, input: UpdateLeadFormInput) {
   const now = new Date();
   const updates: Record<string, unknown> = { updatedAt: now };
@@ -325,6 +373,24 @@ export async function updateLeadForm(userId: string, tenantId: string, id: strin
   if (input.name !== undefined) updates.name = input.name;
   if (input.fields !== undefined) updates.fields = input.fields;
   if (input.isActive !== undefined) updates.isActive = input.isActive;
+  if (input.buttonLabel !== undefined) updates.buttonLabel = input.buttonLabel.slice(0, 120);
+  if (input.thankYouMessage !== undefined) updates.thankYouMessage = input.thankYouMessage;
+  if (input.accentColor !== undefined) updates.accentColor = coerceHexColor(input.accentColor, 'accentColor');
+  if (input.borderColor !== undefined) updates.borderColor = coerceHexColor(input.borderColor, 'borderColor');
+  if (input.borderRadius !== undefined) {
+    const r = Number(input.borderRadius);
+    if (!Number.isFinite(r) || r < 0 || r > 32) throw new Error('borderRadius must be between 0 and 32');
+    updates.borderRadius = Math.round(r);
+  }
+  if (input.fontFamily !== undefined) updates.fontFamily = input.fontFamily.slice(0, 64);
+  if (input.customCss !== undefined) {
+    if (input.customCss === null || input.customCss === '') {
+      updates.customCss = null;
+    } else {
+      validateCustomCss(input.customCss);
+      updates.customCss = input.customCss;
+    }
+  }
 
   await db.update(crmLeadForms).set(updates)
     .where(and(eq(crmLeadForms.id, id), eq(crmLeadForms.tenantId, tenantId)));
@@ -341,6 +407,140 @@ export async function deleteLeadForm(userId: string, tenantId: string, id: strin
     .set({ isArchived: true, isActive: false, updatedAt: new Date() })
     .where(and(eq(crmLeadForms.id, id), eq(crmLeadForms.tenantId, tenantId)));
 }
+
+export async function getLeadFormByToken(token: string) {
+  const [form] = await db.select().from(crmLeadForms)
+    .where(and(eq(crmLeadForms.token, token), eq(crmLeadForms.isActive, true)))
+    .limit(1);
+  return form ?? null;
+}
+
+// ─── Public form HTML rendering ──────────────────────────────────────
+// Shape used by renderPublicLeadForm — a subset of the DB row, so the same
+// helper can serve a real saved form, a draft being previewed in the edit
+// UI, or an on-the-fly default. Never trust customCss here — it has already
+// been validated by validateCustomCss at write time (for DB rows) or at the
+// preview endpoint (for drafts).
+export interface LeadFormRenderData {
+  token?: string;
+  name: string;
+  fields: LeadFormFieldDef[];
+  buttonLabel: string;
+  thankYouMessage: string;
+  accentColor: string;
+  borderColor: string;
+  borderRadius: number;
+  fontFamily: string;
+  customCss: string | null;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function renderPublicLeadForm(
+  form: LeadFormRenderData,
+  opts: { submitted?: boolean; actionUrl?: string } = {},
+): string {
+  const submitted = opts.submitted === true;
+  const actionUrl = opts.actionUrl ?? (form.token ? `/api/v1/crm/forms/public/${form.token}` : '');
+  const font = form.fontFamily && form.fontFamily !== 'inherit'
+    ? `${form.fontFamily}, system-ui, sans-serif`
+    : 'inherit';
+
+  const renderField = (f: LeadFormFieldDef): string => {
+    const id = `atlas-field-${escapeHtml(f.id)}`;
+    const required = f.required ? 'required' : '';
+    const label = `<label class="atlas-lead-form__label" for="${id}">${escapeHtml(f.label)}${f.required ? ' *' : ''}</label>`;
+    if (f.type === 'textarea') {
+      return `<div class="atlas-lead-form__row">${label}<textarea id="${id}" name="${escapeHtml(f.id)}" class="atlas-lead-form__input atlas-lead-form__input--textarea" placeholder="${escapeHtml(f.placeholder)}" ${required} rows="4"></textarea></div>`;
+    }
+    if (f.type === 'select' && f.options?.length) {
+      const opts = f.options.map((o) => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
+      return `<div class="atlas-lead-form__row">${label}<select id="${id}" name="${escapeHtml(f.id)}" class="atlas-lead-form__input atlas-lead-form__input--select" ${required}>${opts}</select></div>`;
+    }
+    const inputType = f.type === 'email' ? 'email' : f.type === 'phone' ? 'tel' : 'text';
+    return `<div class="atlas-lead-form__row">${label}<input id="${id}" name="${escapeHtml(f.id)}" type="${inputType}" class="atlas-lead-form__input" placeholder="${escapeHtml(f.placeholder)}" ${required} /></div>`;
+  };
+
+  const body = submitted
+    ? `<div class="atlas-lead-form__success"><h2>${escapeHtml(form.name)}</h2><p>${escapeHtml(form.thankYouMessage)}</p></div>`
+    : `<form class="atlas-lead-form" method="POST" action="${escapeHtml(actionUrl)}">
+        <h2 class="atlas-lead-form__title">${escapeHtml(form.name)}</h2>
+        ${form.fields.map(renderField).join('')}
+        <button type="submit" class="atlas-lead-form__button">${escapeHtml(form.buttonLabel)}</button>
+      </form>`;
+
+  // Tokenised base styles — always applied. Every rule is scoped under
+  // .atlas-lead-form so the form stays self-contained even when iframed.
+  const baseCss = `
+    body { margin: 0; padding: 24px; font-family: ${font}; background: transparent; }
+    .atlas-lead-form, .atlas-lead-form__success {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px;
+      border: 1px solid ${form.borderColor};
+      border-radius: ${form.borderRadius}px;
+      background: #ffffff;
+      color: #111318;
+      box-sizing: border-box;
+    }
+    .atlas-lead-form__title { margin: 0 0 16px; font-size: 18px; font-weight: 600; }
+    .atlas-lead-form__row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .atlas-lead-form__label { font-size: 13px; font-weight: 500; color: #374151; }
+    .atlas-lead-form__input {
+      padding: 9px 12px;
+      border: 1px solid ${form.borderColor};
+      border-radius: ${form.borderRadius}px;
+      font: inherit;
+      font-size: 14px;
+      background: #ffffff;
+      color: inherit;
+      box-sizing: border-box;
+    }
+    .atlas-lead-form__input:focus { outline: none; border-color: ${form.accentColor}; box-shadow: 0 0 0 3px ${form.accentColor}22; }
+    .atlas-lead-form__input--textarea { resize: vertical; min-height: 88px; }
+    .atlas-lead-form__button {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 18px;
+      border: none;
+      border-radius: ${form.borderRadius}px;
+      background: ${form.accentColor};
+      color: #ffffff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+    }
+    .atlas-lead-form__button:hover { filter: brightness(0.95); }
+    .atlas-lead-form__success h2 { margin: 0 0 8px; }
+    .atlas-lead-form__success p { margin: 0; color: #6b7280; }
+  `;
+
+  // Custom CSS is rendered AFTER the base so users can override any token.
+  // It was already validated upstream (validateCustomCss / preview endpoint).
+  const customCss = form.customCss ? `\n/* custom */\n${form.customCss}\n` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(form.name)}</title>
+<style>${baseCss}${customCss}</style>
+</head>
+<body>${body}</body>
+</html>`;
+}
+
+/** Re-exported for the preview endpoint to validate draft CSS without writing. */
+export const __internal = { validateCustomCss, coerceHexColor };
 
 export async function submitLeadForm(token: string, formData: Record<string, string>) {
   // Find form by token

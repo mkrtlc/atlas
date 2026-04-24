@@ -1463,7 +1463,28 @@ export interface CrmLeadForm {
   submitCount: number;
   createdAt: string;
   updatedAt: string;
+  // Branding + copy (added 2026-04-24).
+  buttonLabel: string;
+  thankYouMessage: string;
+  accentColor: string;
+  borderColor: string;
+  borderRadius: number;
+  fontFamily: string;
+  customCss: string | null;
 }
+
+export type CrmLeadFormBrandingUpdate = Partial<{
+  name: string;
+  fields: LeadFormField[];
+  isActive: boolean;
+  buttonLabel: string;
+  thankYouMessage: string;
+  accentColor: string;
+  borderColor: string;
+  borderRadius: number;
+  fontFamily: string;
+  customCss: string | null;
+}>;
 
 export function useLeadForms() {
   return useQuery({
@@ -1492,7 +1513,7 @@ export function useCreateLeadForm() {
 export function useUpdateLeadForm() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string } & Partial<{ name: string; fields: LeadFormField[]; isActive: boolean }>) => {
+    mutationFn: async ({ id, ...input }: { id: string } & CrmLeadFormBrandingUpdate) => {
       const { data } = await api.patch(`/crm/forms/${id}`, input);
       return data.data as CrmLeadForm;
     },

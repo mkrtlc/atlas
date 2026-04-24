@@ -33,6 +33,7 @@ function requireSeedAdmin(req: Request, res: Response, next: NextFunction) {
 const router = Router();
 
 // ─── Public routes (no auth) — defined BEFORE authMiddleware ────────
+router.get('/forms/public/:token', crmController.getPublicLeadForm);
 router.post('/forms/public/:token', crmController.submitLeadForm);
 router.get('/proposals/public/:token', crmController.getPublicProposal);
 router.post('/proposals/public/:token/accept', crmController.acceptPublicProposal);
@@ -166,6 +167,7 @@ router.delete('/views/:id', crmController.deleteSavedView);
 // Lead Forms
 router.get('/forms', crmController.listLeadForms);
 router.post('/forms', crmController.createLeadForm);
+router.post('/forms/preview', crmController.previewLeadForm);
 router.patch('/forms/:id', crmController.updateLeadForm);
 router.delete('/forms/:id', crmController.deleteLeadForm);
 

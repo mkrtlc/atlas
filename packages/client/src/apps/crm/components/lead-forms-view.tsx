@@ -1,9 +1,9 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Plus, Copy, Trash2, Check, Globe, ToggleLeft, ToggleRight, FileText,
   ChevronUp, ChevronDown, ArrowLeft, Type, Mail, Phone,
-  AlignLeft, ListFilter, Eye,
+  AlignLeft, ListFilter, Eye, Palette,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -14,6 +14,7 @@ import { Badge } from '../../../components/ui/badge';
 import { IconButton } from '../../../components/ui/icon-button';
 import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
 import { useToastStore } from '../../../stores/toast-store';
+import { api } from '../../../lib/api-client';
 import {
   useLeadForms, useCreateLeadForm, useUpdateLeadForm, useDeleteLeadForm,
   type CrmLeadForm, type LeadFormField, type LeadFormFieldType,
@@ -48,15 +49,25 @@ function getServerUrl(): string {
   return import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:3001`;
 }
 
+/**
+ * Inline embed: a self-contained `<form>` using the form's token branding
+ * (accent colour, border, radius, font, button label). This snippet lives
+ * directly inside the host page, so we can't inject the user's custom CSS
+ * here — it would bleed into the host site. Use the iframe snippet below
+ * for full styling.
+ */
 function generateEmbedCode(form: CrmLeadForm): string {
   const serverUrl = getServerUrl();
   const url = `${serverUrl}/api/v1/crm/forms/public/${form.token}`;
+  const font = form.fontFamily && form.fontFamily !== 'inherit'
+    ? `${form.fontFamily}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`
+    : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
   const fieldHtml = form.fields.map((field) => {
     const req = field.required ? ' required' : '';
     const star = field.required ? ' <span style="color:#ef4444">*</span>' : '';
     const label = `    <label style="display:block;margin-bottom:4px;font-size:14px;font-weight:500;color:#111318">${field.label}${star}</label>`;
-    const inputStyle = 'width:100%;padding:8px 12px;border:1px solid #d0d5dd;border-radius:6px;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;box-sizing:border-box;outline:none;background:#fff;color:#111318';
+    const inputStyle = `width:100%;padding:9px 12px;border:1px solid ${form.borderColor};border-radius:${form.borderRadius}px;font-size:14px;font-family:inherit;box-sizing:border-box;outline:none;background:#fff;color:#111318`;
     let input: string;
     switch (field.type) {
       case 'textarea':
@@ -72,13 +83,29 @@ function generateEmbedCode(form: CrmLeadForm): string {
     return `  <div style="margin-bottom:16px">\n${label}\n${input}\n  </div>`;
   });
 
-  return `<div style="max-width:480px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-<form action="${url}" method="POST" style="padding:32px;border:1px solid #e4e7ec;border-radius:12px;background:#fff">
-  <h3 style="margin:0 0 24px 0;font-size:18px;font-weight:600;color:#111318">${form.name}</h3>
+  return `<div style="max-width:480px;margin:0 auto;font-family:${font}">
+<form action="${url}" method="POST" style="padding:24px;border:1px solid ${form.borderColor};border-radius:${form.borderRadius}px;background:#fff">
+  <h3 style="margin:0 0 16px 0;font-size:18px;font-weight:600;color:#111318">${form.name}</h3>
 ${fieldHtml.join('\n')}
-  <button type="submit" style="padding:8px 20px;background:#13715B;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit">Submit</button>
+  <button type="submit" style="width:100%;padding:10px 18px;background:${form.accentColor};color:#fff;border:none;border-radius:${form.borderRadius}px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit">${form.buttonLabel || 'Submit'}</button>
 </form>
 </div>`;
+}
+
+/**
+ * Iframe embed: a single `<iframe>` pointed at the hosted public form URL.
+ * Because the form is rendered on our origin, the user's custom CSS is
+ * applied. Recommended for designers who want pixel-perfect styling.
+ */
+function generateIframeEmbedCode(form: CrmLeadForm): string {
+  const serverUrl = getServerUrl();
+  const url = `${serverUrl}/api/v1/crm/forms/public/${form.token}`;
+  return `<iframe
+  src="${url}"
+  title="${form.name.replace(/"/g, '&quot;')}"
+  loading="lazy"
+  style="width:100%;max-width:480px;min-height:520px;border:0;display:block;margin:0 auto"
+></iframe>`;
 }
 
 function getFieldTypeIcon(type: LeadFormFieldType) {
@@ -193,7 +220,190 @@ function FieldEditorPanel({
   );
 }
 
+// ─── Presets ─────────────────────────────────────────────────────────
+
+interface BrandingPreset {
+  id: string;
+  name: string;
+  accentColor: string;
+  borderColor: string;
+  borderRadius: number;
+  fontFamily: string;
+}
+
+const BRANDING_PRESETS: BrandingPreset[] = [
+  { id: 'classic', name: 'Classic green', accentColor: '#13715B', borderColor: '#d0d5dd', borderRadius: 6, fontFamily: 'inherit' },
+  { id: 'minimal', name: 'Minimal grey', accentColor: '#111318', borderColor: '#e4e7ec', borderRadius: 4, fontFamily: 'inherit' },
+  { id: 'bold', name: 'Bold blue', accentColor: '#2563eb', borderColor: '#cbd5e1', borderRadius: 10, fontFamily: 'inherit' },
+];
+
+const FONT_OPTIONS = [
+  { value: 'inherit', label: 'Match host site' },
+  { value: 'Inter', label: 'Inter' },
+  { value: 'Geist', label: 'Geist' },
+  { value: 'system-ui', label: 'System default' },
+  { value: 'Georgia', label: 'Georgia (serif)' },
+];
+
+// ─── Branding Panel ─────────────────────────────────────────────────
+
+function BrandingPanel({
+  accentColor, borderColor, borderRadius, fontFamily, customCss, cssError,
+  onAccent, onBorder, onRadius, onFont, onCustomCss, onPreset,
+}: {
+  accentColor: string;
+  borderColor: string;
+  borderRadius: number;
+  fontFamily: string;
+  customCss: string;
+  cssError: string | null;
+  onAccent: (v: string) => void;
+  onBorder: (v: string) => void;
+  onRadius: (v: number) => void;
+  onFont: (v: string) => void;
+  onCustomCss: (v: string) => void;
+  onPreset: (p: BrandingPreset) => void;
+}) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+      {/* Preset row */}
+      <div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginBottom: 8, fontFamily: 'var(--font-family)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Presets
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
+          {BRANDING_PRESETS.map((p) => {
+            const isActive = accentColor === p.accentColor && borderColor === p.borderColor && borderRadius === p.borderRadius;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onPreset(p)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 14px',
+                  border: `1px solid ${isActive ? p.accentColor : 'var(--color-border-secondary)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontFamily: 'var(--font-family)',
+                  color: 'var(--color-text-primary)',
+                  boxShadow: isActive ? `inset 0 0 0 1px ${p.accentColor}55` : 'none',
+                }}
+              >
+                <span style={{ width: 14, height: 14, borderRadius: '50%', background: p.accentColor, flexShrink: 0 }} />
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tokens */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: 'var(--spacing-lg)',
+      }}>
+        <div>
+          <label style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Accent colour</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <input type="color" value={accentColor} onChange={(e) => onAccent(e.target.value)} style={{ width: 34, height: 28, border: '1px solid var(--color-border-secondary)', borderRadius: 4, padding: 0, background: 'none', cursor: 'pointer' }} />
+            <Input size="sm" value={accentColor} onChange={(e) => onAccent(e.target.value)} style={{ flex: 1 }} />
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Border colour</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <input type="color" value={borderColor} onChange={(e) => onBorder(e.target.value)} style={{ width: 34, height: 28, border: '1px solid var(--color-border-secondary)', borderRadius: 4, padding: 0, background: 'none', cursor: 'pointer' }} />
+            <Input size="sm" value={borderColor} onChange={(e) => onBorder(e.target.value)} style={{ flex: 1 }} />
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Corner radius</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <input
+              type="range"
+              min={0}
+              max={20}
+              value={borderRadius}
+              onChange={(e) => onRadius(Number(e.target.value))}
+              style={{ flex: 1 }}
+            />
+            <span style={{ minWidth: 32, textAlign: 'right', fontSize: 13, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-secondary)' }}>{borderRadius}px</span>
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Font</label>
+          <div style={{ marginTop: 4 }}>
+            <Select
+              value={fontFamily}
+              onChange={onFont}
+              options={FONT_OPTIONS}
+              size="sm"
+              width="100%"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Advanced CSS */}
+      <div style={{ borderTop: '1px solid var(--color-border-secondary)', paddingTop: 'var(--spacing-md)' }}>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            border: 'none', background: 'transparent', cursor: 'pointer',
+            fontSize: 13, color: 'var(--color-text-secondary)', padding: 0,
+            fontFamily: 'var(--font-family)',
+          }}
+        >
+          {showAdvanced ? <ChevronDown size={14} /> : <ChevronUp size={14} style={{ transform: 'rotate(180deg)' }} />}
+          Advanced CSS (hosted page only)
+        </button>
+        {showAdvanced && (
+          <div style={{ marginTop: 'var(--spacing-sm)' }}>
+            <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 0, marginBottom: 8, fontFamily: 'var(--font-family)', lineHeight: 1.5 }}>
+              Applied only when the form is rendered via the iframe embed or the hosted URL.{' '}
+              Scope your selectors under <code>.atlas-lead-form</code>. <code>@import</code>, <code>javascript:</code>, and other script vectors are rejected.
+            </p>
+            <Textarea
+              value={customCss}
+              onChange={(e) => onCustomCss(e.target.value)}
+              rows={12}
+              placeholder={`.atlas-lead-form {\n  background: #fafafa;\n}\n.atlas-lead-form__button {\n  letter-spacing: 0.02em;\n}`}
+              style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12, lineHeight: 1.5 }}
+            />
+            {cssError && (
+              <div style={{
+                marginTop: 8,
+                padding: '8px 10px',
+                background: 'color-mix(in srgb, var(--color-error) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-error) 25%, transparent)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--color-error)',
+                fontSize: 12,
+                fontFamily: 'var(--font-family)',
+              }}>
+                {cssError}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Form Editor ────────────────────────────────────────────────────
+
+type EditorTab = 'fields' | 'branding';
 
 function FormEditor({
   form, onBack,
@@ -206,10 +416,39 @@ function FormEditor({
   const updateForm = useUpdateLeadForm();
   const [fields, setFields] = useState<LeadFormField[]>(form.fields);
   const [formName, setFormName] = useState(form.name);
+  const [buttonLabel, setButtonLabel] = useState(form.buttonLabel);
+  const [thankYouMessage, setThankYouMessage] = useState(form.thankYouMessage);
+  const [accentColor, setAccentColor] = useState(form.accentColor);
+  const [borderColor, setBorderColor] = useState(form.borderColor);
+  const [borderRadius, setBorderRadius] = useState(form.borderRadius);
+  const [fontFamily, setFontFamily] = useState(form.fontFamily);
+  const [customCss, setCustomCss] = useState<string>(form.customCss ?? '');
+  const [cssError, setCssError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showEmbedModal, setShowEmbedModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<EditorTab>('fields');
+  const [embedMode, setEmbedMode] = useState<'iframe' | 'inline'>('iframe');
+
+  // Wrap each branding setter so any branding edit flips hasChanges.
+  const markDirty = useCallback(() => setHasChanges(true), []);
+  const setBrand = {
+    buttonLabel: (v: string) => { setButtonLabel(v); markDirty(); },
+    thankYouMessage: (v: string) => { setThankYouMessage(v); markDirty(); },
+    accentColor: (v: string) => { setAccentColor(v); markDirty(); },
+    borderColor: (v: string) => { setBorderColor(v); markDirty(); },
+    borderRadius: (v: number) => { setBorderRadius(v); markDirty(); },
+    fontFamily: (v: string) => { setFontFamily(v); markDirty(); },
+    customCss: (v: string) => { setCustomCss(v); markDirty(); },
+    applyPreset: (p: BrandingPreset) => {
+      setAccentColor(p.accentColor);
+      setBorderColor(p.borderColor);
+      setBorderRadius(p.borderRadius);
+      setFontFamily(p.fontFamily);
+      markDirty();
+    },
+  };
 
   const updateField = useCallback((index: number, updated: LeadFormField) => {
     setFields(prev => {
@@ -250,17 +489,58 @@ function FormEditor({
   }, []);
 
   const handleSave = useCallback(() => {
-    updateForm.mutate({ id: form.id, name: formName, fields }, {
+    updateForm.mutate({
+      id: form.id,
+      name: formName,
+      fields,
+      buttonLabel,
+      thankYouMessage,
+      accentColor,
+      borderColor,
+      borderRadius,
+      fontFamily,
+      customCss: customCss.trim().length > 0 ? customCss : null,
+    }, {
       onSuccess: () => {
         setHasChanges(false);
+        setCssError(null);
         addToast({ message: t('crm.leadForms.formSaved'), type: 'success' });
       },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error ?? t('crm.leadForms.formSaveFailed', 'Save failed');
+        if (/css|color|radius/i.test(msg)) {
+          setCssError(msg);
+          setActiveTab('branding');
+        }
+        addToast({ message: msg, type: 'error' });
+      },
     });
-  }, [form.id, formName, fields, updateForm, addToast, t]);
+  }, [
+    form.id, formName, fields,
+    buttonLabel, thankYouMessage,
+    accentColor, borderColor, borderRadius, fontFamily, customCss,
+    updateForm, addToast, t,
+  ]);
+
+  // Merge the editor's current draft onto the persisted form shape so the
+  // live preview, embed snippets, and save payload all see the same values.
+  const draftForm: CrmLeadForm = useMemo(() => ({
+    ...form,
+    name: formName,
+    fields,
+    buttonLabel,
+    thankYouMessage,
+    accentColor,
+    borderColor,
+    borderRadius,
+    fontFamily,
+    customCss: customCss.trim().length > 0 ? customCss : null,
+  }), [form, formName, fields, buttonLabel, thankYouMessage, accentColor, borderColor, borderRadius, fontFamily, customCss]);
 
   const handleCopyEmbed = useCallback(async () => {
-    const updatedForm = { ...form, fields, name: formName };
-    const code = generateEmbedCode(updatedForm);
+    const code = embedMode === 'iframe'
+      ? generateIframeEmbedCode(draftForm)
+      : generateEmbedCode(draftForm);
     try {
       await navigator.clipboard.writeText(code);
     } catch {
@@ -274,10 +554,50 @@ function FormEditor({
     setCopied(true);
     addToast({ message: t('crm.leadForms.codeCopied'), type: 'success' });
     setTimeout(() => setCopied(false), 2000);
-  }, [form, fields, formName, addToast, t]);
+  }, [draftForm, embedMode, addToast, t]);
 
-  // For preview
-  const previewForm = useMemo(() => ({ ...form, fields, name: formName }), [form, fields, formName]);
+  // Live preview — an iframe whose srcDoc is the HTML returned by the
+  // /crm/forms/preview endpoint. Debounced so we don't hammer the server
+  // on every keystroke.
+  const [previewSrcDoc, setPreviewSrcDoc] = useState<string>('');
+  const previewAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      previewAbortRef.current?.abort();
+      const ctrl = new AbortController();
+      previewAbortRef.current = ctrl;
+      try {
+        const { data } = await api.post('/crm/forms/preview', {
+          name: draftForm.name,
+          fields: draftForm.fields,
+          buttonLabel: draftForm.buttonLabel,
+          thankYouMessage: draftForm.thankYouMessage,
+          accentColor: draftForm.accentColor,
+          borderColor: draftForm.borderColor,
+          borderRadius: draftForm.borderRadius,
+          fontFamily: draftForm.fontFamily,
+          customCss: draftForm.customCss,
+        }, { signal: ctrl.signal, transformResponse: (r) => r });
+        setPreviewSrcDoc(typeof data === 'string' ? data : '');
+        setCssError(null);
+      } catch (err: any) {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError') return;
+        // Parse server validation message from the 400 body.
+        let msg: string | null = null;
+        try {
+          const body = typeof err?.response?.data === 'string'
+            ? JSON.parse(err.response.data)
+            : err?.response?.data;
+          msg = body?.error ?? null;
+        } catch { /* ignore */ }
+        setCssError(msg ?? 'Preview failed');
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [draftForm]);
+
+  // Keep `previewForm` as an alias so existing consumers below keep working.
+  const previewForm = draftForm;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -316,122 +636,218 @@ function FormEditor({
       {/* Main content */}
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-xl)' }}>
         {showPreview ? (
-          /* Preview mode */
-          <div style={{ maxWidth: 480, margin: '0 auto' }}>
-            <div style={{
-              border: '1px solid var(--color-border-primary)',
-              borderRadius: 'var(--radius-lg)',
-              padding: 'var(--spacing-xl)',
-              background: 'var(--color-bg-primary)',
-            }}>
-              <h3 style={{
-                fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)',
-                margin: '0 0 var(--spacing-lg) 0',
+          /* Live hosted-page preview — server-rendered so it honours custom CSS */
+          <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            {cssError && (
+              <div style={{
+                padding: 'var(--spacing-sm) var(--spacing-md)',
+                marginBottom: 'var(--spacing-md)',
+                background: 'color-mix(in srgb, var(--color-error) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-error) 25%, transparent)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--color-error)',
+                fontSize: 'var(--font-size-xs)',
+                fontFamily: 'var(--font-family)',
               }}>
-                {formName}
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-                {fields.map((field) => (
-                  <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <label style={{
-                      fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)',
-                      color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)',
-                    }}>
-                      {field.label} {field.required && <span style={{ color: 'var(--color-error)' }}>*</span>}
-                    </label>
-                    {field.type === 'textarea' ? (
-                      <Textarea placeholder={field.placeholder} rows={3} disabled />
-                    ) : field.type === 'select' ? (
-                      <Select
-                        value=""
-                        onChange={() => {}}
-                        options={[
-                          { value: '', label: field.placeholder || 'Select...' },
-                          ...(field.options || []).map(o => ({ value: o, label: o })),
-                        ]}
-                        size="sm"
-                      />
-                    ) : (
-                      <Input
-                        placeholder={field.placeholder}
-                        type={field.type === 'email' ? 'email' : 'text'}
-                        size="sm"
-                        disabled
-                      />
-                    )}
-                  </div>
-                ))}
-                <Button variant="primary" size="sm" disabled style={{ alignSelf: 'flex-start', marginTop: 'var(--spacing-sm)' }}>
-                  Submit
-                </Button>
+                {cssError}
               </div>
-            </div>
+            )}
+            <iframe
+              title="Form preview"
+              srcDoc={previewSrcDoc}
+              style={{
+                width: '100%',
+                height: 600,
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: 'var(--radius-md)',
+                background: '#ffffff',
+              }}
+            />
           </div>
         ) : (
-          /* Editor mode */
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            {/* Field list */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-lg)' }}>
-              {fields.length === 0 && (
-                <div style={{
-                  textAlign: 'center', padding: 'var(--spacing-2xl)',
-                  color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)',
-                  border: '2px dashed var(--color-border-secondary)',
-                  borderRadius: 'var(--radius-lg)',
-                }}>
-                  <Type size={32} style={{ marginBottom: 'var(--spacing-sm)', opacity: 0.3 }} />
-                  <p style={{ fontSize: 'var(--font-size-sm)', margin: 0 }}>
-                    No fields yet. Add a field below to get started.
-                  </p>
-                </div>
-              )}
-              {fields.map((field, i) => (
-                <FieldEditorPanel
-                  key={field.id}
-                  field={field}
-                  onChange={(updated) => updateField(i, updated)}
-                  onDelete={() => deleteField(i)}
-                  onMoveUp={() => moveField(i, -1)}
-                  onMoveDown={() => moveField(i, 1)}
-                  isFirst={i === 0}
-                  isLast={i === fields.length - 1}
-                />
-              ))}
-            </div>
-
-            {/* Add field buttons */}
+          <div style={{ maxWidth: 720, margin: '0 auto' }}>
+            {/* Tab strip */}
             <div style={{
-              display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap',
-              padding: 'var(--spacing-md)',
-              border: '1px dashed var(--color-border-secondary)',
+              display: 'inline-flex',
+              border: '1px solid var(--color-border-secondary)',
               borderRadius: 'var(--radius-md)',
+              padding: 2,
+              marginBottom: 'var(--spacing-lg)',
+              background: 'var(--color-bg-tertiary)',
+              fontFamily: 'var(--font-family)',
             }}>
-              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', width: '100%', marginBottom: 2 }}>
-                Add field
-              </span>
-              {FIELD_TYPE_OPTIONS.map(opt => {
-                const Icon = opt.icon;
+              {([
+                { id: 'fields' as const, label: t('crm.leadForms.tabFields', 'Fields'), icon: <Type size={13} /> },
+                { id: 'branding' as const, label: t('crm.leadForms.tabBranding', 'Branding'), icon: <Palette size={13} /> },
+              ]).map((tab) => {
+                const isActive = activeTab === tab.id;
                 return (
-                  <Button key={opt.value} variant="secondary" size="sm" icon={<Icon size={13} />} onClick={() => addField(opt.value)}>
-                    {opt.label}
-                  </Button>
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      background: isActive ? 'var(--color-bg-primary)' : 'transparent',
+                      color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                      fontSize: 13,
+                      fontWeight: isActive ? 500 : 400,
+                      cursor: 'pointer',
+                      boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
+                    }}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
                 );
               })}
             </div>
+
+            {activeTab === 'fields' ? (
+              <>
+                {/* Per-form copy controls, above the field list */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 'var(--spacing-md)',
+                  marginBottom: 'var(--spacing-lg)',
+                }}>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                      Button label
+                    </label>
+                    <Input size="sm" value={buttonLabel} onChange={(e) => setBrand.buttonLabel(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                      Thank-you message
+                    </label>
+                    <Input size="sm" value={thankYouMessage} onChange={(e) => setBrand.thankYouMessage(e.target.value)} />
+                  </div>
+                </div>
+
+                {/* Field list */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-lg)' }}>
+                  {fields.length === 0 && (
+                    <div style={{
+                      textAlign: 'center', padding: 'var(--spacing-2xl)',
+                      color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)',
+                      border: '2px dashed var(--color-border-secondary)',
+                      borderRadius: 'var(--radius-lg)',
+                    }}>
+                      <Type size={32} style={{ marginBottom: 'var(--spacing-sm)', opacity: 0.3 }} />
+                      <p style={{ fontSize: 'var(--font-size-sm)', margin: 0 }}>
+                        No fields yet. Add a field below to get started.
+                      </p>
+                    </div>
+                  )}
+                  {fields.map((field, i) => (
+                    <FieldEditorPanel
+                      key={field.id}
+                      field={field}
+                      onChange={(updated) => updateField(i, updated)}
+                      onDelete={() => deleteField(i)}
+                      onMoveUp={() => moveField(i, -1)}
+                      onMoveDown={() => moveField(i, 1)}
+                      isFirst={i === 0}
+                      isLast={i === fields.length - 1}
+                    />
+                  ))}
+                </div>
+
+                {/* Add field buttons */}
+                <div style={{
+                  display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap',
+                  padding: 'var(--spacing-md)',
+                  border: '1px dashed var(--color-border-secondary)',
+                  borderRadius: 'var(--radius-md)',
+                }}>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', width: '100%', marginBottom: 2 }}>
+                    Add field
+                  </span>
+                  {FIELD_TYPE_OPTIONS.map(opt => {
+                    const Icon = opt.icon;
+                    return (
+                      <Button key={opt.value} variant="secondary" size="sm" icon={<Icon size={13} />} onClick={() => addField(opt.value)}>
+                        {opt.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <BrandingPanel
+                accentColor={accentColor}
+                borderColor={borderColor}
+                borderRadius={borderRadius}
+                fontFamily={fontFamily}
+                customCss={customCss}
+                cssError={cssError}
+                onAccent={setBrand.accentColor}
+                onBorder={setBrand.borderColor}
+                onRadius={setBrand.borderRadius}
+                onFont={setBrand.fontFamily}
+                onCustomCss={setBrand.customCss}
+                onPreset={setBrand.applyPreset}
+              />
+            )}
           </div>
         )}
       </div>
 
-      {/* Embed code modal */}
-      <Modal open={showEmbedModal} onOpenChange={setShowEmbedModal} width={560} title={t('crm.leadForms.embedCode')}>
+      {/* Embed code modal — two variants: iframe (hosted, supports custom CSS)
+          and inline (self-contained <form>, tokens only, no custom CSS). */}
+      <Modal open={showEmbedModal} onOpenChange={setShowEmbedModal} width={620} title={t('crm.leadForms.embedCode')}>
         <Modal.Header title={t('crm.leadForms.embedCode')} />
         <Modal.Body>
+          <div style={{
+            display: 'inline-flex',
+            border: '1px solid var(--color-border-secondary)',
+            borderRadius: 'var(--radius-md)',
+            padding: 2,
+            marginBottom: 'var(--spacing-md)',
+            background: 'var(--color-bg-tertiary)',
+            fontFamily: 'var(--font-family)',
+          }}>
+            {([
+              { id: 'iframe' as const, label: 'Iframe (recommended)' },
+              { id: 'inline' as const, label: 'Inline' },
+            ]).map((t) => {
+              const isActive = embedMode === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setEmbedMode(t.id)}
+                  style={{
+                    padding: '6px 14px',
+                    border: 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    background: isActive ? 'var(--color-bg-primary)' : 'transparent',
+                    color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                    fontSize: 13,
+                    fontWeight: isActive ? 500 : 400,
+                    cursor: 'pointer',
+                    boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
+                  }}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
           <p style={{
             fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)',
             fontFamily: 'var(--font-family)', marginBottom: 'var(--spacing-md)', marginTop: 0,
           }}>
-            {t('crm.leadForms.embedInstructions')}
+            {embedMode === 'iframe'
+              ? 'Paste this snippet anywhere on your site. The form is hosted on Atlas, so your custom CSS (from the Branding tab) is applied exactly as previewed.'
+              : "Paste this self-contained form anywhere on your site. It inherits your site's font and uses the branding tokens you chose — but custom CSS from the Branding tab is NOT applied here (it would bleed into your page styles)."}
           </p>
           <pre style={{
             background: 'var(--color-bg-tertiary)', padding: 'var(--spacing-md)',
@@ -440,7 +856,9 @@ function FormEditor({
             color: 'var(--color-text-primary)', border: '1px solid var(--color-border-secondary)',
             whiteSpace: 'pre-wrap', wordBreak: 'break-all',
           }}>
-            {generateEmbedCode(previewForm)}
+            {embedMode === 'iframe'
+              ? generateIframeEmbedCode(previewForm)
+              : generateEmbedCode(previewForm)}
           </pre>
         </Modal.Body>
         <Modal.Footer>

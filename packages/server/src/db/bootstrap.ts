@@ -212,6 +212,22 @@ async function migrateLegacyData() {
     "varchar(10) NOT NULL DEFAULT 'USD'");
   await addColumnIfMissing('crm_lead_forms', 'is_archived',
     'boolean NOT NULL DEFAULT false');
+  // Lead-form branding columns — admins can customise the form's appearance
+  // (colours, radius, font, copy) and inject scoped custom CSS that is only
+  // applied on the hosted public form page.
+  await addColumnIfMissing('crm_lead_forms', 'button_label',
+    "varchar(120) NOT NULL DEFAULT 'Submit'");
+  await addColumnIfMissing('crm_lead_forms', 'thank_you_message',
+    "text NOT NULL DEFAULT 'Thanks! We''ll be in touch.'");
+  await addColumnIfMissing('crm_lead_forms', 'accent_color',
+    "varchar(24) NOT NULL DEFAULT '#13715B'");
+  await addColumnIfMissing('crm_lead_forms', 'border_color',
+    "varchar(24) NOT NULL DEFAULT '#d0d5dd'");
+  await addColumnIfMissing('crm_lead_forms', 'border_radius',
+    'integer NOT NULL DEFAULT 6');
+  await addColumnIfMissing('crm_lead_forms', 'font_family',
+    "varchar(64) NOT NULL DEFAULT 'inherit'");
+  await addColumnIfMissing('crm_lead_forms', 'custom_css', 'text');
   await addColumnIfMissing('crm_saved_views', 'is_archived',
     'boolean NOT NULL DEFAULT false');
   await addColumnIfMissing('hr_expense_categories', 'is_archived',

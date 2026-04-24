@@ -280,7 +280,12 @@ export async function updateLeadForm(req: Request, res: Response) {
     const userId = req.auth!.userId;
     const tenantId = req.auth!.tenantId;
     const id = req.params.id as string;
-    const { name, fields, isActive } = req.body;
+    const {
+      name, fields, isActive,
+      buttonLabel, thankYouMessage,
+      accentColor, borderColor, borderRadius, fontFamily,
+      customCss,
+    } = req.body;
 
     const perm = req.crmPerm!;
     if (!canAccessEntity(perm.role, 'leads', 'update', perm.entityPermissions)) {
@@ -290,6 +295,9 @@ export async function updateLeadForm(req: Request, res: Response) {
 
     const form = await crmService.updateLeadForm(userId, tenantId, id, {
       name, fields, isActive,
+      buttonLabel, thankYouMessage,
+      accentColor, borderColor, borderRadius, fontFamily,
+      customCss,
     });
 
     if (!form) {
@@ -298,6 +306,12 @@ export async function updateLeadForm(req: Request, res: Response) {
     }
     res.json({ success: true, data: form });
   } catch (error) {
+    // Validation errors (hex/radius/CSS) surface as 400 with the message.
+    const message = error instanceof Error ? error.message : 'Failed to update lead form';
+    if (/must be|disallowed pattern|exceeds/.test(message)) {
+      res.status(400).json({ success: false, error: message });
+      return;
+    }
     logger.error({ error }, 'Failed to update CRM lead form');
     res.status(500).json({ success: false, error: 'Failed to update lead form' });
   }
@@ -337,18 +351,28 @@ export async function submitLeadForm(req: Request, res: Response) {
       return;
     }
 
-    // HTML form submissions send urlencoded content-type; return a "thank you" page
+    // HTML form submissions send urlencoded content-type; render the form's
+    // own branded "thank you" page so the submitter stays in the same visual
+    // context as the form they just filled in.
     const contentType = req.headers['content-type'] || '';
     const acceptHeader = req.headers.accept || '';
     if (contentType.includes('application/x-www-form-urlencoded') || acceptHeader.includes('text/html')) {
+      const form = await crmService.getLeadFormByToken(token);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Thank you</title>
-<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f9fafb}
-.card{background:#fff;border-radius:12px;padding:40px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1)}
-h2{margin:0 0 8px;color:#111827}p{margin:0;color:#6b7280}</style>
-</head><body><div class="card"><h2>Thank you!</h2><p>Your submission has been received.</p></div></body></html>`);
+      res.send(form
+        ? crmService.renderPublicLeadForm({
+            token: form.token,
+            name: form.name,
+            fields: form.fields as any,
+            buttonLabel: form.buttonLabel,
+            thankYouMessage: form.thankYouMessage,
+            accentColor: form.accentColor,
+            borderColor: form.borderColor,
+            borderRadius: form.borderRadius,
+            fontFamily: form.fontFamily,
+            customCss: form.customCss,
+          }, { submitted: true })
+        : '<!DOCTYPE html><html><body><h2>Thank you!</h2></body></html>');
       return;
     }
 
@@ -356,5 +380,81 @@ h2{margin:0 0 8px;color:#111827}p{margin:0;color:#6b7280}</style>
   } catch (error) {
     logger.error({ error }, 'Failed to submit lead form');
     res.status(500).json({ success: false, error: 'Failed to submit form' });
+  }
+}
+
+/**
+ * GET /api/v1/crm/forms/public/:token — no auth. Serves the branded HTML
+ * form. This is the URL the iframe embed snippet points at.
+ */
+export async function getPublicLeadForm(req: Request, res: Response) {
+  try {
+    const token = req.params.token as string;
+    const form = await crmService.getLeadFormByToken(token);
+    if (!form) {
+      res.status(404).type('html').send('<!DOCTYPE html><html><body><p>Form not found.</p></body></html>');
+      return;
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    // Allow embedding in iframes on any origin — this IS the public form.
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+    res.removeHeader?.('Content-Security-Policy');
+    res.send(crmService.renderPublicLeadForm({
+      token: form.token,
+      name: form.name,
+      fields: form.fields as any,
+      buttonLabel: form.buttonLabel,
+      thankYouMessage: form.thankYouMessage,
+      accentColor: form.accentColor,
+      borderColor: form.borderColor,
+      borderRadius: form.borderRadius,
+      fontFamily: form.fontFamily,
+      customCss: form.customCss,
+    }));
+  } catch (error) {
+    logger.error({ error }, 'Failed to render CRM public lead form');
+    res.status(500).type('html').send('<!DOCTYPE html><html><body><p>Error rendering form.</p></body></html>');
+  }
+}
+
+/**
+ * POST /api/v1/crm/forms/preview — admin-only. The edit UI posts its
+ * current draft here and receives HTML for the live iframe preview.
+ * Validates the draft CSS/colors so the preview surfaces the same errors
+ * the save endpoint would.
+ */
+export async function previewLeadForm(req: Request, res: Response) {
+  try {
+    const body = req.body ?? {};
+    const safe = {
+      token: undefined,
+      name: typeof body.name === 'string' ? body.name : 'Preview',
+      fields: Array.isArray(body.fields) ? body.fields : [],
+      buttonLabel: typeof body.buttonLabel === 'string' ? body.buttonLabel.slice(0, 120) : 'Submit',
+      thankYouMessage: typeof body.thankYouMessage === 'string' ? body.thankYouMessage : "Thanks! We'll be in touch.",
+      accentColor: typeof body.accentColor === 'string' ? body.accentColor : '#13715B',
+      borderColor: typeof body.borderColor === 'string' ? body.borderColor : '#d0d5dd',
+      borderRadius: Number.isFinite(Number(body.borderRadius)) ? Math.max(0, Math.min(32, Math.round(Number(body.borderRadius)))) : 6,
+      fontFamily: typeof body.fontFamily === 'string' ? body.fontFamily.slice(0, 64) : 'inherit',
+      customCss: typeof body.customCss === 'string' && body.customCss.length > 0 ? body.customCss : null,
+    };
+    // Validate the bits that would fail at save time. We want the preview
+    // to complain before the user hits Save, not after.
+    try {
+      crmService.__internal.coerceHexColor(safe.accentColor, 'accentColor');
+      crmService.__internal.coerceHexColor(safe.borderColor, 'borderColor');
+      if (safe.customCss) crmService.__internal.validateCustomCss(safe.customCss);
+    } catch (validationErr) {
+      const message = validationErr instanceof Error ? validationErr.message : 'Invalid draft';
+      res.status(400).json({ success: false, error: message });
+      return;
+    }
+    const submitted = body.submitted === true;
+    const html = crmService.renderPublicLeadForm(safe, { submitted });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    logger.error({ error }, 'Failed to preview CRM lead form');
+    res.status(500).json({ success: false, error: 'Failed to preview form' });
   }
 }
