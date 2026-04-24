@@ -22,7 +22,6 @@ export function SettingsSection({
         background: 'transparent',
         border: '1px solid var(--color-border-secondary)',
         borderRadius: 'var(--radius-md)',
-        overflow: 'hidden',
       }}
     >
       <header
@@ -30,6 +29,8 @@ export function SettingsSection({
           padding: '12px 18px',
           background: 'color-mix(in srgb, var(--color-bg-secondary) 55%, transparent)',
           borderBottom: '1px solid var(--color-border-secondary)',
+          borderTopLeftRadius: 'var(--radius-md)',
+          borderTopRightRadius: 'var(--radius-md)',
         }}
       >
         <h3
