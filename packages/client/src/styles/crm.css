@@ -454,6 +454,11 @@
   flex-direction: column;
   gap: var(--spacing-md);
   min-height: 0;
+  min-width: 0;
+}
+
+.crm-dashboard-card > * {
+  min-width: 0;
 }
 
 .crm-dashboard-card-title {

@@ -105,8 +105,8 @@ export function CrmContent({
   const [searchParams, setSearchParams] = useSearchParams();
 
   return (
-    <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minWidth: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         {activeView === 'dashboard' && (
           <div style={{ overflow: 'auto', flex: 1 }}>
             <CrmDashboard />

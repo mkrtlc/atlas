@@ -620,7 +620,7 @@ function FormEditor({
         />
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
           {hasChanges && (
-            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-warning)', fontFamily: 'var(--font-family)' }}>
+            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-warning)', fontFamily: 'var(--font-family)', whiteSpace: 'nowrap' }}>
               Unsaved changes
             </span>
           )}
@@ -661,9 +661,8 @@ function FormEditor({
               style={{
                 width: '100%',
                 height: 600,
-                border: '1px solid var(--color-border-primary)',
-                borderRadius: 'var(--radius-md)',
-                background: '#ffffff',
+                border: 'none',
+                background: 'transparent',
               }}
             />
           </div>
