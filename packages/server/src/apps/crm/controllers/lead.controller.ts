@@ -306,7 +306,6 @@ export async function updateLeadForm(req: Request, res: Response) {
     }
     res.json({ success: true, data: form });
   } catch (error) {
-    // Validation errors (hex/radius/CSS) surface as 400 with the message.
     const message = error instanceof Error ? error.message : 'Failed to update lead form';
     if (/must be|disallowed pattern|exceeds/.test(message)) {
       res.status(400).json({ success: false, error: message });
@@ -342,14 +341,16 @@ export async function submitLeadForm(req: Request, res: Response) {
     const token = req.params.token as string;
     const { name, email, phone, companyName, message } = req.body;
 
-    const lead = await crmService.submitLeadForm(token, {
+    const result = await crmService.submitLeadForm(token, {
       name, email, phone, companyName, message,
     });
 
-    if (!lead) {
+    if (!result) {
       res.status(404).json({ success: false, error: 'Form not found or inactive' });
       return;
     }
+
+    const { lead, form } = result;
 
     // HTML form submissions send urlencoded content-type; render the form's
     // own branded "thank you" page so the submitter stays in the same visual
@@ -357,22 +358,19 @@ export async function submitLeadForm(req: Request, res: Response) {
     const contentType = req.headers['content-type'] || '';
     const acceptHeader = req.headers.accept || '';
     if (contentType.includes('application/x-www-form-urlencoded') || acceptHeader.includes('text/html')) {
-      const form = await crmService.getLeadFormByToken(token);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(form
-        ? crmService.renderPublicLeadForm({
-            token: form.token,
-            name: form.name,
-            fields: form.fields as any,
-            buttonLabel: form.buttonLabel,
-            thankYouMessage: form.thankYouMessage,
-            accentColor: form.accentColor,
-            borderColor: form.borderColor,
-            borderRadius: form.borderRadius,
-            fontFamily: form.fontFamily,
-            customCss: form.customCss,
-          }, { submitted: true })
-        : '<!DOCTYPE html><html><body><h2>Thank you!</h2></body></html>');
+      res.send(crmService.renderPublicLeadForm({
+        token: form.token,
+        name: form.name,
+        fields: form.fields as any,
+        buttonLabel: form.buttonLabel,
+        thankYouMessage: form.thankYouMessage,
+        accentColor: form.accentColor,
+        borderColor: form.borderColor,
+        borderRadius: form.borderRadius,
+        fontFamily: form.fontFamily,
+        customCss: form.customCss,
+      }, { submitted: true }));
       return;
     }
 

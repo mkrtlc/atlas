@@ -593,7 +593,10 @@ function FormEditor({
         setCssError(msg ?? 'Preview failed');
       }
     }, 250);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      previewAbortRef.current?.abort();
+    };
   }, [draftForm]);
 
   // Keep `previewForm` as an alias so existing consumers below keep working.

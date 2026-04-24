@@ -2,6 +2,7 @@ import { db } from '../../../config/database';
 import { crmLeads, crmLeadForms, crmDeals } from '../../../db/schema';
 import { eq, and, or, asc, desc, sql } from 'drizzle-orm';
 import { logger } from '../../../utils/logger';
+import { escapeHtml } from '../../../utils/html';
 import crypto from 'crypto';
 import type { CrmRecordAccess } from '@atlas-platform/shared';
 import { createActivity } from './activity.service';
@@ -434,15 +435,6 @@ export interface LeadFormRenderData {
   customCss: string | null;
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 export function renderPublicLeadForm(
   form: LeadFormRenderData,
   opts: { submitted?: boolean; actionUrl?: string } = {},
@@ -582,5 +574,5 @@ export async function submitLeadForm(token: string, formData: Record<string, str
   }).where(eq(crmLeadForms.id, form.id));
 
   logger.info({ formId: form.id, leadId: lead.id }, 'CRM lead form submitted');
-  return lead;
+  return { lead, form };
 }
