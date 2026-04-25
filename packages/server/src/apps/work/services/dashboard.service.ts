@@ -95,13 +95,18 @@ export async function getDashboardData(userId: string, tenantId: string) {
 
     db.select({
       id: projectTimeEntries.id,
+      projectId: projectTimeEntries.projectId,
       projectName: projectProjects.name,
       projectColor: projectProjects.color,
+      userId: projectTimeEntries.userId,
       durationMinutes: projectTimeEntries.durationMinutes,
       workDate: projectTimeEntries.workDate,
       taskDescription: projectTimeEntries.taskDescription,
       notes: projectTimeEntries.notes,
+      tags: projectTimeEntries.tags,
+      billable: projectTimeEntries.billable,
       createdAt: projectTimeEntries.createdAt,
+      updatedAt: projectTimeEntries.updatedAt,
     })
       .from(projectTimeEntries)
       .innerJoin(projectProjects, eq(projectTimeEntries.projectId, projectProjects.id))
@@ -176,12 +181,17 @@ export async function getDashboardData(userId: string, tenantId: string) {
     hoursByDay,
     recentTimeEntries: recentTimeEntries.map(e => ({
       id: e.id,
+      projectId: e.projectId,
       projectName: e.projectName,
       projectColor: e.projectColor,
+      userId: e.userId,
       hours: Number(e.durationMinutes) / 60,
       date: e.workDate,
       description: e.taskDescription || e.notes || null,
+      tags: (e.tags as string[] | null) ?? [],
+      isBillable: !!e.billable,
       createdAt: e.createdAt,
+      updatedAt: e.updatedAt,
     })),
     recentInvoiceActions: recentInvoiceActions.map(i => ({
       id: i.id,

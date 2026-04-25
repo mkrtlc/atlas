@@ -4611,7 +4611,10 @@
       "added": "Zaman girişi eklendi",
       "saved": "Zaman girişi kaydedildi",
       "deleted": "Zaman girişi silindi",
-      "noDescription": "Açıklama yok"
+      "noDescription": "Açıklama yok",
+      "editTitle": "Zaman girişini düzenle",
+      "deleteConfirmTitle": "Zaman girişi silinsin mi?",
+      "deleteConfirmDescription": "Bu zaman girişi kalıcı olarak silinecek. Bu işlem geri alınamaz."
     },
     "members": {
       "add": "Üye ekle",

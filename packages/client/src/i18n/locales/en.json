@@ -4611,7 +4611,10 @@
       "added": "Time entry added",
       "saved": "Time entry saved",
       "deleted": "Time entry deleted",
-      "noDescription": "No description"
+      "noDescription": "No description",
+      "editTitle": "Edit time entry",
+      "deleteConfirmTitle": "Delete time entry?",
+      "deleteConfirmDescription": "This time entry will be permanently removed. This action cannot be undone."
     },
     "members": {
       "add": "Add member",

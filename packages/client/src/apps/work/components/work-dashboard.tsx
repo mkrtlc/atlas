@@ -11,11 +11,12 @@ import { QuickActions } from '../../../components/shared/quick-actions';
 import {
   useDashboard, useProjects, useCreateTimeEntry,
 } from '../hooks';
-import type { WorkProject } from '../hooks';
+import type { WorkProject, RecentTimeEntry } from '../hooks';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { useAppActions } from '../../../hooks/use-app-permissions';
+import { TimeEntryDetailModal } from './time-entry-detail-modal';
 import '../../../styles/projects.css';
 
 // ─── Revenue Chart ───────────────────────────────────────────────────
@@ -87,26 +88,27 @@ function DashboardHoursChart({ hoursByDay }: { hoursByDay: Array<{ date: string;
 
 // ─── Recent Activity ─────────────────────────────────────────────────
 
-function DashboardRecentActivity({ recentTimeEntries, recentInvoiceActions }: {
-  recentTimeEntries: Array<{ id: string; projectName: string; projectColor: string; hours: number; date: string; description: string | null; createdAt: string }>;
+function DashboardRecentActivity({ recentTimeEntries, recentInvoiceActions, onTimeEntryClick }: {
+  recentTimeEntries: RecentTimeEntry[];
   recentInvoiceActions: Array<{ id: string; invoiceNumber: string; clientName: string | null; status: string; amount: number; updatedAt: string }>;
+  onTimeEntryClick: (entry: RecentTimeEntry) => void;
 }) {
   const { t } = useTranslation();
 
   const combined = [
     ...recentTimeEntries.map(e => ({
-      ...e,
       key: `time-${e.id}`,
       type: 'time' as const,
-      date: e.createdAt,
+      sortDate: e.createdAt,
+      entry: e,
     })),
     ...recentInvoiceActions.map(i => ({
-      ...i,
       key: `inv-${i.id}`,
       type: 'invoice' as const,
-      date: i.updatedAt,
+      sortDate: i.updatedAt,
+      invoice: i,
     })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
+  ].sort((a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime()).slice(0, 8);
 
   return (
     <div className="projects-dashboard-card">
@@ -117,30 +119,53 @@ function DashboardRecentActivity({ recentTimeEntries, recentInvoiceActions }: {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {combined.map((item) => (
-            <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', padding: 'var(--spacing-sm) var(--spacing-md)', borderBottom: '1px solid var(--color-border-secondary)' }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-tertiary)', flexShrink: 0 }}>
-                {item.type === 'time' ? <Clock size={12} style={{ color: '#f59e0b' }} /> : <FileText size={12} style={{ color: '#3b82f6' }} />}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {item.type === 'time'
-                    ? `${formatNumber((item as typeof recentTimeEntries[0] & { type: 'time' }).hours, 1)}h - ${(item as typeof recentTimeEntries[0] & { type: 'time' }).projectName}`
-                    : `${(item as typeof recentInvoiceActions[0] & { type: 'invoice' }).invoiceNumber} - ${formatCurrency((item as typeof recentInvoiceActions[0] & { type: 'invoice' }).amount)}`
-                  }
+          {combined.map((item) => {
+            const isTime = item.type === 'time';
+            const interactive = isTime;
+            const handleActivate = () => {
+              if (isTime) onTimeEntryClick(item.entry);
+            };
+            return (
+              <div
+                key={item.key}
+                role={interactive ? 'button' : undefined}
+                tabIndex={interactive ? 0 : undefined}
+                onClick={interactive ? handleActivate : undefined}
+                onKeyDown={interactive ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleActivate(); } } : undefined}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--spacing-sm)',
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  borderBottom: '1px solid var(--color-border-secondary)',
+                  cursor: interactive ? 'pointer' : undefined,
+                }}
+                onMouseEnter={interactive ? (e) => { e.currentTarget.style.background = 'var(--color-surface-hover)'; } : undefined}
+                onMouseLeave={interactive ? (e) => { e.currentTarget.style.background = ''; } : undefined}
+              >
+                <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-tertiary)', flexShrink: 0 }}>
+                  {isTime ? <Clock size={12} style={{ color: '#f59e0b' }} /> : <FileText size={12} style={{ color: '#3b82f6' }} />}
                 </div>
-                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-                  {item.type === 'time'
-                    ? (item as typeof recentTimeEntries[0] & { type: 'time' }).description || formatDate((item as typeof recentTimeEntries[0] & { type: 'time' }).date)
-                    : `${(item as typeof recentInvoiceActions[0] & { type: 'invoice' }).clientName || ''} - ${t(`projects.status.${(item as typeof recentInvoiceActions[0] & { type: 'invoice' }).status}`)}`
-                  }
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isTime
+                      ? `${formatNumber(item.entry.hours, 1)}h - ${item.entry.projectName}`
+                      : `${item.invoice.invoiceNumber} - ${formatCurrency(item.invoice.amount)}`
+                    }
+                  </div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+                    {isTime
+                      ? item.entry.description || formatDate(item.entry.date)
+                      : `${item.invoice.clientName || ''} - ${t(`projects.status.${item.invoice.status}`)}`
+                    }
+                  </div>
                 </div>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', flexShrink: 0 }}>
+                  {formatRelativeDate(item.sortDate)}
+                </span>
               </div>
-              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)', flexShrink: 0 }}>
-                {formatRelativeDate(item.date)}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -225,6 +250,8 @@ export function WorkDashboard() {
   const { data: projectsData } = useProjects();
   const projects = projectsData?.projects ?? [];
   const { canCreate } = useAppActions('work');
+  const [selectedTimeEntryId, setSelectedTimeEntryId] = useState<string | null>(null);
+  const selectedTimeEntry = data?.recentTimeEntries.find((e) => e.id === selectedTimeEntryId) ?? null;
 
   const quickActions = [
     { label: t('work.quickActions.newProject'), icon: <Plus size={13} />, onClick: () => navigate('/work?view=projects&action=create') },
@@ -292,6 +319,14 @@ export function WorkDashboard() {
       <DashboardRecentActivity
         recentTimeEntries={data?.recentTimeEntries ?? []}
         recentInvoiceActions={data?.recentInvoiceActions ?? []}
+        onTimeEntryClick={(entry) => setSelectedTimeEntryId(entry.id)}
+      />
+
+      <TimeEntryDetailModal
+        key={selectedTimeEntryId}
+        open={!!selectedTimeEntry}
+        onOpenChange={(open) => { if (!open) setSelectedTimeEntryId(null); }}
+        entry={selectedTimeEntry}
       />
       </div>
     </ContentArea>

@@ -54,6 +54,21 @@ export interface TimeEntry {
   updatedAt: string;
 }
 
+export interface RecentTimeEntry {
+  id: string;
+  projectId: string;
+  projectName: string;
+  projectColor: string;
+  userId: string;
+  hours: number;
+  date: string;
+  description: string | null;
+  tags: string[];
+  isBillable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface EnhancedDashboard {
   hoursThisWeek: number;
   activeProjects: number;
@@ -68,15 +83,7 @@ export interface EnhancedDashboard {
     outstanding: number;
   };
   hoursByDay: Array<{ date: string; hours: number }>;
-  recentTimeEntries: Array<{
-    id: string;
-    projectName: string;
-    projectColor: string;
-    hours: number;
-    date: string;
-    description: string | null;
-    createdAt: string;
-  }>;
+  recentTimeEntries: RecentTimeEntry[];
   recentInvoiceActions: Array<{
     id: string;
     invoiceNumber: string;

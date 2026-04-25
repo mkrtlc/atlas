@@ -4611,7 +4611,10 @@
       "added": "Voce di tempo aggiunta",
       "saved": "Voce di tempo salvata",
       "deleted": "Voce di tempo eliminata",
-      "noDescription": "Nessuna descrizione"
+      "noDescription": "Nessuna descrizione",
+      "editTitle": "Modifica voce di tempo",
+      "deleteConfirmTitle": "Eliminare la voce di tempo?",
+      "deleteConfirmDescription": "Questa voce di tempo sarà rimossa definitivamente. Questa azione non può essere annullata."
     },
     "members": {
       "add": "Aggiungi membro",

@@ -4611,7 +4611,10 @@
       "added": "Entrée de temps ajoutée",
       "saved": "Entrée de temps enregistrée",
       "deleted": "Entrée de temps supprimée",
-      "noDescription": "Sans description"
+      "noDescription": "Sans description",
+      "editTitle": "Modifier l'entrée de temps",
+      "deleteConfirmTitle": "Supprimer l'entrée de temps ?",
+      "deleteConfirmDescription": "Cette entrée de temps sera définitivement supprimée. Cette action est irréversible."
     },
     "members": {
       "add": "Ajouter un membre",
