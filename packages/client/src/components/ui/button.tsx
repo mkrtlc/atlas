@@ -26,7 +26,7 @@ const variantStyles: Record<NonNullable<ButtonProps['variant']>, CSSProperties> 
   ghost: {
     background: 'transparent',
     color: 'var(--color-text-secondary)',
-    border: '1px solid transparent',
+    border: '1px solid var(--color-border-primary)',
     boxShadow: 'none',
   },
   danger: {

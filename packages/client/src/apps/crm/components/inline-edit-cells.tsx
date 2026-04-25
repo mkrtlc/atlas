@@ -30,6 +30,7 @@ export function InlineEditInput({
         if (e.key === 'Escape') onCancel();
       }}
       onBlur={() => onSave(val)}
+      className="inline-edit-input"
       style={{
         width: '100%', padding: '4px 6px', border: '1px solid var(--color-border-primary)',
         borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)',
@@ -64,6 +65,7 @@ export function InlineSelectCell({
         if (e.key === 'Escape') onCancel();
       }}
       onBlur={() => onCancel()}
+      className="inline-edit-input"
       style={{
         width: '100%', padding: '4px 6px', border: '1px solid var(--color-border-primary)',
         borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-sm)', fontFamily: 'var(--font-family)',

@@ -214,6 +214,10 @@ export function useUpdateCompany() {
     },
     onSuccess: (company) => {
       queryClient.setQueryData(queryKeys.crm.companies.detail(company.id), company);
+      queryClient.setQueriesData<{ companies: CrmCompany[] } | undefined>(
+        { queryKey: queryKeys.crm.companies.all },
+        (prev) => prev ? { ...prev, companies: prev.companies.map(c => c.id === company.id ? company : c) } : prev,
+      );
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.all });
     },
   });
@@ -298,6 +302,10 @@ export function useUpdateContact() {
     },
     onSuccess: (contact) => {
       queryClient.setQueryData(queryKeys.crm.contacts.detail(contact.id), contact);
+      queryClient.setQueriesData<{ contacts: CrmContact[] } | undefined>(
+        { queryKey: queryKeys.crm.contacts.all },
+        (prev) => prev ? { ...prev, contacts: prev.contacts.map(c => c.id === contact.id ? contact : c) } : prev,
+      );
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.all });
     },
   });
@@ -436,6 +444,10 @@ export function useUpdateDeal() {
     },
     onSuccess: (deal) => {
       queryClient.setQueryData(queryKeys.crm.deals.detail(deal.id), deal);
+      queryClient.setQueriesData<{ deals: CrmDeal[] } | undefined>(
+        { queryKey: queryKeys.crm.deals.all },
+        (prev) => prev ? { ...prev, deals: prev.deals.map(d => d.id === deal.id ? deal : d) } : prev,
+      );
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.all });
     },
   });
@@ -1079,6 +1091,10 @@ export function useUpdateLead() {
     },
     onSuccess: (lead) => {
       queryClient.setQueryData(queryKeys.crm.leads.detail(lead.id), lead);
+      queryClient.setQueriesData<{ leads: CrmLead[] } | undefined>(
+        { queryKey: queryKeys.crm.leads.all },
+        (prev) => prev ? { ...prev, leads: prev.leads.map(l => l.id === lead.id ? lead : l) } : prev,
+      );
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.all });
     },
   });

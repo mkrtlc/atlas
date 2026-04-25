@@ -100,6 +100,15 @@
   border-color: transparent;
 }
 
+/* Inline-edit cells (CRM table etc.) — suppress the heavy 3px accent
+   ring; the cell already has its own 1px border and sits inside a
+   tight table row where the ring reads as a ghost rectangle. */
+.inline-edit-input:focus,
+.inline-edit-input:focus-visible {
+  box-shadow: none;
+  border-color: var(--color-border-focus);
+}
+
 /* Slim, neat scrollbars across the app. Thumb is invisible until the
    container is hovered — matches macOS overlay feel on every platform. */
 * {

@@ -55,7 +55,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             style={{
               width: '100%',
               height,
-              padding: iconLeft ? '0 var(--spacing-sm) 0 calc(var(--spacing-sm) * 3 + 16px)' : '0 var(--spacing-sm)',
+              padding: iconLeft ? '0 var(--spacing-sm) 0 30px' : '0 var(--spacing-sm)',
               background: 'var(--color-bg-tertiary)',
               border: `1px solid ${error ? 'var(--color-error)' : 'var(--color-border-primary)'}`,
               borderRadius: 'var(--radius-md)',
