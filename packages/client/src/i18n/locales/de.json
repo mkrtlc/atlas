@@ -842,6 +842,7 @@
     "notes": "Notizen",
     "when": "Wann",
     "priority": {
+      "urgent": "Dringend",
       "high": "Hoch",
       "medium": "Mittel",
       "low": "Niedrig",
@@ -1081,7 +1082,15 @@
     "widgetDueToday": "heute fällig",
     "widgetOverdue": "überfällig",
     "widgetCompleted": "diese Woche",
-    "download": "Herunterladen"
+    "download": "Herunterladen",
+    "tableView": "Tabellenansicht",
+    "fields": {
+      "title": "Titel",
+      "project": "Projekt",
+      "priority": "Priorität",
+      "dueDate": "Fälligkeitsdatum",
+      "assignee": "Zugewiesen"
+    }
   },
   "errors": {
     "recipientRequired": "Mindestens ein Empfänger ist erforderlich",
